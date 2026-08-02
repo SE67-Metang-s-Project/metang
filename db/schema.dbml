@@ -79,6 +79,7 @@ Table loan_request {
   approved_amount   "numeric(12,2)" [note: 'NAT-46: admin may cut it. Installments build from this. Reason goes in loan_approval.comment.']
   amount_in_words   text [not null]
   purpose           text [not null]
+  annotation        text
   bank_name         text [not null]
   bank_account_no   text [not null]
   bank_account_name text [not null]
@@ -163,20 +164,6 @@ Table fund_transaction {
   created_at   timestamptz [not null, default: `now()`]
 
   Note: 'NAT-40/46/47. Fund balance = sum(amount * direction). Never a stored column.'
-}
-
-Table notification {
-  id         bigserial [pk]
-  user_id    uuid [ref: > app_user.id, not null]
-  channel    text [not null, default: 'line', note: 'line | email']
-  template   text [not null]
-  payload    jsonb
-  deep_link  text
-  sent_at    timestamptz
-  error      text
-  created_at timestamptz [not null, default: `now()`]
-
-  Note: 'NAT-28/35/44/50: exists so the due-date cron does not send the same reminder twice.'
 }
 
 Table audit_log {
