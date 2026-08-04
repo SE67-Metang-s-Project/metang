@@ -6,6 +6,7 @@ Postgres on Neon. **`db/schema.ts` is the source of truth.**
 npm run db:push      # apply schema.ts to the database
 npm run db:studio    # browse the data
 npm run db:seed      # dev users + 100,000 THB in the fund   (NEVER on the shared branch)
+npm run db:reset     # delete all app data, then reseed       (NEVER on the shared branch)
 npm run db:check     # constraint self-check, rolls back      (safe anywhere)
 ```
 
