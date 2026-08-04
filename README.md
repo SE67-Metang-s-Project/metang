@@ -17,8 +17,11 @@ refresh tokens are not stored in the cookie.
 4. Start the development server on the port used by the registered callback:
 
    ```bash
-   npm run dev -- -p 8080
+   npm run dev
    ```
+
+   This uses Infisical when its CLI is installed; otherwise Next.js loads the teammate's
+   local `.env` file as usual.
 
 Open <http://localhost:8080> and select **เข้าสู่ระบบด้วย CMU Account**.
 
