@@ -47,6 +47,7 @@ next-env.d.ts
 # agent tooling — fetched caches, not project code
 .claude/skills
 .agents
+.windsurf/skills
 
 # Supabase
 .branches
