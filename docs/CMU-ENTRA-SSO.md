@@ -108,8 +108,7 @@ starts this restricted mode. A rejected account receives `not_eligible` and cann
 nursing SSO session, even if CMU Entra authentication itself succeeded. The general CMU Account
 button keeps the existing unrestricted CMU profile behavior.
 
-Student access requires `itaccounttype_EN` to be exactly `Student Account`. That profile type
-must also have a student ID matching the nursing, undergraduate, normal-plan format:
+Student IDs are interpreted using the format shown by the CMU student examples:
 
 ```text
 YY 12 1 0 XXX
@@ -128,10 +127,8 @@ The allowed student pattern is:
 
 Examples:
 
-- `itaccounttype_EN: "Student Account"` with `661210XXX`: allowed nursing undergraduate,
-  normal-plan student.
+- `661210XXX`: allowed nursing undergraduate, normal-plan student.
 - `661215XXX`: rejected because plan `5` is international, not normal plan `0`.
-- A nursing-looking student ID without `itaccounttype_EN: "Student Account"`: rejected.
 - IDs with a faculty code other than `12`: rejected.
 - IDs with an undergraduate/plan segment other than `10`: rejected.
 
