@@ -1,41 +1,37 @@
 # Database
 
-Postgres on Neon. **`db/schema.ts` is the source of truth.**
+Supabase Postgres with Prisma. **`db/schema.prisma` is the source of truth.**
 
 ```bash
-npm run db:push      # apply schema.ts to the database
-npm run db:studio    # browse the data
-npm run db:seed      # dev users + 100,000 THB in the fund   (NEVER on the shared branch)
-npm run db:reset     # delete all app data, then reseed       (NEVER on the shared branch)
-npm run db:check     # constraint self-check, rolls back      (safe anywhere)
+npm run db:generate  # regenerate Prisma Client
+npm run db:status    # confirm Prisma can reach Supabase
+npm run db:migrate   # create and apply a development migration
+npm run db:deploy    # apply committed migrations
+npm run db:studio    # browse data
+npm run db:seed      # load development fixtures
+npm run db:reset     # delete app data and reseed
 ```
 
-`$DATABASE_URL` comes from `.env`. Never commit it. `drizzle.config.ts` strips
-`-pooler` from the host, because DDL must go to Neon's direct endpoint, not PgBouncer.
+Set `DATABASE_URL` to the Supabase Session pooler for the application. Set `DIRECT_URL`
+to the direct database URL for Prisma migrations; use the Session pooler when direct IPv6
+is unavailable.
 
-## Changing the schema
+Set `INFISICAL_ENV=dev` or `INFISICAL_ENV=prod` in local `.env`. Every `db:*` command
+stops until this file and value exist, then loads `DATABASE_URL` and `DIRECT_URL` from the
+matching Infisical environment. There is no default environment.
 
-Edit `db/schema.ts`, then `npm run db:push`. Test on a Neon branch first:
+Supabase CLI migrations and seeds are disabled in `supabase/config.toml`; Prisma owns both.
 
-```bash
-npx neonctl branches create --name test
-# point .env at the branch, push, check, then push to the default branch
-```
-
-Switch from `push` to `drizzle-kit generate` + `migrate` once real loan data exists
-and migrations need reviewing in a PR. `push` diffs and applies silently — right
-pre-launch, wrong after.
+Prisma cannot represent PostgreSQL check constraints or create views from its schema.
+Keep those rules in reviewed SQL migrations.
 
 ## Files
 
 | file | role |
 |---|---|
-| `client.ts` | pooled runtime database connection |
-| `schema.ts` | **source of truth.** Generated once by `drizzle-kit pull`, hand-edited from here on |
-| `relations.ts` | FK graph, powers `db.query.*` |
-| `queries/` | reusable server-side data queries |
-| `migrations/` | baseline snapshot and generated migrations |
-| `seed_dev.sql` | dev seed. Drizzle has no seeding — this stays |
-| `check.sql` | asserts the money rules actually bite. Drizzle has no equivalent — this stays |
-| `schema.dbml` | ER diagram for dbdiagram.io (NAT-8 deliverable). Update when schema.ts changes |
-| `run-sql.mjs` | runs a .sql file with `$DATABASE_URL` from `.env` |
+| `schema.prisma` | schema and relations source of truth |
+| `migrations/` | reviewed database migrations |
+| `../lib/prisma.ts` | pooled server-only Prisma client |
+| `queries/` | reusable server-side queries |
+| `seed.ts` | idempotent development fixtures through Prisma Client |
+| `schema.dbml` | ER diagram source for dbdiagram.io |

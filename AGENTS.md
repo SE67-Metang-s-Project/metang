@@ -5,13 +5,13 @@
 This is a Next.js 16 App Router project written in TypeScript.
 
 - `app/` contains routes, layouts, and global styles. Add route UI in `app/<route>/page.tsx`.
-- `db/schema.ts` is the Drizzle schema source of truth; `db/relations.ts` defines relational mappings.
-- `db/client.ts` creates the server-only Neon/Postgres connection. Reusable reads and writes belong in `db/queries/`.
-- `db/migrations/` contains generated SQL migrations and Drizzle metadata. Do not hand-edit `meta/`.
-- `db/seed_dev.sql` provides mock data; `db/check.sql` contains database assertions.
+- `db/schema.prisma` is the database schema and relation source of truth.
+- `lib/prisma.ts` creates the server-only Supabase/Postgres Prisma client. Reusable reads and writes belong in `db/queries/`.
+- `db/migrations/` contains generated Prisma migrations. Review generated SQL before applying it.
+- `db/seed.ts` provides mock development data.
 - `public/` stores static assets served from the site root.
 
-Use the `@/` alias for root-relative imports, for example `@/db/client`.
+Use the `@/` alias for root-relative imports, for example `@/lib/prisma`.
 
 ## Build, Test, and Development Commands
 
@@ -20,9 +20,12 @@ Use the `@/` alias for root-relative imports, for example `@/db/client`.
 - `npm run build` creates a production build and catches integration errors.
 - `npm run lint` runs ESLint with Next.js Core Web Vitals and TypeScript rules.
 - `npx tsc --noEmit` performs strict TypeScript checking.
-- `npm run db:push` applies `db/schema.ts` directly to the configured database.
-- `npm run db:seed` loads mock development data; `npm run db:check` runs SQL constraint checks.
-- `npm run db:studio` opens Drizzle Studio.
+- `npm run db:generate` regenerates Prisma Client after schema changes.
+- `npm run db:migrate` creates and applies a development migration.
+- `npm run db:deploy` applies pending migrations in production.
+- `npm run db:push` applies `db/schema.prisma` directly without migration history.
+- `npm run db:seed` loads mock development data.
+- `npm run db:studio` opens Prisma Studio.
 
 ## Coding Style & Naming Conventions
 
@@ -30,7 +33,7 @@ Use two-space indentation, double quotes, semicolons, trailing commas, and a 100
 
 ## Testing Guidelines
 
-There is currently no JavaScript test framework or coverage requirement. Before submitting changes, run `npm run lint`, `npx tsc --noEmit`, and `npm run build`. For schema or constraint changes, update `db/check.sql` and run `npm run db:check` against your own Neon testing branch.
+There is currently no JavaScript test framework or coverage requirement. Before submitting changes, run `npm run lint`, `npx tsc --noEmit`, and `npm run build`. Test schema changes against your own Supabase development database before deployment.
 
 ## Commit & Pull Request Guidelines
 
@@ -38,4 +41,4 @@ Recent history uses concise Conventional Commit subjects such as `feat(db): data
 
 ## Security & Configuration
 
-Copy `.env.example` to `.env` and keep credentials uncommitted. Never import `db/client.ts` into a Client Component. Confirm `DATABASE_URL` targets your personal Neon branch before pushing, seeding, or checking the database.
+Set `INFISICAL_ENV=dev` or `INFISICAL_ENV=prod` in local `.env` and store secrets in the matching Infisical environment. Never import `lib/prisma.ts` into a Client Component. Use `DATABASE_URL` for the application pool and `DIRECT_URL` for Prisma migrations. Confirm both target your own Supabase project before pushing, seeding, or checking the database.
