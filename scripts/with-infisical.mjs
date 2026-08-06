@@ -11,7 +11,7 @@ if (dotenvResult.error) {
   throw dotenvResult.error;
 }
 
-const environment = dotenvResult.parsed?.INFISICAL_ENV;
+const environment = dotenvResult.parsed?.INFISICAL_ENV || "dev";
 
 if (!environment) {
   throw new Error("Missing INFISICAL_ENV in .env. Set it to the Infisical environment to use.");
