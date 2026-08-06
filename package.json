@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "if command -v infisical >/dev/null 2>&1; then infisical run --env=dev -- next dev -p 8080; else next dev -p 8080; fi",
+    "dev-normal": "next dev -p 8080",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

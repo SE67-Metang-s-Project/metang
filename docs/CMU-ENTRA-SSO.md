@@ -26,8 +26,10 @@ OpenID Connect with ID-token signature, issuer, audience, nonce, and expiry vali
 | Area | File or route | Responsibility |
 | --- | --- | --- |
 | Shared authentication library | `lib/cmu-auth.ts` | Configuration, PKCE, state, encryption, profile sanitization, and session reads |
-| Start login | `GET /api/auth/login` | Creates the OAuth transaction and redirects to CMU Entra |
-| Complete login | `GET /api/auth/callback` | Validates the callback, exchanges the code, and fetches BasicInfo |
+| General login | `GET /api/auth/login` | Creates a general OAuth transaction and redirects to CMU Entra |
+| Nursing SSO login | `GET /api/auth/nurse/login` | Creates a nursing-policy OAuth transaction and redirects to CMU Entra |
+| Complete login | `GET /api/auth/callback` | Validates the callback, exchanges the code, fetches BasicInfo, and applies nursing policy when requested |
+| Nursing access policy | `lib/nurse-auth.ts` | Allows only eligible nursing students and nursing-faculty employees |
 | Logout | `POST /api/auth/logout` | Deletes the local session and redirects through Entra logout |
 | Login/profile UI | `app/page.tsx` | Shows login status and the complete BasicInfo JSON response |
 
@@ -97,6 +99,46 @@ should be removed or restricted before using the page outside development or adm
 
 The OAuth access token and any returned refresh token are not stored in the browser, database,
 or local session.
+
+### Nursing faculty access policy
+
+The nursing callback applies the nursing authorization policy after BasicInfo is fetched and
+before the local session cookie is created. Only the **CMU SSO สำหรับคณะพยาบาลศาสตร์** button
+starts this restricted mode. A rejected account receives `not_eligible` and cannot use the
+nursing SSO session, even if CMU Entra authentication itself succeeded. The general CMU Account
+button keeps the existing unrestricted CMU profile behavior.
+
+Student IDs are interpreted using the format shown by the CMU student examples:
+
+```text
+YY 12 1 0 XXX
+│  │  │ │ └── student sequence
+│  │  │ └──── normal plan (0)
+│  │  └────── undergraduate (1)
+│  └───────── nursing faculty (12)
+└──────────── enrollment year, Buddhist Era short year
+```
+
+The allowed student pattern is:
+
+```text
+^\d{2}1210\d{3}$
+```
+
+Examples:
+
+- `661210XXX`: allowed nursing undergraduate, normal-plan student.
+- `661215XXX`: rejected because plan `5` is international, not normal plan `0`.
+- IDs with a faculty code other than `12`: rejected.
+- IDs with an undergraduate/plan segment other than `10`: rejected.
+
+Employees do not use the student-ID rule. An employee is allowed only when the CMU BasicInfo
+field `organization_code` is exactly `12`. All other employee organization codes, and profiles
+without an eligible student ID or nursing organization code, are rejected.
+
+The policy is implemented by `getNurseAccessDecision` in `lib/nurse-auth.ts`, so the rule can be
+reused by protected pages and API routes as the application grows. Keep this policy server-side;
+it must not be implemented only as a UI visibility check.
 
 ### 4. Logout
 
@@ -249,6 +291,7 @@ sessions to a server-side store and keep only an opaque session identifier in th
 | `invalid_state` | Transaction expired, could not decrypt, or state did not match | Restart within ten minutes; check that all instances share `SESSION_SECRET` |
 | `token_exchange_failed` | Entra rejected the code exchange | Check client ID, client secret, callback URI, scope, and secret expiry |
 | `profile_failed` | BasicInfo returned an error or unusable JSON | Check delegated permission, scope, token audience, and CMU API availability |
+| `not_eligible` | CMU authentication succeeded but the nursing access policy rejected the profile | Check the student-ID segment or employee `organization_code` |
 | `login_failed` | An unexpected callback error occurred | Review server logs without printing tokens or secrets |
 
 ### Common redirect mismatch

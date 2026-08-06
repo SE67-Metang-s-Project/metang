@@ -11,6 +11,7 @@ const errorMessages: Record<string, string> = {
   invalid_state: "คำขอเข้าสู่ระบบหมดอายุหรือไม่ถูกต้อง กรุณาลองใหม่",
   token_exchange_failed: "ไม่สามารถยืนยันการเข้าสู่ระบบกับ CMU ได้",
   profile_failed: "เข้าสู่ระบบสำเร็จ แต่ไม่สามารถอ่านข้อมูลบัญชี CMU ได้",
+  not_eligible: "ระบบนี้อนุญาติให้ นักศึกษา ปริญาตรี ภาคปกติ คณะพยาบาล หรือ บุคลากร คณะพยาบาลเท่านั้น",
   login_failed: "เกิดข้อผิดพลาดระหว่างเข้าสู่ระบบ กรุณาลองใหม่",
 };
 
@@ -102,15 +103,26 @@ export default async function Home({ searchParams }: HomeProps) {
           </p>
 
           {isCmuAuthConfigured() ? (
-            <a
-              className={
-                "mt-8 inline-block bg-[#6f1d77] px-5 py-3 font-medium text-white " +
-                "hover:bg-[#5c1863]"
-              }
-              href="/api/auth/login"
-            >
-              เข้าสู่ระบบด้วย CMU Account
-            </a>
+            <div className="mt-8 flex flex-col items-start gap-3">
+              <a
+                className={
+                  "inline-block bg-[#6f1d77] px-5 py-3 font-medium text-white " +
+                  "hover:bg-[#5c1863]"
+                }
+                href="/api/auth/login"
+              >
+                เข้าสู่ระบบด้วย CMU Account
+              </a>
+              <a
+                className={
+                  "inline-block border border-[#6f1d77] px-5 py-3 font-medium " +
+                  "text-[#6f1d77] hover:bg-purple-50"
+                }
+                href="/api/auth/nurse/login"
+              >
+                CMU SSO สำหรับคณะพยาบาลศาสตร์
+              </a>
+            </div>
           ) : (
             <p
               className={

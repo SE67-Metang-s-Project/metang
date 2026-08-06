@@ -11,6 +11,7 @@ import {
   type CmuSession,
   type OAuthTransaction,
 } from "@/lib/cmu-auth";
+import { getNurseAccessDecision } from "@/lib/nurse-auth";
 
 type TokenResponse = {
   access_token?: string;
@@ -93,6 +94,18 @@ export async function GET(request: NextRequest) {
     if (!basicInfoResponse.ok || !profile) {
       console.error("CMU BasicInfo request failed", basicInfoResponse.status);
       return redirectHome(request, "profile_failed");
+    }
+
+    if (transaction.mode === "nurse") {
+      const accessDecision = getNurseAccessDecision(profile);
+
+      if (!accessDecision.allowed) {
+        console.info("CMU nursing SSO rejected by access policy", {
+          userType: accessDecision.userType,
+          reason: accessDecision.reason,
+        });
+        return redirectHome(request, "not_eligible");
+      }
     }
 
     const session: CmuSession = {
