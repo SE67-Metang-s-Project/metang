@@ -3,6 +3,7 @@ import "server-only";
 import type { CmuProfile } from "@/lib/cmu-auth";
 
 export const NURSING_ORGANIZATION_CODE = "12";
+export const NURSING_STUDENT_ACCOUNT_TYPE = "Student Account";
 export const NURSING_STUDENT_ID_PATTERN = /^\d{2}1210\d{3}$/;
 
 export type NurseAccessDecision =
@@ -10,7 +11,11 @@ export type NurseAccessDecision =
   | {
       allowed: false;
       userType: "student" | "employee" | "unknown";
-      reason: "student_id_not_eligible" | "employee_not_nursing" | "profile_not_eligible";
+      reason:
+        | "student_account_type_not_eligible"
+        | "student_id_not_eligible"
+        | "employee_not_nursing"
+        | "profile_not_eligible";
     };
 
 function getProfileText(profile: CmuProfile, key: string) {
@@ -32,12 +37,21 @@ export function isNursingFacultyEmployee(profile: CmuProfile) {
 }
 
 export function getNurseAccessDecision(profile: CmuProfile): NurseAccessDecision {
+  const accountType = getProfileText(profile, "itaccounttype_EN");
   const studentId = getProfileText(profile, "student_id");
 
-  if (studentId) {
+  if (accountType === NURSING_STUDENT_ACCOUNT_TYPE) {
     return isEligibleNursingStudentId(studentId)
       ? { allowed: true, userType: "student" }
       : { allowed: false, userType: "student", reason: "student_id_not_eligible" };
+  }
+
+  if (studentId) {
+    return {
+      allowed: false,
+      userType: "unknown",
+      reason: "student_account_type_not_eligible",
+    };
   }
 
   if (isNursingFacultyEmployee(profile)) {
