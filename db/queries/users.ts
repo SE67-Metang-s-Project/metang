@@ -1,19 +1,17 @@
-import { asc, isNotNull } from "drizzle-orm";
-import { db } from "@/db/client";
-import { appUser, loanRequest } from "@/db/schema";
+import { prisma } from "@/lib/prisma";
 
 export async function getAllStudents() {
-  return db
-    .selectDistinct({
-      id: appUser.id,
-      studentCode: appUser.studentCode,
-      fullNameTh: appUser.fullNameTh,
-    })
-    .from(appUser)
-    .where(isNotNull(appUser.studentCode))
-    .orderBy(asc(appUser.fullNameTh));
+  return prisma.appUser.findMany({
+    where: { studentCode: { not: null } },
+    orderBy: { fullNameTh: "asc" },
+    select: {
+      id: true,
+      studentCode: true,
+      fullNameTh: true,
+    },
+  });
 }
 
 export async function getAllLoanRequest() {
-  return db.select().from(loanRequest).orderBy(asc(loanRequest.createdAt));
+  return prisma.loanRequest.findMany({ orderBy: { createdAt: "asc" } });
 }

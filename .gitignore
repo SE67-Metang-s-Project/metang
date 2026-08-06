@@ -47,4 +47,14 @@ next-env.d.ts
 # agent tooling — fetched caches, not project code
 .claude/skills
 .agents
-.neon
+
+# Supabase
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local
+
+/lib/generated/prisma
