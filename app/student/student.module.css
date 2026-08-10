@@ -1,0 +1,718 @@
+/* Student page layout styles live here; shared colors are in app/styles/colors.css. */
+.studentPage {
+  min-height: 100svh;
+  padding: 24px 20px 48px;
+  background-color: var(--color-background);
+  background-image: linear-gradient(180deg, var(--color-background-tint) 0%, transparent 34%);
+  color: var(--color-text);
+  font-family: var(--font-kanit), "Kanit", sans-serif;
+  font-size: 15px;
+}
+
+.studentPage button {
+  font: inherit;
+}
+
+.studentContent {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.studentContent > * {
+  min-width: 0;
+}
+
+.studentHeader,
+.summaryIntro,
+.summaryFooter,
+.paymentBehavior,
+.installmentHeading,
+.installmentDetails,
+.historyCard,
+.historyCardTitle,
+.behaviorHeading {
+  display: flex;
+  align-items: center;
+}
+
+.studentHeader {
+  justify-content: space-between;
+  padding: 0 4px 12px;
+}
+
+.brandMark {
+  padding: 9px 19px 10px;
+  border-radius: 9px;
+  background: var(--color-brand);
+  color: var(--color-surface);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.profileMark {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-brand);
+  color: var(--color-surface);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.loanSummary {
+  padding: 28px 20px 24px;
+  border-radius: 15px;
+  background: linear-gradient(
+    110deg,
+    var(--color-summary-start) 0%,
+    var(--color-summary-middle) 57%,
+    var(--color-summary-end) 100%
+  );
+}
+
+.summaryIntro {
+  justify-content: space-between;
+}
+
+.summaryIntro > div {
+  min-width: 0;
+}
+
+.summaryIntro h1 {
+  margin: 0;
+  color: var(--color-summary-heading);
+  font-size: clamp(18px, 4.2vw, 20px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.summaryIntro p {
+  margin: 3px 0 0;
+  color: var(--color-summary-description);
+  font-size: 15px;
+  letter-spacing: -0.2px;
+}
+
+.medicalBag {
+  width: 76px;
+  height: 54px;
+  margin: -3px 0 0 8px;
+  flex: 0 0 auto;
+}
+
+.loanLabels {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  margin: 13px 0 -1px;
+  overflow: hidden;
+  border-radius: 10px 10px 0 0;
+  background: var(--color-loan-label);
+  color: var(--color-surface);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.loanLabels span {
+  display: inline-block;
+  padding: 6px 11px;
+  white-space: nowrap;
+}
+
+.loanLabels span + span {
+  background: var(--color-loan-label-active);
+  color: var(--color-loan-label-active-text);
+}
+
+.loanProgressCard {
+  padding: 11px 11px 10px;
+  border-radius: 11px;
+  background: var(--color-surface);
+}
+
+.loanAmount {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.loanAmount strong {
+  color: var(--color-summary-amount);
+  font-size: clamp(28px, 7vw, 31px);
+  line-height: 1;
+  letter-spacing: -1.3px;
+}
+
+.loanAmount span {
+  color: var(--color-summary-amount-secondary);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.progressTrack {
+  position: relative;
+  height: 6px;
+  margin: 12px 2px 9px;
+  border-radius: 10px;
+  background: var(--color-progress-track);
+}
+
+.progressTrack span {
+  display: block;
+  width: 83%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-progress);
+}
+
+.progressTrack b {
+  position: absolute;
+  top: 50%;
+  left: 83%;
+  width: 19px;
+  height: 19px;
+  border: 3px solid var(--color-progress-marker-border);
+  border-radius: 50%;
+  background: var(--color-progress-marker);
+  box-shadow: 0 1px 2px var(--color-progress-shadow);
+  transform: translate(-50%, -50%);
+}
+
+.progressTrack b::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--color-progress-marker-core);
+}
+
+.loanProgressCard p {
+  margin: 0;
+  color: var(--color-summary-date);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.summaryFooter {
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 17px 1px 0;
+}
+
+.summaryFooter button,
+.modalPrimary {
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--color-brand-dark);
+  color: var(--color-surface);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.summaryFooter span {
+  min-width: 0;
+  flex: 1 1 140px;
+  color: var(--color-summary-note);
+  font-size: 15px;
+  text-align: right;
+}
+
+.paymentBehavior {
+  justify-content: space-between;
+  min-height: 84px;
+  margin: 5px 2px 0;
+  padding: 14px 16px;
+  overflow: hidden;
+  border-radius: 11px;
+  background: linear-gradient(108deg, var(--color-behavior-start) 0%, var(--color-behavior-end) 100%);
+  color: var(--color-surface);
+}
+
+.behaviorHeading {
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.paymentBehavior > div {
+  min-width: 0;
+}
+
+.behaviorHeading h2 {
+  margin: 0;
+  font-size: clamp(14px, 3.5vw, 17px);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.behaviorHeading span {
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: var(--color-surface);
+  color: var(--color-behavior-badge-text);
+  font-size: clamp(9px, 2.4vw, 12px);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.paymentBehavior p {
+  margin: 4px 0 0;
+  color: var(--color-behavior-subtext);
+  font-size: 15px;
+}
+
+.moneyIllustration {
+  width: 84px;
+  height: 53px;
+  margin-right: -9px;
+  flex: 0 0 auto;
+}
+
+.installmentsSection,
+.historySection {
+  padding: 17px 14px 15px;
+  border: 2px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+}
+
+.installmentsSection h2,
+.historySection h2 {
+  margin: 0 1px 13px;
+  color: var(--color-heading);
+  font-size: clamp(18px, 4.5vw, 20px);
+  font-weight: 800;
+  letter-spacing: -0.7px;
+}
+
+.installmentsList,
+.historyList {
+  display: grid;
+  gap: 11px;
+}
+
+.installmentCard {
+  padding: 15px 14px 14px;
+  border: 2px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+}
+
+.current {
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-soft);
+}
+
+.installmentHeading {
+  justify-content: space-between;
+  gap: 7px;
+}
+
+.installmentTitle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.installmentTitle strong {
+  color: var(--color-card-title);
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.statusPill {
+  padding: 3px 8px;
+  border: 1px solid var(--color-success-border);
+  border-radius: 15px;
+  color: var(--color-success-text);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.current .statusPill {
+  border-color: var(--color-current-pill-border);
+  background: var(--color-current-pill-background);
+  color: var(--color-current-pill-text);
+}
+
+.upcoming .statusPill {
+  border-color: var(--color-upcoming-pill-border);
+  background: var(--color-upcoming-pill-background);
+  color: var(--color-card-secondary);
+}
+
+.installmentBalance {
+  display: grid;
+  justify-items: end;
+  line-height: 1.1;
+}
+
+.installmentBalance span,
+.historyAmount span {
+  color: var(--color-card-muted);
+  font-size: 12px;
+}
+
+.installmentBalance strong {
+  color: var(--color-card-amount);
+  font-size: 20px;
+}
+
+.installmentDetails {
+  align-items: end;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.installmentDetails p {
+  margin: 0;
+  color: var(--color-card-muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.installmentNote {
+  color: var(--color-success) !important;
+  font-weight: 700;
+  text-align: right;
+}
+
+.installmentNote i {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 5px 2px 0;
+  border-radius: 50%;
+  background: var(--color-success);
+}
+
+.current .installmentNote {
+  color: var(--color-current-text) !important;
+}
+
+.current .installmentNote i {
+  background: var(--color-current-dot);
+}
+
+.upcoming .installmentNote {
+  color: var(--color-card-secondary) !important;
+}
+
+.upcoming .installmentNote i {
+  background: var(--color-card-quiet);
+}
+
+.installmentAction {
+  width: 100%;
+  margin-top: 9px;
+  padding: 9px 7px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--color-warning);
+  color: var(--color-surface);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.installmentAction:disabled {
+  background: var(--color-disabled);
+  cursor: not-allowed;
+}
+
+.historySection {
+  margin-top: 5px;
+  padding-top: 13px;
+  padding-bottom: 17px;
+}
+
+.historyCard {
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 15px 14px 14px;
+  border: 2px solid var(--color-border);
+  border-radius: 15px;
+}
+
+.historyCard p,
+.historyCard small,
+.historyCard > div > strong:last-child {
+  display: block;
+}
+
+.historyCardTitle {
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.historyCardTitle > strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-history-title);
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyCard > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.historyCard p {
+  margin: 3px 0 10px;
+  color: var(--color-history-date);
+  font-size: 15px;
+}
+
+.historyCard small {
+  margin-bottom: 1px;
+  color: var(--color-history-label);
+  font-size: 15px;
+}
+
+.historyCard > div > strong:last-child {
+  color: var(--color-history-description);
+  font-size: 15px;
+}
+
+.historyStatus {
+  padding: 3px 7px;
+  border-radius: 15px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pending {
+  border: 1px solid var(--color-info-border);
+  background: var(--color-info-soft);
+  color: var(--color-info);
+}
+
+.rejected {
+  border: 1px solid var(--color-danger-border);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.historyAmount {
+  display: grid;
+  justify-items: end;
+  align-self: end;
+  flex: 0 0 auto;
+}
+
+.historyAmount strong {
+  color: var(--color-history-amount);
+  font-size: 17px;
+  white-space: nowrap;
+}
+
+.showMore,
+.moreHistory {
+  display: block;
+  margin: 17px auto 0;
+  color: var(--color-link-muted);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.showMore {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.modalBackdrop {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  padding: 20px;
+  place-items: center;
+  background: var(--color-overlay);
+}
+
+.modalCard {
+  position: relative;
+  width: min(100%, 380px);
+  padding: 27px 22px 22px;
+  border-radius: 18px;
+  background: var(--color-surface);
+  box-shadow: 0 18px 45px var(--color-modal-shadow);
+}
+
+.modalCard h2 {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: 20px;
+}
+
+.modalCard p {
+  margin: 10px 0 20px;
+  color: var(--color-modal-description);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.modalClose {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  border: 0;
+  background: transparent;
+  color: var(--color-modal-close);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 27px;
+  line-height: 1;
+}
+
+.modalPrimary {
+  width: 100%;
+}
+
+.studentPage :is(h1, h2, strong, button) {
+  letter-spacing: 0.3px;
+}
+
+.studentPage .loanAmount strong {
+  letter-spacing: -0.6px;
+}
+
+@media (min-width: 641px) {
+  .studentPage {
+    padding: 32px 28px 60px;
+  }
+
+  .studentContent {
+    gap: 18px;
+    max-width: 840px;
+  }
+
+  .studentHeader {
+    padding: 0 4px 4px;
+  }
+
+  .loanSummary {
+    padding: 34px 30px 28px;
+  }
+
+  .paymentBehavior {
+    margin-right: 0;
+    margin-left: 0;
+    padding: 17px 24px;
+  }
+
+  .installmentsSection,
+  .historySection {
+    padding: 22px 21px 20px;
+  }
+
+  .installmentCard,
+  .historyCard {
+    padding: 18px 19px 17px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .studentPage {
+    padding: 48px 48px 72px;
+  }
+
+  .studentContent {
+    grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+    align-items: start;
+    max-width: 1240px;
+  }
+
+  .studentHeader {
+    grid-column: 1 / -1;
+    padding: 0 4px 2px;
+  }
+
+  .loanSummary {
+    grid-column: 1;
+  }
+
+  .paymentBehavior {
+    grid-column: 1;
+    margin-top: 0;
+  }
+
+  .installmentsSection {
+    grid-column: 2;
+    grid-row: 2 / span 2;
+  }
+
+  .historySection {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .studentPage {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .loanSummary {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+
+  .summaryFooter span {
+    font-size: 13px;
+  }
+
+  .behaviorHeading {
+    gap: 3px;
+  }
+
+  .behaviorHeading span {
+    padding-right: 5px;
+    padding-left: 5px;
+  }
+
+  .moneyIllustration {
+    width: 68px;
+    margin-right: -12px;
+  }
+
+  .installmentDetails {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .installmentNote {
+    align-self: flex-end;
+  }
+
+  .historyCardTitle {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+}
