@@ -1,8 +1,5 @@
-"use client";
+import StudentDashboard from "@/components/student/StudentDashboard";
 
-
-export default function StudentDashboard() {
-    // State สำหรับควบคุมการเปิด-ปิด Sidebar บนมือถือ
-    // const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    
+export default function StudentPage() {
+  return <StudentDashboard />;
 }
