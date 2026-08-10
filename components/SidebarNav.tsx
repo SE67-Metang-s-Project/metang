@@ -50,6 +50,7 @@ const menuConfig: Record<UserRole, MenuItem[]> = {
     { title: 'คำร้องรอพิจารณา', icon: FileCheck, href: '/professor/pending' },
     { title: 'นักศึกษาในความดูแล', icon: Users, href: '/professor/students' },
     { title: 'ประวัติการดำเนินการ', icon: History, href: '/professor/history' },
+    // { title: 'รายละเอียดคำร้อง', icon: FileCheck, href: '/professor/pending/details' },
   ],
   admin: [
     { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/admin' },

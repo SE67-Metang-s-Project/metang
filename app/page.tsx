@@ -3,6 +3,7 @@ import {
   getCmuSession,
   isCmuAuthConfigured,
 } from "@/lib/cmu-auth";
+import { CalendarCheck, Clock, CheckSquare, X } from "lucide-react"; // นำเข้า Icon จาก lucide-react
 
 const errorMessages: Record<string, string> = {
   configuration: "ยังไม่ได้ตั้งค่า CMU Entra สำหรับแอปนี้",
@@ -48,7 +49,8 @@ export default async function Home({ searchParams }: HomeProps) {
   const errorMessage = errorCode ? errorMessages[errorCode] : undefined;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col px-6 py-16">
+    // ขยายขนาดคอนเทนเนอร์เป็น max-w-5xl เพื่อให้เรียงกล่อง 4 ใบได้สวยงาม
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-6 py-16">
       <header className="border-b border-zinc-200 pb-6">
         <p className="mb-2 text-sm text-zinc-500">ระบบกู้ยืมเงินฉุกเฉิน</p>
         <h1 className="text-3xl font-semibold text-zinc-950">Me Tang</h1>
@@ -67,6 +69,60 @@ export default async function Home({ searchParams }: HomeProps) {
             {getCmuDisplayName(session.profile)}
           </h2>
 
+          {/* สถิติคำร้อง 4 กล่อง (เพิ่มเข้ามาใหม่) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 my-10">
+            
+            {/* 1. ทั้งหมด (สีฟ้า) */}
+            <div className="bg-[#dbeafe] rounded-2xl p-5 relative overflow-hidden flex flex-col justify-center h-[110px] shadow-sm">
+              <div className="relative z-10">
+                <p className="text-[13px] font-extrabold text-[#1e40af] mb-1 leading-tight">ทั้งหมด</p>
+                <h3 className="text-[34px] font-extrabold text-[#1e40af] leading-none">3</h3>
+              </div>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/70 rounded-[14px] flex items-center justify-center z-10 shadow-sm">
+                <CalendarCheck className="w-7 h-7 text-[#1e40af]" strokeWidth={2.5} />
+              </div>
+              <CalendarCheck className="absolute -right-4 -bottom-4 w-24 h-24 text-[#bfdbfe] opacity-80" strokeWidth={2.5} />
+            </div>
+
+            {/* 2. รอพิจารณา (สีเหลือง) */}
+            <div className="bg-[#fef3c7] rounded-2xl p-5 relative overflow-hidden flex flex-col justify-center h-[110px] shadow-sm">
+              <div className="relative z-10">
+                <p className="text-[13px] font-extrabold text-[#b45309] mb-1 leading-tight">รอพิจารณา</p>
+                <h3 className="text-[34px] font-extrabold text-[#b45309] leading-none">0</h3>
+              </div>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/70 rounded-[14px] flex items-center justify-center z-10 shadow-sm">
+                <Clock className="w-7 h-7 text-[#b45309]" strokeWidth={2.5} />
+              </div>
+              <Clock className="absolute -right-4 -bottom-4 w-24 h-24 text-[#fde68a] opacity-80" strokeWidth={2.5} />
+            </div>
+
+            {/* 3. อนุมัติ (สีเขียว) */}
+            <div className="bg-[#dcfce7] rounded-2xl p-5 relative overflow-hidden flex flex-col justify-center h-[110px] shadow-sm">
+              <div className="relative z-10">
+                <p className="text-[13px] font-extrabold text-[#166534] mb-1 leading-tight">อนุมัติ</p>
+                <h3 className="text-[34px] font-extrabold text-[#166534] leading-none">3</h3>
+              </div>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/70 rounded-[14px] flex items-center justify-center z-10 shadow-sm">
+                <CheckSquare className="w-7 h-7 text-[#166534]" strokeWidth={2.5} />
+              </div>
+              <CheckSquare className="absolute -right-4 -bottom-4 w-24 h-24 text-[#bbf7d0] opacity-80" strokeWidth={2.5} />
+            </div>
+
+            {/* 4. ปฏิเสธ (สีแดง) */}
+            <div className="bg-[#fee2e2] rounded-2xl p-5 relative overflow-hidden flex flex-col justify-center h-[110px] shadow-sm">
+              <div className="relative z-10">
+                <p className="text-[13px] font-extrabold text-[#b91c1c] mb-1 leading-tight">ปฏิเสธ</p>
+                <h3 className="text-[34px] font-extrabold text-[#b91c1c] leading-none">0</h3>
+              </div>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/70 rounded-[14px] flex items-center justify-center z-10 shadow-sm">
+                <X className="w-7 h-7 text-[#b91c1c]" strokeWidth={3} />
+              </div>
+              <X className="absolute -right-4 -bottom-4 w-24 h-24 text-[#fecaca] opacity-80" strokeWidth={3} />
+            </div>
+
+          </div>
+
+          {/* Profile Details */}
           <dl className="mt-8 divide-y divide-zinc-200 border-y border-zinc-200">
             {Object.entries(session.profile).map(([key, value]) => (
               <div className="grid gap-1 py-3 sm:grid-cols-2" key={key}>
@@ -79,14 +135,14 @@ export default async function Home({ searchParams }: HomeProps) {
           </dl>
 
           <h3 className="mt-8 text-lg font-medium text-zinc-950">CMU BasicInfo API response</h3>
-          <pre className="mt-3 overflow-x-auto bg-zinc-950 p-4 text-xs text-zinc-100">
+          <pre className="mt-3 overflow-x-auto bg-zinc-950 p-4 text-xs text-zinc-100 rounded-lg">
             {JSON.stringify(session.profile, null, 2)}
           </pre>
 
           <form action="/api/auth/logout" className="mt-8" method="post">
             <button
               className={
-                "border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 " +
+                "border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 rounded-lg " +
                 "hover:bg-zinc-50"
               }
               type="submit"
@@ -106,8 +162,8 @@ export default async function Home({ searchParams }: HomeProps) {
             <div className="mt-8 flex flex-col items-start gap-3">
               <a
                 className={
-                  "inline-block bg-[#6f1d77] px-5 py-3 font-medium text-white " +
-                  "hover:bg-[#5c1863]"
+                  "inline-block bg-[#6f1d77] px-5 py-3 font-medium text-white rounded-lg " +
+                  "hover:bg-[#5c1863] transition-colors"
                 }
                 href="/api/auth/login"
               >
@@ -115,8 +171,8 @@ export default async function Home({ searchParams }: HomeProps) {
               </a>
               <a
                 className={
-                  "inline-block border border-[#6f1d77] px-5 py-3 font-medium " +
-                  "text-[#6f1d77] hover:bg-purple-50"
+                  "inline-block border border-[#6f1d77] px-5 py-3 font-medium rounded-lg " +
+                  "text-[#6f1d77] hover:bg-purple-50 transition-colors"
                 }
                 href="/api/auth/nurse/login"
               >
@@ -126,7 +182,7 @@ export default async function Home({ searchParams }: HomeProps) {
           ) : (
             <p
               className={
-                "mt-8 border border-amber-200 bg-amber-50 px-4 py-3 text-sm " +
+                "mt-8 border border-amber-200 bg-amber-50 px-4 py-3 text-sm rounded-lg " +
                 "text-amber-900"
               }
             >
