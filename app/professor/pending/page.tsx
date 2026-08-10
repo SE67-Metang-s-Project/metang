@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import SideNav from '@/components/SidebarNav';
 import UserProfile from '@/components/UserProfile';
-import { Menu, Search, FileText } from 'lucide-react'; 
+import { Menu, Search, FileText } from 'lucide-react';
 
 // สร้าง Mock Data ให้ตรงกับข้อมูลในรูปภาพ
 const actionRequests = [
@@ -49,8 +49,7 @@ export default function PendingRequestsPage() {
       <SideNav 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)} 
-        role="teacher"
-        currentPath="/teacher/pending" 
+        role="professor"
       />
 
       <main className="flex-1 flex flex-col w-full min-h-screen lg:ml-64 transition-all duration-300">
@@ -79,7 +78,7 @@ export default function PendingRequestsPage() {
           </div>
         </header>
 
-        {/* Content Area (ปรับความกว้างเป็น max-w-[1200px] ให้เท่ากับหน้า Dashboard) */}
+        {/* Content Area (ปรับความกว้างเป็น 1200px ให้เท่ากับหน้า Dashboard) */}
         <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto">
           
           {/* Page Title */}
@@ -101,14 +100,15 @@ export default function PendingRequestsPage() {
           </div>
 
           {/* Filter Tabs */}
-          <div className="bg-[#eff2f5] p-1.5 rounded-[12px] flex items-center space-x-1 overflow-x-auto mb-6 scrollbar-hide border border-gray-200/50">
+          <div className="bg-[#eff2f5] p-2 rounded-[14px] flex items-center gap-2 overflow-x-auto mb-6 scrollbar-hide border border-gray-200/50">
             {filterTabs.map((tab) => (
               <button 
                 key={tab} 
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-[8px] text-[13px] font-semibold whitespace-nowrap transition-all duration-200 ${
+                // เติม focus:outline-none ตรงนี้
+                className={`focus:outline-none px-5 py-2.5 rounded-[10px] text-[13.5px] font-semibold whitespace-nowrap transition-all duration-200 ${
                   activeTab === tab 
-                    ? 'bg-white text-gray-900 shadow-sm border border-gray-200/50' 
+                    ? 'bg-white text-gray-900 shadow-sm border border-gray-200/60' 
                     : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                 }`}
               >
@@ -117,54 +117,51 @@ export default function PendingRequestsPage() {
             ))}
           </div>
 
-          {/* Request Cards List (ปรับดีไซน์การ์ดให้เหมือนหน้า Dashboard) */}
-          <div className="space-y-3">
+          {/* Request Cards List */}
+          <div className="space-y-4">
             {actionRequests.map((req, index) => (
-              <div key={index} className="bg-white border border-gray-100 rounded-[12px] p-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-shadow">
+              <div key={index} className="bg-white border border-gray-100 rounded-[14px] p-5 lg:px-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow">
                 
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-8 flex-1">
                   
-                  {/* Icon Box (ซ้ายสุด) */}
-                  <div className="w-11 h-11 rounded-[10px] bg-[#fff7ed] flex items-center justify-center text-[#ea580c] shrink-0 hidden sm:flex border border-[#ffedd5]">
-                    <FileText size={20} />
+                  {/* Icon Box */}
+                  <div className="w-12 h-12 rounded-[10px] bg-[#fff7ed] flex items-center justify-center text-[#ea580c] shrink-0 hidden sm:flex border border-[#ffedd5]">
+                    <FileText size={22} strokeWidth={1.5} />
                   </div>
 
                   {/* Info Column 1: Name & Subtitle */}
-                  <div className="flex-1 min-w-[200px]">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <h4 className="font-bold text-[#1e293b] text-[15px]">{req.name}</h4>
-                      <span className="text-[11px] text-gray-400 font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-100">{req.id}</span>
-                    </div>
-                    <p className="text-[12px] text-gray-500">
+                  <div className="w-full sm:w-[220px] shrink-0">
+                    <h4 className="font-bold text-[#1e293b] text-[15.5px] mb-0.5">{req.name}</h4>
+                    <p className="text-[12.5px] text-gray-500">
                       {req.studentId} • {req.major} • ปี {req.year}
                     </p>
                   </div>
 
                   {/* Info Column 2: Date & Wait time */}
                   <div className="w-full sm:w-[130px] shrink-0">
-                    <p className="font-semibold text-gray-700 text-[13px]">{req.submitDate}</p>
-                    <p className="text-[12px] text-gray-500 mt-0.5">รอพิจารณา {req.waitDays} วัน</p>
+                    <p className="font-bold text-[#334155] text-[13.5px] mb-0.5">{req.submitDate}</p>
+                    <p className="text-[12.5px] text-gray-500">รอพิจารณา {req.waitDays} วัน</p>
                   </div>
 
-                  {/* Info Column 3: Objective (Grey Pill ตรงกลาง) */}
-                  <div className="hidden md:flex flex-1 justify-start">
-                    <div className="bg-[#f1f5f9] px-3 py-1.5 rounded-full inline-flex max-w-[280px] lg:max-w-[320px]">
-                      <p className="text-[12px] text-[#475569] font-medium truncate">
-                        <span className="font-bold mr-1">฿{req.amount}</span> 
+                  {/* Info Column 3: Objective */}
+                  <div className="hidden md:flex flex-1 justify-center lg:justify-start">
+                    <div className="bg-[#f1f5f9] px-4 py-2 rounded-full inline-flex w-fit max-w-[350px]">
+                      <p className="text-[12.5px] text-[#475569] font-medium truncate">
+                        <span className="font-bold text-[#334155] mr-1.5">฿{req.amount}</span> 
                         ({req.term} งวด) - {req.objective}
                       </p>
                     </div>
                   </div>
 
                   {/* Status Column */}
-                  <div className="w-full sm:w-[100px] shrink-0 flex items-center xl:justify-end">
+                  <div className="w-full sm:w-[100px] shrink-0 flex items-center lg:justify-end">
                     {req.isOverdue ? (
-                      <span className="text-[#dc2626] text-[12px] font-bold flex items-center gap-1.5 bg-[#fef2f2] px-2.5 py-1 rounded-full border border-[#fee2e2]">
+                      <span className="text-[#dc2626] text-[12.5px] font-bold flex items-center gap-2 bg-[#fef2f2] px-3 py-1.5 rounded-full border border-[#fee2e2]">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>
                         เลยกำหนด
                       </span>
                     ) : (
-                      <span className="text-[#ea580c] text-[12px] font-bold flex items-center gap-1.5 bg-[#fff7ed] px-2.5 py-1 rounded-full border border-[#ffedd5]">
+                      <span className="text-[#ea580c] text-[12.5px] font-bold flex items-center gap-2 bg-[#fff7ed] px-3 py-1.5 rounded-full border border-[#ffedd5]">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#ea580c]"></span>
                         ปกติ
                       </span>
@@ -172,9 +169,10 @@ export default function PendingRequestsPage() {
                   </div>
                 </div>
 
-                {/* Action Button (ปุ่มสีอ่อน ขวาสุด) */}
-                <div className="shrink-0 w-full xl:w-auto mt-2 xl:mt-0">
-                  <button className="w-full xl:w-auto bg-[#fff7ed] hover:bg-[#ffedd5] text-[#ea580c] px-4 py-2 rounded-[8px] text-[13px] font-bold transition-colors">
+                {/* Action Button */}
+                <div className="shrink-0 w-full lg:w-auto mt-3 lg:mt-0 lg:ml-4">
+                  {/* เติม focus:outline-none ตรงนี้ */}
+                  <button className="focus:outline-none w-full lg:w-auto bg-[#fff7ed] hover:bg-[#ffedd5] text-[#ea580c] px-5 py-2.5 rounded-[10px] text-[13.5px] font-bold transition-colors">
                     ตรวจสอบคำร้อง
                   </button>
                 </div>

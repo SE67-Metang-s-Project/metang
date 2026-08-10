@@ -1,6 +1,8 @@
 'use client';
 
 import React from "react";
+import Link from "next/link"; // 1. นำเข้า Link จาก Next.js
+import { usePathname } from "next/navigation"; // 2. นำเข้า usePathname
 import { 
   LayoutDashboard, 
   FileCheck,
@@ -19,7 +21,7 @@ import {
 } from "lucide-react";
 
 // กำหนดประเภทของ Role ทั้งหมดในระบบ
-export type UserRole = 'student' | 'teacher' | 'admin' | 'executive' | 'superadmin';
+export type UserRole = 'student' | 'professor' | 'admin' | 'executive' | 'superadmin';
 
 // กำหนดโครงสร้างของเมนู
 interface MenuItem {
@@ -30,9 +32,9 @@ interface MenuItem {
 
 interface SideNavProps {
   isOpen: boolean;
-  role: UserRole; // รับค่า Role เพื่อดึงเมนูให้ตรงกับสิทธิ์
-  currentPath?: string; // ใช้เช็คว่าหน้าไหนดึงเมนูมาใช้อยู่ เพื่อทำ Active State
+  role: UserRole;
   onClose: () => void;
+  // ไม่ต้องรับ currentPath จาก Props แล้ว เพราะเราจะดึงอัตโนมัติ
 }
 
 // ตั้งค่ารายการเมนูแยกตาม Role
@@ -43,11 +45,11 @@ const menuConfig: Record<UserRole, MenuItem[]> = {
     { title: 'ชำระเงินคืน (e-Slip)', icon: Wallet, href: '/student/payment' },
     { title: 'ประวัติคำร้อง', icon: History, href: '/student/history' },
   ],
-  teacher: [
-    { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/teacher' },
-    { title: 'คำร้องรอพิจารณา', icon: FileCheck, href: '/teacher/pending' },
-    { title: 'นักศึกษาในความดูแล', icon: Users, href: '/teacher/students' },
-    { title: 'ประวัติการดำเนินการ', icon: History, href: '/teacher/history' },
+  professor: [
+    { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/professor' },
+    { title: 'คำร้องรอพิจารณา', icon: FileCheck, href: '/professor/pending' },
+    { title: 'นักศึกษาในความดูแล', icon: Users, href: '/professor/students' },
+    { title: 'ประวัติการดำเนินการ', icon: History, href: '/professor/history' },
   ],
   admin: [
     { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/admin' },
@@ -68,9 +70,11 @@ const menuConfig: Record<UserRole, MenuItem[]> = {
   ]
 };
 
-export default function SideNav({ isOpen, role, currentPath = '', onClose }: SideNavProps) {
-  // ดึงรายการเมนูมาตาม Role ที่ส่งเข้ามา
+export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
   const menus = menuConfig[role] || [];
+  
+  // 3. ใช้ hook เพื่อดึง path ปัจจุบันอัตโนมัติ (เช่น '/professor/pending')
+  const pathname = usePathname(); 
 
   return (
     <>
@@ -111,13 +115,18 @@ export default function SideNav({ isOpen, role, currentPath = '', onClose }: Sid
           {menus.map((item, index) => {
             const Icon = item.icon;
             
-            // เช็คว่าเมนูนี้คือหน้าปัจจุบันหรือไม่ (ถ้าไม่มีค่า currentPath ส่งมา ให้เมนูแรกเป็น Active ไปก่อนชั่วคราว)
-            const isActive = currentPath === item.href || (currentPath === '' && index === 0);
+            // 4. เปรียบเทียบ url ปัจจุบันกับ href ของเมนู
+            const isActive = pathname === item.href;
 
             return (
-              <a
+              // 5. เปลี่ยนจาก <a href="..."> เป็น <Link href="...">
+              <Link
                 key={index}
                 href={item.href}
+                // ถ้ากดเมนูบนมือถือ ให้ปิด Sidebar อัตโนมัติด้วย
+                onClick={() => {
+                  if (window.innerWidth < 1024) onClose();
+                }}
                 className={`flex items-center px-4 py-3 rounded-xl transition-all ${
                   isActive 
                     ? "text-white bg-[#ea580c] shadow-md shadow-orange-500/20" 
@@ -126,7 +135,7 @@ export default function SideNav({ isOpen, role, currentPath = '', onClose }: Sid
               >
                 <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : ''}`} />
                 {item.title}
-              </a>
+              </Link>
             );
           })}
         </nav>
