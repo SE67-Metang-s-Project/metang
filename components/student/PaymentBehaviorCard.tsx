@@ -12,13 +12,16 @@ export default function PaymentBehaviorCard({ moneyIllustration }: PaymentBehavi
       <div>
         <div className={styles.behaviorHeading}>
           <h2>พฤติกรรมการชำระ</h2>
-          <span>● ชำระตรงเวลา {paymentBehavior.onTimeInstallments} งวด</span>
+          <span>
+            ● {paymentBehavior.onTimeStatusLabel} {paymentBehavior.onTimeInstallments} งวด
+          </span>
         </div>
         <p>
-          กู้ยืมทั้งหมด {paymentBehavior.totalLoanRequests} ครั้ง · แบ่งจ่ายจำนวน {paymentBehavior.totalInstallments} งวด
+          กู้ยืมทั้งหมด {paymentBehavior.totalLoanRequests} ครั้ง · แบ่งจ่ายจำนวน{" "}
+          {paymentBehavior.totalInstallments} งวด
         </p>
       </div>
-      {moneyIllustration}
+      {/* {moneyIllustration} */}
     </section>
   );
 }
