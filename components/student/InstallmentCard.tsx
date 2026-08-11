@@ -44,7 +44,7 @@ export default function InstallmentCard({ installment, onPay }: InstallmentCardP
         {hasCompletedPayment ? (
           <p className={`${styles.installmentNote} ${styles.completedPaymentNote}`}>
             <span className={styles.paymentNoteText}>
-              <span>● ชำระเสร็จสิ้นเมื่อ</span>
+              <span>ชำระเสร็จสิ้นเมื่อ</span>
               <span>
                 {installment.completedPaymentDateLabel} {installment.completedPaymentTimeLabel}
               </span>
