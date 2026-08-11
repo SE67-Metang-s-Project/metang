@@ -1,19 +1,10 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import SideNav from "@/components/SidebarNav";
-import UserProfile from "@/components/UserProfile";
-import {
-  Menu,
-  Search,
-  FileText,
-  CalendarCheck,
-  Clock,
-  CheckSquare,
-  X,
-  ChevronDown,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
+import React, { useState } from 'react';
+import SideNav from '@/components/SidebarNav';
+import UserProfile from '@/components/UserProfile';
+import { Menu, Search, FileText, ChevronDown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 // ==========================================
 // 1. Mock Data
@@ -46,9 +37,6 @@ const actionRequests = [
     isOverdue: false,
   },
 ];
-
-// รายการ Tabs กรองข้อมูล
-const filterTabs = ["ทั้งหมด", "รอพิจารณา", "พิจารณาแล้ว", "ส่งกลับให้แก้ไข", "อนุมัติ", "ปฏิเสธ"];
 
 // ==========================================
 // 2. Sub-Components
@@ -125,8 +113,6 @@ const RequestCard = ({
 // ==========================================
 export default function PendingRequestsPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("ทั้งหมด");
-
   const router = useRouter();
 
   return (
@@ -152,40 +138,44 @@ export default function PendingRequestsPage() {
 
         {/* Content Area */}
         <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto">
-
-          {/* Page Title */}
-          <div className="mb-8">
-            <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">คำร้องทั้งหมด</h1>
-            <p className="text-[13px] text-gray-500">คำร้องกู้ยืมของนักศึกษาในความดูแลทั้งหมด</p>
+          
+          {/* Welcome Card */}
+          <div className="bg-gradient-to-r from-orange-600 to-orange-700 rounded-2xl p-8 text-white shadow-sm mb-8">
+            <h2 className="text-2xl font-bold mb-2">สวัสดี, นางสาวกมลชนก</h2>
+            <p className="text-sm opacity-90">พยาบาลศาสตรบัณฑิต · ชั้นปีที่ 3 · 651210001</p>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative mb-4">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400" />
+          {/* Section: Title + Search & Filter */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            
+            {/* Page Title */}
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">คำร้องรอพิจารณา</h1>
+              <p className="text-[13px] text-gray-500">คำร้องกู้ยืมของนักศึกษาในความดูแลทั้งหมด</p>
             </div>
-            <input
-              type="text"
-              className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-[8px] bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#ea580c] text-[13px] transition-all"
-              placeholder="ค้นหาเลขคำร้อง / ชื่อ / รหัสนักศึกษา"
-            />
-          </div>
 
-          {/* Filter Tabs */}
-          <div className="bg-[#eff2f5] p-2 rounded-[14px] flex items-center gap-2 overflow-x-auto mb-6 scrollbar-hide border border-gray-200/50">
-            {filterTabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`focus:outline-none px-5 py-2.5 rounded-[10px] text-[13.5px] font-semibold whitespace-nowrap transition-all duration-200 ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm border border-gray-200/60"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-                }`}
-              >
-                {tab}
+            {/* Search Bar & Dropdown */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+              
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-[280px]">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className="block w-full pl-9 pr-3 py-2 border border-gray-200 rounded-[8px] bg-white text-[13px] focus:outline-none focus:ring-1 focus:ring-[#ea580c] transition-all"
+                  placeholder="ค้นหาเลขคำร้อง / ชื่อ / รหัสนักศึกษา"
+                />
+              </div>
+
+              {/* Dropdown Button (สไตล์คล้ายๆ กับในรูป) */}
+              <button className="w-full sm:w-auto flex items-center justify-between px-4 py-2 bg-white border border-gray-200 rounded-[8px] text-[13px] font-medium text-[#ea580c] hover:bg-orange-50 shrink-0 transition-colors">
+                <span>สถานะทั้งหมด</span>
+                <ChevronDown className="w-4 h-4 ml-2" />
               </button>
-            ))}
+              
+            </div>
           </div>
 
           {/* Request Cards List */}
