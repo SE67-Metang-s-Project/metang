@@ -19,8 +19,11 @@
   --color-summary-amount: #3d1f1a;
   --color-summary-amount-secondary: #6c514c;
   --color-loan-label: #ff8c8c;
-  --color-loan-label-active: #fff3b5;
-  --color-loan-label-active-text: #eda02d;
+  --color-loan-label-soft: rgb(255 140 140 / 34%);
+  --color-loan-label-strong: #ff767a;
+  --color-loan-label-back: rgba(254, 226, 220, 0.774);
+  --color-loan-label-active: #fffeb5;
+  --color-loan-label-active-text: #f4a939;
   --color-behavior-start: #41af2f;
   --color-behavior-end: #b5dc4a;
   --color-behavior-badge-text: #6a9d54;

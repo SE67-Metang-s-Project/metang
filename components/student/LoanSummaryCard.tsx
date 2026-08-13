@@ -21,8 +21,9 @@ export default function LoanSummaryCard({ onOpenDetails, medicalBag }: LoanSumma
       </div>
 
       <div className={styles.loanLabels}>
-        <span>{activeLoan.requestNumber}</span>
-        <span>● {activeLoan.statusLabel}</span>
+        <span className={styles.loanRequestLabel}>{activeLoan.requestNumber}</span>
+        <span className={styles.loanStatusLabel}>● {activeLoan.statusLabel}</span>
+        <span aria-hidden="true" className={styles.loanBackLabel} />
       </div>
 
       <div className={styles.loanProgressCard}>
@@ -34,14 +35,16 @@ export default function LoanSummaryCard({ onOpenDetails, medicalBag }: LoanSumma
           <span style={{ width: `${activeLoan.progressPercent}%` }} />
           <b style={{ left: `${activeLoan.progressPercent}%` }} />
         </div>
-        <p>ชำระงวดที่ 2 ก่อนวันที่ {activeLoan.nextDueDate}</p>
+        <p>
+          ชำระงวดที่ {activeLoan.nextInstallmentNumber} ก่อนวันที่ {activeLoan.nextDueDate}
+        </p>
       </div>
 
       <div className={styles.summaryFooter}>
         <button onClick={onOpenDetails} type="button">
           ดูรายละเอียดคำร้อง
         </button>
-        <span>* ไม่สามารถยื่นคำร้องใหม่ได้ในขณะนี้</span>
+        {/* <span>* ไม่สามารถยื่นคำร้องใหม่ได้ในขณะนี้</span> */}
       </div>
     </section>
   );

@@ -3,10 +3,12 @@ export type InstallmentStatus = "paid" | "current" | "upcoming";
 export type InstallmentPayment = {
   installmentNumber: number;
   status: InstallmentStatus;
-  paidSummary: string;
-  dueDate: string;
+  paidAmountSummary: string;
+  dueDateLabel: string;
   outstandingAmount: string;
-  paymentNote: string;
+  paymentNote?: string;
+  completedPaymentDateLabel?: string;
+  completedPaymentTimeLabel?: string;
   actionLabel?: string;
 };
 
@@ -35,10 +37,12 @@ export const activeLoan = {
   paidAmount: "฿2,500",
   totalAmount: "฿3,000",
   progressPercent: 83,
+  nextInstallmentNumber: 2,
   nextDueDate: "18 ก.พ. 2570",
 };
 
 export const paymentBehavior = {
+  onTimeStatusLabel: "ชำระตรงเวลา",
   onTimeInstallments: 12,
   totalLoanRequests: 4,
   totalInstallments: 12,
@@ -48,16 +52,17 @@ export const installmentPayments: InstallmentPayment[] = [
   {
     installmentNumber: 1,
     status: "paid",
-    paidSummary: "ชำระแล้ว ฿1,000 / ฿1,000",
-    dueDate: "ครบกำหนด 19 ม.ค. 2570",
+    paidAmountSummary: "฿1,000 / ฿1,000",
+    dueDateLabel: "19 ม.ค. 2570",
     outstandingAmount: "฿0",
-    paymentNote: "ชำระเสร็จสิ้นเมื่อ 7 ม.ค. 2570 17:00 น.",
+    completedPaymentDateLabel: "7 ม.ค. 2570",
+    completedPaymentTimeLabel: "17:00 น.",
   },
   {
     installmentNumber: 2,
     status: "current",
-    paidSummary: "ชำระแล้ว ฿300 / ฿1,000",
-    dueDate: "ครบกำหนด 18 ก.พ. 2570",
+    paidAmountSummary: "฿300 / ฿1,000",
+    dueDateLabel: "18 ก.พ. 2570",
     outstandingAmount: "฿700",
     paymentNote: "อีก 15 วันครบกำหนด",
     actionLabel: "ชำระงวดนี้ · คงเหลือ ฿700",
@@ -65,8 +70,8 @@ export const installmentPayments: InstallmentPayment[] = [
   {
     installmentNumber: 3,
     status: "upcoming",
-    paidSummary: "ชำระแล้ว ฿500 / ฿1,000",
-    dueDate: "ครบกำหนด 20 มี.ค. 2570",
+    paidAmountSummary: "฿500 / ฿1,000",
+    dueDateLabel: "20 มี.ค. 2570",
     outstandingAmount: "฿500",
     paymentNote: "อีก 45 วันครบกำหนด",
     actionLabel: "โปรดชำระงวดก่อนหน้าให้เสร็จสิ้น",

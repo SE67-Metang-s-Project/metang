@@ -14,6 +14,8 @@ function getStatusLabel(status: InstallmentStatus) {
 
 export default function InstallmentCard({ installment, onPay }: InstallmentCardProps) {
   const isUpcoming = installment.status === "upcoming";
+  const hasCompletedPayment =
+    installment.completedPaymentDateLabel && installment.completedPaymentTimeLabel;
 
   return (
     <article className={`${styles.installmentCard} ${styles[installment.status]}`}>
@@ -29,14 +31,31 @@ export default function InstallmentCard({ installment, onPay }: InstallmentCardP
       </div>
 
       <div className={styles.installmentDetails}>
-        <div>
-          <p>{installment.paidSummary}</p>
-          <p>{installment.dueDate}</p>
+        <div className={styles.installmentDetailGroup}>
+          <p className={styles.installmentDetailLine}>
+            <span>ชำระแล้ว</span>
+            <span>{installment.paidAmountSummary}</span>
+          </p>
+          <p className={styles.installmentDetailLine}>
+            <span>ครบกำหนด</span>
+            <span>{installment.dueDateLabel}</span>
+          </p>
         </div>
-        <p className={styles.installmentNote}>
-          <i />
-          {installment.paymentNote}
-        </p>
+        {hasCompletedPayment ? (
+          <p className={`${styles.installmentNote} ${styles.completedPaymentNote}`}>
+            <span className={styles.paymentNoteText}>
+              <span>ชำระเสร็จสิ้นเมื่อ</span>
+              <span>
+                {installment.completedPaymentDateLabel} {installment.completedPaymentTimeLabel}
+              </span>
+            </span>
+          </p>
+        ) : installment.paymentNote ? (
+          <p className={styles.installmentNote}>
+            <i />
+            {installment.paymentNote}
+          </p>
+        ) : null}
       </div>
 
       {installment.actionLabel ? (
