@@ -10,7 +10,8 @@ import {
   CalendarCheck, 
   Clock, 
   CheckSquare, 
-  X 
+  X,
+  ChevronDown // <-- เพิ่ม import ChevronDown
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -45,7 +46,6 @@ const actionRequests = [
     isOverdue: false,
   }
 ];
-
 
 // ==========================================
 // 2. SUB-COMPONENTS
@@ -121,21 +121,7 @@ const StatCards = () => (
   </div>
 );
 
-// 2.3 ช่องค้นหา
-const SearchBar = () => (
-  <div className="relative mb-4">
-    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-      <Search className="h-4 w-4 text-gray-400" />
-    </div>
-    <input 
-      type="text" 
-      className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-[8px] bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#ea580c] text-[13px] transition-all" 
-      placeholder="ค้นหาเลขคำร้อง / ชื่อ / รหัสนักศึกษา" 
-    />
-  </div>
-);
-
-// 2.5 การ์ดแสดงข้อมูลคำร้อง
+// 2.3 การ์ดแสดงข้อมูลคำร้อง
 const RequestCard = ({ req, onClick }: { req: typeof actionRequests[0], onClick: () => void }) => (
   <div 
     onClick={onClick}
@@ -171,21 +157,6 @@ const RequestCard = ({ req, onClick }: { req: typeof actionRequests[0], onClick:
           </p>
         </div>
       </div>
-
-      {/* Status Column */}
-      <div className="w-full sm:w-[110px] shrink-0 flex items-center lg:justify-end">
-        {req.isOverdue ? (
-          <span className="text-[#dc2626] text-[12.5px] font-bold flex items-center gap-1.5 bg-[#fef2f2] px-3 py-1.5 rounded-full border border-[#fee2e2]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>
-            เลยกำหนด
-          </span>
-        ) : (
-          <span className="text-[#ea580c] text-[12.5px] font-bold flex items-center gap-1.5 bg-[#fff7ed] px-3 py-1.5 rounded-full border border-[#ffedd5]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ea580c]"></span>
-            ปกติ
-          </span>
-        )}
-      </div>
     </div>
 
     {/* Action Button */}
@@ -202,7 +173,6 @@ const RequestCard = ({ req, onClick }: { req: typeof actionRequests[0], onClick:
 // ==========================================
 export default function PendingRequestsPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('ทั้งหมด');
   const router = useRouter();
 
   return (
@@ -220,15 +190,39 @@ export default function PendingRequestsPage() {
 
         <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto">
           
-          <div className="mb-6">
-            <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">คำร้องทั้งหมด</h1>
-            <p className="text-[13px] text-gray-500">คำร้องกู้ยืมของนักศึกษาในความดูแลทั้งหมด</p>
-          </div>
-
-          {/* สอดแทรก StatCards ตรงนี้ */}
           <StatCards />
 
-          <SearchBar />
+          {/* Section: Title + Search & Filter (แทนที่ของเดิม) */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            
+            {/* Page Title */}
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">คำร้องรอพิจารณา</h1>
+            </div>
+
+            {/* Search Bar & Dropdown */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+              
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-[280px]">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className="block w-full pl-9 pr-3 py-2 border border-gray-200 rounded-[8px] bg-white text-[13px] focus:outline-none focus:ring-1 focus:ring-[#ea580c] transition-all"
+                  placeholder="ค้นหาเลขคำร้อง / ชื่อ / รหัสนักศึกษา"
+                />
+              </div>
+
+              {/* Dropdown Button */}
+              <button className="w-full sm:w-auto flex items-center justify-between px-4 py-2 bg-white border border-gray-200 rounded-[8px] text-[13px] font-medium text-[#ea580c] hover:bg-orange-50 shrink-0 transition-colors">
+                <span>สถานะทั้งหมด</span>
+                <ChevronDown className="w-4 h-4 ml-2" />
+              </button>
+              
+            </div>
+          </div>
 
           <div className="space-y-4">
             {actionRequests.map((req, index) => (

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import SideNav from '@/components/SidebarNav';
 import UserProfile from '@/components/UserProfile';
-import { Menu, Search, FileText, ChevronDown } from 'lucide-react';
+import { Menu, Search, FileText, ChevronDown, ArrowRight, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 // ==========================================
@@ -36,6 +36,7 @@ const actionRequests = [
     waitDays: 5,
     isOverdue: false,
   },
+  
 ];
 
 // ==========================================
@@ -51,58 +52,66 @@ const RequestCard = ({
 }) => (
   <div
     onClick={onClick}
-    className="cursor-pointer bg-white border border-gray-100 rounded-[14px] p-4 lg:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-6 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] hover:shadow-md hover:border-orange-200 transition-all"
+    className={`cursor-pointer bg-white border border-gray-200 rounded-[12px] p-5 sm:p-6 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow relative overflow-hidden ${
+      req.isOverdue ? 'border-l-[4px] border-l-[#dc2626]' : 'border-l-[4px] border-l-transparent'
+    }`}
   >
-    <div className="flex flex-col sm:flex-row sm:items-center gap-4 lg:gap-6 flex-1 min-w-0">
-      {/* Icon Box */}
-      <div className="w-11 h-11 rounded-[10px] bg-[#fff7ed] flex items-center justify-center text-[#ea580c] shrink-0 hidden sm:flex border border-[#ffedd5]">
-        <FileText size={20} strokeWidth={1.5} />
+    {/* Top Row: ID, Date & Button */}
+    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+      <div className="flex items-center gap-3">
+        <span className="font-bold text-[#1e293b] bg-gray-100 px-2.5 py-1 rounded-[6px] text-[13px]">
+          {req.id}
+        </span>
+        <span className="text-[13px] text-gray-500">ยื่นเมื่อ {req.submitDate}</span>
       </div>
 
-      {/* Info Column 1: Name & Subtitle */}
-      <div className="w-full sm:w-[260px] shrink-0">
-        <h4 className="font-bold text-[#1e293b] text-[15px] mb-0.5">{req.name}</h4>
-        <p className="text-[12.5px] text-gray-500 truncate">
-          {req.studentId} • {req.major} • ปี {req.year}
-        </p>
-      </div>
+      {/* เปลี่ยนสีปุ่มจากเขียวเป็นส้มตามโลโก้ */}
+      <button className="hidden sm:flex focus:outline-none items-center gap-2 bg-[#ea580c] hover:bg-[#c2410c] text-white px-4 py-2 rounded-[8px] text-[14px] font-medium transition-colors">
+        ตรวจสอบคำร้อง
+        <ArrowRight size={16} />
+      </button>
+    </div>
 
-      {/* Info Column 2: Date & Wait time */}
-      <div className="w-full sm:w-[120px] shrink-0">
-        <p className="font-bold text-[#334155] text-[13.5px] mb-0.5">{req.submitDate}</p>
-        <p className="text-[12.5px] text-gray-500">รอพิจารณา {req.waitDays} วัน</p>
-      </div>
+    {/* Info Column: Name & Subtitle */}
+    <div className="mb-4">
+      <h4 className="font-bold text-[#1e293b] text-[18px] mb-1">{req.name}</h4>
+      <p className="text-[13.5px] text-gray-500">
+        {req.studentId} • {req.major} • ชั้นปีที่ {req.year}
+      </p>
+    </div>
 
-      {/* Info Column 3: Objective */}
-      <div className="hidden md:flex flex-1 justify-start min-w-0">
-        <div className="bg-[#f1f5f9] px-4 py-1.5 rounded-full inline-flex items-center max-w-full">
-          <p className="text-[12.5px] text-[#475569] font-medium truncate">
-            <span className="font-bold text-[#334155] mr-1.5">฿{req.amount}</span>({req.term} งวด) -{" "}
-            {req.objective}
-          </p>
+    {/* Objective */}
+    <div className="mb-5">
+      <p className="text-[13px] text-gray-500 mb-0.5">วัตถุประสงค์:</p>
+      <p className="text-[14px] text-[#1e293b]">{req.objective}</p>
+    </div>
+
+    {/* Stats Grid */}
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-2">
+      <div>
+        <p className="text-[13px] text-gray-500 mb-0.5">จำนวนที่ขอกู้</p>
+        <p className="text-[16px] font-bold text-[#1e293b]">฿{req.amount}</p>
+      </div>
+      <div>
+        <p className="text-[13px] text-gray-500 mb-0.5">งวดชำระ</p>
+        <p className="text-[16px] font-bold text-[#1e293b]">{req.term} งวด</p>
+      </div>
+      <div className="flex items-start gap-2">
+        <Clock className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+        <div>
+          <p className="text-[13px] text-gray-500 mb-0.5">รอพิจารณา</p>
+          <p className="text-[16px] font-bold text-[#1e293b]">{req.waitDays} วัน</p>
         </div>
-      </div>
-
-      {/* Status Column */}
-      <div className="w-full sm:w-[110px] shrink-0 flex items-center lg:justify-end">
-        {req.isOverdue ? (
-          <span className="text-[#dc2626] text-[12.5px] font-bold flex items-center gap-1.5 bg-[#fef2f2] px-3 py-1.5 rounded-full border border-[#fee2e2]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>
-            เลยกำหนด
-          </span>
-        ) : (
-          <span className="text-[#ea580c] text-[12.5px] font-bold flex items-center gap-1.5 bg-[#fff7ed] px-3 py-1.5 rounded-full border border-[#ffedd5]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ea580c]"></span>
-            ปกติ
-          </span>
-        )}
       </div>
     </div>
 
-    {/* Action Button */}
-    <div className="shrink-0 w-full lg:w-auto mt-3 lg:mt-0">
-      <button className="focus:outline-none w-full lg:w-auto bg-[#fff7ed] hover:bg-[#ffedd5] text-[#ea580c] px-4 py-2 rounded-[8px] text-[13px] font-bold transition-colors">
+    {/* Mobile Button & Overdue Badge */}
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-3 gap-4">
+
+      {/* เปลี่ยนสีปุ่มมือถือจากเขียวเป็นส้มตามโลโก้ */}
+      <button className="sm:hidden w-full focus:outline-none flex justify-center items-center gap-2 bg-[#ea580c] hover:bg-[#c2410c] text-white px-4 py-2.5 rounded-[8px] text-[14px] font-medium transition-colors">
         ตรวจสอบคำร้อง
+        <ArrowRight size={16} />
       </button>
     </div>
   </div>
@@ -139,10 +148,10 @@ export default function PendingRequestsPage() {
         {/* Content Area */}
         <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto">
           
-          {/* Welcome Card */}
-          <div className="bg-gradient-to-r from-orange-600 to-orange-700 rounded-2xl p-8 text-white shadow-sm mb-8">
-            <h2 className="text-2xl font-bold mb-2">สวัสดี, นางสาวกมลชนก</h2>
-            <p className="text-sm opacity-90">พยาบาลศาสตรบัณฑิต · ชั้นปีที่ 3 · 651210001</p>
+          {/* Welcome Card ปรับสีให้ตรงโลโก้ */}
+          <div className="bg-gradient-to-r from-[#ea580c] to-[#f97316] rounded-[16px] p-6 sm:p-8 text-white shadow-sm mb-8">
+            <h2 className="text-2xl font-bold mb-2">สวัสดี, ผศ.ดร. สุนีย์ วงค์ประเสริฐ</h2>
+            <p className="text-sm opacity-90">คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่</p>
           </div>
 
           {/* Section: Title + Search & Filter */}
@@ -151,7 +160,6 @@ export default function PendingRequestsPage() {
             {/* Page Title */}
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">คำร้องรอพิจารณา</h1>
-              <p className="text-[13px] text-gray-500">คำร้องกู้ยืมของนักศึกษาในความดูแลทั้งหมด</p>
             </div>
 
             {/* Search Bar & Dropdown */}
@@ -169,7 +177,7 @@ export default function PendingRequestsPage() {
                 />
               </div>
 
-              {/* Dropdown Button (สไตล์คล้ายๆ กับในรูป) */}
+              {/* Dropdown Button */}
               <button className="w-full sm:w-auto flex items-center justify-between px-4 py-2 bg-white border border-gray-200 rounded-[8px] text-[13px] font-medium text-[#ea580c] hover:bg-orange-50 shrink-0 transition-colors">
                 <span>สถานะทั้งหมด</span>
                 <ChevronDown className="w-4 h-4 ml-2" />
