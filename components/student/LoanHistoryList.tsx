@@ -27,6 +27,10 @@ export default function LoanHistoryList({
       ) : (
         <button className={styles.showMore} onClick={onShowMore} type="button">
           ดูเพิ่มเติม
+          <span aria-hidden="true" className={styles.showMoreIcon}>
+            <i />
+            <i />
+          </span>
         </button>
       )}
     </section>

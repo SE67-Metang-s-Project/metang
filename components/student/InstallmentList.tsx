@@ -4,7 +4,7 @@ import styles from "@/app/student/student.module.css";
 
 type InstallmentListProps = {
   installments: InstallmentPayment[];
-  onPay: () => void;
+  onPay: (installment: InstallmentPayment) => void;
 };
 
 export default function InstallmentList({ installments, onPay }: InstallmentListProps) {

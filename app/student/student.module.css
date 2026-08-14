@@ -294,7 +294,7 @@
   justify-content: space-between;
   min-height: 84px;
   margin: 5px 2px 0;
-  padding: 28px 16px 24px;
+  padding: 20px 16px 18px;
   overflow: hidden;
   border-radius: 11px;
   background: linear-gradient(108deg, var(--color-behavior-start) 0%, var(--color-behavior-end) 100%);
@@ -304,6 +304,8 @@
 .behaviorHeading {
   gap: 6px;
   flex-wrap: wrap;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .paymentBehavior > div {
@@ -318,6 +320,7 @@
 }
 
 .behaviorHeading span {
+  margin-left: auto;
   padding: 3px 8px;
   border-radius: 20px;
   background: var(--color-surface);
@@ -361,12 +364,9 @@
   letter-spacing: -0.7px;
 }
 
-.installmentsSection h2 {
-  font-size: clamp(20px, 4.2vw, 21px);
-}
-
+.installmentsSection h2,
 .historySection h2 {
-  font-size: clamp(18px, 4.5vw, 20px);
+  font-size: clamp(20px, 4.2vw, 21px);
 }
 
 .installmentsList,
@@ -467,10 +467,14 @@
 
 .installmentDetailLine {
   display: flex;
-  gap: 4px;
+  align-items: baseline;
+  gap: 6px;
 }
 
 .installmentNote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--color-success) !important;
   font-weight: 500;
   text-align: right;
@@ -482,14 +486,26 @@
 
 .paymentNoteText {
   display: inline-flex;
-  gap: 4px;
+  gap: 6px;
+}
+
+.paymentNoteLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.installmentNoteText {
+  min-width: 0;
 }
 
 .installmentNote i {
   display: inline-block;
-  width: 5px;
-  height: 5px;
-  margin: 0 5px 2px 0;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  margin: 0;
   border-radius: 50%;
   background: var(--color-success);
 }
@@ -535,6 +551,7 @@
 }
 
 .historyCard {
+  position: relative;
   justify-content: space-between;
   align-items: flex-start;
   gap: 8px;
@@ -560,10 +577,12 @@
 
 .historyCardTitle > strong {
   min-width: 0;
-  overflow: hidden;
+  max-width: none;
+  overflow: visible;
   color: var(--color-history-title);
-  font-size: 15px;
-  text-overflow: ellipsis;
+  font-size: clamp(16px, 3.7vw, 18px);
+  font-weight: 600;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
@@ -590,11 +609,16 @@
 }
 
 .historyStatus {
-  padding: 3px 7px;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  max-width: 52%;
+  padding: 3px 8px;
   border-radius: 15px;
-  font-size: 10px;
+  font-size: clamp(14px, 3.2vw, 15px);
   font-weight: 500;
-  white-space: nowrap;
+  line-height: 1.25;
+  text-align: right;
 }
 
 .pending {
@@ -614,6 +638,18 @@
   justify-items: end;
   align-self: end;
   flex: 0 0 auto;
+}
+
+.historyAmount span {
+  font-size: 15px;
+}
+
+.historyAmount strong span {
+  font-size: inherit;
+}
+
+.historyAmountTotal {
+  color: var(--color-history-label);
 }
 
 .historyAmount strong {
@@ -636,6 +672,721 @@
   border: 0;
   background: transparent;
   cursor: pointer;
+}
+
+.showMoreIcon {
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  margin: 5px auto 2px;
+  color: var(--color-show-more-icon);
+}
+
+.showMoreIcon i {
+  position: relative;
+  display: block;
+  width: 54px;
+  height: 24px;
+}
+
+.showMoreIcon i + i {
+  margin-top: -11px;
+}
+
+.showMoreIcon i::before,
+.showMoreIcon i::after {
+  position: absolute;
+  top: 0;
+  width: 31px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+}
+
+.showMoreIcon i::before {
+  left: 0;
+  transform: rotate(30deg);
+  transform-origin: left center;
+}
+
+.showMoreIcon i::after {
+  right: 0;
+  transform: rotate(-30deg);
+  transform-origin: right center;
+}
+
+.loanDetailsPage {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding-bottom: 8px;
+}
+
+.loanDetailsBack {
+  justify-self: start;
+  padding: 0 3px;
+  border: 0;
+  background: transparent;
+  color: var(--color-detail-orange-dark);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.loanDetailSection {
+  padding: 14px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+}
+
+.loanDetailSection h2 {
+  margin: 0 0 12px;
+  color: var(--color-heading);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.loanDetailOverview {
+  padding: 13px 12px 14px;
+}
+
+.loanDetailTopline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.loanDetailTopline h1 {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.loanDetailTopline p {
+  margin: 1px 0 0;
+  color: var(--color-detail-muted);
+  font-size: 13px;
+}
+
+.loanDetailStatus {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border: 1px solid var(--color-info-border);
+  border-radius: 12px;
+  background: var(--color-info-soft);
+  color: var(--color-info);
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.loanDetailOverviewGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 10px 14px;
+  margin-top: 13px;
+}
+
+.loanDetailOverviewGrid > div {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.loanDetailOverviewGrid span {
+  color: var(--color-detail-muted);
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.loanDetailOverviewGrid strong {
+  color: var(--color-heading);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.loanDetailAmount,
+.loanDetailAmountMeta {
+  justify-items: end;
+  text-align: right;
+}
+
+.loanDetailAmount strong {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.loanDownloadButton {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 13px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--color-detail-orange);
+  color: var(--color-surface);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.loanDownloadButton span {
+  font-size: 18px;
+  line-height: 0.8;
+}
+
+.loanTimeline {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.loanTimelineItem {
+  position: relative;
+  display: flex;
+  gap: 9px;
+  min-width: 0;
+  padding-bottom: 9px;
+}
+
+.loanTimelineItem:not(:last-child)::before {
+  position: absolute;
+  top: 19px;
+  bottom: 0;
+  left: 9px;
+  width: 2px;
+  background: var(--color-detail-line);
+  content: "";
+}
+
+.timelineMarker {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-detail-orange);
+  color: var(--color-surface);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.timelineContent {
+  min-width: 0;
+  padding-top: 0;
+}
+
+.timelineContent strong {
+  display: block;
+  color: var(--color-heading);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.timelineContent p {
+  margin: 1px 0 0;
+  color: var(--color-detail-muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.transferDetails {
+  margin: 2px 0 0;
+  padding-left: 18px;
+  color: var(--color-heading);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.outlineOrangeButton {
+  margin: 2px 0 0 29px;
+  padding: 5px 9px;
+  border: 1px solid var(--color-detail-orange);
+  border-radius: 7px;
+  background: var(--color-detail-orange-pale);
+  color: var(--color-detail-orange-dark);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.loanScheduleSection {
+  border-color: var(--color-detail-green-border);
+}
+
+.loanScheduleList {
+  display: grid;
+}
+
+.loanScheduleRow {
+  display: grid;
+  grid-template-columns: 45px minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-detail-muted);
+  font-size: 14px;
+}
+
+.loanScheduleRow:last-child {
+  border-bottom: 0;
+}
+
+.loanScheduleRow strong {
+  color: var(--color-heading);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.loanScheduleRow > strong:last-child {
+  font-weight: 600;
+}
+
+.paymentHistorySection {
+  background: var(--color-detail-orange-pale);
+}
+
+.paymentHistoryList {
+  display: grid;
+  gap: 7px;
+}
+
+.paymentHistoryCard {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) max-content;
+  align-items: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.paymentReceiptIcon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--color-detail-green-soft);
+  color: var(--color-detail-muted);
+  font-size: 21px;
+  line-height: 1;
+}
+
+.paymentHistoryContent {
+  min-width: 0;
+}
+
+.paymentHistoryContent strong {
+  display: block;
+  overflow: hidden;
+  color: var(--color-heading);
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paymentHistoryContent p {
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-detail-muted);
+  font-size: 11px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paymentVerifiedPill {
+  align-self: start;
+  padding: 3px 7px;
+  border: 1px solid var(--color-detail-green-border);
+  border-radius: 12px;
+  background: var(--color-detail-green-soft);
+  color: var(--color-detail-green-text);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.contactDescription {
+  margin: -3px 0 10px;
+  color: var(--color-detail-muted);
+  font-size: 14px;
+}
+
+.contactCard {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-detail-orange-pale);
+}
+
+.contactCard h3 {
+  margin: 0 0 6px;
+  color: var(--color-heading);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.contactCard p {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 5px 0 0;
+  color: var(--color-detail-muted);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.contactCard p:first-of-type {
+  color: var(--color-detail-green-text);
+}
+
+.contactCard p > span:first-child {
+  width: 16px;
+  flex: 0 0 16px;
+  color: var(--color-detail-muted);
+  font-size: 17px;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.copyIcon {
+  margin-left: 5px;
+  color: var(--color-heading) !important;
+}
+
+.paymentModalBackdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  overflow-y: auto;
+  padding: 13px;
+  place-items: center;
+  background-color: var(--color-payment-backdrop);
+  background-image: radial-gradient(var(--color-payment-dots) 1.5px, transparent 1.5px);
+  background-size: 14px 14px;
+}
+
+.paymentModal {
+  position: relative;
+  width: min(100%, 500px);
+  max-height: 96svh;
+  overflow-y: auto;
+  padding: 24px 30px 27px;
+  border: 1px solid var(--color-border);
+  border-radius: 17px;
+  background: var(--color-surface);
+  box-shadow: 0 16px 40px var(--color-modal-shadow);
+}
+
+.paymentModalClose {
+  position: absolute;
+  top: 12px;
+  right: 17px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-detail-muted);
+  cursor: pointer;
+  font-size: 31px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.paymentModalHeader {
+  padding-right: 26px;
+  text-align: center;
+}
+
+.paymentModalHeader h2 {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.paymentModalHeader p {
+  margin: 3px 0 0;
+  color: var(--color-heading);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.paymentModalHeader p strong {
+  font-weight: 700;
+}
+
+.paymentModalDivider {
+  height: 1px;
+  margin: 13px 27px 14px;
+  border: 0;
+  background: var(--color-detail-muted);
+  opacity: 0.7;
+}
+
+.paymentAccountSection h3,
+.paymentUploadSection h3 {
+  margin: 0 0 8px;
+  color: var(--color-heading);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.paymentAccountSection h3 span {
+  margin-right: 7px;
+  color: var(--color-payment-green-dark);
+  font-size: 20px;
+}
+
+.paymentAccountList {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.paymentAccountList > div {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 5px;
+  min-width: 0;
+}
+
+.paymentAccountList dt,
+.paymentAccountList dd {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.paymentAccountList dt {
+  color: var(--color-detail-muted);
+}
+
+.paymentAccountList dd {
+  overflow-wrap: anywhere;
+  color: var(--color-heading);
+}
+
+.copyAccountButton {
+  margin-left: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-heading);
+  cursor: pointer;
+  font: inherit;
+  white-space: nowrap;
+}
+
+.paymentQrSection {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 26px;
+  text-align: center;
+}
+
+.paymentProviderBanner {
+  display: grid;
+  width: min(100%, 311px);
+  min-height: 59px;
+  place-items: center;
+  border-radius: 15px 15px 0 0;
+  background: var(--color-payment-blue);
+  color: var(--color-surface);
+  font-family: Arial, sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.promptPayLabel {
+  margin-top: 8px;
+  padding: 1px 4px;
+  border: 1px solid var(--color-border);
+  color: var(--color-payment-blue);
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.paymentQrCode {
+  display: grid;
+  grid-template-columns: repeat(21, 1fr);
+  width: min(100%, 178px);
+  aspect-ratio: 1;
+  gap: 0;
+  margin: 7px 0 15px;
+  padding: 4px;
+  background: var(--color-surface);
+}
+
+.paymentQrCell,
+.paymentQrCellFilled {
+  display: block;
+  aspect-ratio: 1;
+}
+
+.paymentQrCellFilled {
+  background: #111111;
+}
+
+.paymentQrSection > strong {
+  color: var(--color-payment-green-dark);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.paymentQrSection > p,
+.paymentQrSection > small {
+  margin: 1px 0 0;
+  color: var(--color-detail-muted);
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.paymentQrSection > small {
+  color: #b0b0b0;
+}
+
+.paymentBankNotice {
+  width: min(100%, 311px);
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 2px solid #62bd9f;
+  color: #a4a4a4;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+}
+
+.paymentBankNotice::first-letter {
+  color: var(--color-payment-green);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.paymentSaveButton,
+.paymentConfirmButton {
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--color-payment-green);
+  color: var(--color-surface);
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.paymentSaveButton {
+  margin-top: 23px;
+}
+
+.paymentUploadSection {
+  margin-top: 23px;
+}
+
+.paymentUploadBox {
+  display: flex;
+  min-height: 132px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border: 2px dashed var(--color-border);
+  border-radius: 16px 16px 9px 9px;
+  background: var(--color-payment-upload);
+  color: var(--color-detail-muted);
+  cursor: pointer;
+  text-align: center;
+}
+
+.paymentUploadBox strong {
+  color: var(--color-heading);
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.paymentUploadBox > span:not(.uploadIcon) {
+  font-size: 14px;
+}
+
+.uploadIcon {
+  color: var(--color-payment-green-dark);
+  font-size: 34px;
+  line-height: 1;
+}
+
+.paymentUploadBox input {
+  display: none;
+}
+
+.paymentSelectedFile {
+  margin: 0;
+  padding: 8px 12px;
+  overflow: hidden;
+  border-radius: 0 0 9px 9px;
+  background: #ededed;
+  color: var(--color-detail-muted);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paymentModalActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 13px;
+}
+
+.paymentCancelButton,
+.paymentConfirmButton {
+  min-height: 45px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.paymentCancelButton {
+  background: #dddddd;
+  color: var(--color-heading);
+}
+
+.paymentConfirmButton {
+  background: var(--color-payment-green);
+  color: var(--color-surface);
 }
 
 .modalBackdrop {
@@ -801,7 +1552,7 @@
     align-items: start;
     width: 100%;
     column-gap: 10px;
-    row-gap: 6px;
+    row-gap: 2px;
   }
 
   .installmentDetailGroup {
@@ -810,7 +1561,7 @@
 
   .installmentDetailLine {
     flex-direction: row;
-    gap: 4px;
+    gap: 6px;
   }
 
   .installmentDetailLine:first-child {
