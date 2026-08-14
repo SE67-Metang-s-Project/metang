@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   activeLoan,
   getLoanDetails,
@@ -17,12 +17,28 @@ import PaymentBehaviorCard from "./PaymentBehaviorCard";
 import PaymentModal from "./PaymentModal";
 import type { InstallmentPayment } from "@/app/student/studentMockData";
 import { MedicalBagIcon, MoneyIllustration } from "./StudentIllustrations";
+import ContactFooter from "./ContactFooter";
 import styles from "@/app/student/student.module.css";
 
 export default function StudentDashboard() {
   const [showAllRequests, setShowAllRequests] = useState(false);
   const [activePayment, setActivePayment] = useState<InstallmentPayment | null>(null);
   const [activeView, setActiveView] = useState<"dashboard" | "loan-details">("dashboard");
+  const preservedScrollPosition = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (preservedScrollPosition.current === null) {
+      return;
+    }
+
+    window.scrollTo(window.scrollX, preservedScrollPosition.current);
+    preservedScrollPosition.current = null;
+  }, [showAllRequests]);
+
+  const toggleRequestHistory = () => {
+    preservedScrollPosition.current = window.scrollY;
+    setShowAllRequests((current) => !current);
+  };
 
   const activeLoanDetails = getLoanDetails(activeLoan.requestNumber);
 
@@ -47,10 +63,11 @@ export default function StudentDashboard() {
             onPay={setActivePayment}
           />
           <LoanHistoryList
-            onShowMore={() => setShowAllRequests(true)}
+            onShowMore={toggleRequestHistory}
             requests={loanRequestHistory}
             showAllRequests={showAllRequests}
           />
+          <ContactFooter />
         </div>
       )}
 

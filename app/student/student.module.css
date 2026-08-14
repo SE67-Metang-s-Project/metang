@@ -561,6 +561,11 @@
   border-radius: 15px;
 }
 
+.historyList > .historyCard:first-child {
+  border-color: var(--color-history-current-border);
+  background: var(--color-history-current-soft);
+}
+
 .historyCard p,
 .historyCard small,
 .historyCard > div > strong:last-child {
@@ -627,10 +632,36 @@
   color: var(--color-info);
 }
 
-.rejected {
+.rejectedExecutive {
   border: 1px solid var(--color-danger-border);
   background: var(--color-danger-soft);
   color: var(--color-danger);
+}
+
+.waitingPaymentConfirmation {
+  border: 1px solid var(--color-history-purple-border);
+  background: var(--color-history-purple-soft);
+  color: var(--color-history-purple);
+}
+
+.revisionRequired {
+  border: 1px solid var(--color-warning-border);
+  background: var(--color-history-orange-soft);
+  color: var(--color-warning);
+}
+
+.waitingAdvisorApproval,
+.waitingExecutiveApproval,
+.waitingDocumentReview {
+  border: 1px solid var(--color-history-yellow-border);
+  background: var(--color-history-yellow-soft);
+  color: var(--color-history-yellow);
+}
+
+.completed {
+  border: 1px solid var(--color-success-border);
+  background: var(--color-success-soft);
+  color: var(--color-success-text);
 }
 
 .historyAmount {
@@ -658,6 +689,85 @@
   white-space: nowrap;
 }
 
+.contactFooter {
+  grid-column: 1 / -1;
+  padding: 22px 20px 20px;
+  border: 1px solid var(--color-contact-footer-border);
+  border-radius: 15px;
+  background: var(--color-surface);
+}
+
+.contactFooter h2 {
+  margin: 0 0 15px;
+  color: var(--color-contact-footer-heading);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+
+.contactFooterGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.contactFooterItem {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-contact-footer-text);
+  font-size: 15px;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.contactFooterItem a {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: inherit;
+  text-decoration: none;
+}
+
+.contactFooterItem svg {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  color: var(--color-contact-footer-icon);
+  stroke-width: 1.8;
+}
+
+.contactFooterItem span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.contactFooterCopyIcon {
+  width: 21px !important;
+  height: 21px !important;
+  flex: 0 0 21px !important;
+  margin-left: 4px;
+  color: var(--color-contact-footer-icon) !important;
+}
+
+.contactFooterCopyButton {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  margin-left: 2px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--color-contact-footer-icon);
+  cursor: pointer;
+}
+
+.contactFooterCopyButton svg {
+  width: 21px;
+  height: 21px;
+}
+
 .showMore,
 .moreHistory {
   display: block;
@@ -680,6 +790,13 @@
   gap: 0;
   margin: 5px auto 2px;
   color: var(--color-show-more-icon);
+  transform: rotate(0deg);
+  transform-origin: center;
+  transition: transform 240ms ease;
+}
+
+.showMoreIconExpanded {
+  transform: rotate(180deg);
 }
 
 .showMoreIcon i {
@@ -1478,6 +1595,15 @@
   .installmentCard,
   .historyCard {
     padding: 18px 19px 17px;
+  }
+
+  .contactFooterGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .contactFooterItem {
+    align-items: flex-start;
   }
 }
 

@@ -13,26 +13,40 @@ export default function LoanHistoryList({
   showAllRequests,
   onShowMore,
 }: LoanHistoryListProps) {
+  const visibleRequests = showAllRequests ? requests : requests.slice(0, 3);
+  const buttonLabel = showAllRequests
+    ? "ซ่อนรายละเอียด"
+    : "ดูประวัติคำร้องทั้งหมด";
+  const iconClassName = [
+    styles.showMoreIcon,
+    showAllRequests ? styles.showMoreIconExpanded : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <section className={styles.historySection} aria-labelledby="history-title">
       <h2 id="history-title">ประวัติคำร้องกู้ยืม</h2>
       <div className={styles.historyList}>
-        {requests.map((request, index) => (
+        {visibleRequests.map((request, index) => (
           <LoanHistoryCard key={`${request.requestNumber}-${index}`} request={request} />
         ))}
       </div>
 
-      {showAllRequests ? (
-        <p className={styles.moreHistory}>ไม่พบรายการเพิ่มเติม</p>
-      ) : (
-        <button className={styles.showMore} onClick={onShowMore} type="button">
-          ดูเพิ่มเติม
-          <span aria-hidden="true" className={styles.showMoreIcon}>
+      {requests.length >= 3 ? (
+        <button
+          aria-expanded={showAllRequests}
+          className={styles.showMore}
+          onClick={onShowMore}
+          type="button"
+        >
+          {buttonLabel}
+          <span aria-hidden="true" className={iconClassName}>
             <i />
             <i />
           </span>
         </button>
-      )}
+      ) : null}
     </section>
   );
 }

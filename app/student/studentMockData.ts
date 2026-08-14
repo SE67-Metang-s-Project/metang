@@ -26,7 +26,15 @@ export type PaymentAccount = {
   qrReference: string;
 };
 
-export type LoanRequestStatus = "pending" | "rejected";
+export type LoanRequestStatus =
+  | "pending"
+  | "rejectedExecutive"
+  | "waitingPaymentConfirmation"
+  | "revisionRequired"
+  | "waitingAdvisorApproval"
+  | "waitingExecutiveApproval"
+  | "waitingDocumentReview"
+  | "completed";
 
 export type LoanRequestHistoryItem = {
   requestNumber: string;
@@ -82,6 +90,13 @@ export type LoanDetails = {
   schedule: LoanScheduleItem[];
   paymentHistory: LoanPaymentHistoryItem[];
   contact: LoanContact;
+};
+
+export const loanContact: LoanContact = {
+  phone: "053-935025",
+  email: "loan@nurse.cmu.ac.th",
+  location: "ชั้น 1 อาคารเทพรัตน์ คณะพยาบาลศาสตร์ มช.",
+  openingHours: "จันทร์-ศุกร์ 08:30 - 16:30 น.",
 };
 
 export const studentProfile = {
@@ -156,21 +171,75 @@ export const installmentPayments: InstallmentPayment[] = [
 export const loanRequestHistory: LoanRequestHistoryItem[] = [
   {
     requestNumber: "SL-2568-0001",
-    statusLabel: "อยู่ระหว่างชำระคืน",
+    statusLabel: activeLoan.statusLabel,
     statusType: "pending",
     submittedAt: "ยื่นเมื่อ 18 ธ.ค. 2569 10:00 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 1/2569",
     amountLabel: "ชำระแล้ว",
-    amount: "฿2,000/฿3,000",
+    amount: `${activeLoan.paidAmount}/${activeLoan.totalAmount}`,
   },
   {
-    requestNumber: "SL-2568-0001",
-    statusLabel: "ปฏิเสธโดย · อาจารย์ที่ปรึกษา",
-    statusType: "rejected",
-    submittedAt: "ยื่นเมื่อ 18 ธ.ค. 2569 10:00 น.",
+    requestNumber: "SL-2568-0002",
+    statusLabel: "ปฏิเสธโดย · ผู้บริหาร",
+    statusType: "rejectedExecutive",
+    submittedAt: "ยื่นเมื่อ 10 พ.ย. 2569 09:30 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 1/2569",
     amountLabel: "จำนวนที่ขอกู้",
     amount: "฿3,000",
+  },
+  {
+    requestNumber: "SL-2568-0003",
+    statusLabel: "รอยืนยันการรับเงิน",
+    statusType: "waitingPaymentConfirmation",
+    submittedAt: "ยื่นเมื่อ 4 พ.ย. 2569 13:15 น.",
+    purpose: "ค่าใช้จ่ายเกี่ยวกับการศึกษา",
+    amountLabel: "จำนวนที่ขอกู้",
+    amount: "฿8,500",
+  },
+  {
+    requestNumber: "SL-2568-0004",
+    statusLabel: "รอแก้ไขเอกสาร",
+    statusType: "revisionRequired",
+    submittedAt: "ยื่นเมื่อ 28 ต.ค. 2569 11:00 น.",
+    purpose: "ค่าเทอมภาคเรียนที่ 2/2568",
+    amountLabel: "จำนวนที่ขอกู้",
+    amount: "฿12,000",
+  },
+  {
+    requestNumber: "SL-2568-0005",
+    statusLabel: "รออาจารย์ที่ปรึกษาอนุมัติ",
+    statusType: "waitingAdvisorApproval",
+    submittedAt: "ยื่นเมื่อ 22 ต.ค. 2569 14:20 น.",
+    purpose: "ค่าเทอมภาคเรียนที่ 2/2568",
+    amountLabel: "จำนวนที่ขอกู้",
+    amount: "฿6,000",
+  },
+  {
+    requestNumber: "SL-2568-0006",
+    statusLabel: "รอผู้บริหารอนุมัติ",
+    statusType: "waitingExecutiveApproval",
+    submittedAt: "ยื่นเมื่อ 18 ต.ค. 2569 10:45 น.",
+    purpose: "ค่าใช้จ่ายเกี่ยวกับการศึกษา",
+    amountLabel: "จำนวนที่ขอกู้",
+    amount: "฿9,000",
+  },
+  {
+    requestNumber: "SL-2568-0007",
+    statusLabel: "รอเจ้าหน้าที่ตรวจสอบเอกสาร",
+    statusType: "waitingDocumentReview",
+    submittedAt: "ยื่นเมื่อ 12 ต.ค. 2569 08:50 น.",
+    purpose: "ค่าเทอมภาคเรียนที่ 2/2568",
+    amountLabel: "จำนวนที่ขอกู้",
+    amount: "฿10,500",
+  },
+  {
+    requestNumber: "SL-2568-0008",
+    statusLabel: "ชำระเสร็จสิ้น",
+    statusType: "completed",
+    submittedAt: "ยื่นเมื่อ 5 ก.ย. 2569 09:10 น.",
+    purpose: "ค่าเทอมภาคเรียนที่ 1/2568",
+    amountLabel: "ชำระแล้ว",
+    amount: "฿7,500",
   },
 ];
 
@@ -259,12 +328,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
         statusLabel: "ตรวจสอบสำเร็จ",
       },
     ],
-    contact: {
-      phone: "053-935025",
-      email: "loan@nurse.cmu.ac.th",
-      location: "ชั้น 1 อาคารเทพรัตน์ คณะพยาบาลศาสตร์ มช.",
-      openingHours: "จันทร์-ศุกร์ 08:30 - 16:30 น.",
-    },
+    contact: loanContact,
   },
 };
 
