@@ -80,6 +80,810 @@
   );
 }
 
+.tempLoanSummary {
+  padding: 28px 20px 24px;
+  border-radius: 15px;
+  background: linear-gradient(
+    110deg,
+    var(--color-temp-summary-start) 0%,
+    var(--color-temp-summary-middle) 58%,
+    var(--color-temp-summary-end) 100%
+  );
+}
+
+.tempSummaryIntro h1 {
+  margin: 0;
+  color: var(--color-temp-summary-heading);
+  font-size: clamp(20px, 4.2vw, 21px);
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.tempSummaryIntro p {
+  margin: 3px 0 0;
+  color: var(--color-temp-summary-description);
+  font-size: 15px;
+  letter-spacing: -0.2px;
+}
+
+.tempLoanAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 9px 22px;
+  border: 1px solid var(--color-temp-action-border);
+  border-radius: 13px;
+  background: var(--color-temp-action);
+  color: var(--color-surface);
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.loanApplicationPage {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  max-width: 920px;
+  min-height: calc(100svh - 48px);
+  margin: 0 auto;
+  align-content: start;
+}
+
+.loanApplicationTitle {
+  margin: 0 4px;
+  color: var(--color-heading);
+  font-size: clamp(28px, 6vw, 34px);
+  font-weight: 600;
+  letter-spacing: -0.8px;
+}
+
+.applicationStepper {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: center;
+  margin: 4px 35px 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.applicationStepper li {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.applicationStepper li:not(:last-child)::after {
+  position: absolute;
+  top: 50%;
+  left: calc(50% + 36px);
+  width: calc(100% - 72px);
+  height: 4px;
+  background: var(--color-application-step-line);
+  content: "";
+  transform: translateY(-50%);
+}
+
+.applicationStepper span {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border: 2px solid var(--color-detail-orange);
+  border-radius: 50%;
+  background: var(--color-background);
+  color: var(--color-detail-orange);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.applicationStepper .applicationStepActive span {
+  background: var(--color-detail-orange);
+  color: var(--color-surface);
+}
+
+.applicationStepper .applicationStepComplete span {
+  background: var(--color-detail-orange);
+  color: var(--color-surface);
+}
+
+.applicationStepper .applicationStepComplete::after {
+  background: var(--color-detail-orange) !important;
+}
+
+.loanAgreementCard {
+  padding: 22px 18px 20px;
+  border: 2px solid var(--color-border);
+  border-radius: 15px;
+  background: var(--color-surface);
+}
+
+.loanAgreementCard h2 {
+  margin: 0 0 17px;
+  color: var(--color-heading);
+  font-size: clamp(20px, 4.8vw, 26px);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.loanAgreementScroll {
+  height: clamp(360px, 52svh, 620px);
+  overflow-y: auto;
+  padding: 23px 18px;
+  border: 2px solid var(--color-border);
+  border-radius: 15px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 15px;
+  line-height: 1.7;
+  scrollbar-color: var(--color-application-scrollbar) transparent;
+  scrollbar-width: auto;
+}
+
+.loanAgreementScroll:focus-visible {
+  outline: 2px solid var(--color-detail-orange);
+  outline-offset: 2px;
+}
+
+.loanAgreementScroll h3 {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.loanAgreementScroll > h4 {
+  margin: 2px 0 19px;
+  color: var(--color-heading);
+  font-size: 17px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.loanAgreementScroll p {
+  margin: 0 0 16px;
+}
+
+.loanAgreementScroll section h4 {
+  margin: 0 0 3px;
+  color: var(--color-heading);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.loanAgreementScroll section p {
+  margin-bottom: 16px;
+}
+
+.loanAgreementAcceptance {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 20px 4px 0;
+  color: var(--color-detail-muted);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.loanAgreementAcceptance input {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  margin: 0;
+  accent-color: var(--color-detail-orange);
+  cursor: pointer;
+}
+
+.loanAgreementAcceptanceDisabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.loanAgreementAcceptanceDisabled input {
+  cursor: not-allowed;
+}
+
+.loanApplicationNext {
+  width: 100%;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--color-detail-orange);
+  color: var(--color-surface);
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.loanApplicationNext:disabled {
+  background: var(--color-application-disabled);
+  cursor: not-allowed;
+}
+
+.loanApplicationDashboardButton {
+  width: 100%;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--color-detail-orange);
+  color: var(--color-surface);
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.loanFormCard {
+  padding: 22px 18px 20px;
+  border: 2px solid var(--color-border);
+  border-radius: 15px;
+  background: var(--color-surface);
+}
+
+.loanFormCard h2 {
+  margin: 0 0 17px;
+  color: var(--color-heading);
+  font-size: clamp(20px, 4.8vw, 26px);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.loanFormStudentCard,
+.loanApprovalInfoCard {
+  padding: 15px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 15px;
+  background: var(--color-surface);
+}
+
+.loanFormStudentCard h3,
+.loanApprovalInfoCard h3 {
+  margin: 0 0 10px;
+  color: var(--color-heading);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.loanFormStudentCard p {
+  margin: 2px 0;
+  color: var(--color-detail-muted);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.loanFormFields {
+  display: grid;
+  gap: 14px;
+  margin-top: 17px;
+}
+
+.loanFormField {
+  display: grid;
+  gap: 6px;
+  color: var(--color-heading);
+  font-size: 15px;
+}
+
+.loanFormField input,
+.loanFormField select,
+.loanFormField textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-heading);
+  font: inherit;
+}
+
+.loanFormField input,
+.loanFormField select {
+  height: 45px;
+}
+
+.loanFormField textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.loanFormField input:focus,
+.loanFormField select:focus,
+.loanFormField textarea:focus {
+  border-color: var(--color-detail-orange);
+  outline: 2px solid var(--color-detail-orange-soft);
+}
+
+.loanFormField small {
+  color: var(--color-detail-muted);
+  font-size: 13px;
+}
+
+.loanInstallmentField {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.loanInstallmentField legend {
+  padding: 0;
+  color: var(--color-heading);
+  font-size: 15px;
+}
+
+.loanInstallmentOptions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.loanInstallmentOptions button {
+  min-height: 44px;
+  padding: 7px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-surface);
+  color: var(--color-heading);
+  cursor: pointer;
+  font: inherit;
+}
+
+.loanInstallmentOptions button.loanInstallmentSelected {
+  border-color: var(--color-detail-orange);
+  background: var(--color-detail-orange-soft);
+  color: var(--color-detail-orange-dark);
+}
+
+.loanFormSchedule,
+.loanApprovalSchedule {
+  display: grid;
+  gap: 0;
+  padding: 14px 12px;
+  border: 1px solid var(--color-detail-green-border);
+  border-radius: 15px;
+  background: var(--color-detail-green-soft);
+}
+
+.loanFormSchedule h3,
+.loanApprovalSchedule h4 {
+  margin: 0 0 9px;
+  color: var(--color-heading);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.loanFormSchedule > div,
+.loanApprovalSchedule > div {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-detail-green-border);
+  color: var(--color-detail-muted);
+  font-size: 14px;
+}
+
+.loanFormSchedule > div:last-child,
+.loanApprovalSchedule > div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.loanFormSchedule strong,
+.loanApprovalSchedule strong {
+  color: var(--color-heading);
+  white-space: nowrap;
+}
+
+.loanFormActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.loanFormBack,
+.loanFormActions .loanApplicationNext {
+  min-height: 48px;
+  margin: 0;
+}
+
+.loanFormBack {
+  padding: 10px 16px;
+  border: 2px solid var(--color-detail-orange);
+  border-radius: 13px;
+  background: var(--color-detail-orange-soft);
+  color: var(--color-detail-orange-dark);
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.loanApprovalModalBackdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  overflow-y: auto;
+  padding: 24px;
+  place-items: center;
+  background-color: var(--color-payment-backdrop);
+  background-image: radial-gradient(var(--color-payment-dots) 1.5px, transparent 1.5px);
+  background-size: 14px 14px;
+}
+
+.loanApprovalModal {
+  position: relative;
+  width: min(100%, 610px);
+  max-height: 94svh;
+  overflow-y: auto;
+  padding: 32px 20px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 15px;
+  background: var(--color-surface);
+  box-shadow: 0 16px 40px var(--color-modal-shadow);
+}
+
+.loanApprovalModalClose {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-detail-muted);
+  cursor: pointer;
+  font-size: 31px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.loanApprovalModal > h2 {
+  margin: 0 0 18px;
+  color: var(--color-heading);
+  font-size: 26px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.loanApprovalWarning {
+  margin: 0 0 19px;
+  padding: 16px 13px;
+  border: 2px solid var(--color-detail-orange);
+  border-radius: 12px;
+  background: var(--color-detail-orange-soft);
+  color: var(--color-detail-orange-dark);
+  font-size: 16px;
+  line-height: 1.65;
+  text-align: center;
+}
+
+.loanApprovalInfoCard {
+  margin-top: 14px;
+}
+
+.loanApprovalInfoCard dl {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.loanApprovalInfoCard dl > div {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+}
+
+.loanApprovalInfoCard dt,
+.loanApprovalInfoCard dd {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.loanApprovalInfoCard dt {
+  color: var(--color-detail-muted);
+}
+
+.loanApprovalInfoCard dd {
+  min-width: 0;
+  color: var(--color-heading);
+  overflow-wrap: anywhere;
+}
+
+.loanApprovalSchedule {
+  margin-top: 14px;
+}
+
+.loanApprovalActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 17px;
+}
+
+.loanApprovalCancel,
+.loanApprovalConfirm {
+  min-height: 48px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.loanApprovalCancel {
+  border: 2px solid var(--color-detail-orange);
+  background: var(--color-detail-orange-soft);
+  color: var(--color-detail-orange-dark);
+}
+
+.loanApprovalConfirm {
+  border: 2px solid var(--color-detail-orange);
+  background: var(--color-detail-orange);
+  color: var(--color-surface);
+}
+
+.tempLoanDetailsSection {
+  display: grid;
+  gap: 16px;
+  padding: 22px 18px 20px;
+  border: 2px solid var(--color-border);
+  border-radius: 15px;
+  background: var(--color-surface);
+}
+
+.tempLoanDetailsSection > h2 {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: clamp(20px, 4.8vw, 26px);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.tempDetailOverview,
+.tempDetailCard {
+  padding: 16px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 15px;
+  background: var(--color-surface);
+}
+
+.tempDetailOverviewTopline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tempDetailOverviewTopline h3 {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.tempDetailOverviewTopline p {
+  margin: 3px 0 0;
+  color: var(--color-detail-muted);
+  font-size: 15px;
+}
+
+.tempDetailStatus {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 2px solid var(--color-history-blue-border);
+  border-radius: 18px;
+  background: var(--color-history-blue-soft);
+  color: var(--color-history-blue);
+  font-size: 14px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.tempDetailOverviewGrid {
+  display: grid;
+  gap: 13px;
+  margin-top: 17px;
+}
+
+.tempDetailOverviewGrid > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tempDetailOverviewGrid span,
+.tempDetailAmount small {
+  color: var(--color-detail-muted);
+  font-size: 15px;
+}
+
+.tempDetailOverviewGrid strong {
+  color: var(--color-heading);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.tempDetailAmount {
+  justify-items: end;
+  text-align: right;
+}
+
+.tempDetailAmount strong {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.tempDetailCard h3 {
+  margin: 0 0 14px;
+  color: var(--color-heading);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.tempLoanTimeline {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tempLoanTimeline > li {
+  position: relative;
+  display: flex;
+  gap: 11px;
+  min-width: 0;
+  padding-bottom: 13px;
+}
+
+.tempLoanTimeline > li:not(:last-child)::before {
+  position: absolute;
+  top: 25px;
+  bottom: 0;
+  left: 11px;
+  width: 3px;
+  background: var(--color-detail-orange);
+  content: "";
+}
+
+.tempLoanTimeline > li > span {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-detail-orange);
+  color: var(--color-surface);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.tempLoanTimeline > li > div {
+  min-width: 0;
+}
+
+.tempLoanTimeline strong {
+  display: block;
+  color: var(--color-heading);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.tempLoanTimeline p {
+  margin: 2px 0 0;
+  color: var(--color-detail-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.tempLoanTimeline ul {
+  margin: 2px 0 0;
+  padding-left: 18px;
+  color: var(--color-detail-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.tempDetailTimelineActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 3px 0 0 35px;
+}
+
+.tempDetailTimelineActions .loanFormBack,
+.tempDetailTimelineActions .loanApplicationNext {
+  min-height: 44px;
+  padding: 7px 8px;
+  font-size: 14px;
+}
+
+.tempDetailDefinitionList {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+}
+
+.tempDetailDefinitionList > div {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 9px;
+  min-width: 0;
+}
+
+.tempDetailDefinitionList dt,
+.tempDetailDefinitionList dd {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.tempDetailDefinitionList dt {
+  color: var(--color-detail-muted);
+}
+
+.tempDetailDefinitionList dd {
+  min-width: 0;
+  color: var(--color-heading);
+  overflow-wrap: anywhere;
+}
+
+.tempDetailSchedule {
+  display: grid;
+  gap: 0;
+  margin-top: 15px;
+  padding: 14px 12px;
+  border: 1px solid var(--color-detail-green-border);
+  border-radius: 15px;
+  background: var(--color-detail-green-soft);
+}
+
+.tempDetailSchedule h4 {
+  margin: 0 0 9px;
+  color: var(--color-heading);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.tempDetailSchedule > div {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-detail-green-border);
+  color: var(--color-detail-muted);
+  font-size: 14px;
+}
+
+.tempDetailSchedule > div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.tempDetailSchedule strong {
+  color: var(--color-heading);
+  white-space: nowrap;
+}
+
 .summaryIntro {
   justify-content: space-between;
 }
@@ -299,6 +1103,202 @@
   border-radius: 11px;
   background: linear-gradient(108deg, var(--color-behavior-start) 0%, var(--color-behavior-end) 100%);
   color: var(--color-surface);
+}
+
+.tempPaymentBehavior {
+  padding: 22px 20px 21px;
+  border-radius: 15px;
+  background: linear-gradient(
+    110deg,
+    var(--color-temp-behavior-start) 0%,
+    var(--color-temp-behavior-middle) 58%,
+    var(--color-temp-behavior-end) 100%
+  );
+  color: var(--color-surface);
+}
+
+.tempBehaviorHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tempBehaviorHeading h2 {
+  margin: 0;
+  font-size: clamp(20px, 4.2vw, 21px);
+  font-weight: 600;
+}
+
+.tempLateBadge,
+.tempOnTimeBadge,
+.tempLateStatBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: var(--color-surface);
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.tempLateBadge,
+.tempLateStatBadge {
+  color: var(--color-temp-late);
+}
+
+.tempOnTimeBadge {
+  color: var(--color-temp-on-time);
+}
+
+.tempLateBadge i,
+.tempOnTimeBadge i,
+.tempLateStatBadge i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.tempPaymentBehavior > p {
+  margin: 5px 0 12px;
+  color: var(--color-temp-behavior-text);
+  font-size: 15px;
+}
+
+.tempSubmittedSummary {
+  display: grid;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 28px 20px 25px;
+  border-radius: 15px;
+  background: linear-gradient(
+    110deg,
+    var(--color-temp-summary-start) 0%,
+    var(--color-temp-summary-middle) 58%,
+    var(--color-temp-summary-end) 100%
+  );
+}
+
+.tempSubmittedSummary h1 {
+  margin: 0;
+  color: var(--color-temp-summary-heading);
+  font-size: clamp(20px, 4.2vw, 21px);
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.tempSubmittedSummary p {
+  margin: 3px 0 0;
+  color: var(--color-temp-summary-description);
+  font-size: 15px;
+}
+
+.tempSubmittedSummaryAction {
+  justify-self: start;
+  padding: 9px 15px;
+  border: 1px solid var(--color-temp-action-border);
+  border-radius: 12px;
+  background: var(--color-temp-action);
+  color: var(--color-surface);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.tempCurrentApplication {
+  display: grid;
+  gap: 16px;
+  padding: 20px 14px 18px;
+  border: 2px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+}
+
+.tempCurrentApplication > h2 {
+  margin: 0 2px;
+  color: var(--color-heading);
+  font-size: clamp(22px, 5vw, 26px);
+  font-weight: 600;
+}
+
+.tempCurrentOverview,
+.tempCurrentTimeline,
+.tempCurrentSchedule {
+  padding: 16px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 15px;
+  background: var(--color-surface);
+}
+
+.tempCurrentOverviewTopline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tempCurrentOverviewTopline h3 {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.tempCurrentOverviewTopline p {
+  margin: 3px 0 0;
+  color: var(--color-detail-muted);
+  font-size: 15px;
+}
+
+.tempCurrentOverviewGrid {
+  display: grid;
+  gap: 13px;
+  margin-top: 16px;
+}
+
+.tempCurrentOverviewGrid > div {
+  display: grid;
+  gap: 2px;
+}
+
+.tempCurrentOverviewGrid span {
+  color: var(--color-detail-muted);
+  font-size: 15px;
+}
+
+.tempCurrentOverviewGrid strong {
+  color: var(--color-heading);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.tempCurrentTimeline h3,
+.tempCurrentSchedule h3 {
+  margin: 0 0 14px;
+  color: var(--color-heading);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.tempCurrentSchedule .tempDetailSchedule {
+  margin-top: 0;
+}
+
+.tempBehaviorStats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tempHistorySection .historyList > .historyCard:first-child {
+  border-color: var(--color-border);
+  background: var(--color-surface);
 }
 
 .behaviorHeading {
@@ -639,9 +1639,9 @@
 }
 
 .waitingPaymentConfirmation {
-  border: 1px solid var(--color-history-purple-border);
-  background: var(--color-history-purple-soft);
-  color: var(--color-history-purple);
+  border: 1px solid var(--color-history-blue-border);
+  background: var(--color-history-blue-soft);
+  color: var(--color-history-blue);
 }
 
 .revisionRequired {

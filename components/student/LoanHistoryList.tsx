@@ -3,20 +3,30 @@ import LoanHistoryCard from "./LoanHistoryCard";
 import styles from "@/app/student/student.module.css";
 
 type LoanHistoryListProps = {
+  initialVisibleCount?: number;
+  lessLabel?: string;
+  moreLabel?: string;
   requests: LoanRequestHistoryItem[];
+  sectionClassName?: string;
   showAllRequests: boolean;
+  showMoreButton?: boolean;
   onShowMore: () => void;
 };
 
 export default function LoanHistoryList({
+  initialVisibleCount = 3,
+  lessLabel = "ซ่อนรายละเอียด",
+  moreLabel = "ดูประวัติคำร้องทั้งหมด",
   requests,
+  sectionClassName,
   showAllRequests,
+  showMoreButton = false,
   onShowMore,
 }: LoanHistoryListProps) {
-  const visibleRequests = showAllRequests ? requests : requests.slice(0, 3);
-  const buttonLabel = showAllRequests
-    ? "ซ่อนรายละเอียด"
-    : "ดูประวัติคำร้องทั้งหมด";
+  const visibleRequests = showAllRequests
+    ? requests
+    : requests.slice(0, initialVisibleCount);
+  const buttonLabel = showAllRequests ? lessLabel : moreLabel;
   const iconClassName = [
     styles.showMoreIcon,
     showAllRequests ? styles.showMoreIconExpanded : "",
@@ -25,7 +35,10 @@ export default function LoanHistoryList({
     .join(" ");
 
   return (
-    <section className={styles.historySection} aria-labelledby="history-title">
+    <section
+      className={[styles.historySection, sectionClassName].filter(Boolean).join(" ")}
+      aria-labelledby="history-title"
+    >
       <h2 id="history-title">ประวัติคำร้องกู้ยืม</h2>
       <div className={styles.historyList}>
         {visibleRequests.map((request, index) => (
@@ -33,7 +46,7 @@ export default function LoanHistoryList({
         ))}
       </div>
 
-      {requests.length >= 3 ? (
+      {requests.length >= 3 || showMoreButton ? (
         <button
           aria-expanded={showAllRequests}
           className={styles.showMore}
