@@ -9,15 +9,15 @@ import {
   paymentAccount,
   studentProfile,
 } from "@/app/student/studentMockData";
-import InstallmentList from "./InstallmentList";
-import LoanDetailsPage from "./LoanDetailsPage";
+import LoanDetailsPage from "../loan-details/LoanDetailsPage";
 import LoanHistoryList from "./LoanHistoryList";
 import LoanSummaryCard from "./LoanSummaryCard";
 import PaymentBehaviorCard from "./PaymentBehaviorCard";
-import PaymentModal from "./PaymentModal";
+import InstallmentList from "../payments/InstallmentList";
+import PaymentModal from "../payments/PaymentModal";
 import type { InstallmentPayment } from "@/app/student/studentMockData";
 import { MedicalBagIcon, MoneyIllustration } from "./StudentIllustrations";
-import ContactFooter from "./ContactFooter";
+import ContactFooter from "../loan-details/ContactFooter";
 import styles from "@/app/student/student.module.css";
 
 export default function StudentDashboard() {

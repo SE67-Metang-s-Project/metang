@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type { InstallmentPayment, PaymentAccount } from "@/app/student/studentMockData";
-import PaymentQrCode from "./PaymentQrCode";
 import styles from "@/app/student/student.module.css";
 
 type PaymentModalProps = {
@@ -74,7 +73,11 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
         <section className={styles.paymentQrSection}>
           <div className={styles.paymentProviderBanner}>{account.qrTitle}</div>
           <span className={styles.promptPayLabel}>PromptPay</span>
-          <PaymentQrCode value={`${account.accountNumber}-${installment.installmentNumber}`} />
+          <img
+            alt="QR Code สำหรับชำระเงิน"
+            className={styles.paymentQrImage}
+            src={account.qrImageSrc}
+          />
           <strong>สแกน QR เพื่อโอนเข้าบัญชี</strong>
           <p>ชื่อ: {account.qrRecipientName}</p>
           <p>บัญชี: {account.qrAccountName}</p>

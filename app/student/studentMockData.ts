@@ -21,6 +21,7 @@ export type PaymentAccount = {
   accountNumberLabel: string;
   accountNumber: string;
   qrTitle: string;
+  qrImageSrc: string;
   qrRecipientName: string;
   qrAccountName: string;
   qrReference: string;
@@ -63,6 +64,7 @@ export type LoanScheduleItem = {
 export type LoanPaymentHistoryItem = {
   installmentNumber: number;
   amount: string;
+  receiptImage: string;
   paidAt: string;
   checkedAt: string;
   statusLabel: string;
@@ -86,6 +88,7 @@ export type LoanDetails = {
   additionalReasonLabel: string;
   additionalReason: string;
   downloadLabel: string;
+  transferSlipImage: string;
   timeline: LoanTimelineItem[];
   schedule: LoanScheduleItem[];
   paymentHistory: LoanPaymentHistoryItem[];
@@ -132,6 +135,7 @@ export const paymentAccount: PaymentAccount = {
   accountNumberLabel: "เลขที่บัญชี",
   accountNumber: "1234567890",
   qrTitle: "THAI QR PAYMENT",
+  qrImageSrc: "/mock-payment-qr.svg",
   qrRecipientName: "น.ส. ชลลานนา สายคำปา",
   qrAccountName: "xxx-x-x1188-x",
   qrReference: "004999123469479",
@@ -255,6 +259,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
     additionalReasonLabel: "หมายเหตุเพิ่มเติม",
     additionalReason: "สถานการณ์ทางการเงิน",
     downloadLabel: "ดาวน์โหลดสัญญาการกู้ยืม",
+    transferSlipImage: "/mock-transfer-slip.svg",
     timeline: [
       {
         title: "ส่งคำร้องกู้ยืม",
@@ -309,6 +314,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
       {
         installmentNumber: 1,
         amount: "฿1,000",
+        receiptImage: "/mock-transfer-slip.svg",
         paidAt: "ชำระเมื่อ 24 พ.ค. 2569 10:00 น.",
         checkedAt: "ตรวจสอบเมื่อ 25 พ.ค. 2569 10:00 น.",
         statusLabel: "ตรวจสอบสำเร็จ",
@@ -316,6 +322,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
       {
         installmentNumber: 2,
         amount: "฿1,000",
+        receiptImage: "/mock-transfer-slip.svg",
         paidAt: "ชำระเมื่อ 27 ก.ค. 2569 10:00 น.",
         checkedAt: "ตรวจสอบเมื่อ 28 ก.ค. 2569 10:00 น.",
         statusLabel: "ตรวจสอบสำเร็จ",
@@ -323,6 +330,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
       {
         installmentNumber: 3,
         amount: "฿500",
+        receiptImage: "/mock-transfer-slip.svg",
         paidAt: "ชำระเมื่อ 1 ส.ค. 2569 10:00 น.",
         checkedAt: "ตรวจสอบเมื่อ 2 ส.ค. 2569 10:00 น.",
         statusLabel: "ตรวจสอบสำเร็จ",

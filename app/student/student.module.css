@@ -423,7 +423,7 @@
 .loanInstallmentOptions {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 14px;
 }
 
 .loanInstallmentOptions button {
@@ -542,7 +542,7 @@
   background: transparent;
   color: var(--color-detail-muted);
   cursor: pointer;
-  font-size: 31px;
+  font-size: 25px;
   font-weight: 300;
   line-height: 1;
 }
@@ -731,6 +731,10 @@
   color: var(--color-heading);
   font-size: 22px;
   font-weight: 600;
+}
+
+.loanDetailInfoHeading {
+  font-size: 20px !important;
 }
 
 .tempLoanTimeline {
@@ -1120,7 +1124,7 @@
 .tempBehaviorHeading {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
   flex-wrap: wrap;
 }
@@ -1141,7 +1145,7 @@
   border-radius: 20px;
   background: var(--color-surface);
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 400;
   white-space: nowrap;
 }
 
@@ -1157,14 +1161,21 @@
 .tempLateBadge i,
 .tempOnTimeBadge i,
 .tempLateStatBadge i {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: currentColor;
 }
 
-.tempPaymentBehavior > p {
+.tempBehaviorMetrics {
+  width: max-content;
+  max-width: 100%;
+}
+
+.tempBehaviorMetrics > p {
   margin: 5px 0 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid rgb(255 255 255 / 52%);
   color: var(--color-temp-behavior-text);
   font-size: 15px;
 }
@@ -1294,11 +1305,6 @@
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-}
-
-.tempHistorySection .historyList > .historyCard:first-child {
-  border-color: var(--color-border);
-  background: var(--color-surface);
 }
 
 .behaviorHeading {
@@ -1564,6 +1570,33 @@
 .historyList > .historyCard:first-child {
   border-color: var(--color-history-current-border);
   background: var(--color-history-current-soft);
+}
+
+.historyList > .historyCard:first-child[data-status="rejectedExecutive"] {
+  border-color: var(--color-history-first-danger-border);
+  background: var(--color-history-first-danger-soft);
+}
+
+.historyList > .historyCard:first-child[data-status="waitingPaymentConfirmation"] {
+  border-color: var(--color-history-first-blue-border);
+  background: var(--color-history-first-blue-soft);
+}
+
+.historyList > .historyCard:first-child[data-status="revisionRequired"] {
+  border-color: var(--color-history-first-orange-border);
+  background: var(--color-history-first-orange-soft);
+}
+
+.historyList > .historyCard:first-child[data-status="waitingAdvisorApproval"],
+.historyList > .historyCard:first-child[data-status="waitingExecutiveApproval"],
+.historyList > .historyCard:first-child[data-status="waitingDocumentReview"] {
+  border-color: var(--color-history-first-yellow-border);
+  background: var(--color-history-first-yellow-soft);
+}
+
+.historyList > .historyCard:first-child[data-status="completed"] {
+  border-color: var(--color-history-first-success-border);
+  background: var(--color-history-first-success-soft);
 }
 
 .historyCard p,
@@ -1840,6 +1873,7 @@
   max-width: 760px;
   margin: 0 auto;
   padding-bottom: 8px;
+  font-size: 15px;
 }
 
 .loanDetailsBack {
@@ -1863,7 +1897,7 @@
 .loanDetailSection h2 {
   margin: 0 0 12px;
   color: var(--color-heading);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: 0.2px;
 }
@@ -1882,7 +1916,7 @@
 .loanDetailTopline h1 {
   margin: 0;
   color: var(--color-heading);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   line-height: 1.25;
 }
@@ -1890,7 +1924,7 @@
 .loanDetailTopline p {
   margin: 1px 0 0;
   color: var(--color-detail-muted);
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .loanDetailStatus {
@@ -1900,7 +1934,7 @@
   border-radius: 12px;
   background: var(--color-info-soft);
   color: var(--color-info);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -1908,7 +1942,7 @@
 .loanDetailOverviewGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content;
-  gap: 10px 14px;
+  gap: 7px 14px;
   margin-top: 13px;
 }
 
@@ -1920,26 +1954,57 @@
 
 .loanDetailOverviewGrid span {
   color: var(--color-detail-muted);
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.25;
 }
 
 .loanDetailOverviewGrid strong {
   color: var(--color-heading);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   line-height: 1.25;
 }
 
-.loanDetailAmount,
+.loanDetailAmountLabel,
+.loanDetailAmountValue,
 .loanDetailAmountMeta {
   justify-items: end;
   text-align: right;
 }
 
-.loanDetailAmount strong {
+.loanDetailSubmittedAt p {
+  margin: 0;
+  color: var(--color-detail-muted);
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.loanDetailAmountMeta {
+  display: grid;
+  gap: 1px;
+}
+
+.loanDetailPurpose,
+.loanDetailRepaymentMeta {
+  display: grid !important;
+  gap: 1px !important;
+}
+
+.loanDetailRepaymentMeta {
+  justify-items: end;
+  text-align: right;
+}
+
+.loanDetailAmountValue strong {
   font-size: 20px;
   font-weight: 600;
+}
+
+.loanDetailAdditionalReason {
+  grid-column: 1 / -1;
+  display: grid !important;
+  gap: 1px !important;
+  margin-top: 4px;
 }
 
 .loanDownloadButton {
@@ -2001,9 +2066,16 @@
   border-radius: 50%;
   background: var(--color-detail-orange);
   color: var(--color-surface);
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1;
+}
+
+.timelineMarker::after {
+  width: 7px;
+  height: 12px;
+  border: solid currentColor;
+  border-width: 0 3px 3px 0;
+  border-radius: 0 0 2px;
+  content: "";
+  transform: rotate(45deg) translate(-1px, -1px);
 }
 
 .timelineContent {
@@ -2014,7 +2086,7 @@
 .timelineContent strong {
   display: block;
   color: var(--color-heading);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   line-height: 1.25;
 }
@@ -2022,7 +2094,7 @@
 .timelineContent p {
   margin: 1px 0 0;
   color: var(--color-detail-muted);
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.35;
 }
 
@@ -2030,7 +2102,7 @@
   margin: 2px 0 0;
   padding-left: 18px;
   color: var(--color-heading);
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.35;
 }
 
@@ -2046,8 +2118,70 @@
   font-weight: 500;
 }
 
+.transferSlipModalBackdrop {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  display: grid;
+  overflow-y: auto;
+  padding: 18px;
+  place-items: center;
+  background: var(--color-overlay);
+}
+
+.transferSlipModal {
+  position: relative;
+  width: min(100%, 560px);
+  max-height: 94svh;
+  overflow-y: auto;
+  padding: 30px 16px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: 0 18px 45px var(--color-modal-shadow);
+}
+
+.transferSlipModalClose {
+  position: absolute;
+  top: 7px;
+  right: 12px;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--color-detail-muted);
+  cursor: pointer;
+  font-size: 25px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.transferSlipModal h2 {
+  margin: 0 0 12px;
+  color: var(--color-heading);
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.transferSlipImageFrame {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.transferSlipImageFrame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .loanScheduleSection {
-  border-color: var(--color-detail-green-border);
+  border-color: var(--color-border);
 }
 
 .loanScheduleList {
@@ -2062,7 +2196,7 @@
   min-height: 36px;
   border-bottom: 1px solid var(--color-border);
   color: var(--color-detail-muted);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .loanScheduleRow:last-child {
@@ -2071,9 +2205,13 @@
 
 .loanScheduleRow strong {
   color: var(--color-heading);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   white-space: nowrap;
+}
+
+.loanScheduleRow > span {
+  text-align: center;
 }
 
 .loanScheduleRow > strong:last-child {
@@ -2081,7 +2219,7 @@
 }
 
 .paymentHistorySection {
-  background: var(--color-detail-orange-pale);
+  background: var(--color-surface);
 }
 
 .paymentHistoryList {
@@ -2090,8 +2228,9 @@
 }
 
 .paymentHistoryCard {
+  position: relative;
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) max-content;
+  grid-template-columns: 44px minmax(0, 1fr);
   align-items: start;
   gap: 8px;
   min-width: 0;
@@ -2099,12 +2238,16 @@
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: var(--color-surface);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
 }
 
 .paymentReceiptIcon {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   border-radius: 8px;
   background: var(--color-detail-green-soft);
@@ -2113,45 +2256,54 @@
   line-height: 1;
 }
 
+.paymentReceiptIcon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .paymentHistoryContent {
+  display: grid;
+  gap: 4px;
   min-width: 0;
 }
 
 .paymentHistoryContent strong {
   display: block;
-  overflow: hidden;
+  margin-bottom: 7px;
+  padding-right: 94px;
   color: var(--color-heading);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
 }
 
 .paymentHistoryContent p {
   margin: 0;
-  overflow: hidden;
+  overflow-wrap: anywhere;
   color: var(--color-detail-muted);
-  font-size: 11px;
+  font-size: 15px;
   line-height: 1.3;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .paymentVerifiedPill {
-  align-self: start;
+  position: absolute;
+  top: 8px;
+  right: 8px;
   padding: 3px 7px;
   border: 1px solid var(--color-detail-green-border);
   border-radius: 12px;
   background: var(--color-detail-green-soft);
   color: var(--color-detail-green-text);
-  font-size: 11px;
+  font-size: 14px;
   white-space: nowrap;
 }
 
 .contactDescription {
   margin: -3px 0 10px;
   color: var(--color-detail-muted);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .contactCard {
@@ -2174,7 +2326,7 @@
   gap: 8px;
   margin: 5px 0 0;
   color: var(--color-detail-muted);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.35;
 }
 
@@ -2205,8 +2357,6 @@
   padding: 13px;
   place-items: center;
   background-color: var(--color-payment-backdrop);
-  background-image: radial-gradient(var(--color-payment-dots) 1.5px, transparent 1.5px);
-  background-size: 14px 14px;
 }
 
 .paymentModal {
@@ -2230,7 +2380,7 @@
   background: transparent;
   color: var(--color-detail-muted);
   cursor: pointer;
-  font-size: 31px;
+  font-size: 40px;
   font-weight: 300;
   line-height: 1;
 }
@@ -2278,7 +2428,7 @@
 
 .paymentAccountSection h3 span {
   margin-right: 7px;
-  color: var(--color-payment-green-dark);
+  color: var(--color-detail-orange-dark);
   font-size: 20px;
 }
 
@@ -2336,7 +2486,7 @@
   min-height: 59px;
   place-items: center;
   border-radius: 15px 15px 0 0;
-  background: var(--color-payment-blue);
+  background: var(--color-detail-orange-dark);
   color: var(--color-surface);
   font-family: Arial, sans-serif;
   font-size: 17px;
@@ -2348,21 +2498,20 @@
   margin-top: 8px;
   padding: 1px 4px;
   border: 1px solid var(--color-border);
-  color: var(--color-payment-blue);
+  color: var(--color-detail-orange-dark);
   font-family: Arial, sans-serif;
   font-size: 11px;
   font-weight: 700;
 }
 
-.paymentQrCode {
-  display: grid;
-  grid-template-columns: repeat(21, 1fr);
+.paymentQrImage {
+  display: block;
   width: min(100%, 178px);
   aspect-ratio: 1;
-  gap: 0;
   margin: 7px 0 15px;
   padding: 4px;
   background: var(--color-surface);
+  object-fit: contain;
 }
 
 .paymentQrCell,
@@ -2376,7 +2525,7 @@
 }
 
 .paymentQrSection > strong {
-  color: var(--color-payment-green-dark);
+  color: var(--color-detail-orange-dark);
   font-size: 15px;
   font-weight: 500;
 }
@@ -2397,14 +2546,14 @@
   width: min(100%, 311px);
   margin-top: 10px;
   padding-top: 8px;
-  border-top: 2px solid #62bd9f;
+  border-top: 2px solid var(--color-detail-orange);
   color: #a4a4a4;
   font-family: Arial, sans-serif;
   font-size: 11px;
 }
 
 .paymentBankNotice::first-letter {
-  color: var(--color-payment-green);
+  color: var(--color-detail-orange-dark);
   font-size: 18px;
   font-weight: 700;
 }
@@ -2415,7 +2564,7 @@
   padding: 9px 12px;
   border: 0;
   border-radius: 8px;
-  background: var(--color-payment-green);
+  background: var(--color-detail-orange);
   color: var(--color-surface);
   cursor: pointer;
   font-size: 18px;
@@ -2431,6 +2580,7 @@
 }
 
 .paymentUploadBox {
+  position: relative;
   display: flex;
   min-height: 132px;
   align-items: center;
@@ -2438,12 +2588,25 @@
   flex-direction: column;
   gap: 4px;
   padding: 14px;
-  border: 2px dashed var(--color-border);
+  border: 0;
   border-radius: 16px 16px 9px 9px;
-  background: var(--color-payment-upload);
+  background: var(--color-detail-orange-pale);
   color: var(--color-detail-muted);
   cursor: pointer;
   text-align: center;
+}
+
+.paymentUploadBox::before {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(to right, var(--color-detail-orange-border) 0 14px, transparent 14px 22px) top / 22px 2px repeat-x,
+    linear-gradient(to right, var(--color-detail-orange-border) 0 14px, transparent 14px 22px) bottom / 22px 2px repeat-x,
+    linear-gradient(to bottom, var(--color-detail-orange-border) 0 14px, transparent 14px 22px) left / 2px 22px repeat-y,
+    linear-gradient(to bottom, var(--color-detail-orange-border) 0 14px, transparent 14px 22px) right / 2px 22px repeat-y;
+  content: "";
+  pointer-events: none;
 }
 
 .paymentUploadBox strong {
@@ -2457,7 +2620,7 @@
 }
 
 .uploadIcon {
-  color: var(--color-payment-green-dark);
+  color: var(--color-detail-orange-dark);
   font-size: 34px;
   line-height: 1;
 }
@@ -2502,7 +2665,7 @@
 }
 
 .paymentConfirmButton {
-  background: var(--color-payment-green);
+  background: var(--color-detail-orange);
   color: var(--color-surface);
 }
 
@@ -2547,7 +2710,7 @@
   color: var(--color-modal-close);
   cursor: pointer;
   font-family: inherit;
-  font-size: 27px;
+  font-size: 25px;
   line-height: 1;
 }
 

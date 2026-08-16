@@ -1,4 +1,4 @@
-import TempStudentDashboard from "@/components/student/TempStudentDashboard";
+import TempStudentDashboard from "@/components/student/dashboard/TempStudentDashboard";
 
 export default function TempStudentPage() {
   return <TempStudentDashboard />;

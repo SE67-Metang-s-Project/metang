@@ -29,7 +29,7 @@
   --color-temp-behavior-middle: #f6a62d;
   --color-temp-behavior-end: #e9d34f;
   --color-temp-behavior-text: #fff4dc;
-  --color-temp-late: #ff7444;
+  --color-temp-late: #e99a6f;
   --color-temp-on-time: #1eab42;
   --color-application-step-line: #dddddd;
   --color-application-scrollbar: #aaaaaa;
@@ -79,6 +79,16 @@
   --color-info-border: #72b9f7;
   --color-history-current-soft: #f8fcff;
   --color-history-current-border: #dceffb;
+  --color-history-first-danger-soft: #fff8f8;
+  --color-history-first-danger-border: #ffd6d6;
+  --color-history-first-blue-soft: #f7fbff;
+  --color-history-first-blue-border: #c8dcef;
+  --color-history-first-orange-soft: #fff9f4;
+  --color-history-first-orange-border: #f5d8c5;
+  --color-history-first-yellow-soft: #fffdf2;
+  --color-history-first-yellow-border: #f4e3a7;
+  --color-history-first-success-soft: #f7fcf8;
+  --color-history-first-success-border: #dcefe0;
   --color-danger: #fb6e6e;
   --color-danger-soft: #fff0f0;
   --color-danger-border: #ff8585;
