@@ -1,9 +1,7 @@
 import type { TempLoanFormData } from "@/app/student/temp/tempMockData";
-import {
-  tempRepaymentSchedule,
-  tempStudentProfile,
-} from "@/app/student/temp/tempMockData";
+import { tempStudentProfile } from "@/app/student/temp/tempMockData";
 import styles from "@/app/student/student.module.css";
+import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 
 type TempLoanApprovalModalProps = {
   formData: TempLoanFormData;
@@ -16,7 +14,26 @@ export default function TempLoanApprovalModal({
   onClose,
   onConfirm,
 }: TempLoanApprovalModalProps) {
-  const schedule = tempRepaymentSchedule.slice(0, formData.installmentCount);
+  const loanAmount = Number(formData.loanAmount) || 0;
+  const installmentAmount = Math.floor(loanAmount / formData.installmentCount);
+  const installmentRemainder = loanAmount % formData.installmentCount;
+  const schedule = Array.from({ length: formData.installmentCount }, (_, index) => {
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30 * (index + 1));
+
+    return {
+      installmentNumber: index + 1,
+      dueDateLabel: `ครบกำหนด ${dueDate.toLocaleDateString("th-TH", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })}`,
+      amount: `฿${(
+        installmentAmount +
+        (index === formData.installmentCount - 1 ? installmentRemainder : 0)
+      ).toLocaleString("th-TH")}`,
+    };
+  });
 
   const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
@@ -121,16 +138,7 @@ export default function TempLoanApprovalModal({
             </div>
           </dl>
 
-          <div className={styles.loanApprovalSchedule}>
-            <h4>ตารางการชำระ</h4>
-            {schedule.map((item) => (
-              <div key={item.installmentNumber}>
-                <strong>งวด {item.installmentNumber}</strong>
-                <span>{item.dueDateLabel}</span>
-                <strong>{item.amount}</strong>
-              </div>
-            ))}
-          </div>
+          <LoanDetailSchedule items={schedule} />
         </section>
 
         <div className={styles.loanApprovalActions}>

@@ -128,14 +128,14 @@
   width: 100%;
   max-width: 920px;
   min-height: calc(100svh - 48px);
-  margin: 0 auto;
+  margin: 16px auto 0;
   align-content: start;
 }
 
 .loanApplicationTitle {
   margin: 0 4px;
   color: var(--color-heading);
-  font-size: clamp(28px, 6vw, 34px);
+  font-size: clamp(25px, 5vw, 32px);
   font-weight: 600;
   letter-spacing: -0.8px;
 }
@@ -144,7 +144,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
-  margin: 4px 35px 10px;
+  margin: 8px 20px 14px;
   padding: 0;
   list-style: none;
 }
@@ -158,9 +158,9 @@
 .applicationStepper li:not(:last-child)::after {
   position: absolute;
   top: 50%;
-  left: calc(50% + 36px);
-  width: calc(100% - 72px);
-  height: 4px;
+  left: calc(50% + 28px);
+  width: calc(100% - 56px);
+  height: 3px;
   background: var(--color-application-step-line);
   content: "";
   transform: translateY(-50%);
@@ -170,20 +170,40 @@
   position: relative;
   z-index: 1;
   display: grid;
-  width: 52px;
-  height: 52px;
+  width: 42px;
+  height: 42px;
   place-items: center;
   border: 2px solid var(--color-detail-orange);
   border-radius: 50%;
-  background: var(--color-background);
+  background: color-mix(in srgb, var(--color-detail-orange) 12%, var(--color-surface));
   color: var(--color-detail-orange);
-  font-size: 24px;
+  font-size: 19px;
   font-weight: 600;
 }
 
 .applicationStepper .applicationStepActive span {
   background: var(--color-detail-orange);
   color: var(--color-surface);
+}
+
+.applicationStepper .applicationStepActive::after {
+  background: linear-gradient(
+    90deg,
+    var(--color-detail-orange) 0%,
+    var(--color-detail-orange) 48%,
+    var(--color-application-step-line) 100%
+  );
+  background-size: 220% 100%;
+  animation: applicationStepLine 2.2s ease-in-out infinite;
+}
+
+@keyframes applicationStepLine {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
 }
 
 .applicationStepper .applicationStepComplete span {
@@ -203,11 +223,23 @@
 }
 
 .loanAgreementCard h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   margin: 0 0 17px;
   color: var(--color-heading);
   font-size: clamp(20px, 4.8vw, 26px);
   font-weight: 600;
   line-height: 1.3;
+}
+
+.loanAgreementCard h2::before {
+  width: 5px;
+  height: 24px;
+  flex: 0 0 5px;
+  border-radius: 3px;
+  background: var(--color-detail-orange);
+  content: "";
 }
 
 .loanAgreementScroll {
@@ -232,7 +264,7 @@
 .loanAgreementScroll h3 {
   margin: 0;
   color: var(--color-heading);
-  font-size: 19px;
+  font-size: clamp(17px, 4vw, 19px);
   font-weight: 600;
   line-height: 1.4;
   text-align: center;
@@ -277,8 +309,32 @@
   height: 30px;
   flex: 0 0 30px;
   margin: 0;
-  accent-color: var(--color-detail-orange);
+  appearance: none;
+  border: 2px solid var(--color-detail-orange);
+  border-radius: 5px;
+  background: var(--color-surface);
   cursor: pointer;
+}
+
+.loanAgreementAcceptance input:checked {
+  position: relative;
+  background: var(--color-detail-orange);
+}
+
+.loanAgreementAcceptance input:checked::after {
+  position: absolute;
+  top: 3px;
+  left: 8px;
+  width: 7px;
+  height: 13px;
+  border: solid var(--color-surface);
+  border-width: 0 2px 2px 0;
+  content: "";
+  transform: rotate(45deg);
+}
+
+.loanAgreementAcceptance > span {
+  margin-left: 8px;
 }
 
 .loanAgreementAcceptanceDisabled {
@@ -310,10 +366,10 @@
 .loanApplicationDashboardButton {
   width: 100%;
   padding: 11px 16px;
-  border: 0;
+  border: 2px solid var(--color-detail-orange);
   border-radius: 13px;
-  background: var(--color-detail-orange);
-  color: var(--color-surface);
+  background: color-mix(in srgb, var(--color-detail-orange) 12%, var(--color-surface));
+  color: var(--color-detail-orange);
   cursor: pointer;
   font-size: 20px;
   font-weight: 600;
@@ -357,6 +413,15 @@
   line-height: 1.45;
 }
 
+.loanFormStudentCard p span {
+  color: var(--color-detail-muted);
+}
+
+.loanFormStudentCard p strong {
+  color: var(--color-heading);
+  font-weight: 400;
+}
+
 .loanFormFields {
   display: grid;
   gap: 14px;
@@ -383,9 +448,49 @@
   font: inherit;
 }
 
+.loanFormField input::placeholder,
+.loanFormField textarea::placeholder {
+  color: var(--color-detail-muted);
+  opacity: 1;
+}
+
+.loanFormSelectPlaceholder {
+  color: var(--color-detail-muted) !important;
+}
+
 .loanFormField input,
 .loanFormField select {
   height: 45px;
+}
+
+.loanFormSelectWrap {
+  position: relative;
+  display: grid;
+  gap: 4px;
+}
+
+.loanFormSelectWrap::after {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--color-detail-muted);
+  border-bottom: 2px solid var(--color-detail-muted);
+  content: "";
+  pointer-events: none;
+  transform: rotate(45deg);
+}
+
+.loanFormSelectWrap select {
+  appearance: none;
+  padding-right: 38px;
+}
+
+.loanFormSelectWrap small {
+  min-height: 18px;
+  color: var(--color-heading);
+  font-size: 14px;
 }
 
 .loanFormField textarea {
@@ -517,8 +622,6 @@
   padding: 24px;
   place-items: center;
   background-color: var(--color-payment-backdrop);
-  background-image: radial-gradient(var(--color-payment-dots) 1.5px, transparent 1.5px);
-  background-size: 14px 14px;
 }
 
 .loanApprovalModal {
@@ -550,19 +653,19 @@
 .loanApprovalModal > h2 {
   margin: 0 0 18px;
   color: var(--color-heading);
-  font-size: 26px;
+  font-size: 25px;
   font-weight: 600;
   text-align: center;
 }
 
 .loanApprovalWarning {
-  margin: 0 0 19px;
-  padding: 16px 13px;
+  margin: 0 0 12px;
+  padding: 6px 10px;
   border: 2px solid var(--color-detail-orange);
   border-radius: 12px;
   background: var(--color-detail-orange-soft);
   color: var(--color-detail-orange-dark);
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.65;
   text-align: center;
 }
@@ -603,6 +706,14 @@
 
 .loanApprovalSchedule {
   margin-top: 14px;
+}
+
+.loanApprovalInfoCard > .loanScheduleSection {
+  margin-top: 20px;
+}
+
+.loanApprovalModal .loanScheduleSection h2 {
+  font-size: 17px;
 }
 
 .loanApprovalActions {
@@ -656,6 +767,10 @@
   border: 1px solid var(--color-border);
   border-radius: 15px;
   background: var(--color-surface);
+}
+
+.tempDetailCard > .loanScheduleSection {
+  margin-top: 22px;
 }
 
 .tempDetailOverviewTopline {
@@ -1567,6 +1682,15 @@
   border-radius: 15px;
 }
 
+.historyCard[role="button"] {
+  cursor: pointer;
+}
+
+.historyCard[role="button"]:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary) 45%, transparent);
+  outline-offset: 3px;
+}
+
 .historyList > .historyCard:first-child {
   border-color: var(--color-history-current-border);
   background: var(--color-history-current-soft);
@@ -2235,7 +2359,7 @@
 
 .loanScheduleRow strong {
   color: var(--color-heading);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -2764,6 +2888,10 @@
   .studentContent {
     gap: 18px;
     max-width: 840px;
+  }
+
+  .loanApplicationPage {
+    margin-top: 16px;
   }
 
   .studentHeader {

@@ -66,15 +66,15 @@ export type TempLoanFormData = {
 };
 
 export const tempLoanFormDefaults: TempLoanFormData = {
-  academicYear: "1",
+  academicYear: "",
   advisorName: "",
   phoneNumber: "",
   bankName: "",
   accountNumber: "",
   accountName: "",
   purpose: "",
-  additionalNote: "",
-  loanAmount: "3000",
+  additionalNote: "-",
+  loanAmount: "",
   installmentCount: 3,
 };
 
