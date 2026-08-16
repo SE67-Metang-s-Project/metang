@@ -1,10 +1,13 @@
 import {
   tempLoanTimeline,
-  tempRepaymentSchedule,
   tempStudentProfile,
+  tempCurrentLoanDetails,
   type TempLoanFormData,
 } from "@/app/student/temp/tempMockData";
 import styles from "@/app/student/student.module.css";
+import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
+import LoanDetailOverview from "../loan-details/LoanDetailOverview";
+import LoanTimeline from "../loan-details/LoanTimeline";
 
 type TempLoanDetailsStepProps = {
   formData: TempLoanFormData;
@@ -14,71 +17,43 @@ const studentName =
   tempStudentProfile.displayName.replace("นางสาว", "").trim() + " มีโชค";
 
 export default function TempLoanDetailsStep({ formData }: TempLoanDetailsStepProps) {
-  const schedule = tempRepaymentSchedule.slice(0, formData.installmentCount);
+  const loanAmount = Number(formData.loanAmount) || 0;
+  const baseInstallmentAmount = Math.floor(loanAmount / formData.installmentCount);
+  const installmentRemainder = loanAmount % formData.installmentCount;
+  const schedule = Array.from({ length: formData.installmentCount }, (_, index) => {
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30 * (index + 1));
+
+    return {
+      installmentNumber: index + 1,
+      dueDateLabel: `ครบกำหนด ${dueDate.toLocaleDateString("th-TH", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })}`,
+      amount: `฿${(
+        baseInstallmentAmount +
+        (index === formData.installmentCount - 1 ? installmentRemainder : 0)
+      ).toLocaleString("th-TH")}`,
+    };
+  });
+  const details = {
+    ...tempCurrentLoanDetails,
+    amount: formData.loanAmount ? `฿${Number(formData.loanAmount).toLocaleString("th-TH")}` : "฿0",
+    purpose: formData.purpose || tempCurrentLoanDetails.purpose,
+    additionalReason: formData.additionalNote === "-" ? "-" : formData.additionalNote,
+  };
 
   return (
     <section className={styles.tempLoanDetailsSection} aria-labelledby="loan-details-step-title">
       <h2 id="loan-details-step-title">ขั้นตอนที่ 3: รายละเอียดการกู้ยืม</h2>
 
-      <section className={styles.tempDetailOverview}>
-        <div className={styles.tempDetailOverviewTopline}>
-          <div>
-            <h3>คำร้อง SL-2568-0001</h3>
-            <p>ยื่นเมื่อ 18 ธ.ค. 2569 10:00 น.</p>
-          </div>
-          <span className={styles.tempDetailStatus}>รอยืนยันการรับเงิน</span>
-        </div>
-        <div className={styles.tempDetailOverviewGrid}>
-          <div>
-            <span>วัตถุประสงค์การกู้ยืม</span>
-            <strong>ค่าเทอมภาคเรียนที่ 1/2569</strong>
-          </div>
-          <div className={styles.tempDetailAmount}>
-            <span>จำนวนที่ขอกู้</span>
-            <strong>฿{formData.loanAmount || "0"}</strong>
-            <small>สามพันบาทไทยถ้วน</small>
-          </div>
-          <div>
-            <span>หมายเหตุเพิ่มเติม</span>
-            <strong>
-              ข้าพเจ้ามีความจำเป็นต้องกู้ยืมเพื่อชำระค่าเทอม เนื่องจากครอบครัวขาดสภาพคล่องทางการเงิน
-              เพื่อให้สามารถศึกษาต่อได้อย่างต่อเนื่อง
-            </strong>
-          </div>
-        </div>
-      </section>
-
-      <section className={styles.tempDetailCard}>
-        <h3>ไทม์ไลน์สถานะคำร้อง</h3>
-        <ol className={styles.tempLoanTimeline}>
-          {tempLoanTimeline.map((item) => (
-            <li key={item.title}>
-              <span aria-hidden="true">✓</span>
-              <div>
-                <strong>{item.title}</strong>
-                <p>
-                  {item.dateTime} · โดย {item.actor}
-                </p>
-                {item.transferDetails ? (
-                  <ul>
-                    {item.transferDetails.map((detail) => (
-                      <li key={detail}>{detail}</li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            </li>
-          ))}
-        </ol>
-        <div className={styles.tempDetailTimelineActions}>
-          <button className={styles.loanFormBack} type="button">
-            ดูหลักฐานการโอนเงิน
-          </button>
-          <button className={styles.loanApplicationNext} type="button">
-            ยืนยันการรับเงิน
-          </button>
-        </div>
-      </section>
+      <LoanDetailOverview details={details} />
+      <LoanTimeline
+        items={tempLoanTimeline}
+        confirmTransferLabel="ยืนยันการรับเงิน"
+        onShowTransferSlip={() => undefined}
+      />
 
       <section className={styles.tempDetailCard}>
         <h3>ข้อมูลนักศึกษา</h3>
@@ -152,16 +127,7 @@ export default function TempLoanDetailsStep({ formData }: TempLoanDetailsStepPro
             <dd>{formData.installmentCount} งวด</dd>
           </div>
         </dl>
-        <div className={styles.tempDetailSchedule}>
-          <h4>ตารางการชำระ</h4>
-          {schedule.map((item) => (
-            <div key={item.installmentNumber}>
-              <strong>งวด {item.installmentNumber}</strong>
-              <span>{item.dueDateLabel}</span>
-              <strong>{item.amount}</strong>
-            </div>
-          ))}
-        </div>
+        <LoanDetailSchedule items={schedule} />
       </section>
     </section>
   );

@@ -24,6 +24,7 @@ export default function StudentDashboard() {
   const [showAllRequests, setShowAllRequests] = useState(false);
   const [activePayment, setActivePayment] = useState<InstallmentPayment | null>(null);
   const [activeView, setActiveView] = useState<"dashboard" | "loan-details">("dashboard");
+  const [activeRequestNumber, setActiveRequestNumber] = useState(activeLoan.requestNumber);
   const preservedScrollPosition = useRef<number | null>(null);
 
   useLayoutEffect(() => {
@@ -40,7 +41,15 @@ export default function StudentDashboard() {
     setShowAllRequests((current) => !current);
   };
 
-  const activeLoanDetails = getLoanDetails(activeLoan.requestNumber);
+  const activeLoanDetails = getLoanDetails(activeRequestNumber);
+  const openLoanDetails = (requestNumber: string) => {
+    const loanDetails = getLoanDetails(requestNumber);
+
+    if (loanDetails) {
+      setActiveRequestNumber(requestNumber);
+      setActiveView("loan-details");
+    }
+  };
 
   return (
     <main className={styles.studentPage}>
@@ -64,6 +73,7 @@ export default function StudentDashboard() {
           />
           <LoanHistoryList
             onShowMore={toggleRequestHistory}
+            onOpenRequest={openLoanDetails}
             requests={loanRequestHistory}
             showAllRequests={showAllRequests}
           />

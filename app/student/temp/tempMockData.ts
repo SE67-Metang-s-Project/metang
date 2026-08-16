@@ -1,5 +1,18 @@
 import type { LoanRequestHistoryItem } from "@/app/student/studentMockData";
 
+export const tempCurrentLoanDetails = {
+  requestNumber: "SL-2568-0001",
+  statusLabel: "รอยืนยันการรับเงิน",
+  submittedAt: "ยื่นเมื่อ 18 ธ.ค. 2569 10:00 น.",
+  purposeLabel: "วัตถุประสงค์การกู้ยืม",
+  purpose: "ค่าเทอมภาคเรียนที่ 1/2569",
+  amount: "฿3,000",
+  downloadLabel: "",
+  additionalReasonLabel: "หมายเหตุเพิ่มเติม",
+  additionalReason:
+    "ข้าพเจ้ามีความจำเป็นต้องกู้ยืมเพื่อชำระค่าเทอม เนื่องจากครอบครัวขาดสภาพคล่องทางการเงิน เพื่อให้สามารถศึกษาต่อได้อย่างต่อเนื่อง",
+};
+
 export const tempStudentProfile = {
   displayName: "นางสาวกมลชนก",
   programName: "พยาบาลศาสตรบัณฑิต",
@@ -53,15 +66,15 @@ export type TempLoanFormData = {
 };
 
 export const tempLoanFormDefaults: TempLoanFormData = {
-  academicYear: "1",
+  academicYear: "",
   advisorName: "",
   phoneNumber: "",
   bankName: "",
   accountNumber: "",
   accountName: "",
   purpose: "",
-  additionalNote: "",
-  loanAmount: "3000",
+  additionalNote: "-",
+  loanAmount: "",
   installmentCount: 3,
 };
 

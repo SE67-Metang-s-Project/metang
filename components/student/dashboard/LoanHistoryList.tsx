@@ -11,6 +11,7 @@ type LoanHistoryListProps = {
   showAllRequests: boolean;
   showMoreButton?: boolean;
   onShowMore: () => void;
+  onOpenRequest?: (requestNumber: string) => void;
 };
 
 export default function LoanHistoryList({
@@ -22,6 +23,7 @@ export default function LoanHistoryList({
   showAllRequests,
   showMoreButton = false,
   onShowMore,
+  onOpenRequest,
 }: LoanHistoryListProps) {
   const visibleRequests = showAllRequests
     ? requests
@@ -42,7 +44,11 @@ export default function LoanHistoryList({
       <h2 id="history-title">ประวัติคำร้องกู้ยืม</h2>
       <div className={styles.historyList}>
         {visibleRequests.map((request, index) => (
-          <LoanHistoryCard key={`${request.requestNumber}-${index}`} request={request} />
+          <LoanHistoryCard
+            key={`${request.requestNumber}-${index}`}
+            onOpenRequest={onOpenRequest}
+            request={request}
+          />
         ))}
       </div>
 

@@ -1,38 +1,69 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   tempLoanAgreement,
   tempLoanFormDefaults,
-  tempRepaymentSchedule,
   tempStudentProfile,
   type TempLoanFormData,
 } from "@/app/student/temp/tempMockData";
+import { formatThaiBahtText } from "@/app/student/studentFormatters";
 import TempLoanApprovalModal from "./TempLoanApprovalModal";
 import TempLoanDetailsStep from "./TempLoanDetailsStep";
+import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import styles from "@/app/student/student.module.css";
 
 type FormField = keyof Omit<TempLoanFormData, "academicYear" | "installmentCount">;
 
 export default function TempLoanApplicationPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const agreementRef = useRef<HTMLDivElement>(null);
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(
+    searchParams.get("step") === "3" ? 3 : 1,
+  );
   const [hasReadAgreement, setHasReadAgreement] = useState(false);
   const [hasAcceptedAgreement, setHasAcceptedAgreement] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [formData, setFormData] = useState(tempLoanFormDefaults);
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("step") === "3") {
-      setCurrentStep(3);
-    }
-  }, []);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [currentStep]);
 
   const updateFormField = (field: FormField, value: string) => {
     setFormData((current) => ({ ...current, [field]: value }));
   };
+
+  const isLoanFormComplete = [
+    formData.academicYear,
+    formData.advisorName,
+    formData.phoneNumber,
+    formData.bankName,
+    formData.accountNumber,
+    formData.accountName,
+    formData.purpose,
+    formData.loanAmount,
+  ].every((value) => value.trim().length > 0);
+
+  const loanAmount = Number(formData.loanAmount) || 0;
+  const installmentAmount = Math.floor(loanAmount / formData.installmentCount);
+  const installmentRemainder = loanAmount % formData.installmentCount;
+  const repaymentSchedule = Array.from({ length: formData.installmentCount }, (_, index) => {
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30 * (index + 1));
+
+    return {
+      installmentNumber: index + 1,
+      dueDateLabel: `ครบกำหนด ${dueDate.toLocaleDateString("th-TH", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })}`,
+      amount: `฿${(installmentAmount + (index === formData.installmentCount - 1 ? installmentRemainder : 0)).toLocaleString("th-TH")}`,
+    };
+  });
 
   const handleAgreementScroll = () => {
     const agreementElement = agreementRef.current;
@@ -121,40 +152,62 @@ export default function TempLoanApplicationPage() {
 
             <section className={styles.loanFormStudentCard}>
               <h3>ข้อมูลนักศึกษา</h3>
-              <p>ชื่อ-นามสกุล: {tempStudentProfile.displayName.replace("นางสาว", "").trim()} มีโชค</p>
-              <p>รหัสนักศึกษา: {tempStudentProfile.studentId}</p>
-              <p>หลักสูตร: {tempStudentProfile.programName}</p>
+              <p>
+                <span>ชื่อ-นามสกุล:</span>{" "}
+                <strong>{tempStudentProfile.displayName.replace("นางสาว", "").trim()} มีโชค</strong>
+              </p>
+              <p>
+                <span>รหัสนักศึกษา:</span> <strong>{tempStudentProfile.studentId}</strong>
+              </p>
+              <p>
+                <span>หลักสูตร:</span> <strong>{tempStudentProfile.programName}</strong>
+              </p>
             </section>
 
             <div className={styles.loanFormFields}>
               <label className={styles.loanFormField}>
                 <span>ชั้นปีการศึกษา</span>
-                <select
-                  value={formData.academicYear}
-                  onChange={(event) =>
-                    setFormData((current) => ({
-                      ...current,
-                      academicYear: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                </select>
+                <div className={styles.loanFormSelectWrap}>
+                  <select
+                    className={
+                      formData.academicYear ? "" : styles.loanFormSelectPlaceholder
+                    }
+                    required
+                    value={formData.academicYear}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        academicYear: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">เลือกชั้นปีการศึกษา</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                  </select>
+                  {/* <small>{formData.academicYear}</small> */}
+                </div>
               </label>
 
               <label className={styles.loanFormField}>
                 <span>อาจารย์ที่ปรึกษา</span>
-                <select
-                  value={formData.advisorName}
-                  onChange={(event) => updateFormField("advisorName", event.target.value)}
-                >
-                  <option value="">เลือกอาจารย์ที่ปรึกษา</option>
-                  <option value="พิมพา มีโชค">พิมพา มีโชค</option>
-                  <option value="วรัญญู มีโชค">วรัญญู มีโชค</option>
-                </select>
+                <div className={styles.loanFormSelectWrap}>
+                  <select
+                    className={
+                      formData.advisorName ? "" : styles.loanFormSelectPlaceholder
+                    }
+                    required
+                    value={formData.advisorName}
+                    onChange={(event) => updateFormField("advisorName", event.target.value)}
+                  >
+                    <option value="">เลือกอาจารย์ที่ปรึกษา</option>
+                    <option value="พิมพา มีโชค">พิมพา มีโชค</option>
+                    <option value="วรัญญู มีโชค">วรัญญู มีโชค</option>
+                  </select>
+                  {/* <small>{formData.advisorName || "ยังไม่ได้เลือก"}</small> */}
+                </div>
               </label>
 
               <label className={styles.loanFormField}>
@@ -163,6 +216,7 @@ export default function TempLoanApplicationPage() {
                   inputMode="tel"
                   onChange={(event) => updateFormField("phoneNumber", event.target.value)}
                   placeholder="กรอกเบอร์โทรศัพท์"
+                  required
                   type="tel"
                   value={formData.phoneNumber}
                 />
@@ -170,14 +224,18 @@ export default function TempLoanApplicationPage() {
 
               <label className={styles.loanFormField}>
                 <span>ธนาคาร</span>
-                <select
-                  value={formData.bankName}
-                  onChange={(event) => updateFormField("bankName", event.target.value)}
-                >
-                  <option value="">เลือกธนาคาร</option>
-                  <option value="ธนาคารกสิกรไทย">ธนาคารกสิกรไทย</option>
-                  <option value="ธนาคารกรุงไทย">ธนาคารกรุงไทย</option>
-                </select>
+                <div className={styles.loanFormSelectWrap}>
+                  <select
+                    required
+                    value={formData.bankName}
+                    onChange={(event) => updateFormField("bankName", event.target.value)}
+                  >
+                    <option value="">เลือกธนาคาร</option>
+                    <option value="ธนาคารกสิกรไทย">ธนาคารกสิกรไทย</option>
+                    <option value="ธนาคารกรุงไทย">ธนาคารกรุงไทย</option>
+                  </select>
+                  <small>{formData.bankName || "ยังไม่ได้เลือก"}</small>
+                </div>
               </label>
 
               <label className={styles.loanFormField}>
@@ -186,6 +244,7 @@ export default function TempLoanApplicationPage() {
                   inputMode="numeric"
                   onChange={(event) => updateFormField("accountNumber", event.target.value)}
                   placeholder="กรอกเลขที่บัญชี"
+                  required
                   type="text"
                   value={formData.accountNumber}
                 />
@@ -196,6 +255,7 @@ export default function TempLoanApplicationPage() {
                 <input
                   onChange={(event) => updateFormField("accountName", event.target.value)}
                   placeholder="กรอกชื่อบัญชี"
+                  required
                   type="text"
                   value={formData.accountName}
                 />
@@ -206,6 +266,7 @@ export default function TempLoanApplicationPage() {
                 <input
                   onChange={(event) => updateFormField("purpose", event.target.value)}
                   placeholder="กรอกวัตถุประสงค์"
+                  required
                   type="text"
                   value={formData.purpose}
                 />
@@ -216,7 +277,7 @@ export default function TempLoanApplicationPage() {
                 <textarea
                   onChange={(event) => updateFormField("additionalNote", event.target.value)}
                   placeholder="กรอกหมายเหตุเพิ่มเติม"
-                  value={formData.additionalNote}
+                  value={formData.additionalNote === "-" ? "" : formData.additionalNote}
                 />
               </label>
 
@@ -226,10 +287,11 @@ export default function TempLoanApplicationPage() {
                   inputMode="numeric"
                   min="0"
                   onChange={(event) => updateFormField("loanAmount", event.target.value)}
+                  required
                   type="number"
                   value={formData.loanAmount}
                 />
-                <small>สามพันบาทถ้วน</small>
+                {formData.loanAmount ? <p>{formatThaiBahtText(formData.loanAmount)}</p> : null}
               </label>
 
               <fieldset className={styles.loanInstallmentField}>
@@ -255,16 +317,7 @@ export default function TempLoanApplicationPage() {
                     </button>
                   ))}
                 </div>
-                <div className={styles.loanFormSchedule}>
-                  <h3>ตารางการชำระ</h3>
-                  {tempRepaymentSchedule.slice(0, formData.installmentCount).map((item) => (
-                    <div key={item.installmentNumber}>
-                      <strong>งวด {item.installmentNumber}</strong>
-                      <span>{item.dueDateLabel}</span>
-                      <strong>{item.amount}</strong>
-                    </div>
-                  ))}
-                </div>
+                <LoanDetailSchedule items={repaymentSchedule} />
               </fieldset>
             </div>
           </section>
@@ -273,14 +326,23 @@ export default function TempLoanApplicationPage() {
         )}
 
         {currentStep === 1 ? (
-          <button
-            className={styles.loanApplicationNext}
-            disabled={!hasReadAgreement || !hasAcceptedAgreement}
-            onClick={() => setCurrentStep(2)}
-            type="button"
-          >
-            ถัดไป <span aria-hidden="true">→</span>
-          </button>
+          <div className={styles.loanFormActions}>
+            <button
+              className={styles.loanApplicationDashboardButton}
+              onClick={() => router.push("/student/temp?submitted=true")}
+              type="button"
+            >
+              กลับไปที่ dashboard
+            </button>
+            <button
+              className={styles.loanApplicationNext}
+              disabled={!hasReadAgreement || !hasAcceptedAgreement}
+              onClick={() => setCurrentStep(2)}
+              type="button"
+            >
+              ถัดไป <span aria-hidden="true">→</span>
+            </button>
+          </div>
         ) : currentStep === 2 ? (
           <div className={styles.loanFormActions}>
             <button
@@ -292,6 +354,7 @@ export default function TempLoanApplicationPage() {
             </button>
             <button
               className={styles.loanApplicationNext}
+              disabled={!isLoanFormComplete}
               onClick={() => setIsApprovalModalOpen(true)}
               type="button"
             >
@@ -312,7 +375,7 @@ export default function TempLoanApplicationPage() {
               onClick={() => router.push("/student/temp?submitted=true")}
               type="button"
             >
-              กลับไปที่ dashboard
+              ← กลับไปที่ dashboard
             </button>
           </div>
         )}

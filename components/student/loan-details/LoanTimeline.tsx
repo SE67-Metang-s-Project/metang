@@ -6,9 +6,14 @@ import styles from "@/app/student/student.module.css";
 type LoanTimelineProps = {
   items: LoanTimelineItem[];
   onShowTransferSlip: () => void;
+  confirmTransferLabel?: string;
 };
 
-export default function LoanTimeline({ items, onShowTransferSlip }: LoanTimelineProps) {
+export default function LoanTimeline({
+  items,
+  onShowTransferSlip,
+  confirmTransferLabel,
+}: LoanTimelineProps) {
   return (
     <section className={styles.loanDetailSection} aria-labelledby="loan-timeline-title">
       <h2 id="loan-timeline-title">ไทม์ไลน์สถานะคำร้อง</h2>
@@ -24,7 +29,16 @@ export default function LoanTimeline({ items, onShowTransferSlip }: LoanTimeline
               {item.transferDetails ? (
                 <ul className={styles.transferDetails}>
                   {item.transferDetails.map((detail) => (
-                    <li key={detail}>{detail}</li>
+                    <li key={detail}>
+                      {detail.includes(":") ? (
+                        <>
+                          <span>{detail.slice(0, detail.indexOf(":") + 1)}</span>
+                          {detail.slice(detail.indexOf(":") + 1)}
+                        </>
+                      ) : (
+                        detail
+                      )}
+                    </li>
                   ))}
                 </ul>
               ) : null}
@@ -32,13 +46,20 @@ export default function LoanTimeline({ items, onShowTransferSlip }: LoanTimeline
           </li>
         ))}
       </ol>
-      <button
-        className={styles.outlineOrangeButton}
-        onClick={onShowTransferSlip}
-        type="button"
-      >
-        ดูหลักฐานการโอนเงิน
-      </button>
+      <div className={styles.loanTimelineActions}>
+        <button
+          className={styles.outlineOrangeButton}
+          onClick={onShowTransferSlip}
+          type="button"
+        >
+          ดูหลักฐานการโอนเงิน
+        </button>
+        {confirmTransferLabel ? (
+          <button className={styles.loanApplicationNext} type="button">
+            {confirmTransferLabel}
+          </button>
+        ) : null}
+      </div>
     </section>
   );
 }

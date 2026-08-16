@@ -340,6 +340,24 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
   },
 };
 
+loanRequestHistory.forEach((request) => {
+  if (loanDetailsByRequestNumber[request.requestNumber]) {
+    return;
+  }
+
+  const templateDetails = loanDetailsByRequestNumber[activeLoan.requestNumber];
+  loanDetailsByRequestNumber[request.requestNumber] = {
+    ...templateDetails,
+    requestNumber: request.requestNumber,
+    statusLabel: request.statusLabel,
+    submittedAt: request.submittedAt,
+    purpose: request.purpose,
+    amountLabel: request.amountLabel,
+    amount: request.amount,
+    additionalReason: "ข้อมูลประกอบคำร้องตามรายละเอียดที่นักศึกษายื่นไว้",
+  };
+});
+
 export function getLoanDetails(requestNumber: string) {
   return loanDetailsByRequestNumber[requestNumber] ?? null;
 }
