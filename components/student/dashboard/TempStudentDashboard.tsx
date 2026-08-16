@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { tempLoanRequestHistory, tempStudentProfile } from "@/app/student/temp/tempMockData";
 import LoanHistoryList from "./LoanHistoryList";
 import TempSubmittedStudentDashboard from "./TempSubmittedStudentDashboard";
@@ -9,12 +10,9 @@ import TempPaymentBehaviorCard from "./TempPaymentBehaviorCard";
 import styles from "@/app/student/student.module.css";
 
 export default function TempStudentDashboard() {
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const searchParams = useSearchParams();
+  const isSubmitted = searchParams.get("submitted") === "true";
   const [showAllRequests, setShowAllRequests] = useState(false);
-
-  useEffect(() => {
-    setIsSubmitted(new URLSearchParams(window.location.search).get("submitted") === "true");
-  }, []);
 
   if (isSubmitted) {
     return <TempSubmittedStudentDashboard />;

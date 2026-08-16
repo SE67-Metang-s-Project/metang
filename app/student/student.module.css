@@ -2106,6 +2106,14 @@
   line-height: 1.35;
 }
 
+.transferDetails li::marker {
+  color: var(--color-detail-muted);
+}
+
+.transferDetails li > span {
+  color: var(--color-detail-muted);
+}
+
 .outlineOrangeButton {
   margin: 2px 0 0 29px;
   padding: 5px 9px;
@@ -2116,6 +2124,28 @@
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
+}
+
+.loanTimelineActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.loanTimelineActions .outlineOrangeButton,
+.loanTimelineActions .loanApplicationNext {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.loanTimelineActions .loanApplicationNext {
+  padding: 5px 9px;
+  border-radius: 7px;
+  font-size: 15px;
+  font-weight: 400;
 }
 
 .transferSlipModalBackdrop {
