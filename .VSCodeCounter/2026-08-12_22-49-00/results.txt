@@ -1,0 +1,123 @@
+Date : 2026-08-12 22:49:00
+Directory : /Users/sinsin/Desktop/methang
+Total : 59 files,  13919 codes, 145 comments, 772 blanks, all 14836 lines
+
+Languages
++--------------------+------------+------------+------------+------------+------------+
+| language           | files      | code       | comment    | blank      | total      |
++--------------------+------------+------------+------------+------------+------------+
+| JSON               |          4 |      9,126 |          0 |          3 |      9,129 |
+| TypeScript JSX     |         26 |      1,750 |         99 |        218 |      2,067 |
+| PostCSS            |          3 |      1,424 |          1 |        216 |      1,641 |
+| TypeScript         |         12 |      1,057 |          1 |        148 |      1,206 |
+| Markdown           |          4 |        334 |          2 |        120 |        456 |
+| MS SQL             |          1 |        133 |         40 |         48 |        221 |
+| JavaScript         |          3 |         56 |          2 |         18 |         76 |
+| JSON with Comments |          1 |         34 |          0 |          1 |         35 |
+| XML                |          5 |          5 |          0 |          0 |          5 |
++--------------------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                              | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                 |         59 |     13,919 |        145 |        772 |     14,836 |
+| . (Files)                                                                         |         11 |      9,252 |          5 |         43 |      9,300 |
+| app                                                                               |         17 |      2,800 |         81 |        392 |      3,273 |
+| app (Files)                                                                       |          3 |        219 |          7 |         28 |        254 |
+| app/api                                                                           |          4 |        140 |          0 |         28 |        168 |
+| app/api/auth                                                                      |          4 |        140 |          0 |         28 |        168 |
+| app/api/auth/callback                                                             |          1 |        112 |          0 |         19 |        131 |
+| app/api/auth/login                                                                |          1 |          4 |          0 |          2 |          6 |
+| app/api/auth/logout                                                               |          1 |         20 |          0 |          5 |         25 |
+| app/api/auth/nurse                                                                |          1 |          4 |          0 |          2 |          6 |
+| app/api/auth/nurse/login                                                          |          1 |          4 |          0 |          2 |          6 |
+| app/professor                                                                     |          5 |        762 |         73 |         99 |        934 |
+| app/professor (Files)                                                             |          1 |        163 |         22 |         21 |        206 |
+| app/professor/history                                                             |          1 |        198 |         13 |         24 |        235 |
+| app/professor/pending                                                             |          2 |        203 |         24 |         30 |        257 |
+| app/professor/pending (Files)                                                     |          1 |        195 |         24 |         28 |        247 |
+| app/professor/pending/details                                                     |          1 |          8 |          0 |          2 |         10 |
+| app/professor/students                                                            |          1 |        198 |         14 |         24 |        236 |
+| app/student                                                                       |          3 |      1,565 |          1 |        232 |      1,798 |
+| app/styles                                                                        |          1 |        100 |          0 |          1 |        101 |
+| app/user                                                                          |          1 |         14 |          0 |          4 |         18 |
+| components                                                                        |         17 |        765 |         19 |         88 |        872 |
+| components (Files)                                                                |          2 |        140 |         16 |         15 |        171 |
+| components/student                                                                |         15 |        625 |          3 |         73 |        701 |
+| db                                                                                |          4 |        520 |         40 |         81 |        641 |
+| db (Files)                                                                        |          2 |        372 |          0 |         30 |        402 |
+| db/migrations                                                                     |          1 |        133 |         40 |         48 |        221 |
+| db/migrations/20260806130000_baseline                                             |          1 |        133 |         40 |         48 |        221 |
+| db/queries                                                                        |          1 |         15 |          0 |          3 |         18 |
+| docs                                                                              |          1 |        251 |          0 |         82 |        333 |
+| lib                                                                               |          3 |        292 |          0 |         73 |        365 |
+| public                                                                            |          5 |          5 |          0 |          0 |          5 |
+| scripts                                                                           |          1 |         34 |          0 |         13 |         47 |
++-----------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| filename                                                                          | language           | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| /Users/sinsin/Desktop/methang/.infisical.json                                     | JSON               |          5 |          0 |          0 |          5 |
+| /Users/sinsin/Desktop/methang/AGENTS.md                                           | Markdown           |         33 |          2 |         20 |         55 |
+| /Users/sinsin/Desktop/methang/README.md                                           | Markdown           |         21 |          0 |          9 |         30 |
+| /Users/sinsin/Desktop/methang/app/api/auth/callback/route.ts                      | TypeScript         |        112 |          0 |         19 |        131 |
+| /Users/sinsin/Desktop/methang/app/api/auth/login/route.ts                         | TypeScript         |          4 |          0 |          2 |          6 |
+| /Users/sinsin/Desktop/methang/app/api/auth/logout/route.ts                        | TypeScript         |         20 |          0 |          5 |         25 |
+| /Users/sinsin/Desktop/methang/app/api/auth/nurse/login/route.ts                   | TypeScript         |          4 |          0 |          2 |          6 |
+| /Users/sinsin/Desktop/methang/app/globals.css                                     | PostCSS            |         14 |          0 |          3 |         17 |
+| /Users/sinsin/Desktop/methang/app/layout.tsx                                      | TypeScript JSX     |         35 |          0 |          6 |         41 |
+| /Users/sinsin/Desktop/methang/app/page.tsx                                        | TypeScript JSX     |        170 |          7 |         19 |        196 |
+| /Users/sinsin/Desktop/methang/app/professor/history/page.tsx                      | TypeScript JSX     |        198 |         13 |         24 |        235 |
+| /Users/sinsin/Desktop/methang/app/professor/page.tsx                              | TypeScript JSX     |        163 |         22 |         21 |        206 |
+| /Users/sinsin/Desktop/methang/app/professor/pending/details/page.tsx              | TypeScript JSX     |          8 |          0 |          2 |         10 |
+| /Users/sinsin/Desktop/methang/app/professor/pending/page.tsx                      | TypeScript JSX     |        195 |         24 |         28 |        247 |
+| /Users/sinsin/Desktop/methang/app/professor/students/page.tsx                     | TypeScript JSX     |        198 |         14 |         24 |        236 |
+| /Users/sinsin/Desktop/methang/app/student/page.tsx                                | TypeScript JSX     |          4 |          0 |          2 |          6 |
+| /Users/sinsin/Desktop/methang/app/student/student.module.css                      | PostCSS            |      1,310 |          1 |        212 |      1,523 |
+| /Users/sinsin/Desktop/methang/app/student/studentMockData.ts                      | TypeScript         |        251 |          0 |         18 |        269 |
+| /Users/sinsin/Desktop/methang/app/styles/colors.css                               | PostCSS            |        100 |          0 |          1 |        101 |
+| /Users/sinsin/Desktop/methang/app/user/page.tsx                                   | TypeScript JSX     |         14 |          0 |          4 |         18 |
+| /Users/sinsin/Desktop/methang/components/SidebarNav.tsx                           | TypeScript JSX     |        121 |         13 |         12 |        146 |
+| /Users/sinsin/Desktop/methang/components/UserProfile.tsx                          | TypeScript JSX     |         19 |          3 |          3 |         25 |
+| /Users/sinsin/Desktop/methang/components/student/InstallmentCard.tsx              | TypeScript JSX     |         67 |          0 |          7 |         74 |
+| /Users/sinsin/Desktop/methang/components/student/InstallmentList.tsx              | TypeScript JSX     |         19 |          0 |          3 |         22 |
+| /Users/sinsin/Desktop/methang/components/student/LoanContactCard.tsx              | TypeScript JSX     |         35 |          0 |          3 |         38 |
+| /Users/sinsin/Desktop/methang/components/student/LoanDetailSchedule.tsx           | TypeScript JSX     |         21 |          0 |          3 |         24 |
+| /Users/sinsin/Desktop/methang/components/student/LoanDetailsPage.tsx              | TypeScript JSX     |         54 |          0 |          5 |         59 |
+| /Users/sinsin/Desktop/methang/components/student/LoanHistoryCard.tsx              | TypeScript JSX     |         26 |          0 |          3 |         29 |
+| /Users/sinsin/Desktop/methang/components/student/LoanHistoryList.tsx              | TypeScript JSX     |         31 |          0 |          4 |         35 |
+| /Users/sinsin/Desktop/methang/components/student/LoanPaymentHistory.tsx           | TypeScript JSX     |         30 |          0 |          3 |         33 |
+| /Users/sinsin/Desktop/methang/components/student/LoanSummaryCard.tsx              | TypeScript JSX     |         44 |          2 |          6 |         52 |
+| /Users/sinsin/Desktop/methang/components/student/LoanTimeline.tsx                 | TypeScript JSX     |         37 |          0 |          3 |         40 |
+| /Users/sinsin/Desktop/methang/components/student/PaymentBehaviorCard.tsx          | TypeScript JSX     |         24 |          1 |          3 |         28 |
+| /Users/sinsin/Desktop/methang/components/student/PaymentModal.tsx                 | TypeScript JSX     |        106 |          0 |         13 |        119 |
+| /Users/sinsin/Desktop/methang/components/student/PaymentQrCode.tsx                | TypeScript JSX     |         37 |          0 |          7 |         44 |
+| /Users/sinsin/Desktop/methang/components/student/StudentDashboard.tsx             | TypeScript JSX     |         61 |          0 |          7 |         68 |
+| /Users/sinsin/Desktop/methang/components/student/StudentIllustrations.tsx         | TypeScript JSX     |         33 |          0 |          3 |         36 |
+| /Users/sinsin/Desktop/methang/db/README.md                                        | Markdown           |         29 |          0 |          9 |         38 |
+| /Users/sinsin/Desktop/methang/db/migrations/20260806130000_baseline/migration.sql | MS SQL             |        133 |         40 |         48 |        221 |
+| /Users/sinsin/Desktop/methang/db/queries/users.ts                                 | TypeScript         |         15 |          0 |          3 |         18 |
+| /Users/sinsin/Desktop/methang/db/seed.ts                                          | TypeScript         |        343 |          0 |         21 |        364 |
+| /Users/sinsin/Desktop/methang/docs/CMU-ENTRA-SSO.md                               | Markdown           |        251 |          0 |         82 |        333 |
+| /Users/sinsin/Desktop/methang/eslint.config.mjs                                   | JavaScript         |         16 |          2 |          3 |         21 |
+| /Users/sinsin/Desktop/methang/lib/cmu-auth.ts                                     | TypeScript         |        239 |          0 |         53 |        292 |
+| /Users/sinsin/Desktop/methang/lib/nurse-auth.ts                                   | TypeScript         |         40 |          0 |         13 |         53 |
+| /Users/sinsin/Desktop/methang/lib/prisma.ts                                       | TypeScript         |         13 |          0 |          7 |         20 |
+| /Users/sinsin/Desktop/methang/next.config.ts                                      | TypeScript         |          4 |          1 |          3 |          8 |
+| /Users/sinsin/Desktop/methang/package-lock.json                                   | JSON               |      8,975 |          0 |          1 |      8,976 |
+| /Users/sinsin/Desktop/methang/package.json                                        | JSON               |         45 |          0 |          1 |         46 |
+| /Users/sinsin/Desktop/methang/postcss.config.mjs                                  | JavaScript         |          6 |          0 |          2 |          8 |
+| /Users/sinsin/Desktop/methang/prisma.config.ts                                    | TypeScript         |         12 |          0 |          2 |         14 |
+| /Users/sinsin/Desktop/methang/public/file.svg                                     | XML                |          1 |          0 |          0 |          1 |
+| /Users/sinsin/Desktop/methang/public/globe.svg                                    | XML                |          1 |          0 |          0 |          1 |
+| /Users/sinsin/Desktop/methang/public/next.svg                                     | XML                |          1 |          0 |          0 |          1 |
+| /Users/sinsin/Desktop/methang/public/vercel.svg                                   | XML                |          1 |          0 |          0 |          1 |
+| /Users/sinsin/Desktop/methang/public/window.svg                                   | XML                |          1 |          0 |          0 |          1 |
+| /Users/sinsin/Desktop/methang/scripts/with-infisical.mjs                          | JavaScript         |         34 |          0 |         13 |         47 |
+| /Users/sinsin/Desktop/methang/skills-lock.json                                    | JSON               |        101 |          0 |          1 |        102 |
+| /Users/sinsin/Desktop/methang/tsconfig.json                                       | JSON with Comments |         34 |          0 |          1 |         35 |
+| Total                                                                             |                    |     13,919 |        145 |        772 |     14,836 |
++-----------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+

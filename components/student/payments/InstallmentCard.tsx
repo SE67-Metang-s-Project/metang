@@ -3,7 +3,7 @@ import styles from "@/app/student/student.module.css";
 
 type InstallmentCardProps = {
   installment: InstallmentPayment;
-  onPay: () => void;
+  onPay: (installment: InstallmentPayment) => void;
 };
 
 function getStatusLabel(status: InstallmentStatus) {
@@ -15,14 +15,18 @@ function getStatusLabel(status: InstallmentStatus) {
 export default function InstallmentCard({ installment, onPay }: InstallmentCardProps) {
   const isUpcoming = installment.status === "upcoming";
   const hasCompletedPayment =
-    installment.completedPaymentDateLabel && installment.completedPaymentTimeLabel;
+    installment.completedPaymentLabel &&
+    installment.completedPaymentDateLabel &&
+    installment.completedPaymentTimeLabel;
 
   return (
     <article className={`${styles.installmentCard} ${styles[installment.status]}`}>
       <div className={styles.installmentHeading}>
         <div className={styles.installmentTitle}>
           <strong>งวดที่ {installment.installmentNumber}</strong>
-          <span className={styles.statusPill}>{getStatusLabel(installment.status)}</span>
+          {!isUpcoming ? (
+            <span className={styles.statusPill}>{getStatusLabel(installment.status)}</span>
+          ) : null}
         </div>
         <div className={styles.installmentBalance}>
           <span>ค้างชำระ</span>
@@ -44,7 +48,10 @@ export default function InstallmentCard({ installment, onPay }: InstallmentCardP
         {hasCompletedPayment ? (
           <p className={`${styles.installmentNote} ${styles.completedPaymentNote}`}>
             <span className={styles.paymentNoteText}>
-              <span>ชำระเสร็จสิ้นเมื่อ</span>
+              <span className={styles.paymentNoteLabel}>
+                <i aria-hidden="true" />
+                <span>{installment.completedPaymentLabel}</span>
+              </span>
               <span>
                 {installment.completedPaymentDateLabel} {installment.completedPaymentTimeLabel}
               </span>
@@ -52,8 +59,8 @@ export default function InstallmentCard({ installment, onPay }: InstallmentCardP
           </p>
         ) : installment.paymentNote ? (
           <p className={styles.installmentNote}>
-            <i />
-            {installment.paymentNote}
+            <i aria-hidden="true" />
+            <span className={styles.installmentNoteText}>{installment.paymentNote}</span>
           </p>
         ) : null}
       </div>
@@ -62,7 +69,7 @@ export default function InstallmentCard({ installment, onPay }: InstallmentCardP
         <button
           className={styles.installmentAction}
           disabled={isUpcoming}
-          onClick={onPay}
+          onClick={() => onPay(installment)}
           type="button"
         >
           {installment.actionLabel}

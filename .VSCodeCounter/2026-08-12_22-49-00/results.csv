@@ -1,0 +1,61 @@
+"filename", "language", "JSON", "TypeScript", "JSON with Comments", "Markdown", "TypeScript JSX", "XML", "JavaScript", "PostCSS", "MS SQL", "comment", "blank", "total"
+"/Users/sinsin/Desktop/methang/.infisical.json", "JSON", 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
+"/Users/sinsin/Desktop/methang/AGENTS.md", "Markdown", 0, 0, 0, 33, 0, 0, 0, 0, 0, 2, 20, 55
+"/Users/sinsin/Desktop/methang/README.md", "Markdown", 0, 0, 0, 21, 0, 0, 0, 0, 0, 0, 9, 30
+"/Users/sinsin/Desktop/methang/app/api/auth/callback/route.ts", "TypeScript", 0, 112, 0, 0, 0, 0, 0, 0, 0, 0, 19, 131
+"/Users/sinsin/Desktop/methang/app/api/auth/login/route.ts", "TypeScript", 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 2, 6
+"/Users/sinsin/Desktop/methang/app/api/auth/logout/route.ts", "TypeScript", 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 5, 25
+"/Users/sinsin/Desktop/methang/app/api/auth/nurse/login/route.ts", "TypeScript", 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 2, 6
+"/Users/sinsin/Desktop/methang/app/globals.css", "PostCSS", 0, 0, 0, 0, 0, 0, 0, 14, 0, 0, 3, 17
+"/Users/sinsin/Desktop/methang/app/layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 35, 0, 0, 0, 0, 0, 6, 41
+"/Users/sinsin/Desktop/methang/app/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 170, 0, 0, 0, 0, 7, 19, 196
+"/Users/sinsin/Desktop/methang/app/professor/history/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 198, 0, 0, 0, 0, 13, 24, 235
+"/Users/sinsin/Desktop/methang/app/professor/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 163, 0, 0, 0, 0, 22, 21, 206
+"/Users/sinsin/Desktop/methang/app/professor/pending/details/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 2, 10
+"/Users/sinsin/Desktop/methang/app/professor/pending/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 195, 0, 0, 0, 0, 24, 28, 247
+"/Users/sinsin/Desktop/methang/app/professor/students/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 198, 0, 0, 0, 0, 14, 24, 236
+"/Users/sinsin/Desktop/methang/app/student/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 2, 6
+"/Users/sinsin/Desktop/methang/app/student/student.module.css", "PostCSS", 0, 0, 0, 0, 0, 0, 0, 1310, 0, 1, 212, 1523
+"/Users/sinsin/Desktop/methang/app/student/studentMockData.ts", "TypeScript", 0, 251, 0, 0, 0, 0, 0, 0, 0, 0, 18, 269
+"/Users/sinsin/Desktop/methang/app/styles/colors.css", "PostCSS", 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 1, 101
+"/Users/sinsin/Desktop/methang/app/user/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 4, 18
+"/Users/sinsin/Desktop/methang/components/SidebarNav.tsx", "TypeScript JSX", 0, 0, 0, 0, 121, 0, 0, 0, 0, 13, 12, 146
+"/Users/sinsin/Desktop/methang/components/UserProfile.tsx", "TypeScript JSX", 0, 0, 0, 0, 19, 0, 0, 0, 0, 3, 3, 25
+"/Users/sinsin/Desktop/methang/components/student/InstallmentCard.tsx", "TypeScript JSX", 0, 0, 0, 0, 67, 0, 0, 0, 0, 0, 7, 74
+"/Users/sinsin/Desktop/methang/components/student/InstallmentList.tsx", "TypeScript JSX", 0, 0, 0, 0, 19, 0, 0, 0, 0, 0, 3, 22
+"/Users/sinsin/Desktop/methang/components/student/LoanContactCard.tsx", "TypeScript JSX", 0, 0, 0, 0, 35, 0, 0, 0, 0, 0, 3, 38
+"/Users/sinsin/Desktop/methang/components/student/LoanDetailSchedule.tsx", "TypeScript JSX", 0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 3, 24
+"/Users/sinsin/Desktop/methang/components/student/LoanDetailsPage.tsx", "TypeScript JSX", 0, 0, 0, 0, 54, 0, 0, 0, 0, 0, 5, 59
+"/Users/sinsin/Desktop/methang/components/student/LoanHistoryCard.tsx", "TypeScript JSX", 0, 0, 0, 0, 26, 0, 0, 0, 0, 0, 3, 29
+"/Users/sinsin/Desktop/methang/components/student/LoanHistoryList.tsx", "TypeScript JSX", 0, 0, 0, 0, 31, 0, 0, 0, 0, 0, 4, 35
+"/Users/sinsin/Desktop/methang/components/student/LoanPaymentHistory.tsx", "TypeScript JSX", 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 3, 33
+"/Users/sinsin/Desktop/methang/components/student/LoanSummaryCard.tsx", "TypeScript JSX", 0, 0, 0, 0, 44, 0, 0, 0, 0, 2, 6, 52
+"/Users/sinsin/Desktop/methang/components/student/LoanTimeline.tsx", "TypeScript JSX", 0, 0, 0, 0, 37, 0, 0, 0, 0, 0, 3, 40
+"/Users/sinsin/Desktop/methang/components/student/PaymentBehaviorCard.tsx", "TypeScript JSX", 0, 0, 0, 0, 24, 0, 0, 0, 0, 1, 3, 28
+"/Users/sinsin/Desktop/methang/components/student/PaymentModal.tsx", "TypeScript JSX", 0, 0, 0, 0, 106, 0, 0, 0, 0, 0, 13, 119
+"/Users/sinsin/Desktop/methang/components/student/PaymentQrCode.tsx", "TypeScript JSX", 0, 0, 0, 0, 37, 0, 0, 0, 0, 0, 7, 44
+"/Users/sinsin/Desktop/methang/components/student/StudentDashboard.tsx", "TypeScript JSX", 0, 0, 0, 0, 61, 0, 0, 0, 0, 0, 7, 68
+"/Users/sinsin/Desktop/methang/components/student/StudentIllustrations.tsx", "TypeScript JSX", 0, 0, 0, 0, 33, 0, 0, 0, 0, 0, 3, 36
+"/Users/sinsin/Desktop/methang/db/README.md", "Markdown", 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 9, 38
+"/Users/sinsin/Desktop/methang/db/migrations/20260806130000_baseline/migration.sql", "MS SQL", 0, 0, 0, 0, 0, 0, 0, 0, 133, 40, 48, 221
+"/Users/sinsin/Desktop/methang/db/queries/users.ts", "TypeScript", 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 3, 18
+"/Users/sinsin/Desktop/methang/db/seed.ts", "TypeScript", 0, 343, 0, 0, 0, 0, 0, 0, 0, 0, 21, 364
+"/Users/sinsin/Desktop/methang/docs/CMU-ENTRA-SSO.md", "Markdown", 0, 0, 0, 251, 0, 0, 0, 0, 0, 0, 82, 333
+"/Users/sinsin/Desktop/methang/eslint.config.mjs", "JavaScript", 0, 0, 0, 0, 0, 0, 16, 0, 0, 2, 3, 21
+"/Users/sinsin/Desktop/methang/lib/cmu-auth.ts", "TypeScript", 0, 239, 0, 0, 0, 0, 0, 0, 0, 0, 53, 292
+"/Users/sinsin/Desktop/methang/lib/nurse-auth.ts", "TypeScript", 0, 40, 0, 0, 0, 0, 0, 0, 0, 0, 13, 53
+"/Users/sinsin/Desktop/methang/lib/prisma.ts", "TypeScript", 0, 13, 0, 0, 0, 0, 0, 0, 0, 0, 7, 20
+"/Users/sinsin/Desktop/methang/next.config.ts", "TypeScript", 0, 4, 0, 0, 0, 0, 0, 0, 0, 1, 3, 8
+"/Users/sinsin/Desktop/methang/package-lock.json", "JSON", 8975, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 8976
+"/Users/sinsin/Desktop/methang/package.json", "JSON", 45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 46
+"/Users/sinsin/Desktop/methang/postcss.config.mjs", "JavaScript", 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 2, 8
+"/Users/sinsin/Desktop/methang/prisma.config.ts", "TypeScript", 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 2, 14
+"/Users/sinsin/Desktop/methang/public/file.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1
+"/Users/sinsin/Desktop/methang/public/globe.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1
+"/Users/sinsin/Desktop/methang/public/next.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1
+"/Users/sinsin/Desktop/methang/public/vercel.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1
+"/Users/sinsin/Desktop/methang/public/window.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1
+"/Users/sinsin/Desktop/methang/scripts/with-infisical.mjs", "JavaScript", 0, 0, 0, 0, 0, 0, 34, 0, 0, 0, 13, 47
+"/Users/sinsin/Desktop/methang/skills-lock.json", "JSON", 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 102
+"/Users/sinsin/Desktop/methang/tsconfig.json", "JSON with Comments", 0, 0, 34, 0, 0, 0, 0, 0, 0, 0, 1, 35
+"Total", "-", 9126, 1057, 34, 334, 1750, 5, 56, 1424, 133, 145, 772, 14836

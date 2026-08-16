@@ -6,8 +6,10 @@ type LoanHistoryCardProps = {
 };
 
 export default function LoanHistoryCard({ request }: LoanHistoryCardProps) {
+  const [paidAmount, totalAmount] = request.amount.split("/");
+
   return (
-    <article className={styles.historyCard}>
+    <article className={styles.historyCard} data-status={request.statusType}>
       <div>
         <div className={styles.historyCardTitle}>
           <strong>คำร้อง {request.requestNumber}</strong>
@@ -17,11 +19,20 @@ export default function LoanHistoryCard({ request }: LoanHistoryCardProps) {
         </div>
         <p>{request.submittedAt}</p>
         <small>วัตถุประสงค์การกู้ยืม</small>
-        <strong>ค่าเทอมภาคเรียนที่ 1/2569</strong>
+        <strong>{request.purpose}</strong>
       </div>
       <div className={styles.historyAmount}>
         <span>{request.amountLabel}</span>
-        <strong>{request.amount}</strong>
+        <strong>
+          {request.statusType === "pending" && totalAmount ? (
+            <>
+              {paidAmount.trim()}
+              <span className={styles.historyAmountTotal}>/{totalAmount.trim()}</span>
+            </>
+          ) : (
+            request.amount
+          )}
+        </strong>
       </div>
     </article>
   );
