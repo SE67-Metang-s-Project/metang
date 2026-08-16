@@ -52,71 +52,52 @@ const RequestCard = ({
 }) => (
   <div
     onClick={onClick}
-    className={`cursor-pointer bg-white border border-gray-200 rounded-[12px] p-5 sm:p-6 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow relative overflow-hidden ${
-      req.isOverdue ? 'border-l-[4px] border-l-[#dc2626]' : 'border-l-[4px] border-l-transparent'
-    }`}
+    className="cursor-pointer bg-white border border-gray-100 rounded-[14px] p-4 lg:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-6 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] hover:shadow-md hover:border-orange-200 transition-all"
   >
-    {/* Top Row: ID, Date & Button */}
-    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
-      <div className="flex items-center gap-3">
-        <span className="font-bold text-[#1e293b] bg-gray-100 px-2.5 py-1 rounded-[6px] text-[13px]">
-          {req.id}
+    <div className="flex flex-col sm:flex-row sm:items-center gap-4 lg:gap-6 flex-1 min-w-0">
+      {/* Icon Box */}
+      <div className="w-11 h-11 rounded-[10px] bg-[#fff7ed] flex items-center justify-center text-[#ea580c] shrink-0 hidden sm:flex border border-[#ffedd5]">
+        <FileText size={20} strokeWidth={1.5} />
+      </div>
+
+      {/* Info Column 1: Name & Subtitle */}
+      <div className="w-full sm:w-[260px] shrink-0">
+        <h4 className="font-bold text-[#1e293b] text-[15px] mb-0.5">{req.name}</h4>
+        <p className="text-[12.5px] text-gray-500 truncate">
+          {req.studentId} • {req.major} • ปี {req.year}
+        </p>
+      </div>
+
+      {/* Info Column 2: Date & Wait time */}
+      <div className="w-full sm:w-[120px] shrink-0">
+        <p className="font-bold text-[#334155] text-[13.5px] mb-0.5">{req.submitDate}</p>
+        <p className="text-[12.5px] text-gray-500">รอพิจารณา {req.waitDays} วัน</p>
+      </div>
+
+      {/* Info Column 3: Amount, Term & Objective (แยกส่วนออกจากกัน) */}
+      <div className="hidden md:flex flex-1 items-center gap-2.5 min-w-0">
+        <span className="bg-[#f1f5f9] px-3 py-1.5 rounded-[6px] text-[12.5px] font-bold text-[#334155] whitespace-nowrap">
+          ฿{req.amount}
         </span>
-        <span className="text-[13px] text-gray-500">ยื่นเมื่อ {req.submitDate}</span>
+        <span className="bg-[#f1f5f9] px-3 py-1.5 rounded-[6px] text-[12.5px] font-medium text-[#475569] whitespace-nowrap">
+          {req.term} งวด
+        </span>
+        <span className="text-[12.5px] text-gray-500 truncate">
+          {req.objective}
+        </span>
       </div>
 
-      {/* เปลี่ยนสีปุ่มจากเขียวเป็นส้มตามโลโก้ */}
-      <button className="hidden sm:flex focus:outline-none items-center gap-2 bg-[#ea580c] hover:bg-[#c2410c] text-white px-4 py-2 rounded-[8px] text-[14px] font-medium transition-colors">
+    </div>
+
+    {/* Action Button (เปลี่ยนเป็นสีส้มทึบ พร้อมไอคอนลูกศร) */}
+    <div className="shrink-0 w-full lg:w-auto mt-3 lg:mt-0">
+      <button className="flex items-center justify-center gap-2 focus:outline-none w-full lg:w-auto bg-[#ea580c] hover:bg-[#d94a08] text-white px-5 py-2.5 rounded-[8px] text-[13.5px] font-bold transition-colors">
         ตรวจสอบคำร้อง
-        <ArrowRight size={16} />
-      </button>
-    </div>
-
-    {/* Info Column: Name & Subtitle */}
-    <div className="mb-4">
-      <h4 className="font-bold text-[#1e293b] text-[18px] mb-1">{req.name}</h4>
-      <p className="text-[13.5px] text-gray-500">
-        {req.studentId} • {req.major} • ชั้นปีที่ {req.year}
-      </p>
-    </div>
-
-    {/* Objective */}
-    <div className="mb-5">
-      <p className="text-[13px] text-gray-500 mb-0.5">วัตถุประสงค์:</p>
-      <p className="text-[14px] text-[#1e293b]">{req.objective}</p>
-    </div>
-
-    {/* Stats Grid */}
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-2">
-      <div>
-        <p className="text-[13px] text-gray-500 mb-0.5">จำนวนที่ขอกู้</p>
-        <p className="text-[16px] font-bold text-[#1e293b]">฿{req.amount}</p>
-      </div>
-      <div>
-        <p className="text-[13px] text-gray-500 mb-0.5">งวดชำระ</p>
-        <p className="text-[16px] font-bold text-[#1e293b]">{req.term} งวด</p>
-      </div>
-      <div className="flex items-start gap-2">
-        <Clock className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-        <div>
-          <p className="text-[13px] text-gray-500 mb-0.5">รอพิจารณา</p>
-          <p className="text-[16px] font-bold text-[#1e293b]">{req.waitDays} วัน</p>
-        </div>
-      </div>
-    </div>
-
-    {/* Mobile Button & Overdue Badge */}
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-3 gap-4">
-
-      {/* เปลี่ยนสีปุ่มมือถือจากเขียวเป็นส้มตามโลโก้ */}
-      <button className="sm:hidden w-full focus:outline-none flex justify-center items-center gap-2 bg-[#ea580c] hover:bg-[#c2410c] text-white px-4 py-2.5 rounded-[8px] text-[14px] font-medium transition-colors">
-        ตรวจสอบคำร้อง
-        <ArrowRight size={16} />
+        <ArrowRight size={16} strokeWidth={2.5} />
       </button>
     </div>
   </div>
 );
-
 // ==========================================
 // 3. Main Page
 // ==========================================

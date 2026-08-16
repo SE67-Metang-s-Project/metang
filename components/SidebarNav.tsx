@@ -50,14 +50,14 @@ const menuConfig: Record<UserRole, MenuItem[]> = {
     { title: 'คำร้องรอพิจารณา', icon: FileCheck, href: '/professor/pending' },
     { title: 'นักศึกษาในความดูแล', icon: Users, href: '/professor/students' },
     { title: 'ประวัติการดำเนินการ', icon: History, href: '/professor/history' },
-    // { title: 'รายละเอียดคำร้อง', icon: FileCheck, href: '/professor/pending/details' },
   ],
   admin: [
     { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/admin' },
     { title: 'คำร้องทั้งหมด', icon: Files, href: '/admin/requests' },
-    { title: 'ตรวจสอบ e-Slip', icon: FileSearch, href: '/admin/verify-slip' },
-    { title: 'จัดทำสัญญายืมเงิน', icon: FileSignature, href: '/admin/contracts' },
+    { title: 'ตรวจสอบสลิปชำระเงิน', icon: FileSearch, href: '/admin/verify-slip' },
+    { title: 'เบิกจ่ายหนี้', icon: FileSignature, href: '/admin/disburse-debt' },
     { title: 'ติดตามสถานะหนี้', icon: Users, href: '/admin/tracking' },
+    { title: 'ประวัติการดำเนินการ', icon: History, href: '/admin/history' },
   ],
   executive: [
     { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/executive' },

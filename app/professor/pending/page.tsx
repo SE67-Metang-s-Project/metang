@@ -11,7 +11,8 @@ import {
   Clock, 
   CheckSquare, 
   X,
-  ChevronDown // <-- เพิ่ม import ChevronDown
+  ChevronDown, // <-- เพิ่ม import ChevronDown
+  ArrowRight
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -122,13 +123,18 @@ const StatCards = () => (
 );
 
 // 2.3 การ์ดแสดงข้อมูลคำร้อง
-const RequestCard = ({ req, onClick }: { req: typeof actionRequests[0], onClick: () => void }) => (
-  <div 
+const RequestCard = ({
+  req,
+  onClick,
+}: {
+  req: (typeof actionRequests)[0];
+  onClick: () => void;
+}) => (
+  <div
     onClick={onClick}
     className="cursor-pointer bg-white border border-gray-100 rounded-[14px] p-4 lg:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-6 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] hover:shadow-md hover:border-orange-200 transition-all"
   >
     <div className="flex flex-col sm:flex-row sm:items-center gap-4 lg:gap-6 flex-1 min-w-0">
-      
       {/* Icon Box */}
       <div className="w-11 h-11 rounded-[10px] bg-[#fff7ed] flex items-center justify-center text-[#ea580c] shrink-0 hidden sm:flex border border-[#ffedd5]">
         <FileText size={20} strokeWidth={1.5} />
@@ -148,21 +154,26 @@ const RequestCard = ({ req, onClick }: { req: typeof actionRequests[0], onClick:
         <p className="text-[12.5px] text-gray-500">รอพิจารณา {req.waitDays} วัน</p>
       </div>
 
-      {/* Info Column 3: Objective */}
-      <div className="hidden md:flex flex-1 justify-start min-w-0">
-        <div className="bg-[#f1f5f9] px-4 py-1.5 rounded-full inline-flex items-center max-w-full">
-          <p className="text-[12.5px] text-[#475569] font-medium truncate">
-            <span className="font-bold text-[#334155] mr-1.5">฿{req.amount}</span> 
-            ({req.term} งวด) - {req.objective}
-          </p>
-        </div>
+      {/* Info Column 3: Amount, Term & Objective (แยกส่วนออกจากกัน) */}
+      <div className="hidden md:flex flex-1 items-center gap-2.5 min-w-0">
+        <span className="bg-[#f1f5f9] px-3 py-1.5 rounded-[6px] text-[12.5px] font-bold text-[#334155] whitespace-nowrap">
+          ฿{req.amount}
+        </span>
+        <span className="bg-[#f1f5f9] px-3 py-1.5 rounded-[6px] text-[12.5px] font-medium text-[#475569] whitespace-nowrap">
+          {req.term} งวด
+        </span>
+        <span className="text-[12.5px] text-gray-500 truncate">
+          {req.objective}
+        </span>
       </div>
+
     </div>
 
-    {/* Action Button */}
+    {/* Action Button (เปลี่ยนเป็นสีส้มทึบ พร้อมไอคอนลูกศร) */}
     <div className="shrink-0 w-full lg:w-auto mt-3 lg:mt-0">
-      <button className="focus:outline-none w-full lg:w-auto bg-[#fff7ed] hover:bg-[#ffedd5] text-[#ea580c] px-4 py-2 rounded-[8px] text-[13px] font-bold transition-colors">
+      <button className="flex items-center justify-center gap-2 focus:outline-none w-full lg:w-auto bg-[#ea580c] hover:bg-[#d94a08] text-white px-5 py-2.5 rounded-[8px] text-[13.5px] font-bold transition-colors">
         ตรวจสอบคำร้อง
+        <ArrowRight size={16} strokeWidth={2.5} />
       </button>
     </div>
   </div>
