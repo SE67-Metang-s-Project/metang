@@ -1,0 +1,118 @@
+const MAX_MONEY_AMOUNT = 2_147_483_647;
+
+export type LoanInput = {
+  advisorName: string;
+  amount: number;
+  studentYear: number;
+  purpose: string;
+  additionalNote: string | null;
+  bankName: string;
+  bankAccountNo: string;
+  bankAccountName: string;
+  installmentCount: number;
+};
+
+export type LoanDecision = "approved" | "returned" | "rejected";
+
+export type LoanDecisionInput = {
+  decision: LoanDecision;
+  comment: string | null;
+};
+
+function requiredText(value: unknown, field: string, maxLength = 500) {
+  if (typeof value !== "string") throw new Error(`${field} is required`);
+  const text = value.trim();
+  if (!text || text.length > maxLength) throw new Error(`${field} is invalid`);
+  return text;
+}
+
+function parseAmount(value: unknown) {
+  if (
+    typeof value !== "number" ||
+    !Number.isSafeInteger(value) ||
+    value <= 0 ||
+    value > MAX_MONEY_AMOUNT
+  ) {
+    throw new Error("amount is invalid");
+  }
+  return value;
+}
+
+function parseStudentYear(value: unknown) {
+  if (!Number.isInteger(value) || (value as number) < 1 || (value as number) > 4) {
+    throw new Error("studentYear is invalid");
+  }
+  return value as number;
+}
+
+function optionalText(value: unknown, field: string, maxLength = 500) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string") throw new Error(`${field} is invalid`);
+  const text = value.trim();
+  if (text.length > maxLength) throw new Error(`${field} is invalid`);
+  return text || null;
+}
+
+export function parseLoanInput(value: unknown): LoanInput {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("request body is invalid");
+  }
+
+  const input = value as Record<string, unknown>;
+  const installmentCount = input.installmentCount;
+  if (
+    !Number.isInteger(installmentCount) ||
+    (installmentCount as number) < 1 ||
+    (installmentCount as number) > 3
+  ) {
+    throw new Error("installmentCount is invalid");
+  }
+
+  return {
+    advisorName: requiredText(input.advisorName, "advisorName", 200),
+    amount: parseAmount(input.amount),
+    studentYear: parseStudentYear(input.studentYear),
+    purpose: requiredText(input.purpose, "purpose", 2000),
+    additionalNote: optionalText(input.additionalNote, "additionalNote", 2000),
+    bankName: requiredText(input.bankName, "bankName", 200),
+    bankAccountNo: requiredText(input.bankAccountNo, "bankAccountNo", 50),
+    bankAccountName: requiredText(input.bankAccountName, "bankAccountName", 200),
+    installmentCount: installmentCount as number,
+  };
+}
+
+function parseDecision(value: unknown): LoanDecision {
+  if (value === "approved" || value === "returned" || value === "rejected") return value;
+  throw new Error("decision is invalid");
+}
+
+export function parseLoanDecisionInput(value: unknown): LoanDecisionInput {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("request body is invalid");
+  }
+
+  const input = value as Record<string, unknown>;
+  const decision = parseDecision(input.decision);
+  const valueComment = input.comment;
+  if (valueComment !== undefined && valueComment !== null && typeof valueComment !== "string") {
+    throw new Error("comment is invalid");
+  }
+
+  const comment = typeof valueComment === "string" ? valueComment.trim() : "";
+  if (comment.length > 2000) throw new Error("comment is invalid");
+  if ((decision === "returned" || decision === "rejected") && !comment) {
+    throw new Error("A comment is required for this decision");
+  }
+
+  return { decision, comment: comment || null };
+}
+
+export function parsePhoneNumber(value: unknown) {
+  if (typeof value !== "string") throw new Error("phoneNumber is invalid");
+  if (!/^0(?:6|8|9)\d{8}$/.test(value)) throw new Error("phoneNumber is invalid");
+  return value;
+}
+
+export function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
