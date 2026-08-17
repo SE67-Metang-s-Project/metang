@@ -1,0 +1,30 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Me Tang API",
+    "version": "0.1.0",
+    "description": "API for the CMU student emergency loan workflow."
+  },
+  "servers": [{ "url": "/api", "description": "Current application" }],
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "cmu_session"
+      }
+    }
+  },
+  "apiDir": "./app/api",
+  "routerType": "app",
+  "schemaDir": ["./app", "./lib"],
+  "schemaType": "typescript",
+  "outputFile": "openapi.json",
+  "outputDir": "./public",
+  "docsUrl": "/api-docs",
+  "ui": "none",
+  "includeOpenApiRoutes": false,
+  "ignoreRoutes": [],
+  "defaultResponseSet": "none",
+  "debug": false
+}
