@@ -8,6 +8,9 @@
     "build": "node scripts/with-infisical.mjs next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "NODE_OPTIONS=--conditions=react-server tsx --test tests/*.test.ts",
+    "test:db": "NODE_OPTIONS=--conditions=react-server RUN_DB_TESTS=true node scripts/with-infisical.mjs tsx --test tests/*.integration.test.ts",
+    "openapi:generate": "next-openapi-gen generate -t next.openapi.json && node scripts/normalize-openapi.mjs",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:status": "node scripts/with-infisical.mjs prisma migrate status",
@@ -27,7 +30,8 @@
     "next": "16.2.10",
     "pg": "^8.22.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -37,6 +41,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "next-openapi-gen": "^1.7.3",
     "prisma": "^7.9.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.9",
