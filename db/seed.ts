@@ -25,18 +25,21 @@ const users: Prisma.AppUserCreateManyInput[] = [
   {
     id: id(1),
     email: "exec@cmu.ac.th",
+    cmuAccount: "exec",
     fullNameTh: "ผู้บริหาร ทดสอบ",
     fullNameEn: "Mock Executive",
   },
   {
     id: id(2),
     email: "superadmin@cmu.ac.th",
+    cmuAccount: "superadmin",
     fullNameTh: "ซุปเปอร์แอดมิน ทดสอบ",
     fullNameEn: "Mock Super Admin",
   },
   {
     id: id(3),
     email: "admin@cmu.ac.th",
+    cmuAccount: "admin",
     fullNameTh: "แอดมิน ทดสอบ",
     fullNameEn: "Mock Admin",
     phone: "0800000003",
@@ -44,6 +47,7 @@ const users: Prisma.AppUserCreateManyInput[] = [
   {
     id: id(4),
     email: "advisor@cmu.ac.th",
+    cmuAccount: "advisor",
     fullNameTh: "อาจารย์ที่ปรึกษา ทดสอบ",
     fullNameEn: "Mock Advisor",
     phone: "0800000004",
@@ -51,6 +55,7 @@ const users: Prisma.AppUserCreateManyInput[] = [
   {
     id: id(5),
     email: "advisor2@cmu.ac.th",
+    cmuAccount: "advisor2",
     fullNameTh: "อาจารย์สำรอง ทดสอบ",
     fullNameEn: "Backup Advisor",
   },
@@ -61,6 +66,7 @@ const users: Prisma.AppUserCreateManyInput[] = [
     return {
       id: id(userId),
       email: `student${number}@cmu.ac.th`,
+      cmuAccount: `student${number}`,
       studentCode: `660610${String(number).padStart(3, "0")}`,
       fullNameTh: `นักศึกษา ทดสอบ ${number}`,
       fullNameEn: `Mock Student ${number}`,
@@ -101,9 +107,8 @@ const loans: Prisma.LoanRequestCreateManyInput[] = loanScenarios.map(
   ([number, status, amount, approvedAmount, installmentCount, dueOffset]) => ({
     id: id(number),
     studentId: id(number - 100),
-    advisorName: [208, 209].includes(number)
-      ? "อาจารย์สำรอง ทดสอบ"
-      : "อาจารย์ที่ปรึกษา ทดสอบ",
+    advisorId: [208, 209].includes(number) ? id(5) : id(4),
+    studentYear: 3,
     amount,
     approvedAmount,
     purpose: `Mock scenario: ${status}`,

@@ -53,13 +53,15 @@ enum UserRoleName {
 model AppUser {
   id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email             String            @unique(map: "app_user_email_key") @db.Text
+  cmuAccount        String            @unique(map: "app_user_cmu_account_key") @map("cmu_account") @db.Text
   studentCode       String?           @unique(map: "app_user_student_code_key") @map("student_code") @db.Text
   fullNameTh        String            @map("full_name_th") @db.Text
   fullNameEn        String?           @map("full_name_en") @db.Text
   phone             String?           @db.Text
   createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime          @default(now()) @map("updated_at") @db.Timestamptz(6)
+  updatedAt         DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   studentLoans      LoanRequest[]     @relation("StudentLoans")
+  advisorLoans      LoanRequest[]     @relation("AdvisorLoans")
   cancelledLoans    LoanRequest[]     @relation("CancelledLoans")
   approvalDecisions LoanApproval[]
   confirmedPayments Payment[]
@@ -75,10 +77,12 @@ model AppUser {
 model LoanRequest {
   id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   studentId        String            @map("student_id") @db.Uuid
-  advisorName      String            @map("advisor_name") @db.Text
-  amount           Decimal           @db.Decimal(12, 2)
-  approvedAmount   Decimal?          @map("approved_amount") @db.Decimal(12, 2)
+  advisorId        String            @map("advisor_id") @db.Uuid
+  amount           Int               @db.Integer
+  approvedAmount   Int?              @map("approved_amount") @db.Integer
+  studentYear      Int               @map("student_year") @db.SmallInt
   purpose          String            @db.Text
+  additionalNote   String?           @map("additional_note") @db.Text
   bankName         String            @map("bank_name") @db.Text
   bankAccountNo    String            @map("bank_account_no") @db.Text
   bankAccountName  String            @map("bank_account_name") @db.Text
@@ -91,8 +95,9 @@ model LoanRequest {
   disbursedAt      DateTime?         @map("disbursed_at") @db.Timestamptz(6)
   closedAt         DateTime?         @map("closed_at") @db.Timestamptz(6)
   createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime          @default(now()) @map("updated_at") @db.Timestamptz(6)
+  updatedAt        DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   student          AppUser           @relation("StudentLoans", fields: [studentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  advisor          AppUser           @relation("AdvisorLoans", fields: [advisorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   cancelledByUser  AppUser?          @relation("CancelledLoans", fields: [cancelledBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   approvals        LoanApproval[]
   installments     Installment[]
@@ -100,7 +105,7 @@ model LoanRequest {
   fundTransactions FundTransaction[]
 
   @@unique([studentId], map: "one_open_loan_per_student", where: raw("status <> ALL (ARRAY['closed'::loan_status, 'rejected'::loan_status, 'cancelled'::loan_status])"))
-  @@index([advisorName, status], map: "loan_request_advisor_idx")
+  @@index([advisorId, status], map: "loan_request_advisor_idx")
   @@index([studentId], map: "loan_request_student_idx")
   @@map("loan_request")
 }
@@ -109,6 +114,7 @@ model LoanApproval {
   id        BigInt       @id @default(autoincrement())
   loanId    String       @map("loan_id") @db.Uuid
   step      ApprovalStep
+  attempt   Int          @default(1) @db.SmallInt
   decision  Decision     @default(pending)
   decidedBy String?      @map("decided_by") @db.Uuid
   decidedAt DateTime?    @map("decided_at") @db.Timestamptz(6)
@@ -116,7 +122,8 @@ model LoanApproval {
   loan      LoanRequest  @relation(fields: [loanId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   decider   AppUser?     @relation(fields: [decidedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([step, loanId], map: "loan_approval_loan_id_step_key")
+  @@unique([loanId, step, attempt], map: "loan_approval_loan_id_step_attempt_key")
+  @@unique([loanId, step], map: "loan_approval_one_pending_key", where: { decision: "pending" })
   @@map("loan_approval")
 }
 
@@ -125,8 +132,8 @@ model Installment {
   loanId     String      @map("loan_id") @db.Uuid
   seq        Int         @db.SmallInt
   dueDate    DateTime    @map("due_date") @db.Date
-  amountDue  Decimal     @map("amount_due") @db.Decimal(12, 2)
-  amountPaid Decimal     @default(0) @map("amount_paid") @db.Decimal(12, 2)
+  amountDue  Int         @map("amount_due") @db.Integer
+  amountPaid Int         @default(0) @map("amount_paid") @db.Integer
   settledAt  DateTime?   @map("settled_at") @db.Timestamptz(6)
   loan       LoanRequest @relation(fields: [loanId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   payments   Payment[]
@@ -140,11 +147,11 @@ model Payment {
   id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   loanId        String       @map("loan_id") @db.Uuid
   installmentId BigInt?      @map("installment_id")
-  amount        Decimal      @db.Decimal(12, 2)
+  amount        Int          @db.Integer
   slipUrl       String?      @map("slip_url") @db.Text
   slipRef       String?      @unique(map: "payment_slip_ref_key") @map("slip_ref") @db.Text
   slipOcrStatus String       @default("pending") @map("slip_ocr_status") @db.Text
-  ocrAmount     Decimal?     @map("ocr_amount") @db.Decimal(12, 2)
+  ocrAmount     Int?         @map("ocr_amount") @db.Integer
   ocrPaidAt     DateTime?    @map("ocr_paid_at") @db.Timestamptz(6)
   slipOcrRaw    Json?        @map("slip_ocr_raw") @db.JsonB
   status        String       @default("pending_review") @db.Text
@@ -163,7 +170,7 @@ model Payment {
 model FundTransaction {
   id          BigInt       @id @default(autoincrement())
   kind        String       @db.Text
-  amount      Decimal      @db.Decimal(12, 2)
+  amount      Int          @db.Integer
   direction   Int          @db.SmallInt
   loanId      String?      @map("loan_id") @db.Uuid
   performedBy String       @map("performed_by") @db.Uuid

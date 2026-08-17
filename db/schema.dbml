@@ -44,6 +44,7 @@ Enum decision {
 Table app_user {
   id           uuid [pk, default: `gen_random_uuid()`]
   email        text [not null, unique]
+  cmu_account  text [not null, unique]
   student_code text [unique, note: 'null for staff']
   full_name_th text [not null]
   full_name_en text
@@ -72,10 +73,12 @@ Table user_role {
 Table loan_request {
   id                uuid [pk, default: `gen_random_uuid()`]
   student_id        uuid [ref: > app_user.id, not null]
-  advisor_name      text [not null, note: 'the advisor the STUDENT typed/picked; mismatch with app_user.advisor_name => reject']
-  amount            "numeric(12,2)" [not null, note: 'what the student asked for']
-  approved_amount   "numeric(12,2)" [note: 'NAT-46: admin may cut it. Installments build from this. Reason goes in loan_approval.comment.']
+  advisor_id        uuid [ref: > app_user.id, not null]
+  amount            integer [not null, note: 'whole baht; what the student asked for']
+  approved_amount   integer [note: 'NAT-46: admin may cut it. Installments build from this. Reason goes in loan_approval.comment.']
+  student_year      smallint [not null, note: '1-4']
   purpose           text [not null]
+  additional_note   text
   bank_name         text [not null]
   bank_account_no   text [not null]
   bank_account_name text [not null]
@@ -92,7 +95,7 @@ Table loan_request {
 
   indexes {
     student_id
-    (advisor_name, status)
+    (advisor_id, status)
   }
   Note: 'NAT-24. Partial unique index on student_id WHERE status NOT IN (closed, rejected, cancelled) allows only one open loan per student.'
 }
@@ -101,13 +104,15 @@ Table loan_approval {
   id         bigserial [pk]
   loan_id    uuid [ref: > loan_request.id, not null]
   step       approval_step [not null]
+  attempt    smallint [not null, default: 1]
   decision   decision [not null, default: 'pending']
   decided_by uuid [ref: > app_user.id]
   decided_at timestamptz
   comment    text
 
   indexes {
-    (loan_id, step) [unique]
+    (loan_id, step, attempt) [unique]
+    (loan_id, step) [note: 'partial unique index for pending rows only']
   }
   Note: 'NAT-19: one row per approval step, so decision history survives.'
 }
@@ -117,8 +122,8 @@ Table installment {
   loan_id     uuid [ref: > loan_request.id, not null]
   seq         smallint [not null, note: '1-3']
   due_date    date [not null]
-  amount_due  "numeric(12,2)" [not null]
-  amount_paid "numeric(12,2)" [not null, default: 0]
+  amount_due  integer [not null]
+  amount_paid integer [not null, default: 0]
   settled_at  timestamptz
 
   indexes {
@@ -132,11 +137,11 @@ Table payment {
   id              uuid [pk, default: `gen_random_uuid()`]
   loan_id         uuid [ref: > loan_request.id, not null]
   installment_id  bigint [ref: > installment.id]
-  amount          "numeric(12,2)" [not null]
+  amount          integer [not null]
   slip_url        text
   slip_ref        text [unique, note: 'bank transaction ref: same slip cannot be reused']
   slip_ocr_status text [not null, default: 'pending', note: 'pending | verified | failed | manual']
-  ocr_amount      "numeric(12,2)" [note: 'what OCR read — compare against `amount`, which the student typed']
+  ocr_amount      integer [note: 'whole baht; what OCR read — compare against `amount`, which the student typed']
   ocr_paid_at     timestamptz [note: 'transfer date OCR read off the slip']
   slip_ocr_raw    jsonb [note: 'everything else OCR returned']
   status          text [not null, default: 'pending_review', note: 'pending_review | confirmed | rejected']
@@ -151,7 +156,7 @@ Table payment {
 Table fund_transaction {
   id           bigserial [pk]
   kind         text [not null, note: 'top_up | disburse | repayment | adjustment']
-  amount       "numeric(12,2)" [not null]
+  amount       integer [not null]
   direction    smallint [not null, note: '+1 in, -1 out']
   loan_id      uuid [ref: > loan_request.id]
   performed_by uuid [ref: > app_user.id, not null]
