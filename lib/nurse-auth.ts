@@ -34,13 +34,12 @@ export function isNursingFacultyEmployee(profile: CmuProfile) {
 export function getNurseAccessDecision(profile: CmuProfile): NurseAccessDecision {
   const studentId = getProfileText(profile, "student_id");
 
-  if (studentId) {
-    return isEligibleNursingStudentId(studentId)
-      ? { allowed: true, userType: "student" }
-      : { allowed: false, userType: "student", reason: "student_id_not_eligible" };
-  }
 
   if (isNursingFacultyEmployee(profile)) {
+    if (studentId) {
+      return isEligibleNursingStudentId(studentId)
+        ? { allowed: true, userType: "student" } : { allowed: false, userType: "student", reason: "student_id_not_eligible" };
+    }
     return { allowed: true, userType: "employee" };
   }
 
