@@ -21,7 +21,6 @@
   "schemaType": "typescript",
   "outputFile": "openapi.json",
   "outputDir": "./public",
-  "docsUrl": "/api-docs",
   "ui": "none",
   "includeOpenApiRoutes": false,
   "ignoreRoutes": [],
