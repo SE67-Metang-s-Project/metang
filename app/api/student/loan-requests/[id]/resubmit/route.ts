@@ -6,7 +6,6 @@ import { isUuid, parseLoanInput } from "@/lib/loan-validation";
 import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/serialization";
 import { validateJsonRequest } from "@/lib/request-security";
-import { enqueueNotification } from "@/db/queries/notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -121,13 +120,6 @@ export async function POST(request: Request, { params }: Params) {
           before: serializeJson(current),
           after: serializeJson(final),
         },
-      });
-      await enqueueNotification(tx, {
-        eventType: "loan.review_requested",
-        dedupeKey: `loan:${id}:review:${step}:${attempt}`,
-        payload: step === "advisor"
-          ? { loanId: id, step, recipient: { userId: advisorId } }
-          : { loanId: id, step, recipient: { roles: ["admin", "super_admin"] } },
       });
       return final;
     });

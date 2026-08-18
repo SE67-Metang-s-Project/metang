@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { parseLoanInput } from "@/lib/loan-validation";
 import { validateJsonRequest } from "@/lib/request-security";
 import { serializeJson } from "@/lib/serialization";
-import { enqueueNotification } from "@/db/queries/notifications";
 import {
   getStudentSessionContext,
   resolveStoredStudent,
@@ -152,11 +151,6 @@ export async function POST(request: Request) {
           entityId: created.id,
           after: serializeJson(created),
         },
-      });
-      await enqueueNotification(tx, {
-        eventType: "loan.review_requested",
-        dedupeKey: `loan:${created.id}:review:advisor:1`,
-        payload: { loanId: created.id, step: "advisor", recipient: { userId: advisors[0].id } },
       });
       return tx.loanRequest.findUniqueOrThrow({ where: { id: created.id }, include: loanInclude });
     });

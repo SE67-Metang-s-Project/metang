@@ -2,10 +2,6 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
 import type { LoanDecision } from "@/lib/loan-validation";
-import {
-  enqueueNotification,
-  LOAN_REVIEW_REQUESTED_EVENT,
-} from "@/db/queries/notifications";
 
 export type LoanRequestVisibility =
   | { scope: "global" }
@@ -124,11 +120,6 @@ export async function decideLoanRequest({
       });
       const attempt = (latestAdmin?.attempt ?? 0) + 1;
       await tx.loanApproval.create({ data: { loanId: id, step: "admin", attempt } });
-      await enqueueNotification(tx, {
-        eventType: LOAN_REVIEW_REQUESTED_EVENT,
-        dedupeKey: `loan:${id}:review:admin:${attempt}`,
-        payload: { loanId: id, step: "admin", recipient: { roles: ["admin", "super_admin"] } },
-      });
     }
 
     const final = await tx.loanRequest.findUniqueOrThrow({
