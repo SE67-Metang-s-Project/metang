@@ -1,10 +1,68 @@
-'use client';
+import type { LoanRequestHistoryItem } from "@/app/student/studentMockData";
+import LoanHistoryCard from "@/components/student/dashboard/LoanHistoryCard";
+import styles from "@/app/student/student.module.css";
 
-import React, { useState } from "react";
-import SideNav from "@/components/SidebarNav";
-import UserProfile from "@/components/UserProfile";
-import { Menu, Search, ChevronDown } from "lucide-react";
+type LoanHistoryListProps = {
+  initialVisibleCount?: number;
+  lessLabel?: string;
+  moreLabel?: string;
+  requests: LoanRequestHistoryItem[];
+  sectionClassName?: string;
+  showAllRequests: boolean;
+  showMoreButton?: boolean;
+  onShowMore: () => void;
+  onOpenRequest?: (requestNumber: string) => void;
+};
 
-export default function ProfessorPendingDetailsPage() {
-    const [isSideNavOpen, setIsSideNavOpen] = useState(false);
+export default function LoanHistoryList({
+  initialVisibleCount = 3,
+  lessLabel = "ซ่อนรายละเอียด",
+  moreLabel = "ดูประวัติคำร้องทั้งหมด",
+  requests,
+  sectionClassName,
+  showAllRequests,
+  showMoreButton = false,
+  onShowMore,
+  onOpenRequest,
+}: LoanHistoryListProps) {
+  const visibleRequests = showAllRequests
+    ? requests || []
+    : (requests || []).slice(0, initialVisibleCount);
+  const buttonLabel = showAllRequests ? lessLabel : moreLabel;
+  const iconClassName = [styles.showMoreIcon, showAllRequests ? styles.showMoreIconExpanded : ""]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <section
+      className={[styles.historySection, sectionClassName].filter(Boolean).join(" ")}
+      aria-labelledby="history-title"
+    >
+      <h2 id="history-title">ประวัติคำร้องกู้ยืม</h2>
+      <div className={styles.historyList}>
+        {visibleRequests.map((request, index) => (
+          <LoanHistoryCard
+            key={`${request.requestNumber}-${index}`}
+            onOpenRequest={onOpenRequest}
+            request={request}
+          />
+        ))}
+      </div>
+
+      {(requests || []).length >= 3 || showMoreButton ? (
+        <button
+          aria-expanded={showAllRequests}
+          className={styles.showMore}
+          onClick={onShowMore}
+          type="button"
+        >
+          {buttonLabel}
+          <span aria-hidden="true" className={iconClassName}>
+            <i />
+            <i />
+          </span>
+        </button>
+      ) : null}
+    </section>
+  );
 }

@@ -1,11 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import SideNav from '@/components/SidebarNav';
-import UserProfile from '@/components/UserProfile';
-import { Menu, Search, FileText, ChevronDown, ArrowRight, Clock } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-
+import React, { useState } from "react";
+import SideNav from "@/components/SidebarNav";
+import UserProfile from "@/components/UserProfile";
+import { Menu, Search, FileText, ChevronDown, ArrowRight, Clock } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 // ==========================================
 // 1. Mock Data
@@ -37,13 +36,11 @@ const actionRequests = [
     waitDays: 5,
     isOverdue: false,
   },
-  
 ];
 
 // ==========================================
 // 2. Sub-Components
 // ==========================================
-
 const RequestCard = ({
   req,
   onClick,
@@ -75,7 +72,7 @@ const RequestCard = ({
         <p className="text-[12.5px] text-gray-500">รอพิจารณา {req.waitDays} วัน</p>
       </div>
 
-      {/* Info Column 3: Amount, Term & Objective (แยกส่วนออกจากกัน) */}
+      {/* Info Column 3: Amount, Term & Objective */}
       <div className="hidden md:flex flex-1 items-center gap-2.5 min-w-0">
         <span className="bg-[#f1f5f9] px-3 py-1.5 rounded-[6px] text-[12.5px] font-bold text-[#334155] whitespace-nowrap">
           ฿{req.amount}
@@ -83,14 +80,11 @@ const RequestCard = ({
         <span className="bg-[#f1f5f9] px-3 py-1.5 rounded-[6px] text-[12.5px] font-medium text-[#475569] whitespace-nowrap">
           {req.term} งวด
         </span>
-        <span className="text-[12.5px] text-gray-500 truncate">
-          {req.objective}
-        </span>
+        <span className="text-[12.5px] text-gray-500 truncate">{req.objective}</span>
       </div>
-
     </div>
 
-    {/* Action Button (เปลี่ยนเป็นสีส้มทึบ พร้อมไอคอนลูกศร) */}
+    {/* Action Button */}
     <div className="shrink-0 w-full lg:w-auto mt-3 lg:mt-0">
       <button className="flex items-center justify-center gap-2 focus:outline-none w-full lg:w-auto bg-[#ea580c] hover:bg-[#d94a08] text-white px-5 py-2.5 rounded-[8px] text-[13.5px] font-bold transition-colors">
         ตรวจสอบคำร้อง
@@ -99,10 +93,12 @@ const RequestCard = ({
     </div>
   </div>
 );
+
 // ==========================================
-// 3. Main Page
+// 3. Main Export Component
 // ==========================================
-export default function PendingRequestsPage() {
+export default function PendingRequests() {
+  // <-- เปลี่ยนชื่อฟังก์ชันให้เป็น Component
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
 
@@ -129,25 +125,17 @@ export default function PendingRequestsPage() {
 
         {/* Content Area */}
         <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto">
-          
-          {/* Welcome Card ปรับสีให้ตรงโลโก้ */}
           <div className="bg-gradient-to-r from-[#ea580c] to-[#f97316] rounded-[16px] p-6 sm:p-8 text-white shadow-sm mb-8">
             <h2 className="text-2xl font-bold mb-2">สวัสดี, ผศ.ดร. สุนีย์ วงค์ประเสริฐ</h2>
             <p className="text-sm opacity-90">คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่</p>
           </div>
 
-          {/* Section: Title + Search & Filter */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            
-            {/* Page Title */}
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">คำร้องรอพิจารณา</h1>
             </div>
 
-            {/* Search Bar & Dropdown */}
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-              
-              {/* Search Bar */}
               <div className="relative w-full sm:w-[280px]">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-4 w-4 text-gray-400" />
@@ -159,12 +147,10 @@ export default function PendingRequestsPage() {
                 />
               </div>
 
-              {/* Dropdown Button */}
               <button className="w-full sm:w-auto flex items-center justify-between px-4 py-2 bg-white border border-gray-200 rounded-[8px] text-[13px] font-medium text-[#ea580c] hover:bg-orange-50 shrink-0 transition-colors">
                 <span>สถานะทั้งหมด</span>
                 <ChevronDown className="w-4 h-4 ml-2" />
               </button>
-              
             </div>
           </div>
 
