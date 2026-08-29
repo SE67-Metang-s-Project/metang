@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 // กำหนดประเภทของ Role ทั้งหมดในระบบ
-export type UserRole = 'student' | 'professor' | 'admin' | 'executive' | 'superadmin';
+export type UserRole = 'student' | 'advisor' | 'admin' | 'executive' | 'superadmin';
 
 // กำหนดโครงสร้างของเมนู
 interface MenuItem {
@@ -45,11 +45,11 @@ const menuConfig: Record<UserRole, MenuItem[]> = {
     { title: 'ชำระเงินคืน (e-Slip)', icon: Wallet, href: '/student/payment' },
     { title: 'ประวัติคำร้อง', icon: History, href: '/student/history' },
   ],
-  professor: [
-    { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/professor' },
-    { title: 'คำร้องรอพิจารณา', icon: FileCheck, href: '/professor/pending' },
-    { title: 'นักศึกษาในความดูแล', icon: Users, href: '/professor/students' },
-    { title: 'ประวัติการดำเนินการ', icon: History, href: '/professor/history' },
+  advisor: [
+    { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/advisor' },
+    { title: 'คำร้องรอพิจารณา', icon: FileCheck, href: '/advisor/pending' },
+    { title: 'นักศึกษาในความดูแล', icon: Users, href: '/advisor/students' },
+    { title: 'ประวัติการดำเนินการ', icon: History, href: '/advisor/history' },
   ],
   admin: [
     { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/admin' },
