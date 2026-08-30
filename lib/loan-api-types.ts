@@ -254,3 +254,97 @@ export type PhoneNumberBody = {
 export type PhoneNumberResponse = {
   data: { phone: string | null } | null;
 };
+
+export type ExecutiveDecisionBody =
+  | { decision: "approved"; comment?: string | null }
+  | { decision: "rejected"; comment: string };
+
+export type ExecutiveQueueItem = {
+  id: string;
+  studentId: string;
+  advisorId: string;
+  amount: number;
+  approvedAmount: number | null;
+  studentYear: number;
+  purpose: string;
+  additionalNote: string | null;
+  installmentCount: number;
+  firstDueDate: string;
+  status:
+    | "draft"
+    | "returned"
+    | "pending_advisor"
+    | "pending_admin"
+    | "pending_executive"
+    | "pending_disbursement"
+    | "disbursed"
+    | "closed"
+    | "rejected"
+    | "cancelled";
+  submittedAt: string | null;
+  cancelledAt: string | null;
+  cancelledBy: string | null;
+  disbursedAt: string | null;
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  student: {
+    id: string;
+    studentCode: string | null;
+    fullNameTh: string;
+    fullNameEn: string | null;
+    phone: string | null;
+  };
+  advisor: {
+    id: string;
+    fullNameTh: string;
+    fullNameEn: string | null;
+  };
+  approvals: {
+    id: string;
+    loanId: string;
+    step: "advisor" | "admin" | "executive";
+    attempt: number;
+    decision: "pending" | "approved" | "returned" | "rejected";
+    decidedBy: string | null;
+    decidedAt: string | null;
+    comment: string | null;
+    decider: {
+      id: string;
+      fullNameTh: string;
+      fullNameEn: string | null;
+    } | null;
+  }[];
+};
+
+export type ExecutiveLoanRequestDetail = {
+  id: string;
+  studentId: string;
+  advisorId: string;
+  amount: number;
+  approvedAmount: number | null;
+  studentYear: number;
+  purpose: string;
+  additionalNote: string | null;
+  installmentCount: number;
+  firstDueDate: string;
+  status: ExecutiveQueueItem["status"];
+  submittedAt: string | null;
+  cancelledAt: string | null;
+  cancelledBy: string | null;
+  disbursedAt: string | null;
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  student: ExecutiveQueueItem["student"];
+  advisor: ExecutiveQueueItem["advisor"];
+  approvals: ExecutiveQueueItem["approvals"];
+};
+
+export type ExecutiveQueueResponse = {
+  data: ExecutiveQueueItem[];
+};
+
+export type ExecutiveLoanRequestDetailResponse = {
+  data: ExecutiveLoanRequestDetail;
+};

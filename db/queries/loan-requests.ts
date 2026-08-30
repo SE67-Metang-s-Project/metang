@@ -1,11 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
-import type { LoanDecision } from "@/lib/loan-validation";
+import type { ExecutiveDecision, LoanDecision } from "@/lib/loan-validation";
 
-export type LoanRequestVisibility =
-  | { scope: "global" }
-  | { scope: "assigned"; advisorId: string };
+export type LoanRequestVisibility = { scope: "global" } | { scope: "assigned"; advisorId: string };
 
 const userSummarySelect = {
   id: true,
@@ -65,6 +63,10 @@ export const adminLoanDetailSelect = {
   bankAccountName: true,
 } satisfies Prisma.LoanRequestSelect;
 
+export const executiveLoanSelect = {
+  ...adminQueueSelect,
+} satisfies Prisma.LoanRequestSelect;
+
 const globalLoanSelect = {
   ...loanSummarySelect,
   student: {
@@ -115,7 +117,10 @@ type AdvisorLoanRequest = Prisma.LoanRequestGetPayload<{ select: typeof advisorL
 type GlobalLoanRequest = Prisma.LoanRequestGetPayload<{ select: typeof globalLoanSelect }>;
 
 export function getLoanRequests(visibility: { scope: "global" }): Promise<GlobalLoanRequest[]>;
-export function getLoanRequests(visibility: { scope: "assigned"; advisorId: string }): Promise<AdvisorLoanRequest[]>;
+export function getLoanRequests(visibility: {
+  scope: "assigned";
+  advisorId: string;
+}): Promise<AdvisorLoanRequest[]>;
 export function getLoanRequests(
   visibility: LoanRequestVisibility,
 ): Promise<GlobalLoanRequest[] | AdvisorLoanRequest[]>;
@@ -300,6 +305,68 @@ export async function decideAdminLoanRequest({
       data: {
         actorId: adminId,
         action: `loan_request.admin_${decision}`,
+        entityType: "loan_request",
+        entityId: id,
+        before: serializeJson(current),
+        after: serializeJson(final),
+      },
+    });
+    return final;
+  });
+}
+
+export type ExecutiveDecisionErrorCode = "NOT_FOUND" | "STALE_DECISION";
+
+export class ExecutiveDecisionError extends Error {
+  constructor(readonly code: ExecutiveDecisionErrorCode) {
+    super(code);
+  }
+}
+
+export async function decideExecutiveLoanRequest({
+  id,
+  executiveId,
+  decision,
+  comment,
+}: {
+  id: string;
+  executiveId: string;
+  decision: ExecutiveDecision;
+  comment: string | null;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.loanRequest.findUnique({ where: { id }, select: executiveLoanSelect });
+    if (!current) throw new ExecutiveDecisionError("NOT_FOUND");
+    if (current.status !== "pending_executive") {
+      throw new ExecutiveDecisionError("STALE_DECISION");
+    }
+
+    const pending = await tx.loanApproval.findFirst({
+      where: { loanId: id, step: "executive", decision: "pending" },
+      orderBy: { attempt: "desc" },
+    });
+    if (!pending) throw new ExecutiveDecisionError("STALE_DECISION");
+
+    const nextStatus = decision === "approved" ? "pending_disbursement" : "rejected";
+    const changed = await tx.loanRequest.updateMany({
+      where: { id, status: "pending_executive" },
+      data: { status: nextStatus },
+    });
+    if (changed.count !== 1) throw new ExecutiveDecisionError("STALE_DECISION");
+
+    await tx.loanApproval.update({
+      where: { id: pending.id },
+      data: { decision, decidedBy: executiveId, decidedAt: new Date(), comment },
+    });
+
+    const final = await tx.loanRequest.findUniqueOrThrow({
+      where: { id },
+      select: executiveLoanSelect,
+    });
+    await tx.auditLog.create({
+      data: {
+        actorId: executiveId,
+        action: `loan_request.executive_${decision}`,
         entityType: "loan_request",
         entityId: id,
         before: serializeJson(current),
