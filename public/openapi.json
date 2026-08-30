@@ -1833,6 +1833,984 @@
           "error"
         ]
       },
+      "ExecutiveDecisionBody": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "decision": {
+                "type": "string",
+                "enum": [
+                  "approved"
+                ],
+                "nullable": false
+              },
+              "comment": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "decision"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "decision": {
+                "type": "string",
+                "enum": [
+                  "rejected"
+                ],
+                "nullable": false
+              },
+              "comment": {
+                "type": "string",
+                "nullable": false
+              }
+            },
+            "required": [
+              "decision",
+              "comment"
+            ]
+          }
+        ]
+      },
+      "ExecutiveLoanRequestDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "studentId": {
+            "type": "string"
+          },
+          "advisorId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "approvedAmount": {
+            "type": "number",
+            "nullable": true
+          },
+          "studentYear": {
+            "type": "number"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "additionalNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "installmentCount": {
+            "type": "number"
+          },
+          "firstDueDate": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "returned",
+              "pending_advisor",
+              "pending_admin",
+              "pending_executive",
+              "pending_disbursement",
+              "disbursed",
+              "closed",
+              "rejected",
+              "cancelled"
+            ]
+          },
+          "submittedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "cancelledAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "cancelledBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "disbursedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "closedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "student": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "studentCode": {
+                "type": "string",
+                "nullable": true
+              },
+              "fullNameTh": {
+                "type": "string"
+              },
+              "fullNameEn": {
+                "type": "string",
+                "nullable": true
+              },
+              "phone": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "studentCode",
+              "fullNameTh",
+              "fullNameEn",
+              "phone"
+            ]
+          },
+          "advisor": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "fullNameTh": {
+                "type": "string"
+              },
+              "fullNameEn": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "fullNameTh",
+              "fullNameEn"
+            ]
+          },
+          "approvals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "loanId": {
+                  "type": "string"
+                },
+                "step": {
+                  "type": "string",
+                  "enum": [
+                    "advisor",
+                    "admin",
+                    "executive"
+                  ]
+                },
+                "attempt": {
+                  "type": "number"
+                },
+                "decision": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "returned",
+                    "rejected"
+                  ]
+                },
+                "decidedBy": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "decidedAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "comment": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "decider": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "fullNameTh": {
+                      "type": "string"
+                    },
+                    "fullNameEn": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "fullNameTh",
+                    "fullNameEn"
+                  ],
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "loanId",
+                "step",
+                "attempt",
+                "decision",
+                "decidedBy",
+                "decidedAt",
+                "comment",
+                "decider"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "studentId",
+          "advisorId",
+          "amount",
+          "approvedAmount",
+          "studentYear",
+          "purpose",
+          "additionalNote",
+          "installmentCount",
+          "firstDueDate",
+          "status",
+          "submittedAt",
+          "cancelledAt",
+          "cancelledBy",
+          "disbursedAt",
+          "closedAt",
+          "createdAt",
+          "updatedAt",
+          "student",
+          "advisor",
+          "approvals"
+        ]
+      },
+      "ExecutiveLoanRequestDetailResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "studentId": {
+                "type": "string"
+              },
+              "advisorId": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "number"
+              },
+              "approvedAmount": {
+                "type": "number",
+                "nullable": true
+              },
+              "studentYear": {
+                "type": "number"
+              },
+              "purpose": {
+                "type": "string"
+              },
+              "additionalNote": {
+                "type": "string",
+                "nullable": true
+              },
+              "installmentCount": {
+                "type": "number"
+              },
+              "firstDueDate": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "returned",
+                  "pending_advisor",
+                  "pending_admin",
+                  "pending_executive",
+                  "pending_disbursement",
+                  "disbursed",
+                  "closed",
+                  "rejected",
+                  "cancelled"
+                ]
+              },
+              "submittedAt": {
+                "type": "string",
+                "nullable": true
+              },
+              "cancelledAt": {
+                "type": "string",
+                "nullable": true
+              },
+              "cancelledBy": {
+                "type": "string",
+                "nullable": true
+              },
+              "disbursedAt": {
+                "type": "string",
+                "nullable": true
+              },
+              "closedAt": {
+                "type": "string",
+                "nullable": true
+              },
+              "createdAt": {
+                "type": "string"
+              },
+              "updatedAt": {
+                "type": "string"
+              },
+              "student": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "studentCode": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "fullNameTh": {
+                    "type": "string"
+                  },
+                  "fullNameEn": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "phone": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "studentCode",
+                  "fullNameTh",
+                  "fullNameEn",
+                  "phone"
+                ]
+              },
+              "advisor": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "fullNameTh": {
+                    "type": "string"
+                  },
+                  "fullNameEn": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "fullNameTh",
+                  "fullNameEn"
+                ]
+              },
+              "approvals": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "loanId": {
+                      "type": "string"
+                    },
+                    "step": {
+                      "type": "string",
+                      "enum": [
+                        "advisor",
+                        "admin",
+                        "executive"
+                      ]
+                    },
+                    "attempt": {
+                      "type": "number"
+                    },
+                    "decision": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "approved",
+                        "returned",
+                        "rejected"
+                      ]
+                    },
+                    "decidedBy": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "decidedAt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "comment": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "decider": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "fullNameTh": {
+                          "type": "string"
+                        },
+                        "fullNameEn": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "fullNameTh",
+                        "fullNameEn"
+                      ],
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "loanId",
+                    "step",
+                    "attempt",
+                    "decision",
+                    "decidedBy",
+                    "decidedAt",
+                    "comment",
+                    "decider"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "id",
+              "studentId",
+              "advisorId",
+              "amount",
+              "approvedAmount",
+              "studentYear",
+              "purpose",
+              "additionalNote",
+              "installmentCount",
+              "firstDueDate",
+              "status",
+              "submittedAt",
+              "cancelledAt",
+              "cancelledBy",
+              "disbursedAt",
+              "closedAt",
+              "createdAt",
+              "updatedAt",
+              "student",
+              "advisor",
+              "approvals"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ExecutiveQueueItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "studentId": {
+            "type": "string"
+          },
+          "advisorId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "approvedAmount": {
+            "type": "number",
+            "nullable": true
+          },
+          "studentYear": {
+            "type": "number"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "additionalNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "installmentCount": {
+            "type": "number"
+          },
+          "firstDueDate": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "returned",
+              "pending_advisor",
+              "pending_admin",
+              "pending_executive",
+              "pending_disbursement",
+              "disbursed",
+              "closed",
+              "rejected",
+              "cancelled"
+            ]
+          },
+          "submittedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "cancelledAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "cancelledBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "disbursedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "closedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "student": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "studentCode": {
+                "type": "string",
+                "nullable": true
+              },
+              "fullNameTh": {
+                "type": "string"
+              },
+              "fullNameEn": {
+                "type": "string",
+                "nullable": true
+              },
+              "phone": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "studentCode",
+              "fullNameTh",
+              "fullNameEn",
+              "phone"
+            ]
+          },
+          "advisor": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "fullNameTh": {
+                "type": "string"
+              },
+              "fullNameEn": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "fullNameTh",
+              "fullNameEn"
+            ]
+          },
+          "approvals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "loanId": {
+                  "type": "string"
+                },
+                "step": {
+                  "type": "string",
+                  "enum": [
+                    "advisor",
+                    "admin",
+                    "executive"
+                  ]
+                },
+                "attempt": {
+                  "type": "number"
+                },
+                "decision": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "returned",
+                    "rejected"
+                  ]
+                },
+                "decidedBy": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "decidedAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "comment": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "decider": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "fullNameTh": {
+                      "type": "string"
+                    },
+                    "fullNameEn": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "fullNameTh",
+                    "fullNameEn"
+                  ],
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "loanId",
+                "step",
+                "attempt",
+                "decision",
+                "decidedBy",
+                "decidedAt",
+                "comment",
+                "decider"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "studentId",
+          "advisorId",
+          "amount",
+          "approvedAmount",
+          "studentYear",
+          "purpose",
+          "additionalNote",
+          "installmentCount",
+          "firstDueDate",
+          "status",
+          "submittedAt",
+          "cancelledAt",
+          "cancelledBy",
+          "disbursedAt",
+          "closedAt",
+          "createdAt",
+          "updatedAt",
+          "student",
+          "advisor",
+          "approvals"
+        ]
+      },
+      "ExecutiveQueueResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "studentId": {
+                  "type": "string"
+                },
+                "advisorId": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "approvedAmount": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "studentYear": {
+                  "type": "number"
+                },
+                "purpose": {
+                  "type": "string"
+                },
+                "additionalNote": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "installmentCount": {
+                  "type": "number"
+                },
+                "firstDueDate": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "draft",
+                    "returned",
+                    "pending_advisor",
+                    "pending_admin",
+                    "pending_executive",
+                    "pending_disbursement",
+                    "disbursed",
+                    "closed",
+                    "rejected",
+                    "cancelled"
+                  ]
+                },
+                "submittedAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "cancelledAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "cancelledBy": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "disbursedAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "closedAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "type": "string"
+                },
+                "student": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "studentCode": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "fullNameTh": {
+                      "type": "string"
+                    },
+                    "fullNameEn": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "phone": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "studentCode",
+                    "fullNameTh",
+                    "fullNameEn",
+                    "phone"
+                  ]
+                },
+                "advisor": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "fullNameTh": {
+                      "type": "string"
+                    },
+                    "fullNameEn": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "fullNameTh",
+                    "fullNameEn"
+                  ]
+                },
+                "approvals": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "loanId": {
+                        "type": "string"
+                      },
+                      "step": {
+                        "type": "string",
+                        "enum": [
+                          "advisor",
+                          "admin",
+                          "executive"
+                        ]
+                      },
+                      "attempt": {
+                        "type": "number"
+                      },
+                      "decision": {
+                        "type": "string",
+                        "enum": [
+                          "pending",
+                          "approved",
+                          "returned",
+                          "rejected"
+                        ]
+                      },
+                      "decidedBy": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "decidedAt": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "comment": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "decider": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "fullNameTh": {
+                            "type": "string"
+                          },
+                          "fullNameEn": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "fullNameTh",
+                          "fullNameEn"
+                        ],
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "loanId",
+                      "step",
+                      "attempt",
+                      "decision",
+                      "decidedBy",
+                      "decidedAt",
+                      "comment",
+                      "decider"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "studentId",
+                "advisorId",
+                "amount",
+                "approvedAmount",
+                "studentYear",
+                "purpose",
+                "additionalNote",
+                "installmentCount",
+                "firstDueDate",
+                "status",
+                "submittedAt",
+                "cancelledAt",
+                "cancelledBy",
+                "disbursedAt",
+                "closedAt",
+                "createdAt",
+                "updatedAt",
+                "student",
+                "advisor",
+                "approvals"
+              ]
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "LoanDecision": {
         "type": "string",
         "enum": [
@@ -4202,6 +5180,241 @@
         "responses": {}
       }
     },
+    "/executive/loan-requests": {
+      "get": {
+        "operationId": "get-executive-loan-requests",
+        "summary": "List loan requests awaiting the active Executive's final decision.",
+        "description": "",
+        "tags": [
+          "Executive loans"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutiveQueueResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/executive/loan-requests/{id}": {
+      "get": {
+        "operationId": "get-executive-loan-requests-{id}",
+        "summary": "Get a loan request awaiting the active Executive's decision.",
+        "description": "",
+        "tags": [
+          "Executive loans"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutiveLoanRequestDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/executive/loan-requests/{id}/decision": {
+      "post": {
+        "operationId": "post-executive-loan-requests-{id}-decision",
+        "summary": "Submit the active Executive's final decision for a loan request.",
+        "description": "",
+        "tags": [
+          "Executive loans"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutiveDecisionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutiveLoanRequestDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/loan-requests": {
       "get": {
         "operationId": "get-loan-requests",
@@ -4761,6 +5974,9 @@
     },
     {
       "name": "Auth"
+    },
+    {
+      "name": "Executive loans"
     },
     {
       "name": "Loan requests"
