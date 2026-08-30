@@ -27,7 +27,18 @@ export type RequestStatus = {
   history: ActionHistory[];
 };
 
-export type ActionRequest = StudentInfo & LoanDetails & RequestStatus & { id: string; };
+export type PaymentBehaviorInfo = {
+  onTimeStatusLabel?: string;
+  onTimeInstallments?: number;
+  lateInstallments?: number;
+  totalLoanRequests?: number;
+  totalInstallments?: number;
+};
+
+export type ActionRequest = StudentInfo & LoanDetails & RequestStatus & {
+  id: string;
+  paymentBehavior?: PaymentBehaviorInfo;
+};
 
 // 2. ย้ายตัวแปร mockRequests มาไว้ที่นี่ และ Export ออกไป
 export const mockRequests: ActionRequest[] = [
@@ -45,7 +56,14 @@ export const mockRequests: ActionRequest[] = [
     isOverdue: true,
     history: [
       { action: "ยื่นคำขอกู้ยืม", date: "1 ส.ค. 2569", actor: "ธีรภัทร วัฒนา" }
-    ]
+    ],
+    paymentBehavior: {
+      onTimeStatusLabel: "ชำระตรงเวลา",
+      onTimeInstallments: 12,
+      lateInstallments: 0,
+      totalLoanRequests: 4,
+      totalInstallments: 12,
+    }
   },
   {
     id: "SL-2026-000102",
@@ -62,7 +80,13 @@ export const mockRequests: ActionRequest[] = [
     history: [
       { action: "ยื่นคำขอกู้ยืม", date: "5 ส.ค. 2569", actor: "ปิยะพงษ์ สุขใจ" },
       { action: "เจ้าหน้าที่ตรวจสอบเอกสาร", date: "6 ส.ค. 2569", actor: "เจ้าหน้าที่ สมศรี" }
-    ]
+    ],
+    paymentBehavior: {
+      onTimeStatusLabel: "ชำระตรงเวลา",
+      onTimeInstallments: 6,
+      lateInstallments: 0,
+      totalLoanRequests: 2,
+      totalInstallments: 6,
+    }
   },
-  
 ];

@@ -7,7 +7,7 @@ import TopNav from "@/components/TopNav"; // 1. Import TopNav ที่สร้
 // Import กล่องต่างๆ ของเราเข้ามา
 import AdvisorWelcomeCard from "./AdvisorWelcomeCard";
 import AdvisorStatCards from "./AdvisorStatCards";
-import PendingRequestsList from "./PendingRequestsList";
+import PendingRequestsList from "./RequestsList";
 import AdvisorRecentHistory from "./AdvisorRecentHistory";
 
 export default function AdvisorDashboard() {
@@ -33,7 +33,7 @@ export default function AdvisorDashboard() {
           {/* ส่วนบนสุด: Welcome Card และสถิติ */}
           <div>
             <AdvisorWelcomeCard />
-            <AdvisorStatCards />
+            {/* <AdvisorStatCards /> */}
           </div>
 
           {/* 1. รายการคำร้องที่ต้องพิจารณา */}

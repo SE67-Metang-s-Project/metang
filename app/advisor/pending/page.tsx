@@ -1,5 +1,6 @@
-import PendingRequests from "@/components/advisor/dashboard/PendingRequests";
+import PendingPage from "@/components/advisor/pending/PendingPage";
 
 export default function PendingRequestsPage() {
-  return <PendingRequests />;
+  // return <PendingRequests />;
+  return <PendingPage />;
 }
