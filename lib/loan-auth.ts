@@ -89,13 +89,15 @@ export async function resolveAdvisor(identity: LoanIdentity, advisorName?: strin
   return user;
 }
 
-async function getDevelopmentLoanContext(role: "advisor" | "staff") {
+async function getDevelopmentLoanContext(role: "admin" | "advisor" | "staff") {
   const user = await prisma.appUser.findFirst({
     where: {
       roles:
         role === "staff"
           ? { some: { role: { in: ["admin", "super_admin", "executive", "advisor"] } } }
-          : { some: { role } },
+          : role === "admin"
+            ? { some: { role: { in: ["admin", "super_admin"] } } }
+            : { some: { role } },
       ...(role === "advisor" ? { advisorLoans: { some: {} } } : {}),
     },
     include: { roles: { select: { role: true } } },
@@ -167,6 +169,39 @@ export async function getAdvisorContext(advisorName?: string): Promise<LoanUserC
   if (!user) return null;
 
   return { session, profile: session.profile, identity, user };
+}
+
+export type AdminAccess =
+  | { status: "authorized"; context: LoanUserContext }
+  | { status: "unauthenticated" }
+  | { status: "forbidden" };
+
+function hasAdminRole(roles: { role: UserRoleName }[]) {
+  return roles.some(({ role }) => role === "admin" || role === "super_admin");
+}
+
+export async function getAdminAccess(): Promise<AdminAccess> {
+  if (isDevelopmentApiAccess()) {
+    const context = await getDevelopmentLoanContext("admin");
+    return context ? { status: "authorized", context } : { status: "forbidden" };
+  }
+
+  const session = await getCmuSession();
+  if (!session) return { status: "unauthenticated" };
+
+  const identity = normalizeLoanIdentity(session.profile);
+  const user = await resolveStudentIdentity(identity);
+  if (!user || !hasAdminRole(user.roles)) return { status: "forbidden" };
+
+  return {
+    status: "authorized",
+    context: { session, profile: session.profile, identity, user },
+  };
+}
+
+export async function getAdminContext(): Promise<LoanUserContext | null> {
+  const access = await getAdminAccess();
+  return access.status === "authorized" ? access.context : null;
 }
 
 export async function getDevelopmentStaffContext() {
