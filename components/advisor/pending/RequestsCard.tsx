@@ -206,7 +206,8 @@ export default function RequestsCard({ requests }: RequestsCardProps) {
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <span className="hidden sm:inline-block bg-yellow-100 text-yellow-800 text-[12px] font-bold px-2.5 py-1 rounded-md">
-                  รออาจารย์ที่ปรึกษา
+                  {/* นำสถานะล่าสุดมาแสดงบน Header Modal */}
+                  {selectedRequest.history[selectedRequest.history.length - 1]?.action}
                 </span>
                 <button
                   onClick={closeAllModals}
@@ -222,7 +223,7 @@ export default function RequestsCard({ requests }: RequestsCardProps) {
               {/* Badge สถานะสำหรับ Mobile (ย้ายมาไว้ข้างในหากจอเล็ก) */}
               <div className="sm:hidden mb-2">
                 <span className="bg-yellow-100 text-yellow-800 text-[12px] font-bold px-2.5 py-1 rounded-md inline-block">
-                  สถานะ: รออาจารย์ที่ปรึกษา
+                  สถานะ: {selectedRequest.history[selectedRequest.history.length - 1]?.action}
                 </span>
               </div>
 
@@ -352,21 +353,26 @@ export default function RequestsCard({ requests }: RequestsCardProps) {
               </div>
             </div>
 
-            {/* Footer Buttons */}
-            <div className="p-4 bg-white border-t border-gray-200 flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={() => setConfirmAction("reject")}
-                className="w-full sm:flex-1 py-3 flex items-center justify-center gap-2 rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98]"
-              >
-                <XCircle size={18} /> ไม่อนุมัติ
-              </button>
-              <button
-                onClick={() => setConfirmAction("approve")}
-                className="w-full sm:flex-1 py-3 flex items-center justify-center gap-2 rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98]"
-              >
-                <CheckCircle2 size={18} /> อนุมัติ
-              </button>
-            </div>
+            {/* Footer Buttons - แสดงเฉพาะเมื่อสถานะล่าสุดคือ "ยื่นคำขอกู้ยืม" เท่านั้น */}
+            {selectedRequest.history &&
+              selectedRequest.history.length > 0 &&
+              selectedRequest.history[selectedRequest.history.length - 1].action ===
+                "ยื่นคำขอกู้ยืม" && (
+                <div className="p-4 bg-white border-t border-gray-200 flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => setConfirmAction("reject")}
+                    className="w-full sm:flex-1 py-3 flex items-center justify-center gap-2 rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98]"
+                  >
+                    <XCircle size={18} /> ไม่อนุมัติ
+                  </button>
+                  <button
+                    onClick={() => setConfirmAction("approve")}
+                    className="w-full sm:flex-1 py-3 flex items-center justify-center gap-2 rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98]"
+                  >
+                    <CheckCircle2 size={18} /> อนุมัติ
+                  </button>
+                </div>
+              )}
 
             {/* ========================================== */}
             {/* 4. Modal ย่อย: ยืนยันการพิจารณา */}

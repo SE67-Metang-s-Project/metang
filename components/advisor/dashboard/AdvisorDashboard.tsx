@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import SideNav from "@/components/SidebarNav";
-import TopNav from "@/components/TopNav"; // 1. Import TopNav ที่สร้างใหม่เข้ามา
-
+import SideNav from "@/components/shared/SidebarNav";
+import TopNav from "@/components/shared/TopNav"; // 1. Import TopNav ที่สร้างใหม่เข้ามา
+import { ShieldCheck } from "lucide-react";
 // Import กล่องต่างๆ ของเราเข้ามา
-import AdvisorWelcomeCard from "./AdvisorWelcomeCard";
-import AdvisorStatCards from "./AdvisorStatCards";
+
+import AdvisorWelcomeCard from "@/components/shared/WelcomeCard";
 import PendingRequestsList from "./RequestsList";
 import AdvisorRecentHistory from "./AdvisorRecentHistory";
 
@@ -20,8 +20,7 @@ export default function AdvisorDashboard() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col w-full min-h-screen lg:ml-64 transition-all duration-300">
-        
-        {/* ดึงข้อมูลผู้ใช้งานจากระบบ (เช่น จาก Context หรือ API) เพื่อส่งไปยัง TopNav */} 
+        {/* ดึงข้อมูลผู้ใช้งานจากระบบ (เช่น จาก Context หรือ API) เพื่อส่งไปยัง TopNav */}
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
           userName="ผศ.ดร. สุนีย์ วงค์ประเสริฐ"
@@ -31,11 +30,9 @@ export default function AdvisorDashboard() {
         {/* Content Area */}
         <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto space-y-8">
           {/* ส่วนบนสุด: Welcome Card และสถิติ */}
-          <div>
-            <AdvisorWelcomeCard />
-            {/* <AdvisorStatCards /> */}
+          <div className="w-full">
+            <AdvisorWelcomeCard name="ออมซ่า วงค์ประเสริฐ" description="ผู้ดูแลระบบ (Admin)" />
           </div>
-
           {/* 1. รายการคำร้องที่ต้องพิจารณา */}
           <div className="w-full">
             <PendingRequestsList />

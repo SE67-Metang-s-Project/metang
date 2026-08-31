@@ -14,6 +14,7 @@ export interface Student {
   requestStatus: string;
   paymentStatus: string;
   paymentStatusType: "good" | "bad" | "neutral";
+  totalBorrowed: string;
   balance: string;
   delayDays: string;
 }
@@ -50,10 +51,14 @@ export default function StudentListTable({ students }: StudentListTableProps) {
             </div>
 
             {/* ข้อมูลสถานะและยอดเงิน */}
-            <div className="grid grid-cols-2 gap-3 border-t border-gray-50 pt-3">
+            <div className="grid grid-cols-3 gap-3 border-t border-gray-50 pt-3">
               <div>
-                <div className="text-[11px] text-gray-500 mb-0.5">ยอดหนี้คงเหลือ</div>
-                <div className="font-semibold text-gray-700 text-[13px]">฿{student.balance}</div>
+                <div className="text-[11px] text-gray-500 mb-0.5">ยอดกู้ยืม</div>
+                <div className="font-semibold text-gray-700 text-[13px]">฿{student.totalBorrowed}</div>
+              </div>
+              <div>
+                <div className="text-[11px] text-gray-500 mb-0.5">คงเหลือ</div>
+                <div className="font-semibold text-[#dc2626] text-[13px]">฿{student.balance}</div>
               </div>
               <div>
                 <div className="text-[11px] text-gray-500 mb-0.5">สถานะการชำระ</div>
@@ -87,11 +92,6 @@ export default function StudentListTable({ students }: StudentListTableProps) {
                 </span>
               )}
             </div>
-
-            {/* Action Button */}
-            <button className="w-full mt-1 bg-white border border-gray-200 hover:bg-gray-50 text-[#1e293b] px-5 py-2.5 rounded-[8px] text-[13px] font-bold transition-colors shadow-sm">
-              ดูโปรไฟล์
-            </button>
           </div>
         ))}
       </div>
@@ -100,7 +100,7 @@ export default function StudentListTable({ students }: StudentListTableProps) {
       {/* 2. มุมมองสำหรับ Desktop/Tablet (แสดงเป็นตาราง) */}
       {/* ========================================== */}
       <div className="hidden md:block overflow-x-auto relative rounded-xl border border-gray-300 shadow-sm">
-        <table className="w-full text-left border-collapse min-w-[900px] bg-white">
+        <table className="w-full text-left border-collapse min-w-[1000px] bg-white">
           <thead>
             <tr className="bg-gray-100/70 border-b border-gray-300 text-gray-700 text-[14px]">
               <th className="py-3.5 px-4 font-semibold border-r border-gray-300 min-w-[250px]">
@@ -110,15 +110,17 @@ export default function StudentListTable({ students }: StudentListTableProps) {
                 สถานะคำร้อง
               </th>
               <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
-                สถานะการชำระเงิน
+                พฤติกรรมการชำระเงิน
+              </th>
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
+                การกู้ยืมทั้งหมด
               </th>
               <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
                 ยอดหนี้คงเหลือ
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap text-center">
+              <th className="py-3.5 px-4 font-semibold whitespace-nowrap text-center">
                 ล่าช้า (วัน)
               </th>
-              <th className="py-3.5 px-4 font-semibold text-center whitespace-nowrap">จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -170,21 +172,19 @@ export default function StudentListTable({ students }: StudentListTableProps) {
                   )}
                 </td>
 
-                {/* 4. ยอดหนี้คงเหลือ */}
-                <td className="py-3 px-4 text-gray-900 font-bold border-r border-gray-200 whitespace-nowrap">
+                {/* 4. การกู้ยืมทั้งหมด */}
+                <td className="py-3 px-4 text-gray-700 font-medium border-r border-gray-200 whitespace-nowrap">
+                  ฿{student.totalBorrowed}
+                </td>
+
+                {/* 5. ยอดหนี้คงเหลือ */}
+                <td className="py-3 px-4 text-[#dc2626] font-bold border-r border-gray-200 whitespace-nowrap">
                   ฿{student.balance}
                 </td>
 
-                {/* 5. ล่าช้า (วัน) */}
-                <td className="py-3 px-4 text-gray-600 border-r border-gray-200 whitespace-nowrap text-center font-medium">
+                {/* 6. ล่าช้า (วัน) */}
+                <td className="py-3 px-4 text-gray-600 whitespace-nowrap text-center font-medium">
                   {student.delayDays}
-                </td>
-
-                {/* 6. จัดการ */}
-                <td className="py-3 px-4 text-center">
-                  <button className="text-[#1e293b] hover:text-[#ea580c] font-bold bg-white hover:bg-orange-50 px-4 py-2 rounded-lg transition-colors border border-gray-200 hover:border-[#ea580c] shadow-sm whitespace-nowrap text-[13px]">
-                    ดูโปรไฟล์
-                  </button>
                 </td>
               </tr>
             ))}

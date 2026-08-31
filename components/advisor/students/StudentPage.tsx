@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import SideNav from "@/components/SidebarNav";
-import TopNav from "@/components/TopNav";
+import SideNav from "@/components/shared/SidebarNav";
+import TopNav from "@/components/shared/TopNav";
 
 // Import Component ย่อยที่เราสร้างไว้
 import StudentFilters from "./StudentFilters"; 
@@ -19,6 +19,7 @@ const mockStudents = [
     year: "3",
     requestStatus: "รออาจารย์ที่ปรึกษาอนุมัติ",
     paymentStatus: "จ่ายตรงเวลาเสมอ",
+    totalBorrowed: "50,000",
     paymentStatusType: "good", // เขียว
     balance: "17,501",
     delayDays: "0",
@@ -31,6 +32,7 @@ const mockStudents = [
     year: "2",
     requestStatus: "รออาจารย์ที่ปรึกษาอนุมัติ",
     paymentStatus: "มีหนี้เกินกำหนด",
+    totalBorrowed: "30,000",
     paymentStatusType: "bad", // แดง
     balance: "16,500",
     delayDays: "0",
@@ -43,6 +45,7 @@ const mockStudents = [
     year: "4",
     requestStatus: "รออาจารย์ที่ปรึกษาอนุมัติ",
     paymentStatus: "มีหนี้เกินกำหนด",
+    totalBorrowed: "40,000",
     paymentStatusType: "bad", // แดง
     balance: "18,501",
     delayDays: "9",
@@ -54,6 +57,7 @@ const mockStudents = [
     major: "พยาบาลศาสตรบัณฑิต",
     year: "3",
     requestStatus: "รออาจารย์ที่ปรึกษาอนุมัติ",
+    totalBorrowed: "20,000",
     paymentStatus: "ยังไม่มีประวัติชำระ",
     paymentStatusType: "neutral", // เทา
     balance: "12,000",
@@ -66,6 +70,7 @@ const mockStudents = [
     major: "พยาบาลศาสตรบัณฑิต",
     year: "2",
     requestStatus: "รออาจารย์ที่ปรึกษาอนุมัติ",
+    totalBorrowed: "10,000",
     paymentStatus: "ยังไม่มีประวัติชำระ",
     paymentStatusType: "neutral", // เทา
     balance: "9,999",
