@@ -1,50 +1,126 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
-import type { LoanDecision } from "@/lib/loan-validation";
+import type { ExecutiveDecision, LoanDecision } from "@/lib/loan-validation";
 
-export type LoanRequestVisibility =
-  | { scope: "global" }
-  | { scope: "assigned"; advisorId: string };
+export type LoanRequestVisibility = { scope: "global" } | { scope: "assigned"; advisorId: string };
 
-export const advisorLoanSelect = {
-  id: true, studentId: true, advisorId: true, amount: true, approvedAmount: true,
-  studentYear: true, purpose: true, additionalNote: true, installmentCount: true,
-  firstDueDate: true, status: true, submittedAt: true, cancelledAt: true,
-  cancelledBy: true, disbursedAt: true, closedAt: true, createdAt: true, updatedAt: true,
-  student: { select: { id: true, studentCode: true, fullNameTh: true, fullNameEn: true } },
-  advisor: { select: { id: true, fullNameTh: true, fullNameEn: true } },
-  approvals: {
-    include: { decider: { select: { id: true, fullNameTh: true, fullNameEn: true } } },
-    orderBy: [{ step: "asc" }, { attempt: "asc" }],
-  },
+const userSummarySelect = {
+  id: true,
+  fullNameTh: true,
+  fullNameEn: true,
+} satisfies Prisma.AppUserSelect;
+
+const studentSummarySelect = {
+  ...userSummarySelect,
+  studentCode: true,
+} satisfies Prisma.AppUserSelect;
+
+const loanSummarySelect = {
+  id: true,
+  studentId: true,
+  advisorId: true,
+  amount: true,
+  approvedAmount: true,
+  studentYear: true,
+  purpose: true,
+  additionalNote: true,
+  installmentCount: true,
+  firstDueDate: true,
+  status: true,
+  submittedAt: true,
+  cancelledAt: true,
+  cancelledBy: true,
+  disbursedAt: true,
+  closedAt: true,
+  createdAt: true,
+  updatedAt: true,
 } satisfies Prisma.LoanRequestSelect;
 
-const globalLoanInclude = {
+const approvalHistory = {
+  include: { decider: { select: userSummarySelect } },
+  orderBy: [{ step: "asc" }, { attempt: "asc" }],
+} satisfies Prisma.LoanRequest$approvalsArgs;
+
+export const advisorLoanSelect = {
+  ...loanSummarySelect,
+  student: { select: studentSummarySelect },
+  advisor: { select: userSummarySelect },
+  approvals: approvalHistory,
+} satisfies Prisma.LoanRequestSelect;
+
+export const adminQueueSelect = {
+  ...loanSummarySelect,
+  student: { select: { ...studentSummarySelect, phone: true } },
+  advisor: { select: userSummarySelect },
+  approvals: approvalHistory,
+} satisfies Prisma.LoanRequestSelect;
+
+export const adminLoanDetailSelect = {
+  ...adminQueueSelect,
+  bankName: true,
+  bankAccountNo: true,
+  bankAccountName: true,
+} satisfies Prisma.LoanRequestSelect;
+
+export const executiveLoanSelect = {
+  ...adminQueueSelect,
+} satisfies Prisma.LoanRequestSelect;
+
+const globalLoanSelect = {
+  ...loanSummarySelect,
   student: {
     select: {
-      id: true,
-      studentCode: true,
-      fullNameTh: true,
-      fullNameEn: true,
+      ...studentSummarySelect,
       phone: true,
     },
   },
-  advisor: { select: { id: true, fullNameTh: true, fullNameEn: true } },
-  cancelledByUser: { select: { id: true, fullNameTh: true, fullNameEn: true } },
+  advisor: { select: userSummarySelect },
+  cancelledByUser: { select: userSummarySelect },
   approvals: {
-    include: { decider: { select: { id: true, fullNameTh: true, fullNameEn: true } } },
-    orderBy: [{ step: "asc" }, { attempt: "asc" }],
+    ...approvalHistory,
   },
-  installments: { orderBy: { seq: "asc" } },
-  payments: { omit: { slipOcrRaw: true }, orderBy: { createdAt: "asc" } },
-} satisfies Prisma.LoanRequestInclude;
+  installments: {
+    orderBy: { seq: "asc" },
+    select: {
+      id: true,
+      loanId: true,
+      seq: true,
+      dueDate: true,
+      amountDue: true,
+      amountPaid: true,
+      settledAt: true,
+    },
+  },
+  payments: {
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      loanId: true,
+      installmentId: true,
+      amount: true,
+      slipUrl: true,
+      slipRef: true,
+      slipOcrStatus: true,
+      ocrAmount: true,
+      ocrPaidAt: true,
+      status: true,
+      confirmedBy: true,
+      confirmedAt: true,
+      paidAt: true,
+      createdAt: true,
+    },
+  },
+} satisfies Prisma.LoanRequestSelect;
 
 type AdvisorLoanRequest = Prisma.LoanRequestGetPayload<{ select: typeof advisorLoanSelect }>;
-type GlobalLoanRequest = Prisma.LoanRequestGetPayload<{ include: typeof globalLoanInclude }>;
+type GlobalLoanRequest = Prisma.LoanRequestGetPayload<{ select: typeof globalLoanSelect }>;
 
 export function getLoanRequests(visibility: { scope: "global" }): Promise<GlobalLoanRequest[]>;
-export function getLoanRequests(visibility: { scope: "assigned"; advisorId: string }): Promise<AdvisorLoanRequest[]>;
+export function getLoanRequests(visibility: {
+  scope: "assigned";
+  advisorId: string;
+}): Promise<AdvisorLoanRequest[]>;
 export function getLoanRequests(
   visibility: LoanRequestVisibility,
 ): Promise<GlobalLoanRequest[] | AdvisorLoanRequest[]>;
@@ -58,7 +134,7 @@ export async function getLoanRequests(visibility: LoanRequestVisibility) {
   }
 
   return prisma.loanRequest.findMany({
-    include: globalLoanInclude,
+    select: globalLoanSelect,
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
   });
 }
@@ -130,6 +206,167 @@ export async function decideLoanRequest({
       data: {
         actorId: advisorId,
         action: `loan_request.advisor_${decision}`,
+        entityType: "loan_request",
+        entityId: id,
+        before: serializeJson(current),
+        after: serializeJson(final),
+      },
+    });
+    return final;
+  });
+}
+
+export type AdminDecisionErrorCode =
+  | "NOT_FOUND"
+  | "STALE_DECISION"
+  | "INVALID_APPROVED_AMOUNT"
+  | "AMOUNT_EXCEEDS_REQUEST"
+  | "REDUCTION_COMMENT_REQUIRED";
+
+export class AdminDecisionError extends Error {
+  constructor(readonly code: AdminDecisionErrorCode) {
+    super(code);
+  }
+}
+
+export async function decideAdminLoanRequest({
+  id,
+  adminId,
+  decision,
+  approvedAmount,
+  comment,
+}: {
+  id: string;
+  adminId: string;
+  decision: LoanDecision;
+  approvedAmount: number | null;
+  comment: string | null;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.loanRequest.findUnique({
+      where: { id },
+      select: adminLoanDetailSelect,
+    });
+    if (!current) throw new AdminDecisionError("NOT_FOUND");
+    if (current.status !== "pending_admin") {
+      throw new AdminDecisionError("STALE_DECISION");
+    }
+
+    const pending = await tx.loanApproval.findFirst({
+      where: { loanId: id, step: "admin", decision: "pending" },
+      orderBy: { attempt: "desc" },
+    });
+    if (!pending) throw new AdminDecisionError("STALE_DECISION");
+
+    if (decision === "approved") {
+      if (approvedAmount === null || approvedAmount <= 0 || !Number.isSafeInteger(approvedAmount)) {
+        throw new AdminDecisionError("INVALID_APPROVED_AMOUNT");
+      }
+      if (approvedAmount > current.amount) {
+        throw new AdminDecisionError("AMOUNT_EXCEEDS_REQUEST");
+      }
+      if (approvedAmount < current.amount && !comment?.trim()) {
+        throw new AdminDecisionError("REDUCTION_COMMENT_REQUIRED");
+      }
+    }
+
+    const nextStatus = decision === "approved" ? "pending_executive" : decision;
+    const changed = await tx.loanRequest.updateMany({
+      where: { id, status: "pending_admin" },
+      data: {
+        status: nextStatus,
+        approvedAmount: decision === "approved" ? approvedAmount : null,
+      },
+    });
+    if (changed.count !== 1) throw new AdminDecisionError("STALE_DECISION");
+
+    await tx.loanApproval.update({
+      where: { id: pending.id },
+      data: { decision, decidedBy: adminId, decidedAt: new Date(), comment },
+    });
+
+    if (decision === "approved") {
+      const latestExecutive = await tx.loanApproval.findFirst({
+        where: { loanId: id, step: "executive" },
+        orderBy: { attempt: "desc" },
+        select: { attempt: true },
+      });
+      const attempt = (latestExecutive?.attempt ?? 0) + 1;
+      await tx.loanApproval.create({
+        data: { loanId: id, step: "executive", attempt },
+      });
+    }
+
+    const final = await tx.loanRequest.findUniqueOrThrow({
+      where: { id },
+      select: adminLoanDetailSelect,
+    });
+    await tx.auditLog.create({
+      data: {
+        actorId: adminId,
+        action: `loan_request.admin_${decision}`,
+        entityType: "loan_request",
+        entityId: id,
+        before: serializeJson(current),
+        after: serializeJson(final),
+      },
+    });
+    return final;
+  });
+}
+
+export type ExecutiveDecisionErrorCode = "NOT_FOUND" | "STALE_DECISION";
+
+export class ExecutiveDecisionError extends Error {
+  constructor(readonly code: ExecutiveDecisionErrorCode) {
+    super(code);
+  }
+}
+
+export async function decideExecutiveLoanRequest({
+  id,
+  executiveId,
+  decision,
+  comment,
+}: {
+  id: string;
+  executiveId: string;
+  decision: ExecutiveDecision;
+  comment: string | null;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.loanRequest.findUnique({ where: { id }, select: executiveLoanSelect });
+    if (!current) throw new ExecutiveDecisionError("NOT_FOUND");
+    if (current.status !== "pending_executive") {
+      throw new ExecutiveDecisionError("STALE_DECISION");
+    }
+
+    const pending = await tx.loanApproval.findFirst({
+      where: { loanId: id, step: "executive", decision: "pending" },
+      orderBy: { attempt: "desc" },
+    });
+    if (!pending) throw new ExecutiveDecisionError("STALE_DECISION");
+
+    const nextStatus = decision === "approved" ? "pending_disbursement" : "rejected";
+    const changed = await tx.loanRequest.updateMany({
+      where: { id, status: "pending_executive" },
+      data: { status: nextStatus },
+    });
+    if (changed.count !== 1) throw new ExecutiveDecisionError("STALE_DECISION");
+
+    await tx.loanApproval.update({
+      where: { id: pending.id },
+      data: { decision, decidedBy: executiveId, decidedAt: new Date(), comment },
+    });
+
+    const final = await tx.loanRequest.findUniqueOrThrow({
+      where: { id },
+      select: executiveLoanSelect,
+    });
+    await tx.auditLog.create({
+      data: {
+        actorId: executiveId,
+        action: `loan_request.executive_${decision}`,
         entityType: "loan_request",
         entityId: id,
         before: serializeJson(current),

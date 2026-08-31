@@ -71,9 +71,6 @@ export type LoanRequestListItem = {
   studentYear: number;
   purpose: string;
   additionalNote: string | null;
-  bankName: string;
-  bankAccountNo: string;
-  bankAccountName: string;
   installmentCount: number;
   firstDueDate: string;
   status:

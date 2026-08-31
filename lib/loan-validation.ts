@@ -19,6 +19,17 @@ export type LoanDecisionInput = {
   comment: string | null;
 };
 
+export type ExecutiveDecision = "approved" | "rejected";
+
+export type ExecutiveDecisionInput = {
+  decision: ExecutiveDecision;
+  comment: string | null;
+};
+
+export type AdminDecisionInput = LoanDecisionInput & {
+  approvedAmount: number | null;
+};
+
 function requiredText(value: unknown, field: string, maxLength = 500) {
   if (typeof value !== "string") throw new Error(`${field} is required`);
   const text = value.trim();
@@ -86,6 +97,20 @@ function parseDecision(value: unknown): LoanDecision {
   throw new Error("decision is invalid");
 }
 
+function parseDecisionComment(value: unknown, decision: LoanDecision) {
+  if (value !== undefined && value !== null && typeof value !== "string") {
+    throw new Error("comment is invalid");
+  }
+
+  const comment = typeof value === "string" ? value.trim() : "";
+  if (comment.length > 2000) throw new Error("comment is invalid");
+  if ((decision === "returned" || decision === "rejected") && !comment) {
+    throw new Error("A comment is required for this decision");
+  }
+
+  return comment || null;
+}
+
 export function parseLoanDecisionInput(value: unknown): LoanDecisionInput {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("request body is invalid");
@@ -93,18 +118,50 @@ export function parseLoanDecisionInput(value: unknown): LoanDecisionInput {
 
   const input = value as Record<string, unknown>;
   const decision = parseDecision(input.decision);
-  const valueComment = input.comment;
-  if (valueComment !== undefined && valueComment !== null && typeof valueComment !== "string") {
-    throw new Error("comment is invalid");
+  return { decision, comment: parseDecisionComment(input.comment, decision) };
+}
+
+export function parseAdminDecisionInput(value: unknown): AdminDecisionInput {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("request body is invalid");
   }
 
-  const comment = typeof valueComment === "string" ? valueComment.trim() : "";
-  if (comment.length > 2000) throw new Error("comment is invalid");
-  if ((decision === "returned" || decision === "rejected") && !comment) {
-    throw new Error("A comment is required for this decision");
+  const input = value as Record<string, unknown>;
+  const decision = parseDecision(input.decision);
+  const comment = parseDecisionComment(input.comment, decision);
+
+  if (decision !== "approved") {
+    if (Object.hasOwn(input, "approvedAmount")) {
+      throw new Error("approvedAmount is only allowed for approval");
+    }
+    return { decision, approvedAmount: null, comment };
   }
 
-  return { decision, comment: comment || null };
+  const approvedAmount = input.approvedAmount;
+  if (
+    typeof approvedAmount !== "number" ||
+    !Number.isSafeInteger(approvedAmount) ||
+    approvedAmount <= 0 ||
+    approvedAmount > MAX_MONEY_AMOUNT
+  ) {
+    throw new Error("approvedAmount is invalid");
+  }
+
+  return { decision, approvedAmount, comment };
+}
+
+export function parseExecutiveDecisionInput(value: unknown): ExecutiveDecisionInput {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("request body is invalid");
+  }
+
+  const input = value as Record<string, unknown>;
+  if (input.decision !== "approved" && input.decision !== "rejected") {
+    throw new Error("decision is invalid");
+  }
+
+  const decision = input.decision as ExecutiveDecision;
+  return { decision, comment: parseDecisionComment(input.comment, decision) };
 }
 
 export function parsePhoneNumber(value: unknown) {
