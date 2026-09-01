@@ -11,6 +11,7 @@ export type NotificationDemoState = {
   message: string;
 };
 
+const demoNotificationEmail = "nupong.pr@cmu.ac.th";
 function readField(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value.trim() : "";
@@ -49,6 +50,7 @@ export async function sendDemoNotification(
   try {
     await sendLineNotification({
       program: readField(formData, "program"),
+      //email: demoNotificationEmail, // uncomment when need to test line notification
       email,
       message: readField(formData, "message"),
       weblink: readField(formData, "weblink"),
