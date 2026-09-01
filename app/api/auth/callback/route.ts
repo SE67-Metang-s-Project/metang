@@ -104,7 +104,16 @@ export async function GET(request: NextRequest) {
           userType: accessDecision.userType,
           reason: accessDecision.reason,
         });
-        return redirectHome(request, "not_eligible");
+        const response = redirectHome(request, "not_eligible");
+        response.cookies.set(CMU_SESSION_COOKIE, "", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 0,
+        });
+
+        return response;
       }
     }
 

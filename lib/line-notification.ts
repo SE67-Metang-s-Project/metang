@@ -64,6 +64,7 @@ export async function sendLineNotification(
     throw new LineNotificationError("NOTIFY_API_URL must be a valid URL");
   }
 
+  const requestBody = JSON.stringify(payload);
   let response: Response;
 
   try {
@@ -73,7 +74,7 @@ export async function sendLineNotification(
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload),
+      body: requestBody,
     });
   } catch {
     throw new LineNotificationError("Unable to connect to notification API");
@@ -100,7 +101,10 @@ export async function sendLineNotification(
     !("data" in result) ||
     result.data !== "Success"
   ) {
-    throw new LineNotificationError("Notification API returned an unexpected response");
+    throw new LineNotificationError(
+      `Notification API returned an unexpected response. `,
+      `Request body: ${requestBody}. Response: ${JSON.stringify(result)}`, // for debugging
+    );
   }
 
   return { data: "Success" };
