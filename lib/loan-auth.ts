@@ -89,7 +89,9 @@ export async function resolveAdvisor(identity: LoanIdentity, advisorName?: strin
   return user;
 }
 
-async function getDevelopmentLoanContext(role: "admin" | "advisor" | "executive" | "staff") {
+async function getDevelopmentLoanContext(
+  role: "admin" | "advisor" | "executive" | "super_admin" | "staff",
+) {
   const user = await prisma.appUser.findFirst({
     where: {
       roles:
@@ -185,8 +187,17 @@ export type ExecutiveAccess =
   | { status: "unauthenticated" }
   | { status: "forbidden" };
 
+export type SuperAdminAccess =
+  | { status: "authorized"; context: LoanUserContext }
+  | { status: "unauthenticated" }
+  | { status: "forbidden" };
+
 function hasExecutiveRole(roles: { role: UserRoleName }[]) {
   return roles.some(({ role }) => role === "executive");
+}
+
+function hasSuperAdminRole(roles: { role: UserRoleName }[]) {
+  return roles.some(({ role }) => role === "super_admin");
 }
 
 export async function getAdminAccess(): Promise<AdminAccess> {
@@ -211,6 +222,25 @@ export async function getAdminAccess(): Promise<AdminAccess> {
 export async function getAdminContext(): Promise<LoanUserContext | null> {
   const access = await getAdminAccess();
   return access.status === "authorized" ? access.context : null;
+}
+
+export async function getSuperAdminAccess(): Promise<SuperAdminAccess> {
+  if (isDevelopmentApiAccess()) {
+    const context = await getDevelopmentLoanContext("super_admin");
+    return context ? { status: "authorized", context } : { status: "forbidden" };
+  }
+
+  const session = await getCmuSession();
+  if (!session) return { status: "unauthenticated" };
+
+  const identity = normalizeLoanIdentity(session.profile);
+  const user = await resolveStudentIdentity(identity);
+  if (!user || !hasSuperAdminRole(user.roles)) return { status: "forbidden" };
+
+  return {
+    status: "authorized",
+    context: { session, profile: session.profile, identity, user },
+  };
 }
 
 export async function getDevelopmentStaffContext() {

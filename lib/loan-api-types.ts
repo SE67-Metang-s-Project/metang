@@ -348,3 +348,47 @@ export type ExecutiveQueueResponse = {
 export type ExecutiveLoanRequestDetailResponse = {
   data: ExecutiveLoanRequestDetail;
 };
+
+export type UserIdParams = {
+  id: string;
+};
+
+export type PredefinedRoleName =
+  | "student"
+  | "advisor"
+  | "admin"
+  | "super_admin"
+  | "executive";
+
+export type RoleMutationBody = {
+  action: "grant" | "remove";
+  role: PredefinedRoleName;
+};
+
+export type SuperAdminUser = {
+  id: string;
+  email: string;
+  cmuAccount: string;
+  studentCode: string | null;
+  fullNameTh: string;
+  fullNameEn: string | null;
+  phone: string | null;
+  createdAt: string;
+  updatedAt: string;
+  roles: {
+    role: PredefinedRoleName;
+    grantedBy: string | null;
+    grantedAt: string;
+  }[];
+};
+
+export type SuperAdminUserListResponse = {
+  data: {
+    users: SuperAdminUser[];
+    availableRoles: PredefinedRoleName[];
+  };
+};
+
+export type SuperAdminUserResponse = {
+  data: SuperAdminUser;
+};

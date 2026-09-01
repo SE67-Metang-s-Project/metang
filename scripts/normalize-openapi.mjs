@@ -15,6 +15,7 @@ const requiredRequestBodies = {
   ],
   AdvisorDecisionBody: ["decision"],
   PhoneNumberBody: ["phoneNumber"],
+  RoleMutationBody: ["action", "role"],
 };
 const loanInputExample = {
   advisorName: "อาจารย์ทดสอบ",
@@ -43,13 +44,18 @@ for (const [path, operations] of Object.entries(document.paths ?? {})) {
       operation.requestBody.content["application/json"].example = loanInputExample;
     }
 
-    if (!path.endsWith("/loan-requests/{id}") && !path.includes("/loan-requests/{id}/")) continue;
+    const isLoanRequestPath =
+      path.endsWith("/loan-requests/{id}") || path.includes("/loan-requests/{id}/");
+    const isSuperAdminUserPath = path === "/super-admin/users/{id}/roles";
+    if (!isLoanRequestPath && !isSuperAdminUserPath) continue;
     const parameter = operation.parameters?.find(
       (entry) => entry.in === "path" && entry.name === "id",
     );
-    if (!parameter) throw new Error(`Missing loan request id parameter for ${path}`);
+    if (!parameter) throw new Error(`Missing id parameter for ${path}`);
     parameter.schema = { ...parameter.schema, type: "string", format: "uuid" };
-    parameter.example = "1ea025de-e936-4a86-a0a2-accae663cb8e";
+    parameter.example = isSuperAdminUserPath
+      ? "4cf0a318-3344-4c95-a4b7-99d3a721b3bf"
+      : "1ea025de-e936-4a86-a0a2-accae663cb8e";
   }
 }
 
