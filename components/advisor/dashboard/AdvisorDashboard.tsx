@@ -31,7 +31,7 @@ export default function AdvisorDashboard() {
         <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto space-y-8">
           {/* ส่วนบนสุด: Welcome Card และสถิติ */}
           <div className="w-full">
-            <AdvisorWelcomeCard name="ออมซ่า วงค์ประเสริฐ" description="ผู้ดูแลระบบ (Admin)" />
+            <AdvisorWelcomeCard name="ออมซ่า วงค์ประเสริฐ" description="อาจารย์ที่ปรึกษา (Advisor)" />
           </div>
           {/* 1. รายการคำร้องที่ต้องพิจารณา */}
           <div className="w-full">
