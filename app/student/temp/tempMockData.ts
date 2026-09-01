@@ -25,6 +25,18 @@ export const tempLoanApplication = {
   actionLabel: "ยื่นคำร้องกู้ยืม",
 };
 
+export const tempLoanFormOptions = {
+  academicYears: ["1", "2", "3", "4"].map((year) => ({ label: year, value: year })),
+  advisors: ["พิมพา มีโชค", "วรัญญู มีโชค"].map((advisor) => ({
+    label: advisor,
+    value: advisor,
+  })),
+  banks: ["ธนาคารกสิกรไทย", "ธนาคารกรุงไทย"].map((bank) => ({
+    label: bank,
+    value: bank,
+  })),
+};
+
 export const tempLoanAgreement = {
   title: "ข้อกำหนดและเงื่อนไขการกู้ยืมเงินเพื่อการศึกษา",
   organization: "คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่",
