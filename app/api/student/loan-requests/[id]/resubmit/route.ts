@@ -6,6 +6,10 @@ import { isUuid, parseLoanInput } from "@/lib/loan-validation";
 import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/serialization";
 import { validateJsonRequest } from "@/lib/request-security";
+import {
+  enqueueNotification,
+  LOAN_REVIEW_REQUESTED_EVENT,
+} from "@/db/queries/notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -103,6 +107,22 @@ export async function POST(request: Request, { params }: Params) {
       });
       const attempt = (latestApproval?.attempt ?? 0) + 1;
       await tx.loanApproval.create({ data: { loanId: id, step, attempt } });
+      await enqueueNotification(tx, {
+        dedupeKey: `loan:${id}:review:${step}:${attempt}`,
+        eventType: LOAN_REVIEW_REQUESTED_EVENT,
+        payload:
+          step === "advisor"
+            ? {
+                loanId: id,
+                step: "advisor",
+                recipient: { userId: advisorId },
+              }
+            : {
+                loanId: id,
+                step: "admin",
+                recipient: { roles: ["admin", "super_admin"] },
+              },
+      });
 
       const final = await tx.loanRequest.findUniqueOrThrow({
         where: { id },
