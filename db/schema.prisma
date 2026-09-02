@@ -58,6 +58,7 @@ model AppUser {
   fullNameTh        String            @map("full_name_th") @db.Text
   fullNameEn        String?           @map("full_name_en") @db.Text
   phone             String?           @db.Text
+  educationLevel    String?           @map("education_level") @db.Text
   createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   studentLoans      LoanRequest[]     @relation("StudentLoans")
