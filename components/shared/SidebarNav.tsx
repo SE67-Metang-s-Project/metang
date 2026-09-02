@@ -18,7 +18,7 @@ import {
   PieChart,
   Settings,
   UserCog,
-  Bug // 1. นำเข้าไอคอน Bug สำหรับโหมด Debug
+  Bug 
 } from "lucide-react";
 
 export type UserRole = 'student' | 'advisor' | 'admin' | 'executive' | 'superadmin';
@@ -37,35 +37,15 @@ interface SideNavProps {
 }
 
 const ALL_MENU_ITEMS: MenuItem[] = [
-  { 
-    title: 'แดชบอร์ด', 
-    icon: LayoutDashboard, 
-    href: (role) => `/${role}`, 
-    roles: ['student', 'admin', 'executive', 'superadmin'] 
-  },
+  { title: 'แดชบอร์ด', icon: LayoutDashboard, href: (role) => `/${role}`, roles: ['student', 'admin', 'executive', 'superadmin'] },
   { title: 'ยื่นคำร้องขอกู้ยืม', icon: FileText, href: '/student/request', roles: ['student'] },
   { title: 'ชำระเงินคืน (e-Slip)', icon: Wallet, href: '/student/payment', roles: ['student'] },
   { title: 'ประวัติคำร้อง', icon: History, href: '/student/history', roles: ['student'] },
-  { 
-    title: 'คำร้องรอพิจารณา', 
-    icon: FileCheck, 
-    href: (role) => `/${role}/pending`, 
-    roles: ['advisor', 'admin' ,'executive'] 
-  },
-  { 
-    title: 'นักศึกษาในความดูแล', 
-    icon: Users, 
-    href: (role) => `/${role}/students`, 
-    roles: ['advisor', 'executive'] 
-  },
-  { 
-    title: 'รายงานและสถิติ', 
-    icon: PieChart, 
-    href: '/executive/reports', 
-    roles: ['executive'] 
-  },
-  { title: 'ตรวจสอบสลิปชำระเงิน', icon: FileSearch, href: '/admin/verify-slip', roles: ['admin'] },
+  { title: 'คำร้องรอพิจารณา', icon: FileCheck, href: (role) => `/${role}/pending`, roles: ['advisor', 'admin' ,'executive'] },
+  { title: 'นักศึกษาในความดูแล', icon: Users, href: (role) => `/${role}/students`, roles: ['advisor', 'executive'] },
+  { title: 'รายงานและสถิติ', icon: PieChart, href: '/executive/reports', roles: ['executive'] },
   { title: 'เบิกจ่ายหนี้', icon: FileSignature, href: '/admin/disburse-debt', roles: ['admin'] },
+  { title: 'ตรวจสอบสลิปชำระเงิน', icon: FileSearch, href: '/admin/verify-slip', roles: ['admin'] },
   { title: 'จัดการผู้ใช้งาน', icon: UserCog, href: '/superadmin/users', roles: ['superadmin'] },
   { title: 'ตั้งค่าระบบ', icon: Settings, href: '/superadmin/settings', roles: ['superadmin'] },
 ];
@@ -73,15 +53,20 @@ const ALL_MENU_ITEMS: MenuItem[] = [
 export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
   const pathname = usePathname(); 
 
-  // 2. สร้าง Local State สำหรับ Debug (ดึงค่าเริ่มต้นมาจาก Prop)
   const [debugRole, setDebugRole] = useState<UserRole>(role);
+  
+  // 1. เพิ่ม State เช็คว่า Component Mount บน Browser หรือยัง
+  const [isMounted, setIsMounted] = useState(false);
 
-  // 3. ถ้า Prop role จาก Parent เปลี่ยน ให้ซิงค์ค่ากลับมาที่ Debug Role
+  // 2. ใช้ useEffect สั่งให้ isMounted เป็น true เมื่อฝั่ง Client โหลดเสร็จ
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   useEffect(() => {
     setDebugRole(role);
   }, [role]);
 
-  // 4. ใช้ debugRole ในการกรองเมนูแทน role ตัวจริง
   const allowedMenus = ALL_MENU_ITEMS.filter(item => item.roles.includes(debugRole));
 
   return (
@@ -118,11 +103,11 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
         <nav className="flex-1 py-6 px-4 space-y-1.5 text-sm font-medium overflow-y-auto">
           {allowedMenus.map((item, index) => {
             const Icon = item.icon;
-            
-            // ส่ง debugRole เข้าไปแทน เพื่อให้สร้าง href ได้ถูกต้อง
             const resolvedHref = typeof item.href === 'function' ? item.href(debugRole) : item.href;
             
-            const isActive = pathname === resolvedHref;
+            // 3. เปลี่ยนเงื่อนไข isActive โดยนำ isMounted มาครอบ
+            // เพื่อให้ Server และ Client เรนเดอร์เป็น false ตรงกันในตอนแรก แล้วค่อยคำนวณใหม่บน Browser
+            const isActive = isMounted ? pathname === resolvedHref : false;
 
             return (
               <Link
@@ -144,9 +129,6 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
           })}
         </nav>
 
-        {/* ==================================================== */}
-        {/* 5. ส่วนควบคุมสำหรับ Debug (ควรลบออกเมื่อขึ้น Production) */}
-        {/* ==================================================== */}
         {process.env.NODE_ENV === "development" && (
           <div className="p-4 bg-orange-50/50 border-t border-orange-100 shrink-0">
             <div className="flex items-center gap-2 text-xs font-bold text-orange-600 mb-2">

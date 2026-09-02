@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Search, ChevronDown } from "lucide-react"; // นำเข้า ChevronDown เพิ่มเติม
+import { Search, ChevronDown } from "lucide-react";
 
-// กำหนด Type สำหรับสถานะตัวกรอง
+// กำหนด Type สำหรับสถานะตัวกรองของ UI
 export type FilterStatus = "all" | "pending" | "approved" | "rejected";
 
 interface PendingFilterProps {
@@ -12,6 +12,7 @@ interface PendingFilterProps {
   pendingCount?: number;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
+  pendingLabel?: string; // เพิ่ม Prop นี้เพื่อให้แต่ละ Role ตั้งชื่อแท็บได้เอง
 }
 
 export default function PendingFilter({
@@ -20,12 +21,11 @@ export default function PendingFilter({
   pendingCount = 0,
   searchQuery = "",
   onSearchChange,
+  pendingLabel = "รอพิจารณา", // ค่าเริ่มต้น
 }: PendingFilterProps) {
-  // State สำหรับควบคุมการเปิด/ปิด Dropdown แบบ Custom
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // ปิด Dropdown เมื่อคลิกพื้นที่อื่นบนหน้าจอ
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -36,25 +36,20 @@ export default function PendingFilter({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ฟังก์ชันจัดการการคลิกเลือกสถานะใน Dropdown
   const handleDropdownSelect = (status: FilterStatus) => {
     if (currentFilter === status) {
-      // ถ้าคลิกตัวที่เลือกอยู่แล้ว -> ยกเลิกการเลือก (เด้งกลับไปแท็บ "ทั้งหมด")
       onFilterChange("all");
     } else {
-      // ถ้าคลิกตัวอื่น -> เปลี่ยนไปเลือกตัวนั้น
       onFilterChange(status);
     }
-    setIsDropdownOpen(false); // ปิด Dropdown
+    setIsDropdownOpen(false);
   };
 
-  // รายการสถานะหลัก (ปุ่มกดฝั่งซ้าย)
   const mainFilterOptions: { id: FilterStatus; label: string }[] = [
     { id: "all", label: "ทั้งหมด" },
-    { id: "pending", label: "รอพิจารณา" },
+    { id: "pending", label: pendingLabel }, // ใช้ Label ตามที่ส่งเข้ามา
   ];
 
-  // เช็คว่าตอนนี้กำลังเลือกสถานะใน Dropdown อยู่หรือไม่
   const isDropdownActive = ["approved", "rejected"].includes(currentFilter);
 
   return (
@@ -79,7 +74,6 @@ export default function PendingFilter({
             >
               {option.label}
 
-              {/* แสดง Badge ตัวเลขเฉพาะแท็บ "รอพิจารณา" */}
               {option.id === "pending" && pendingCount > 0 && (
                 <span
                   className={`ml-2 inline-flex items-center justify-center w-5 h-5 text-[11px] font-bold rounded-full 
@@ -96,7 +90,6 @@ export default function PendingFilter({
 
       {/* 2. ดรอปดาวน์ และ ช่องค้นหา */}
       <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-        {/* Custom Dropdown สำหรับ อนุมัติ/ไม่อนุมัติ */}
         <div className="relative w-full sm:w-auto min-w-[140px]" ref={dropdownRef}>
           <button
             type="button"
@@ -114,7 +107,7 @@ export default function PendingFilter({
               {currentFilter === "approved"
                 ? "อนุมัติแล้ว"
                 : currentFilter === "rejected"
-                  ? "ไม่อนุมัติ"
+                  ? "ไม่อนุมัติ / ส่งกลับ"
                   : "สถานะอื่นๆ..."}
             </span>
             <ChevronDown
@@ -122,7 +115,6 @@ export default function PendingFilter({
             />
           </button>
 
-          {/* รายการตัวเลือกใน Dropdown */}
           {isDropdownOpen && (
             <div className="absolute top-full mt-1.5 right-0 w-full bg-white border border-gray-100 rounded-xl shadow-lg z-10 py-1.5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
               <button
@@ -143,13 +135,12 @@ export default function PendingFilter({
                     : "text-gray-700"
                 }`}
               >
-                ไม่อนุมัติ
+                ไม่อนุมัติ / ส่งกลับ
               </button>
             </div>
           )}
         </div>
 
-        {/* ช่องค้นหา */}
         <div className="relative w-full sm:w-72">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-gray-400" />

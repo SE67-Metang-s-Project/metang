@@ -14,12 +14,12 @@ import {
   Phone,
   Landmark,
   CalendarDays,
-  ShieldAlert, // เพิ่ม Icon สำหรับเตือนการปกปิดข้อมูล
+  ShieldAlert,
   MessageSquare,
 } from "lucide-react";
 
 // ==========================================
-// การกำหนด Type
+// การกำหนด Type (อ้างอิงจาก Database Schema)
 // ==========================================
 export type StudentInfo = {
   name: string;
@@ -64,14 +64,37 @@ export type PaymentBehaviorInfo = {
   totalInstallments?: number;
 };
 
+export type LoanStatus = 
+  | "draft" 
+  | "returned" 
+  | "pending_advisor" 
+  | "pending_admin" 
+  | "pending_executive" 
+  | "pending_disbursement" 
+  | "disbursed" 
+  | "closed" 
+  | "rejected" 
+  | "cancelled"
+  | string; 
+
+// ==========================================
+// โครงสร้างการอนุมัติ (รองรับหลาย Role)
+// ==========================================
+export type ApprovalStep = {
+  step: "advisor" | "admin" | "executive";
+  actorName: string;
+  comment: string;
+  decision: "approved" | "rejected" | "returned" | "pending";
+  date: string;
+};
+
 export type ActionRequest = StudentInfo &
   LoanDetails &
   RequestStatus & {
     id: string;
-    requestStatus: string;
+    requestStatus: LoanStatus;
     paymentBehavior?: PaymentBehaviorInfo;
-    advisorName?: string;
-    advisorComment?: string;
+    approvals?: ApprovalStep[]; // <--- เปลี่ยนมาใช้ Array เก็บความเห็นทั้งหมด
   };
 
 export type UserRole = "advisor" | "executive" | "admin" | "super_admin";
@@ -84,20 +107,7 @@ interface RequestsCardProps {
 // ==========================================
 // ฟังก์ชันตัวช่วยต่างๆ
 // ==========================================
-const thaiMonths = [
-  "ม.ค.",
-  "ก.พ.",
-  "มี.ค.",
-  "เม.ย.",
-  "พ.ค.",
-  "มิ.ย.",
-  "ก.ค.",
-  "ส.ค.",
-  "ก.ย.",
-  "ต.ค.",
-  "พ.ย.",
-  "ธ.ค.",
-];
+const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
 
 function calculateInstallmentDates(startDateStr: string, term: string) {
   const termsCount = parseInt(term, 10) || 0;
@@ -118,25 +128,54 @@ function calculateInstallmentDates(startDateStr: string, term: string) {
   for (let i = 1; i <= termsCount; i++) {
     const nextDate = new Date(startDate);
     nextDate.setDate(startDate.getDate() + i * 30);
-
     const nextDay = nextDate.getDate();
     const nextMonth = thaiMonths[nextDate.getMonth()];
     const nextYear = nextDate.getFullYear() + 543;
-
     installments.push({
       installmentNumber: i,
       dateString: `${nextDay} ${nextMonth} ${nextYear}`,
     });
   }
-
   return installments;
 }
 
-// ฟังก์ชันสำหรับใส่ comma ในตัวเลข
 const formatAmount = (amountStr: string) => {
   const num = Number(amountStr);
   if (isNaN(num)) return amountStr;
   return num.toLocaleString();
+};
+
+const getStatusDisplay = (status: LoanStatus) => {
+  switch (status) {
+    case "draft": return "แบบร่าง";
+    case "pending_advisor": return "รอพิจารณา"; 
+    case "pending_admin": return "รอเจ้าหน้าที่ตรวจสอบ";
+    case "pending_executive": return "รอผู้บริหารอนุมัติ";
+    case "pending_disbursement": return "รอเบิกจ่ายเงิน";
+    case "disbursed": return "โอนเงินแล้ว";
+    case "closed": return "เสร็จสิ้น";
+    case "returned": return "ส่งกลับแก้ไข";
+    case "rejected": return "ไม่อนุมัติ";
+    case "cancelled": return "ยกเลิกคำร้อง";
+    default: return status; 
+  }
+};
+
+const getRoleDisplay = (step: string) => {
+  switch (step) {
+    case "advisor": return "อ.ที่ปรึกษา";
+    case "admin": return "เจ้าหน้าที่";
+    case "executive": return "ผู้บริหาร";
+    default: return step;
+  }
+};
+
+const checkCanTakeAction = (role: UserRole, status: LoanStatus) => {
+  const s = String(status).toLowerCase();
+  if (role === "advisor" && (s === "pending_advisor" || s.includes("รอพิจารณา"))) return true;
+  if (role === "admin" && (s === "pending_admin" || s.includes("รอเจ้าหน้าที่ตรวจสอบ"))) return true;
+  if (role === "executive" && (s === "pending_executive" || s.includes("รอผู้บริหารอนุมัติ"))) return true;
+  return false;
 };
 
 export default function RequestsCard({ requests, userRole = "advisor" }: RequestsCardProps) {
@@ -152,19 +191,14 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
     setRemark("");
   };
 
-  // ==========================================
-  // ฟังก์ชันสำหรับ Render ปุ่มดำเนินการ หรือ ป้ายสถานะ
-  // ==========================================
   const renderActionButton = (req: ActionRequest, isMobile: boolean) => {
     const baseClasses = isMobile
       ? "px-4 py-2 text-[13px] rounded-lg transition-colors border whitespace-nowrap text-center"
       : "px-3 py-1.5 text-[13px] rounded-lg transition-colors border whitespace-nowrap text-center";
 
-    // === กำหนดว่าสถานะไหนที่ "รอให้ Role นี้เป็นคนกด" ===
-    let isActionable = false;
-    if (userRole === "advisor" && req.requestStatus === "รอพิจารณา") isActionable = true;
-    if (userRole === "admin" && req.requestStatus === "รอเจ้าหน้าที่ตรวจสอบ") isActionable = true;
-    if (userRole === "executive" && req.requestStatus === "รอผู้บริหารอนุมัติ") isActionable = true;
+    const isActionable = checkCanTakeAction(userRole, req.requestStatus);
+    const statusLabel = getStatusDisplay(req.requestStatus);
+    const s = String(req.requestStatus).toLowerCase();
 
     if (isActionable) {
       return (
@@ -177,18 +211,13 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
       );
     }
 
-    // === ถ้าไม่ใช่คิวที่ต้องตรวจสอบ ให้แสดงป้ายสถานะ (สีต่างๆ) ===
     let colorClass = "bg-gray-50 hover:bg-gray-100 text-gray-600 border-gray-200";
 
-    if (req.requestStatus.includes("ไม่อนุมัติ") || req.requestStatus.includes("ยกเลิก")) {
+    if (s.includes("reject") || s.includes("cancel") || s.includes("return") || s.includes("ไม่อนุมัติ") || s.includes("ยกเลิก") || s.includes("แก้ไข")) {
       colorClass = "bg-red-50 hover:bg-red-100 text-red-600 border-red-200";
-    } else if (req.requestStatus.includes("รอ")) {
+    } else if (s.includes("pending") || s.includes("รอ")) {
       colorClass = "bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200";
-    } else if (
-      req.requestStatus.includes("อนุมัติแล้ว") ||
-      req.requestStatus.includes("สำเร็จ") ||
-      req.requestStatus.includes("เสร็จสิ้น")
-    ) {
+    } else if (s.includes("disbursed") || s.includes("closed") || s.includes("อนุมัติแล้ว") || s.includes("เสร็จสิ้น") || s.includes("โอนเงิน")) {
       colorClass = "bg-green-50 hover:bg-green-100 text-green-600 border-green-200";
     }
 
@@ -197,7 +226,7 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
         onClick={() => setSelectedRequest(req)}
         className={`${baseClasses} font-medium ${colorClass}`}
       >
-        {req.requestStatus}
+        {statusLabel}
       </button>
     );
   };
@@ -207,10 +236,7 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
       {/* 1. มุมมองสำหรับ Mobile (แสดงเป็นการ์ด) */}
       <div className="md:hidden space-y-4">
         {requests.map((req, idx) => (
-          <div
-            key={idx}
-            className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md"
-          >
+          <div key={idx} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md">
             <div className="flex justify-between items-start gap-2">
               <div>
                 <div className="font-bold text-gray-900 text-[15px] leading-tight">{req.name}</div>
@@ -234,10 +260,6 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                   <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่ขอ</div>
                   <div className="font-bold text-[#ea580c]">{formatAmount(req.amount)}</div>
                 </div>
-                <div>
-                  <div className="text-[11px] text-gray-500 mb-0.5">กำหนดคืนเงิน</div>
-                  <div className="font-bold text-gray-900">{req.expectedReturnDate}</div>
-                </div>
               </div>
               {renderActionButton(req, true)}
             </div>
@@ -250,33 +272,18 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
         <table className="w-full text-left border-collapse min-w-[900px] bg-white">
           <thead>
             <tr className="bg-gray-100/70 border-b border-gray-300 text-gray-700 text-[14px]">
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
-                รหัสคำร้อง
-              </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 min-w-[200px]">
-                ชื่อ - ข้อมูลนักศึกษา
-              </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
-                วันที่ยื่น
-              </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 min-w-[200px]">
-                รายละเอียดเพื่อนำไปใช้
-              </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
-                จำนวนเงิน
-              </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
-                จำนวนงวด
-              </th>
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">รหัสคำร้อง</th>
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 min-w-[200px]">ชื่อ - ข้อมูลนักศึกษา</th>
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">วันที่ยื่น</th>
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 min-w-[200px]">รายละเอียดเพื่อนำไปใช้</th>
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">จำนวนเงิน</th>
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">จำนวนงวด</th>
               <th className="py-3.5 px-4 font-semibold text-center whitespace-nowrap">จัดการ</th>
             </tr>
           </thead>
           <tbody>
             {requests.map((req, idx) => (
-              <tr
-                key={idx}
-                className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
-              >
+              <tr key={idx} className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]">
                 <td className="py-4 px-4 text-gray-600 border-r border-gray-200">{req.id}</td>
                 <td className="py-4 px-4 border-r border-gray-200">
                   <div className="font-bold text-gray-900">{req.name}</div>
@@ -316,7 +323,7 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <span className="hidden sm:inline-block bg-yellow-100 text-yellow-800 text-[12px] font-bold px-2.5 py-1 rounded-md">
-                  {selectedRequest.history[selectedRequest.history.length - 1]?.action}
+                  {selectedRequest.history?.[selectedRequest.history.length - 1]?.action || "ยื่นคำร้อง"}
                 </span>
                 <button
                   onClick={closeAllModals}
@@ -342,15 +349,11 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                       ยื่นเมื่อ {selectedRequest.submitDate}
                     </span>
                   </div>
-
                   <div className="text-[13px] text-gray-700 font-medium mt-1">คณะพยาบาลศาสตร์</div>
-
                   <div className="text-[13px] text-gray-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span>{selectedRequest.studentId}</span>
                     <span className="hidden sm:inline text-gray-300">|</span>
-                    <span>
-                      {selectedRequest.major} · ปี {selectedRequest.year}
-                    </span>
+                    <span>{selectedRequest.major} · ปี {selectedRequest.year}</span>
                     <span className="hidden sm:inline text-gray-300">|</span>
                     <span className="flex items-center gap-1 text-gray-600">
                       <Phone size={12} /> {selectedRequest.phone}
@@ -382,8 +385,7 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
               {/* วันที่กำหนดชำระ */}
               <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                 <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-3 border-b border-gray-100 pb-2">
-                  <CalendarDays size={15} className="text-[#ea580c]" /> กำหนดการผ่อนชำระ (งวดละ 30
-                  วัน)
+                  <CalendarDays size={15} className="text-[#ea580c]" /> กำหนดการผ่อนชำระ (งวดละ 30 วัน)
                 </div>
                 <div className="flex flex-col gap-2">
                   {calculateInstallmentDates(selectedRequest.submitDate, selectedRequest.term).map(
@@ -397,7 +399,7 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                         </span>
                         <span className="text-gray-900 font-bold">{installment.dateString}</span>
                       </div>
-                    ),
+                    )
                   )}
                 </div>
               </div>
@@ -422,19 +424,19 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                     <div className="flex flex-col">
                       <span className="text-gray-500 text-[11px]">ธนาคาร</span>
                       <span className="font-medium text-gray-900">
-                        {selectedRequest.bankDetails.bankName}
+                        {selectedRequest.bankDetails?.bankName}
                       </span>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-gray-500 text-[11px]">เลขที่บัญชี</span>
                       <span className="font-medium text-gray-900">
-                        {selectedRequest.bankDetails.accountNumber}
+                        {selectedRequest.bankDetails?.accountNumber}
                       </span>
                     </div>
                     <div className="flex flex-col sm:col-span-2">
                       <span className="text-gray-500 text-[11px]">ชื่อบัญชี</span>
                       <span className="font-medium text-gray-900">
-                        {selectedRequest.bankDetails.accountName}
+                        {selectedRequest.bankDetails?.accountName}
                       </span>
                     </div>
                   </div>
@@ -448,23 +450,26 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                 </div>
               )}
 
-              {/* ความเห็นจากอาจารย์ที่ปรึกษา */}
-              {selectedRequest.requestStatus !== "รอพิจารณา" && (
+              {/* ความเห็นประกอบการพิจารณา (แสดงทุก Role ก่อนหน้า) */}
+              {selectedRequest.approvals && selectedRequest.approvals.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                   <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-3 border-b border-gray-100 pb-2">
-                    <MessageSquare size={15} className="text-[#ea580c]" />{" "}
-                    ความเห็นจากอาจารย์ที่ปรึกษา
+                    <MessageSquare size={15} className="text-[#ea580c]" /> ความเห็นประกอบการพิจารณา
                   </div>
-                  <div className="bg-orange-50/50 p-3.5 rounded-lg border border-orange-100/50">
-                    <div className="font-bold text-gray-900 text-[13px] mb-1">
-                      {selectedRequest.advisorName || "อ.ที่ปรึกษา"}
-                    </div>
-                    <p className="text-[13px] text-gray-700 leading-relaxed italic">
-                      "
-                      {selectedRequest.advisorComment ||
-                        "อนุมัติให้ดำเนินการต่อได้ ไม่มีข้อขัดข้อง"}
-                      "
-                    </p>
+                  <div className="space-y-3">
+                    {selectedRequest.approvals.map((approval, idx) => (
+                      <div key={idx} className="bg-orange-50/50 p-3.5 rounded-lg border border-orange-100/50">
+                        <div className="flex justify-between items-start mb-1">
+                          <div className="font-bold text-gray-900 text-[13px]">
+                            {approval.actorName} <span className="text-gray-500 font-normal text-[12px]">({getRoleDisplay(approval.step)})</span>
+                          </div>
+                          <span className="text-[11px] text-gray-500">{approval.date}</span>
+                        </div>
+                        <p className="text-[13px] text-gray-700 leading-relaxed italic">
+                          "{approval.comment}"
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -482,23 +487,20 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                         : "bg-red-50 text-red-700 border border-red-200"
                     }`}
                   >
-                    ●{" "}
-                    {(selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0
-                      ? "ชำระตรงเวลา"
-                      : "ชำระล่าช้า"}
+                    ● {(selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0 ? "ชำระตรงเวลา" : "ชำระล่าช้า"}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
                   <div className="bg-gray-50/80 p-2.5 rounded-lg border border-gray-100">
                     <div className="text-[11px] text-gray-500">ประวัติกู้ยืม</div>
                     <div className="font-bold text-[14px] text-gray-900 mt-0.5">
-                      {selectedRequest.paymentBehavior?.totalLoanRequests ?? 3} ครั้ง
+                      {selectedRequest.paymentBehavior?.totalLoanRequests ?? 0} ครั้ง
                     </div>
                   </div>
                   <div className="bg-emerald-50/60 p-2.5 rounded-lg border border-emerald-100">
                     <div className="text-[11px] text-emerald-700">ตรงเวลา</div>
                     <div className="font-bold text-[14px] text-emerald-800 mt-0.5">
-                      {selectedRequest.paymentBehavior?.onTimeInstallments ?? 12} งวด
+                      {selectedRequest.paymentBehavior?.onTimeInstallments ?? 0} งวด
                     </div>
                   </div>
                   <div className="bg-gray-50/80 p-2.5 rounded-lg border border-gray-100">
@@ -513,19 +515,14 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
               {/* ประวัติการดำเนินการ */}
               <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                 <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-4 border-b border-gray-100 pb-2">
-                  <History size={15} className="text-gray-400" />
-                  ประวัติการดำเนินการ
+                  <History size={15} className="text-gray-400" /> ประวัติการดำเนินการ
                 </div>
                 {selectedRequest.history && selectedRequest.history.length > 0 ? (
                   <div className="relative border-l-2 border-blue-200 ml-2 space-y-5 mt-2">
                     {selectedRequest.history.map((step, index) => (
                       <div key={index} className="relative pl-5">
-                        <div
-                          className={`absolute w-3 h-3 rounded-full -left-[7px] top-1 ${index === selectedRequest.history.length - 1 ? "bg-blue-500 ring-4 ring-blue-50" : "bg-gray-300"}`}
-                        ></div>
-                        <div
-                          className={`font-bold text-[14px] ${index === selectedRequest.history.length - 1 ? "text-gray-900" : "text-gray-600"}`}
-                        >
+                        <div className={`absolute w-3 h-3 rounded-full -left-[7px] top-1 ${index === selectedRequest.history.length - 1 ? "bg-blue-500 ring-4 ring-blue-50" : "bg-gray-300"}`}></div>
+                        <div className={`font-bold text-[14px] ${index === selectedRequest.history.length - 1 ? "text-gray-900" : "text-gray-600"}`}>
                           {step.action}
                         </div>
                         <div className="text-[12px] sm:text-[13px] text-gray-500 mt-0.5">
@@ -542,20 +539,20 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
               </div>
             </div>
 
-            {/* Footer Buttons */}
-            {selectedRequest.requestStatus === "รอพิจารณา" && (
+            {/* Footer Buttons - แสดงปุ่มอนุมัติ/ไม่อนุมัติเฉพาะเมื่อตรงเงื่อนไขของ Role */}
+            {checkCanTakeAction(userRole, selectedRequest.requestStatus) && (
               <div className="p-4 bg-white border-t border-gray-200 flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => setConfirmAction("reject")}
                   className="w-full sm:flex-1 py-3 flex items-center justify-center gap-2 rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98]"
                 >
-                  <XCircle size={18} /> ไม่อนุมัติ
+                  <XCircle size={18} /> ไม่อนุมัติ / ส่งกลับแก้ไข
                 </button>
                 <button
                   onClick={() => setConfirmAction("approve")}
                   className="w-full sm:flex-1 py-3 flex items-center justify-center gap-2 rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98]"
                 >
-                  <CheckCircle2 size={18} /> อนุมัติ
+                  <CheckCircle2 size={18} /> อนุมัติ / ดำเนินการต่อ
                 </button>
               </div>
             )}
@@ -565,49 +562,33 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
               <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4">
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
                   <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100">
-                    <h3
-                      className={`font-bold text-[16px] ${confirmAction === "approve" ? "text-green-700" : "text-red-600"}`}
-                    >
-                      {confirmAction === "approve"
-                        ? "ความเห็นประกอบการพิจารณา"
-                        : "เหตุผลที่ไม่อนุมัติ"}
+                    <h3 className={`font-bold text-[16px] ${confirmAction === "approve" ? "text-green-700" : "text-red-600"}`}>
+                      {confirmAction === "approve" ? "ความเห็นประกอบการพิจารณา" : "เหตุผลที่ไม่อนุมัติ"}
                     </h3>
-                    <button
-                      onClick={() => setConfirmAction(null)}
-                      className="text-gray-400 hover:text-gray-700 bg-gray-50 p-1.5 rounded-full"
-                    >
+                    <button onClick={() => setConfirmAction(null)} className="text-gray-400 hover:text-gray-700 bg-gray-50 p-1.5 rounded-full">
                       <X size={18} />
                     </button>
                   </div>
                   <div className="p-5">
                     <p className="text-[13px] text-gray-600 mb-3">
                       {confirmAction === "approve"
-                        ? "กรุณาระบุความเห็น (เช่น ความเห็นของอาจารย์ที่ปรึกษา / ผู้ช่วยคณบดี) เพื่อแนบในแบบฟอร์ม"
-                        : "กรุณาระบุเหตุผลเพื่อแจ้งกลับให้นักศึกษาทราบและดำเนินการแก้ไข"}
+                        ? "กรุณาระบุความเห็นเพื่อแนบในแบบฟอร์ม"
+                        : "กรุณาระบุเหตุผลเพื่อแจ้งกลับให้ทราบ"}
                     </p>
                     <textarea
                       className="w-full border border-gray-300 rounded-xl p-3.5 text-[14px] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none h-28 bg-gray-50/50"
-                      placeholder={
-                        confirmAction === "approve"
-                          ? "เช่น เห็นสมควรให้กู้ยืมเพื่อนำไปใช้จ่าย..."
-                          : "เช่น เอกสารหรือเหตุผลไม่เพียงพอ..."
-                      }
+                      placeholder={confirmAction === "approve" ? "เช่น เห็นสมควรให้กู้ยืม..." : "เช่น เอกสารไม่เพียงพอ..."}
                       value={remark}
                       onChange={(e) => setRemark(e.target.value)}
                     ></textarea>
                   </div>
                   <div className="px-5 py-4 border-t border-gray-100 flex flex-col-reverse sm:flex-row justify-end gap-2.5 bg-gray-50/50">
-                    <button
-                      onClick={() => setConfirmAction(null)}
-                      className="w-full sm:w-auto px-5 py-2.5 text-[14px] font-semibold text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
-                    >
+                    <button onClick={() => setConfirmAction(null)} className="w-full sm:w-auto px-5 py-2.5 text-[14px] font-semibold text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
                       ยกเลิก
                     </button>
                     <button
                       onClick={() => {
-                        console.log(
-                          `Action: ${confirmAction}, Request: ${selectedRequest.id}, Remark: ${remark}`,
-                        );
+                        console.log(`Action: ${confirmAction}, Request: ${selectedRequest.id}, Remark: ${remark}`);
                         closeAllModals();
                       }}
                       className={`w-full sm:w-auto px-5 py-2.5 text-[14px] font-bold text-white rounded-xl transition-colors shadow-sm ${confirmAction === "approve" ? "bg-[#059669] hover:bg-[#047857] shadow-green-600/20" : "bg-[#e11d48] hover:bg-[#be123c] shadow-red-600/20"}`}

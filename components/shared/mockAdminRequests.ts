@@ -13,53 +13,114 @@ export const mockAdminRequests: ActionRequest[] = [
     amount: "5000",
     term: "5",
     expectedReturnDate: "พ.ค. 2568",
-    requestStatus: "รอเจ้าหน้าที่ตรวจสอบ", // สถานะนี้ทำให้ปุ่ม "ตรวจสอบ" ของ Admin ทำงาน
+    requestStatus: "pending_admin",
     submitDate: "12 ต.ค. 2567",
     waitDays: 2,
     isOverdue: false,
-    advisorName: "รศ.ดร. มานี มีสุข",
-    advisorComment: "นักศึกษามีความจำเป็นจริง เห็นควรให้ความช่วยเหลือเบื้องต้น",
     bankDetails: {
       bankName: "ธนาคารไทยพาณิชย์",
       accountNumber: "123-4-56789-0",
       accountName: "นาย สมชาย ใจดี",
     },
-    paymentBehavior: {
-      totalLoanRequests: 1,
-      onTimeInstallments: 0,
-      lateInstallments: 0,
-    },
+    paymentBehavior: { totalLoanRequests: 1, onTimeInstallments: 5, lateInstallments: 0 },
+    approvals: [
+      {
+        step: "advisor",
+        actorName: "รศ.ดร. มานี มีสุข",
+        comment: "นักศึกษามีความจำเป็นจริง เห็นควรให้ความช่วยเหลือเบื้องต้น",
+        decision: "approved",
+        date: "14 ต.ค. 2567"
+      }
+    ],
     history: [
       { action: "นักศึกษายื่นคำร้อง", date: "12 ต.ค. 2567 09:00", actor: "สมชาย ใจดี" },
       { action: "อ.ที่ปรึกษา อนุมัติ", date: "14 ต.ค. 2567 10:30", actor: "รศ.ดร. มานี มีสุข" }
     ],
   },
   {
-    id: "REQ-2024-0008",
-    name: "วิภาดา รักเรียน",
-    studentId: "63010456",
-    major: "พยาบาลศาสตร์",
+    id: "REQ-2024-0020",
+    name: "ดวงเดือน ดารา",
+    studentId: "63050999",
+    major: "วิศวกรรมซอฟต์แวร์",
     year: "4",
-    phone: "089-876-5432",
-    objective: "ซื้ออุปกรณ์การแพทย์สำหรับการฝึกปฏิบัติงานบนหอผู้ป่วย",
-    amount: "3500",
-    term: "3",
-    expectedReturnDate: "ก.พ. 2568",
-    requestStatus: "รอผู้บริหารอนุมัติ", // Admin ส่งต่อแล้ว จะขึ้นเป็นป้ายสีฟ้าแทนปุ่มกด
-    submitDate: "10 ต.ค. 2567",
-    waitDays: 4,
+    phone: "089-123-4567",
+    objective: "ชำระค่าธรรมเนียมการศึกษา",
+    amount: "15000",
+    term: "6",
+    expectedReturnDate: "มิ.ย. 2568",
+    requestStatus: "pending_executive", // เปลี่ยนจาก disbursement ให้มาอยู่ที่ executive เพื่อทดสอบโชว์ 2 ความเห็น
+    submitDate: "05 ต.ค. 2567",
+    waitDays: 5,
     isOverdue: false,
-    advisorName: "ผศ.ดร. สมศรี ดีใจ",
-    advisorComment: "อุปกรณ์จำเป็นต่อการฝึกปฏิบัติงาน อนุมัติ",
     bankDetails: {
-      bankName: "ธนาคารกสิกรไทย",
-      accountNumber: "098-7-65432-1",
-      accountName: "นางสาว วิภาดา รักเรียน",
+      bankName: "ธนาคารกรุงเทพ",
+      accountNumber: "987-6-54321-0",
+      accountName: "นางสาว ดวงเดือน ดารา",
     },
+    paymentBehavior: { totalLoanRequests: 0, onTimeInstallments: 0, lateInstallments: 0 },
+    approvals: [
+      {
+        step: "advisor",
+        actorName: "อ.ณัฐพล โค้ดดิ้ง",
+        comment: "เอกสารครบถ้วน อนุมัติ",
+        decision: "approved",
+        date: "06 ต.ค. 2567"
+      },
+      {
+        step: "admin",
+        actorName: "สมปอง (เจ้าหน้าที่)",
+        comment: "เอกสารทางการเงินและประวัติการชำระถูกต้องเรียบร้อย",
+        decision: "approved",
+        date: "07 ต.ค. 2567"
+      }
+    ],
     history: [
-      { action: "นักศึกษายื่นคำร้อง", date: "10 ต.ค. 2567 11:20", actor: "วิภาดา รักเรียน" },
-      { action: "อ.ที่ปรึกษา อนุมัติ", date: "11 ต.ค. 2567 15:00", actor: "ผศ.ดร. สมศรี ดีใจ" },
-      { action: "เจ้าหน้าที่ ตรวจสอบผ่าน", date: "12 ต.ค. 2567 09:30", actor: "Admin สมปอง" }
+      { action: "นักศึกษายื่นคำร้อง", date: "05 ต.ค. 2567 09:00", actor: "ดวงเดือน ดารา" },
+      { action: "อ.ที่ปรึกษา อนุมัติ", date: "06 ต.ค. 2567 10:30", actor: "อ.ณัฐพล โค้ดดิ้ง" },
+      { action: "เจ้าหน้าที่ ตรวจสอบผ่าน", date: "07 ต.ค. 2567 14:00", actor: "Admin สมปอง" }
+    ],
+  },
+  {
+    id: "REQ-2024-0022",
+    name: "เอกชัย ถ่ายเอกสาร",
+    studentId: "65010222",
+    major: "พยาบาลศาสตร์",
+    year: "2",
+    phone: "084-555-6666",
+    objective: "ชำระค่าลงทะเบียนเรียน",
+    amount: "10000",
+    term: "4",
+    expectedReturnDate: "มี.ค. 2568",
+    requestStatus: "returned",
+    submitDate: "13 ต.ค. 2567",
+    waitDays: 0,
+    isOverdue: false,
+    bankDetails: {
+      bankName: "ธนาคารไทยพาณิชย์",
+      accountNumber: "111-5-55555-5",
+      accountName: "นาย เอกชัย ถ่ายเอกสาร",
+    },
+    paymentBehavior: { totalLoanRequests: 0, onTimeInstallments: 0, lateInstallments: 0 },
+    approvals: [
+      {
+        step: "advisor",
+        actorName: "ผศ.ดร. สมศรี ดีใจ",
+        comment: "เห็นควรอนุมัติ",
+        decision: "approved",
+        date: "14 ต.ค. 2567"
+      },
+      {
+        step: "admin",
+        actorName: "สมปอง (เจ้าหน้าที่)",
+        comment: "ไฟล์เอกสารใบแจ้งหนี้เบลอมาก อ่านไม่เห็นตัวเลข กรุณาแนบใหม่",
+        decision: "returned",
+        date: "15 ต.ค. 2567"
+      }
+    ],
+    history: [
+      { action: "นักศึกษายื่นคำร้อง", date: "13 ต.ค. 2567 11:20", actor: "เอกชัย ถ่ายเอกสาร" },
+      { action: "อ.ที่ปรึกษา อนุมัติ", date: "14 ต.ค. 2567 15:00", actor: "ผศ.ดร. สมศรี ดีใจ" },
+      { action: "เจ้าหน้าที่ ส่งกลับแก้ไข", date: "15 ต.ค. 2567 09:30", actor: "Admin สมปอง" }
     ],
   }
 ];
