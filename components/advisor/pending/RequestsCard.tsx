@@ -60,6 +60,8 @@ interface RequestsCardProps {
   requests: ActionRequest[];
 }
 
+const formatAmount = (amount: string) => Number(amount).toLocaleString("th-TH");
+
 export default function RequestsCard({ requests }: RequestsCardProps) {
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
   const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | null>(null);
@@ -103,7 +105,7 @@ export default function RequestsCard({ requests }: RequestsCardProps) {
               <div className="flex gap-4">
                 <div>
                   <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่ขอ</div>
-                  <div className="font-bold text-[#ea580c]">฿{req.amount}</div>
+                  <div className="text-[#ea580c]">฿{formatAmount(req.amount)}</div>
                 </div>
                 <div>
                   <div className="text-[11px] text-gray-500 mb-0.5">ผ่อนชำระ</div>
@@ -125,28 +127,37 @@ export default function RequestsCard({ requests }: RequestsCardProps) {
       {/* 2. มุมมองสำหรับ Desktop/Tablet (แสดงเป็นตาราง) */}
       {/* ========================================== */}
       <div className="hidden md:block overflow-x-auto relative rounded-xl border border-gray-300 shadow-sm">
-        <table className="w-full text-left border-collapse min-w-[900px] bg-white">
+        <table className="w-full table-fixed border-collapse min-w-[900px] bg-white text-center">
+          <colgroup>
+            <col className="w-[11%]" />
+            <col className="w-[22%]" />
+            <col className="w-[11%]" />
+            <col className="w-[23%]" />
+            <col className="w-[11%]" />
+            <col className="w-[11%]" />
+            <col className="w-[11%]" />
+          </colgroup>
           <thead>
             <tr className="bg-gray-100/70 border-b border-gray-300 text-gray-700 text-[14px]">
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
+              <th className="py-3.5 px-3 font-semibold border-r border-gray-300 whitespace-nowrap">
                 รหัสคำร้อง
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 min-w-[200px]">
+              <th className="py-3.5 px-3 font-semibold border-r border-gray-300">
                 ชื่อ - ข้อมูลนักศึกษา
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
+              <th className="py-3.5 px-3 font-semibold border-r border-gray-300 whitespace-nowrap">
                 วันที่ยื่น
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 min-w-[200px]">
+              <th className="py-3.5 px-3 font-semibold border-r border-gray-300">
                 รายละเอียดคำร้อง
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
+              <th className="py-3.5 px-3 font-semibold border-r border-gray-300 whitespace-nowrap">
                 จำนวนเงิน
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
+              <th className="py-3.5 px-3 font-semibold border-r border-gray-300 whitespace-nowrap">
                 จำนวนงวด
               </th>
-              <th className="py-3.5 px-4 font-semibold text-center whitespace-nowrap">จัดการ</th>
+              <th className="py-3.5 px-3 font-semibold whitespace-nowrap">จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -155,29 +166,29 @@ export default function RequestsCard({ requests }: RequestsCardProps) {
                 key={idx}
                 className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
               >
-                <td className="py-4 px-4 text-gray-600 border-r border-gray-200">{req.id}</td>
-                <td className="py-4 px-4 border-r border-gray-200">
-                  <div className="font-bold text-gray-900">{req.name}</div>
-                  <div className="text-[13px] text-gray-500 mt-0.5">
+                <td className="py-4 px-3 font-normal text-gray-600 border-r border-gray-200">{req.id}</td>
+                <td className="py-4 px-3 text-left border-r border-gray-200 font-normal">
+                  <div className="font-normal text-gray-900">{req.name}</div>
+                  <div className="mt-0.5 text-sm font-normal text-gray-500">
                     {req.studentId} • {req.major} • ปี {req.year}
                   </div>
                 </td>
-                <td className="py-4 px-4 text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                <td className="py-4 px-3 font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
                   {req.submitDate}
                 </td>
-                <td className="py-4 px-4 text-gray-700 border-r border-gray-200">
-                  <div className="line-clamp-2">{req.objective}</div>
+                <td className="py-4 px-3 text-left font-normal text-gray-700 border-r border-gray-200">
+                  <div className="break-words text-sm">{req.objective}</div>
                 </td>
-                <td className="py-4 px-4 text-gray-900 font-bold border-r border-gray-200 whitespace-nowrap">
-                  ฿{req.amount}
+                <td className="py-4 px-3 font-normal text-gray-900 border-r border-gray-200 whitespace-nowrap">
+                  ฿{formatAmount(req.amount)}
                 </td>
-                <td className="py-4 px-4 text-gray-700 border-r border-gray-200 whitespace-nowrap">
+                <td className="py-4 px-3 font-normal text-gray-700 border-r border-gray-200 whitespace-nowrap">
                   {req.term} งวด
                 </td>
-                <td className="py-4 px-4 text-center">
+                <td className="py-4 px-3 font-normal">
                   <button
                     onClick={() => setSelectedRequest(req)}
-                    className="text-[#ea580c] hover:text-[#c2410c] font-bold bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg transition-colors border border-transparent hover:border-orange-200 whitespace-nowrap"
+                    className="bg-orange-50 px-3 py-1.5 font-normal text-[#ea580c] transition-colors hover:border-orange-200 hover:bg-orange-100 hover:text-[#c2410c] border border-transparent rounded-lg whitespace-nowrap"
                   >
                     ตรวจสอบ
                   </button>
@@ -249,7 +260,7 @@ export default function RequestsCard({ requests }: RequestsCardProps) {
                     <Wallet size={14} /> จำนวนที่ขอ
                   </div>
                   <div className="font-bold text-[16px] sm:text-[18px] text-[#ea580c]">
-                    ฿{selectedRequest.amount}
+                    ฿{formatAmount(selectedRequest.amount)}
                   </div>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-4 shadow-sm">
