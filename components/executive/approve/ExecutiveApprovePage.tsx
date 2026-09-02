@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import PendingRequestsList from "@/components/advisor/dashboard/RequestsList";
+import ApprovalRequestsTable from "@/components/shared/ApprovalRequestsTable";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
+import { mockPendingRequests } from "@/lib/mock-data/pending-requests";
 
 export default function ExecutiveApprovePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -30,7 +31,7 @@ export default function ExecutiveApprovePage() {
           </div>
 
           <div className="w-full">
-            <PendingRequestsList />
+            <ApprovalRequestsTable requests={mockPendingRequests} />
           </div>
         </div>
       </main>

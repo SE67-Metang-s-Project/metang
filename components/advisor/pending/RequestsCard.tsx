@@ -30,6 +30,7 @@ export type LoanDetails = {
 
 export type RequestStatus = {
   submitDate: string;
+  submitTime?: string;
   waitDays: number;
   isOverdue: boolean;
   history: ActionHistory[];
@@ -53,6 +54,8 @@ export type ActionRequest = StudentInfo &
   LoanDetails &
   RequestStatus & {
     id: string;
+    degree?: string;
+    requestStatus?: "รอพิจารณา" | "อนุมัติแล้ว" | "ไม่อนุมัติ" | "ยกเลิกคำร้อง";
     paymentBehavior?: PaymentBehaviorInfo;
   };
 

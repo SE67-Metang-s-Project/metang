@@ -10,7 +10,7 @@ export default function RequestsList() {
   const [searchQuery, setSearchQuery] = useState("");
   const requests = mockPendingRequests.map((request) => ({
     ...request,
-    requestStatus: request.id === "REQ-65001" ? "รอพิจารณา" : "อนุมัติแล้ว",
+    requestStatus: request.requestStatus ?? (request.id === "REQ-65001" ? "รอพิจารณา" : "อนุมัติแล้ว"),
   }));
 
   // 4. กรองข้อมูล
