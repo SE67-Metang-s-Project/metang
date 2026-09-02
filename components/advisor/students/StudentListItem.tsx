@@ -54,11 +54,11 @@ export default function StudentListTable({ students }: StudentListTableProps) {
             <div className="grid grid-cols-3 gap-3 border-t border-gray-50 pt-3">
               <div>
                 <div className="text-[11px] text-gray-500 mb-0.5">ยอดกู้ยืม</div>
-                <div className="font-semibold text-gray-700 text-[13px]">฿{student.totalBorrowed}</div>
+                <div className="font-semibold text-gray-700 text-[13px]">{student.totalBorrowed}</div>
               </div>
               <div>
                 <div className="text-[11px] text-gray-500 mb-0.5">คงเหลือ</div>
-                <div className="font-semibold text-[#dc2626] text-[13px]">฿{student.balance}</div>
+                <div className="font-semibold text-[#dc2626] text-[13px]">{student.balance}</div>
               </div>
               <div>
                 <div className="text-[11px] text-gray-500 mb-0.5">สถานะการชำระ</div>
@@ -174,12 +174,12 @@ export default function StudentListTable({ students }: StudentListTableProps) {
 
                 {/* 4. การกู้ยืมทั้งหมด */}
                 <td className="py-3 px-4 text-gray-700 font-medium border-r border-gray-200 whitespace-nowrap">
-                  ฿{student.totalBorrowed}
+                  {student.totalBorrowed}
                 </td>
 
                 {/* 5. ยอดหนี้คงเหลือ */}
                 <td className="py-3 px-4 text-[#dc2626] font-bold border-r border-gray-200 whitespace-nowrap">
-                  ฿{student.balance}
+                  {student.balance}
                 </td>
 
                 {/* 6. ล่าช้า (วัน) */}

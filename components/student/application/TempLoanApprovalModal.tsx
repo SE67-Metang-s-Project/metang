@@ -28,7 +28,7 @@ export default function TempLoanApprovalModal({
         month: "short",
         year: "numeric",
       })}`,
-      amount: `฿${(
+      amount: `${(
         installmentAmount +
         (index === formData.installmentCount - 1 ? installmentRemainder : 0)
       ).toLocaleString("th-TH")}`,
@@ -130,7 +130,7 @@ export default function TempLoanApprovalModal({
             </div>
             <div>
               <dt>จำนวนเงินที่ขอกู้ยืม (บาท):</dt>
-              <dd>฿{formData.loanAmount || "0"}</dd>
+              <dd>{formData.loanAmount || "0"}</dd>
             </div>
             <div>
               <dt>จำนวนงวดการชำระ:</dt>

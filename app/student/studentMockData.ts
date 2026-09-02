@@ -113,8 +113,8 @@ export const studentProfile = {
 export const activeLoan = {
   requestNumber: "SL-2568-0001",
   statusLabel: "กำลังผ่อนชำระ",
-  paidAmount: "฿2,500",
-  totalAmount: "฿3,000",
+  paidAmount: "2,500",
+  totalAmount: "3,000",
   progressPercent: 83,
   nextInstallmentNumber: 2,
   nextDueDate: "18 ก.พ. 2570",
@@ -145,9 +145,9 @@ export const installmentPayments: InstallmentPayment[] = [
   {
     installmentNumber: 1,
     status: "paid",
-    paidAmountSummary: "฿1,000 / ฿1,000",
+    paidAmountSummary: "1,000 / 1,000",
     dueDateLabel: "19 ม.ค. 2570",
-    outstandingAmount: "฿0",
+    outstandingAmount: "0",
     completedPaymentLabel: "ชำระเสร็จสิ้นเมื่อ",
     completedPaymentDateLabel: "7 ม.ค. 2570",
     completedPaymentTimeLabel: "17:00 น.",
@@ -155,18 +155,18 @@ export const installmentPayments: InstallmentPayment[] = [
   {
     installmentNumber: 2,
     status: "current",
-    paidAmountSummary: "฿300 / ฿1,000",
+    paidAmountSummary: "300 / 1,000",
     dueDateLabel: "18 ก.พ. 2570",
-    outstandingAmount: "฿700",
+    outstandingAmount: "700",
     paymentNote: "อีก 15 วันครบกำหนด",
-    actionLabel: "ชำระงวดนี้ · คงเหลือ ฿700",
+    actionLabel: "ชำระงวดนี้ · คงเหลือ 700",
   },
   {
     installmentNumber: 3,
     status: "upcoming",
-    paidAmountSummary: "฿500 / ฿1,000",
+    paidAmountSummary: "500 / 1,000",
     dueDateLabel: "20 มี.ค. 2570",
-    outstandingAmount: "฿500",
+    outstandingAmount: "500",
     paymentNote: "อีก 45 วันครบกำหนด",
     actionLabel: "กรุณาดำเนินการชำระงวดก่อนหน้าให้เสร็จสิ้น",
   },
@@ -189,7 +189,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
     submittedAt: "ยื่นเมื่อ 10 พ.ย. 2569 09:30 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 1/2569",
     amountLabel: "จำนวนที่ขอกู้",
-    amount: "฿3,000",
+    amount: "3,000",
   },
   {
     requestNumber: "SL-2568-0003",
@@ -198,7 +198,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
     submittedAt: "ยื่นเมื่อ 4 พ.ย. 2569 13:15 น.",
     purpose: "ค่าใช้จ่ายเกี่ยวกับการศึกษา",
     amountLabel: "จำนวนที่ขอกู้",
-    amount: "฿8,500",
+    amount: "8,500",
   },
   {
     requestNumber: "SL-2568-0004",
@@ -207,7 +207,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
     submittedAt: "ยื่นเมื่อ 28 ต.ค. 2569 11:00 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 2/2568",
     amountLabel: "จำนวนที่ขอกู้",
-    amount: "฿12,000",
+    amount: "12,000",
   },
   {
     requestNumber: "SL-2568-0005",
@@ -216,7 +216,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
     submittedAt: "ยื่นเมื่อ 22 ต.ค. 2569 14:20 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 2/2568",
     amountLabel: "จำนวนที่ขอกู้",
-    amount: "฿6,000",
+    amount: "6,000",
   },
   {
     requestNumber: "SL-2568-0006",
@@ -225,7 +225,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
     submittedAt: "ยื่นเมื่อ 18 ต.ค. 2569 10:45 น.",
     purpose: "ค่าใช้จ่ายเกี่ยวกับการศึกษา",
     amountLabel: "จำนวนที่ขอกู้",
-    amount: "฿9,000",
+    amount: "9,000",
   },
   {
     requestNumber: "SL-2568-0007",
@@ -234,7 +234,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
     submittedAt: "ยื่นเมื่อ 12 ต.ค. 2569 08:50 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 2/2568",
     amountLabel: "จำนวนที่ขอกู้",
-    amount: "฿10,500",
+    amount: "10,500",
   },
   {
     requestNumber: "SL-2568-0008",
@@ -243,7 +243,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
     submittedAt: "ยื่นเมื่อ 5 ก.ย. 2569 09:10 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 1/2568",
     amountLabel: "ชำระแล้ว",
-    amount: "฿7,500",
+    amount: "7,500",
   },
 ];
 
@@ -255,7 +255,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
     purposeLabel: "วัตถุประสงค์การกู้ยืม",
     purpose: "ค่าเทอมภาคเรียนที่ 1/2569",
     amountLabel: "จำนวนที่ขอกู้",
-    amount: "฿3,000",
+    amount: "3,000",
     additionalReasonLabel: "หมายเหตุเพิ่มเติม",
     additionalReason: "สถานการณ์ทางการเงิน",
     downloadLabel: "ดาวน์โหลดสัญญาการกู้ยืม",
@@ -282,7 +282,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
         actor: "เอกฤทธิ์ มีโชค",
       },
       {
-        title: "เจ้าหน้าที่โอนเงิน จำนวน ฿3,000",
+        title: "เจ้าหน้าที่โอนเงิน จำนวน 3,000",
         dateTime: "18 ธ.ค. 2569 10:00 น.",
         actor: "วรัญญู มีโชค",
         isCompleted: true,
@@ -297,23 +297,23 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
       {
         installmentNumber: 1,
         dueDateLabel: "ครบกำหนด 7 ก.ค. 2569",
-        amount: "฿1,000",
+        amount: "1,000",
       },
       {
         installmentNumber: 2,
         dueDateLabel: "ครบกำหนด 9 ส.ค. 2569",
-        amount: "฿1,000",
+        amount: "1,000",
       },
       {
         installmentNumber: 3,
         dueDateLabel: "ครบกำหนด 8 ก.ย. 2569",
-        amount: "฿1,000",
+        amount: "1,000",
       },
     ],
     paymentHistory: [
       {
         installmentNumber: 1,
-        amount: "฿1,000",
+        amount: "1,000",
         receiptImage: "/mock-transfer-slip.svg",
         paidAt: "ชำระเมื่อ 24 พ.ค. 2569 10:00 น.",
         checkedAt: "ตรวจสอบเมื่อ 25 พ.ค. 2569 10:00 น.",
@@ -321,7 +321,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
       },
       {
         installmentNumber: 2,
-        amount: "฿1,000",
+        amount: "1,000",
         receiptImage: "/mock-transfer-slip.svg",
         paidAt: "ชำระเมื่อ 27 ก.ค. 2569 10:00 น.",
         checkedAt: "ตรวจสอบเมื่อ 28 ก.ค. 2569 10:00 น.",
@@ -329,7 +329,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
       },
       {
         installmentNumber: 3,
-        amount: "฿500",
+        amount: "500",
         receiptImage: "/mock-transfer-slip.svg",
         paidAt: "ชำระเมื่อ 1 ส.ค. 2569 10:00 น.",
         checkedAt: "ตรวจสอบเมื่อ 2 ส.ค. 2569 10:00 น.",

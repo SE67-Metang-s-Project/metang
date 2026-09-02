@@ -15,7 +15,6 @@ import {
   Wallet,
   FileSignature,
   FileSearch,
-  PieChart,
   Settings,
   UserCog
 } from "lucide-react";
@@ -62,7 +61,6 @@ const menuConfig: Record<UserRole, MenuItem[]> = {
   executive: [
     { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/executive' },
     { title: 'พิจารณาอนุมัติคำร้อง', icon: FileCheck, href: '/executive/approve' },
-    { title: 'รายงานและสถิติ', icon: PieChart, href: '/executive/reports' },
   ],
   superadmin: [
     { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/superadmin' },

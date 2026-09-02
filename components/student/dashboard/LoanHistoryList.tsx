@@ -9,7 +9,6 @@ type LoanHistoryListProps = {
   requests: LoanRequestHistoryItem[];
   sectionClassName?: string;
   showAllRequests: boolean;
-  showMoreButton?: boolean;
   onShowMore: () => void;
   onOpenRequest?: (requestNumber: string) => void;
 };
@@ -21,7 +20,6 @@ export default function LoanHistoryList({
   requests,
   sectionClassName,
   showAllRequests,
-  showMoreButton = false,
   onShowMore,
   onOpenRequest,
 }: LoanHistoryListProps) {
@@ -52,7 +50,7 @@ export default function LoanHistoryList({
         ))}
       </div>
 
-      {requests.length >= 3 || showMoreButton ? (
+      {requests.length > 3 ? (
         <button
           aria-expanded={showAllRequests}
           className={styles.showMore}
