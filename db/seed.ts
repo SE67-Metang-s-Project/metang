@@ -20,6 +20,7 @@ const now = new Date();
 const day = 86_400_000;
 const dateFromNow = (days: number) => new Date(now.getTime() + days * day);
 const id = (value: number) => `00000000-0000-0000-0000-${String(value).padStart(12, "0")}`;
+const educationLevels = ["0", "1", "3", "5"] as const;
 
 const users: Prisma.AppUserCreateManyInput[] = [
   {
@@ -28,6 +29,7 @@ const users: Prisma.AppUserCreateManyInput[] = [
     cmuAccount: "exec",
     fullNameTh: "ผู้บริหาร ทดสอบ",
     fullNameEn: "Mock Executive",
+    educationLevel: "5",
   },
   {
     id: id(2),
@@ -35,6 +37,7 @@ const users: Prisma.AppUserCreateManyInput[] = [
     cmuAccount: "superadmin",
     fullNameTh: "ซุปเปอร์แอดมิน ทดสอบ",
     fullNameEn: "Mock Super Admin",
+    educationLevel: "0",
   },
   {
     id: id(3),
@@ -43,6 +46,7 @@ const users: Prisma.AppUserCreateManyInput[] = [
     fullNameTh: "แอดมิน ทดสอบ",
     fullNameEn: "Mock Admin",
     phone: "0800000003",
+    educationLevel: "0",
   },
   {
     id: id(4),
@@ -51,6 +55,7 @@ const users: Prisma.AppUserCreateManyInput[] = [
     fullNameTh: "อาจารย์ที่ปรึกษา ทดสอบ",
     fullNameEn: "Mock Advisor",
     phone: "0800000004",
+    educationLevel: "5",
   },
   {
     id: id(5),
@@ -58,6 +63,7 @@ const users: Prisma.AppUserCreateManyInput[] = [
     cmuAccount: "advisor2",
     fullNameTh: "อาจารย์สำรอง ทดสอบ",
     fullNameEn: "Backup Advisor",
+    educationLevel: "5",
   },
   ...Array.from({ length: 11 }, (_, index) => {
     const number = index + 1;
@@ -71,6 +77,7 @@ const users: Prisma.AppUserCreateManyInput[] = [
       fullNameTh: `นักศึกษา ทดสอบ ${number}`,
       fullNameEn: `Mock Student ${number}`,
       phone: [6, 9].includes(number) ? null : `0810000${String(userId).padStart(3, "0")}`,
+      educationLevel: educationLevels[index % educationLevels.length],
     };
   }),
 ];
