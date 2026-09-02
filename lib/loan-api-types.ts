@@ -120,6 +120,11 @@ export type AdvisorQueueItem = {
     decidedBy: string | null;
     decidedAt: string | null;
     comment: string | null;
+    decider: {
+      id: string;
+      fullNameTh: string;
+      fullNameEn: string | null;
+    } | null;
   }[];
 };
 
