@@ -137,7 +137,7 @@ export default function TempLoanApplicationPage() {
         month: "short",
         year: "numeric",
       })}`,
-      amount: `฿${(installmentAmount + (index === formData.installmentCount - 1 ? installmentRemainder : 0)).toLocaleString("th-TH")}`,
+      amount: `${(installmentAmount + (index === formData.installmentCount - 1 ? installmentRemainder : 0)).toLocaleString("th-TH")}`,
     };
   });
 

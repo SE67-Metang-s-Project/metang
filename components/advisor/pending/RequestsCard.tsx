@@ -105,7 +105,7 @@ export default function RequestsCard({ requests }: RequestsCardProps) {
               <div className="flex gap-4">
                 <div>
                   <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่ขอ</div>
-                  <div className="text-[#ea580c]">฿{formatAmount(req.amount)}</div>
+                  <div className="text-[#ea580c]">{formatAmount(req.amount)}</div>
                 </div>
                 <div>
                   <div className="text-[11px] text-gray-500 mb-0.5">ผ่อนชำระ</div>
@@ -180,7 +180,7 @@ export default function RequestsCard({ requests }: RequestsCardProps) {
                   <div className="break-words text-sm">{req.objective}</div>
                 </td>
                 <td className="py-4 px-3 font-normal text-gray-900 border-r border-gray-200 whitespace-nowrap">
-                  ฿{formatAmount(req.amount)}
+                  {formatAmount(req.amount)}
                 </td>
                 <td className="py-4 px-3 font-normal text-gray-700 border-r border-gray-200 whitespace-nowrap">
                   {req.term} งวด
@@ -260,7 +260,7 @@ export default function RequestsCard({ requests }: RequestsCardProps) {
                     <Wallet size={14} /> จำนวนที่ขอ
                   </div>
                   <div className="font-bold text-[16px] sm:text-[18px] text-[#ea580c]">
-                    ฿{formatAmount(selectedRequest.amount)}
+                    {formatAmount(selectedRequest.amount)}
                   </div>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-4 shadow-sm">

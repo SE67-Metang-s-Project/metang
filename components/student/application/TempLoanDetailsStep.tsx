@@ -31,7 +31,7 @@ export default function TempLoanDetailsStep({ formData }: TempLoanDetailsStepPro
         month: "short",
         year: "numeric",
       })}`,
-      amount: `฿${(
+      amount: `${(
         baseInstallmentAmount +
         (index === formData.installmentCount - 1 ? installmentRemainder : 0)
       ).toLocaleString("th-TH")}`,
@@ -39,7 +39,7 @@ export default function TempLoanDetailsStep({ formData }: TempLoanDetailsStepPro
   });
   const details = {
     ...tempCurrentLoanDetails,
-    amount: formData.loanAmount ? `฿${Number(formData.loanAmount).toLocaleString("th-TH")}` : "฿0",
+    amount: formData.loanAmount ? `${Number(formData.loanAmount).toLocaleString("th-TH")}` : "0",
     purpose: formData.purpose || tempCurrentLoanDetails.purpose,
     additionalReason: formData.additionalNote === "-" ? "-" : formData.additionalNote,
   };
@@ -116,7 +116,7 @@ export default function TempLoanDetailsStep({ formData }: TempLoanDetailsStepPro
           </div>
           <div>
             <dt>จำนวนเงินที่ขอกู้ยืม (บาท):</dt>
-            <dd>฿{formData.loanAmount || "0"}</dd>
+            <dd>{formData.loanAmount || "0"}</dd>
           </div>
           <div>
             <dt>จำนวนเงินตัวอักษร:</dt>
