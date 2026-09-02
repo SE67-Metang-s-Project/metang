@@ -1,8 +1,8 @@
 'use client';
 
-import React from "react";
-import Link from "next/link"; // 1. นำเข้า Link จาก Next.js
-import { usePathname } from "next/navigation"; // 2. นำเข้า usePathname
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, 
   FileCheck,
@@ -17,69 +17,78 @@ import {
   FileSearch,
   PieChart,
   Settings,
-  UserCog
+  UserCog,
+  Bug // 1. นำเข้าไอคอน Bug สำหรับโหมด Debug
 } from "lucide-react";
 
-// กำหนดประเภทของ Role ทั้งหมดในระบบ
 export type UserRole = 'student' | 'advisor' | 'admin' | 'executive' | 'superadmin';
 
-// กำหนดโครงสร้างของเมนู
 interface MenuItem {
   title: string;
   icon: React.ElementType;
-  href: string;
+  href: string | ((role: UserRole) => string); 
+  roles: UserRole[]; 
 }
 
 interface SideNavProps {
   isOpen: boolean;
   role: UserRole;
   onClose: () => void;
-  // ไม่ต้องรับ currentPath จาก Props แล้ว เพราะเราจะดึงอัตโนมัติ
 }
 
-// ตั้งค่ารายการเมนูแยกตาม Role
-const menuConfig: Record<UserRole, MenuItem[]> = {
-  student: [
-    { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/student' },
-    { title: 'ยื่นคำร้องขอกู้ยืม', icon: FileText, href: '/student/request' },
-    { title: 'ชำระเงินคืน (e-Slip)', icon: Wallet, href: '/student/payment' },
-    { title: 'ประวัติคำร้อง', icon: History, href: '/student/history' },
-  ],
-  advisor: [
-    { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/advisor' },
-    { title: 'คำร้องรอพิจารณา', icon: FileCheck, href: '/advisor/pending' },
-    { title: 'นักศึกษาในความดูแล', icon: Users, href: '/advisor/students' },
-    { title: 'ประวัติการดำเนินการ', icon: History, href: '/advisor/history' },
-  ],
-  admin: [
-    { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/admin' },
-    { title: 'คำร้องทั้งหมด', icon: Files, href: '/admin/requests' },
-    { title: 'ตรวจสอบสลิปชำระเงิน', icon: FileSearch, href: '/admin/verify-slip' },
-    { title: 'เบิกจ่ายหนี้', icon: FileSignature, href: '/admin/disburse-debt' },
-    { title: 'ติดตามสถานะหนี้', icon: Users, href: '/admin/tracking' },
-    { title: 'ประวัติการดำเนินการ', icon: History, href: '/admin/history' },
-  ],
-  executive: [
-    { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/executive' },
-    { title: 'พิจารณาอนุมัติคำร้อง', icon: FileCheck, href: '/executive/approve' },
-    { title: 'รายงานและสถิติ', icon: PieChart, href: '/executive/reports' },
-  ],
-  superadmin: [
-    { title: 'แดชบอร์ด', icon: LayoutDashboard, href: '/superadmin' },
-    { title: 'จัดการผู้ใช้งาน', icon: UserCog, href: '/superadmin/users' },
-    { title: 'ตั้งค่าระบบ', icon: Settings, href: '/superadmin/settings' },
-  ]
-};
+const ALL_MENU_ITEMS: MenuItem[] = [
+  { 
+    title: 'แดชบอร์ด', 
+    icon: LayoutDashboard, 
+    href: (role) => `/${role}`, 
+    roles: ['student', 'admin', 'executive', 'superadmin'] 
+  },
+  { title: 'ยื่นคำร้องขอกู้ยืม', icon: FileText, href: '/student/request', roles: ['student'] },
+  { title: 'ชำระเงินคืน (e-Slip)', icon: Wallet, href: '/student/payment', roles: ['student'] },
+  { title: 'ประวัติคำร้อง', icon: History, href: '/student/history', roles: ['student'] },
+  { 
+    title: 'คำร้องรอพิจารณา', 
+    icon: FileCheck, 
+    href: (role) => `/${role}/pending`, 
+    roles: ['advisor', 'executive'] 
+  },
+  { 
+    title: 'นักศึกษาในความดูแล', 
+    icon: Users, 
+    href: (role) => `/${role}/students`, 
+    roles: ['advisor', 'executive'] 
+  },
+  { 
+    title: 'รายงานและสถิติ', 
+    icon: PieChart, 
+    href: '/executive/reports', 
+    roles: ['executive'] 
+  },
+  { title: 'คำร้องทั้งหมด', icon: Files, href: '/admin/requests', roles: ['admin'] },
+  { title: 'ตรวจสอบสลิปชำระเงิน', icon: FileSearch, href: '/admin/verify-slip', roles: ['admin'] },
+  { title: 'เบิกจ่ายหนี้', icon: FileSignature, href: '/admin/disburse-debt', roles: ['admin'] },
+  { title: 'ติดตามสถานะหนี้', icon: Users, href: '/admin/tracking', roles: ['admin'] },
+  { title: 'ประวัติการดำเนินการ', icon: History, href: '/admin/history', roles: ['admin'] },
+  { title: 'จัดการผู้ใช้งาน', icon: UserCog, href: '/superadmin/users', roles: ['superadmin'] },
+  { title: 'ตั้งค่าระบบ', icon: Settings, href: '/superadmin/settings', roles: ['superadmin'] },
+];
 
 export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
-  const menus = menuConfig[role] || [];
-  
-  // 3. ใช้ hook เพื่อดึง path ปัจจุบันอัตโนมัติ (เช่น '/professor/pending')
   const pathname = usePathname(); 
+
+  // 2. สร้าง Local State สำหรับ Debug (ดึงค่าเริ่มต้นมาจาก Prop)
+  const [debugRole, setDebugRole] = useState<UserRole>(role);
+
+  // 3. ถ้า Prop role จาก Parent เปลี่ยน ให้ซิงค์ค่ากลับมาที่ Debug Role
+  useEffect(() => {
+    setDebugRole(role);
+  }, [role]);
+
+  // 4. ใช้ debugRole ในการกรองเมนูแทน role ตัวจริง
+  const allowedMenus = ALL_MENU_ITEMS.filter(item => item.roles.includes(debugRole));
 
   return (
     <>
-      {/* Background Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-gray-900/50 z-40 lg:hidden transition-opacity"
@@ -87,13 +96,11 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
         />
       )}
 
-      {/* Sidebar Container */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col h-screen transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Logo Area */}
         <div className="h-16 sm:h-20 flex items-center justify-between px-6 border-b border-gray-100 shrink-0">
           <div className="flex items-center">
             <div className="bg-[#ea580c] text-white p-2.5 rounded-xl mr-3 shadow-sm">
@@ -111,20 +118,19 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
           </button>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 py-6 px-4 space-y-1.5 text-sm font-medium overflow-y-auto">
-          {menus.map((item, index) => {
+          {allowedMenus.map((item, index) => {
             const Icon = item.icon;
             
-            // 4. เปรียบเทียบ url ปัจจุบันกับ href ของเมนู
-            const isActive = pathname === item.href;
+            // ส่ง debugRole เข้าไปแทน เพื่อให้สร้าง href ได้ถูกต้อง
+            const resolvedHref = typeof item.href === 'function' ? item.href(debugRole) : item.href;
+            
+            const isActive = pathname === resolvedHref;
 
             return (
-              // 5. เปลี่ยนจาก <a href="..."> เป็น <Link href="...">
               <Link
                 key={index}
-                href={item.href}
-                // ถ้ากดเมนูบนมือถือ ให้ปิด Sidebar อัตโนมัติด้วย
+                href={resolvedHref}
                 onClick={() => {
                   if (window.innerWidth < 1024) onClose();
                 }}
@@ -140,6 +146,28 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
             );
           })}
         </nav>
+
+        {/* ==================================================== */}
+        {/* 5. ส่วนควบคุมสำหรับ Debug (ควรลบออกเมื่อขึ้น Production) */}
+        {/* ==================================================== */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="p-4 bg-orange-50/50 border-t border-orange-100 shrink-0">
+            <div className="flex items-center gap-2 text-xs font-bold text-orange-600 mb-2">
+              <Bug size={14} /> DEBUG: Switch Role
+            </div>
+            <select
+              value={debugRole}
+              onChange={(e) => setDebugRole(e.target.value as UserRole)}
+              className="w-full bg-white border border-orange-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block px-3 py-2 cursor-pointer shadow-sm"
+            >
+              <option value="student">Student</option>
+              <option value="advisor">Advisor</option>
+              <option value="admin">Admin</option>
+              <option value="executive">Executive</option>
+              <option value="superadmin">Superadmin</option>
+            </select>
+          </div>
+        )}
       </aside>
     </>
   );

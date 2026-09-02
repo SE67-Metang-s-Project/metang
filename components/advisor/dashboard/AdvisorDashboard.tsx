@@ -7,7 +7,7 @@ import { ShieldCheck } from "lucide-react";
 // Import กล่องต่างๆ ของเราเข้ามา
 
 import AdvisorWelcomeCard from "@/components/shared/WelcomeCard";
-import PendingRequestsList from "./RequestsList";
+import PendingRequestsList from "../../shared/pending/RequestsList";
 import AdvisorRecentHistory from "./AdvisorRecentHistory";
 
 export default function AdvisorDashboard() {
@@ -40,7 +40,7 @@ export default function AdvisorDashboard() {
 
           {/* 2. ประวัติการดำเนินการล่าสุด */}
           <div className="w-full">
-            <AdvisorRecentHistory />
+            {/* <AdvisorRecentHistory /> */}
           </div>
         </div>
       </main>

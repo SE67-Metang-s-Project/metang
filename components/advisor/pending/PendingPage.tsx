@@ -4,8 +4,7 @@ import React, { useState } from "react";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav"; // 1. Import TopNav ที่สร้างใหม่เข้ามา
 
-import AdvisorStatCards from "@/components/advisor/dashboard/AdvisorStatCards";
-import PendingRequestsList from "@/components/advisor/dashboard/RequestsList";
+import PendingRequestsList from "@/components/shared/pending/RequestsList";
 
 export default function PendingPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

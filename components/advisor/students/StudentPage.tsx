@@ -4,84 +4,16 @@ import React, { useState } from "react";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
 
-// Import Component ย่อยที่เราสร้างไว้
 import StudentFilters from "./StudentFilters"; 
-// เปลี่ยนชื่อ Import ให้สอดคล้องกับ Component ใหม่ที่เราแก้เป็นตาราง
-import StudentListTable from "./StudentListItem"; 
+import StudentListTable, { Student } from "./StudentListItem"; 
 
-// Mock Data รายชื่อนักศึกษา
-const mockStudents = [
-  {
-    initial: "ก",
-    name: "กมลชนก ใจดี",
-    studentId: "651210001",
-    major: "พยาบาลศาสตรบัณฑิต",
-    year: "3",
-    requestStatus: "รออาจารย์ที่ปรึกษาอนุมัติ",
-    paymentStatus: "จ่ายตรงเวลาเสมอ",
-    totalBorrowed: "50,000",
-    paymentStatusType: "good", // เขียว
-    balance: "17,501",
-    delayDays: "0",
-  },
-  {
-    initial: "ป",
-    name: "ปิยะพงษ์ สุขใจ",
-    studentId: "651210042",
-    major: "พยาบาลศาสตรบัณฑิต",
-    year: "2",
-    requestStatus: "รออาจารย์ที่ปรึกษาอนุมัติ",
-    paymentStatus: "มีหนี้เกินกำหนด",
-    totalBorrowed: "30,000",
-    paymentStatusType: "bad", // แดง
-    balance: "16,500",
-    delayDays: "0",
-  },
-  {
-    initial: "อ",
-    name: "อริสรา แสงจันทร์",
-    studentId: "651210077",
-    major: "พยาบาลศาสตรบัณฑิต",
-    year: "4",
-    requestStatus: "รออาจารย์ที่ปรึกษาอนุมัติ",
-    paymentStatus: "มีหนี้เกินกำหนด",
-    totalBorrowed: "40,000",
-    paymentStatusType: "bad", // แดง
-    balance: "18,501",
-    delayDays: "9",
-  },
-  {
-    initial: "ธ",
-    name: "ธีรภัทร วัฒนา",
-    studentId: "651210103",
-    major: "พยาบาลศาสตรบัณฑิต",
-    year: "3",
-    requestStatus: "รออาจารย์ที่ปรึกษาอนุมัติ",
-    totalBorrowed: "20,000",
-    paymentStatus: "ยังไม่มีประวัติชำระ",
-    paymentStatusType: "neutral", // เทา
-    balance: "12,000",
-    delayDays: "0",
-  },
-  {
-    initial: "ณ",
-    name: "ณิชา ประเสริฐ",
-    studentId: "651210158",
-    major: "พยาบาลศาสตรบัณฑิต",
-    year: "2",
-    requestStatus: "รออาจารย์ที่ปรึกษาอนุมัติ",
-    totalBorrowed: "10,000",
-    paymentStatus: "ยังไม่มีประวัติชำระ",
-    paymentStatusType: "neutral", // เทา
-    balance: "9,999",
-    delayDays: "0",
-  },
-];
+// นำเข้าข้อมูล Mock Data ที่คุณสร้างไว้
+import { mockAdvisorRequests } from "@/components/shared/mockAdvisorRequests"; 
 
+// ตั้งค่า Tabs โดยลบ "ไม่มีคำร้อง" ออก
 const filterTabs = [
   "ทั้งหมด",
   "มีคำร้องดำเนินการ",
-  "ไม่มีคำร้อง",
   "มีหนี้คงเหลือ",
   "ชำระครบ",
   "เคยชำระล่าช้า",
@@ -90,6 +22,66 @@ const filterTabs = [
 export default function StudentList() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("ทั้งหมด");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [degreeFilter, setDegreeFilter] = useState("ทั้งหมด");
+
+  // แปลง ActionRequest ให้เป็น Student Type เพื่อแสดงในตาราง
+  const mappedStudents: Student[] = mockAdvisorRequests.map((req) => {
+    // กำหนดเงื่อนไข: พฤติกรรมการชำระเงิน มีแค่ ชำระตรงเวลา และ ชำระล่าช้า (แดง/เขียว)
+    const isLate = (req.paymentBehavior?.lateInstallments ?? 0) > 0;
+    const paymentStatus = isLate ? "ชำระล่าช้า" : "ชำระตรงเวลา";
+    const paymentStatusType = isLate ? "bad" : "good";
+    
+    // แปลงยอดกู้เป็นตัวเลขเพื่อใส่ลูกน้ำ (,)
+    const formattedAmount = Number(req.amount).toLocaleString();
+    
+    // (จำลองข้อมูล Balance) สมมติว่ายอดคงเหลือก็คือยอดที่กู้
+    const mockBalance = req.requestStatus === "อนุมัติแล้ว" ? formattedAmount : "0"; 
+
+    return {
+      initial: req.name.charAt(0),
+      name: req.name,
+      studentId: req.studentId,
+      major: req.major,
+      year: req.year,
+      requestStatus: req.requestStatus,
+      paymentStatus: paymentStatus,
+      paymentStatusType: paymentStatusType,
+      totalBorrowed: formattedAmount,
+      balance: mockBalance,
+      delayDays: req.isOverdue ? req.waitDays.toString() : "0",
+    };
+  });
+
+  // ใช้ฟังก์ชัน Filter ข้อมูลก่อนส่งไปแสดงผล
+  const filteredStudents = mappedStudents.filter((student) => {
+    // 1. กรองด้วยช่องค้นหา (ชื่อ หรือ รหัสนักศึกษา)
+    const matchesSearch = student.name.includes(searchQuery) || student.studentId.includes(searchQuery);
+
+    // 2. กรองด้วยระดับการศึกษา (อิงคำจาก Major)
+    let matchesDegree = true;
+    if (degreeFilter !== "ทั้งหมด") {
+      if (degreeFilter === "ป.ตรี") matchesDegree = student.major.includes("บัณฑิต");
+      else if (degreeFilter === "ป.โท") matchesDegree = student.major.includes("มหาบัณฑิต");
+      else if (degreeFilter === "ป.เอก") matchesDegree = student.major.includes("ดุษฎีบัณฑิต");
+      else if (degreeFilter === "ประกาศนียบัตรผู้ช่วยพยาบาล") matchesDegree = student.major.includes("ผู้ช่วยพยาบาล");
+    }
+
+    // 3. กรองด้วย Tabs
+    let matchesTab = true;
+    if (activeTab === "มีคำร้องดำเนินการ") {
+      matchesTab = student.requestStatus === "รอพิจารณา" || student.requestStatus.includes("รอ");
+    } else if (activeTab === "เคยชำระล่าช้า") {
+      matchesTab = student.paymentStatusType === "bad";
+    } else if (activeTab === "มีหนี้คงเหลือ") {
+      // เอาคอมม่าออกแล้วเช็คว่า > 0 หรือไม่
+      matchesTab = Number(student.balance.replace(/,/g, "")) > 0; 
+    } else if (activeTab === "ชำระครบ") {
+      matchesTab = Number(student.balance.replace(/,/g, "")) === 0;
+    }
+
+    return matchesSearch && matchesDegree && matchesTab;
+  });
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-800">
@@ -116,13 +108,14 @@ export default function StudentList() {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             filterTabs={filterTabs}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            degreeFilter={degreeFilter}
+            setDegreeFilter={setDegreeFilter}
           />
 
-          {/* 
-            แก้ไขส่วนนี้: ลบการ map() ออก แล้วส่ง mockStudents เข้าไปที่ props students โดยตรง
-          */}
           <div className="mt-2">
-            <StudentListTable students={mockStudents as any} />
+            <StudentListTable students={filteredStudents} />
           </div>
 
         </div>
