@@ -7,8 +7,7 @@ import { ShieldCheck } from "lucide-react";
 // Import กล่องต่างๆ ของเราเข้ามา
 
 import AdvisorWelcomeCard from "@/components/shared/WelcomeCard";
-import PendingRequestsList from "../../shared/pending/RequestsList";
-import AdvisorRecentHistory from "./AdvisorRecentHistory";
+import PendingRequestsList from "@/components/advisor/pending/RequestsList";
 
 export default function AdvisorDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

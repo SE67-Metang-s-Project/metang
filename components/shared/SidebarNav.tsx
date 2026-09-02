@@ -50,7 +50,7 @@ const ALL_MENU_ITEMS: MenuItem[] = [
     title: 'คำร้องรอพิจารณา', 
     icon: FileCheck, 
     href: (role) => `/${role}/pending`, 
-    roles: ['advisor', 'executive'] 
+    roles: ['advisor', 'admin' ,'executive'] 
   },
   { 
     title: 'นักศึกษาในความดูแล', 
@@ -64,11 +64,8 @@ const ALL_MENU_ITEMS: MenuItem[] = [
     href: '/executive/reports', 
     roles: ['executive'] 
   },
-  { title: 'คำร้องทั้งหมด', icon: Files, href: '/admin/requests', roles: ['admin'] },
   { title: 'ตรวจสอบสลิปชำระเงิน', icon: FileSearch, href: '/admin/verify-slip', roles: ['admin'] },
   { title: 'เบิกจ่ายหนี้', icon: FileSignature, href: '/admin/disburse-debt', roles: ['admin'] },
-  { title: 'ติดตามสถานะหนี้', icon: Users, href: '/admin/tracking', roles: ['admin'] },
-  { title: 'ประวัติการดำเนินการ', icon: History, href: '/admin/history', roles: ['admin'] },
   { title: 'จัดการผู้ใช้งาน', icon: UserCog, href: '/superadmin/users', roles: ['superadmin'] },
   { title: 'ตั้งค่าระบบ', icon: Settings, href: '/superadmin/settings', roles: ['superadmin'] },
 ];

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import PendingFilter, { FilterStatus } from "./PendingFilter";
-import RequestsCard, { ActionRequest } from "./RequestsCard";
+import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
+import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
 import { mockAdvisorRequests } from "@/components/shared/mockAdvisorRequests"; // นำเข้าข้อมูลจำลองที่เราแยกไฟล์ไว้
 
 export default function RequestsList() {

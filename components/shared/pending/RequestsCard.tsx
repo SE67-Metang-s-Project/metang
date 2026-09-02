@@ -160,7 +160,13 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
       ? "px-4 py-2 text-[13px] rounded-lg transition-colors border whitespace-nowrap text-center"
       : "px-3 py-1.5 text-[13px] rounded-lg transition-colors border whitespace-nowrap text-center";
 
-    if (req.requestStatus === "รอพิจารณา") {
+    // === กำหนดว่าสถานะไหนที่ "รอให้ Role นี้เป็นคนกด" ===
+    let isActionable = false;
+    if (userRole === "advisor" && req.requestStatus === "รอพิจารณา") isActionable = true;
+    if (userRole === "admin" && req.requestStatus === "รอเจ้าหน้าที่ตรวจสอบ") isActionable = true;
+    if (userRole === "executive" && req.requestStatus === "รอผู้บริหารอนุมัติ") isActionable = true;
+
+    if (isActionable) {
       return (
         <button
           onClick={() => setSelectedRequest(req)}
@@ -171,6 +177,7 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
       );
     }
 
+    // === ถ้าไม่ใช่คิวที่ต้องตรวจสอบ ให้แสดงป้ายสถานะ (สีต่างๆ) ===
     let colorClass = "bg-gray-50 hover:bg-gray-100 text-gray-600 border-gray-200";
 
     if (req.requestStatus.includes("ไม่อนุมัติ") || req.requestStatus.includes("ยกเลิก")) {
