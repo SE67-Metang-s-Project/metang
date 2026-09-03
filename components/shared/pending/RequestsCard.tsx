@@ -371,7 +371,9 @@ export default function RequestsCard({
             <tr className="bg-gray-100/70 border-b border-gray-300 text-gray-700 text-[14px]">
               <th className="min-w-[130px] py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 <span className="lg:hidden">
-                  รหัส<br />คำร้อง
+                  รหัส
+                  <br />
+                  คำร้อง
                 </span>
                 <span className="hidden lg:inline">รหัสคำร้อง</span>
               </th>
@@ -382,7 +384,9 @@ export default function RequestsCard({
                 {isExecutiveTable ? (
                   <>
                     <span className="lg:hidden">
-                      วันที่-เวลา<br />ยื่นคำร้อง
+                      วันที่-เวลา
+                      <br />
+                      ยื่นคำร้อง
                     </span>
                     <span className="hidden lg:inline">วันที่-เวลายื่นคำร้อง</span>
                   </>
@@ -755,23 +759,23 @@ export default function RequestsCard({
                   <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <button
                       onClick={() => setConfirmAction("reject")}
-                      className="w-full sm:flex-1 py-3 flex items-center justify-center gap-2 rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98]"
+                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98]"
                     >
-                      <XCircle size={18} /> ไม่อนุมัติ
+                      ไม่อนุมัติ
                     </button>
 
                     <button
                       onClick={() => setConfirmAction("return")}
-                      className="w-full sm:flex-1 py-3 flex items-center justify-center gap-2 rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-bold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
+                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-bold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
                     >
-                      <ShieldAlert size={18} /> ส่งกลับแก้ไข
+                      ส่งกลับแก้ไข
                     </button>
 
                     <button
                       onClick={() => setConfirmAction("approve")}
-                      className="w-full sm:flex-1 py-3 flex items-center justify-center gap-2 rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98]"
+                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98]"
                     >
-                      <CheckCircle2 size={18} /> อนุมัติ
+                      อนุมัติ
                     </button>
                   </div>
                 ) : (
