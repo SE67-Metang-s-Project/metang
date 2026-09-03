@@ -86,7 +86,7 @@ export default function DisburseDebtPage() {
           </div>
 
           {/* รายการคำร้อง */}
-          <DisburseDebtCard requests={filteredRequests} />
+          <DisburseDebtCard requests={filteredRequests as any} />
           
         </main>
       </div>

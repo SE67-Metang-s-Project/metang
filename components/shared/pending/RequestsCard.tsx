@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   GraduationCap,
@@ -16,6 +16,7 @@ import {
   CalendarDays,
   ShieldAlert,
   MessageSquare,
+  Pencil, // <--- เพิ่ม Import Icon สำหรับแก้ไข
 } from "lucide-react";
 
 // ==========================================
@@ -94,7 +95,7 @@ export type ActionRequest = StudentInfo &
     id: string;
     requestStatus: LoanStatus;
     paymentBehavior?: PaymentBehaviorInfo;
-    approvals?: ApprovalStep[]; // <--- เปลี่ยนมาใช้ Array เก็บความเห็นทั้งหมด
+    approvals?: ApprovalStep[];
   };
 
 export type UserRole = "advisor" | "executive" | "admin" | "super_admin";
@@ -213,12 +214,37 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
   const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | "return" | null>(null);
   const [remark, setRemark] = useState("");
 
+  // ==========================================
+  // State สำหรับการแก้ไขวงเงิน (Admin / Super Admin)
+  // ==========================================
+  const [isEditingAmount, setIsEditingAmount] = useState(false);
+  const [editAmountValue, setEditAmountValue] = useState("");
+
   const canViewSensitiveData = userRole === "admin" || userRole === "super_admin";
+  const canEditAmount = userRole === "admin" || userRole === "super_admin";
+
+  // รีเซ็ตค่าวงเงินเมื่อเลือกคำร้องใหม่
+  useEffect(() => {
+    if (selectedRequest) {
+      setEditAmountValue(selectedRequest.amount);
+      setIsEditingAmount(false);
+    }
+  }, [selectedRequest]);
 
   const closeAllModals = () => {
     setSelectedRequest(null);
     setConfirmAction(null);
     setRemark("");
+    setIsEditingAmount(false);
+  };
+
+  // ฟังก์ชันบันทึกวงเงินใหม่
+  const handleSaveAmount = () => {
+    if (selectedRequest && editAmountValue) {
+      setSelectedRequest({ ...selectedRequest, amount: editAmountValue });
+      setIsEditingAmount(false);
+      console.log(`อัปเดตวงเงินใหม่สำหรับคำร้อง ${selectedRequest.id}: ${editAmountValue}`);
+    }
   };
 
   const renderActionButton = (req: ActionRequest, isMobile: boolean) => {
@@ -428,14 +454,58 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
 
               {/* Grid 2 ช่อง (จำนวนเงิน, กำหนดคืน) */}
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-4 shadow-sm">
-                  <div className="text-[12px] text-gray-500 flex items-center gap-1.5 mb-1">
-                    <Wallet size={14} /> จำนวนเงินที่ขอยืม
+                {/* ---------------------------------------------------- */}
+                {/* แก้ไข: ส่วนที่ให้ Admin แก้ไขตัวเลขวงเงินได้ */}
+                {/* ---------------------------------------------------- */}
+                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-4 shadow-sm relative">
+                  <div className="text-[12px] text-gray-500 flex items-center justify-between mb-1">
+                    <span className="flex items-center gap-1.5">
+                      <Wallet size={14} /> จำนวนเงินที่ขอยืม
+                    </span>
+                    {/* ปุ่มแก้ไข จะโชว์เฉพาะ Role ที่กำหนด และตอนที่ยังไม่ได้กดแก้ */}
+                    {canEditAmount && !isEditingAmount && (
+                      <button
+                        onClick={() => setIsEditingAmount(true)}
+                        className="text-blue-500 hover:text-blue-700 flex items-center gap-1 text-[11px] bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md transition-colors"
+                      >
+                        <Pencil size={12} /> ปรับวงเงิน
+                      </button>
+                    )}
                   </div>
-                  <div className="font-bold text-[16px] sm:text-[18px] text-[#ea580c]">
-                    {formatAmount(selectedRequest.amount)}
-                  </div>
+
+                  {isEditingAmount ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="font-bold text-gray-700">฿</span>
+                      <input
+                        type="number"
+                        value={editAmountValue}
+                        onChange={(e) => setEditAmountValue(e.target.value)}
+                        className="w-full border border-gray-300 rounded-md px-2 py-1 text-[14px] font-bold text-[#ea580c] focus:outline-none focus:ring-1 focus:ring-[#ea580c]"
+                        autoFocus
+                      />
+                      <button
+                        onClick={handleSaveAmount}
+                        className="bg-green-100 text-green-700 p-1.5 rounded-md hover:bg-green-200 transition-colors"
+                      >
+                        <CheckCircle2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditingAmount(false);
+                          setEditAmountValue(selectedRequest.amount);
+                        }}
+                        className="bg-gray-100 text-gray-600 p-1.5 rounded-md hover:bg-gray-200 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="font-bold text-[16px] sm:text-[18px] text-[#ea580c]">
+                      ฿{formatAmount(selectedRequest.amount)}
+                    </div>
+                  )}
                 </div>
+
                 <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-4 shadow-sm">
                   <div className="text-[12px] text-gray-500 flex items-center gap-1.5 mb-1">
                     <Clock size={14} /> จำนวนงวดที่ผ่อน
@@ -652,8 +722,8 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                         confirmAction === "approve"
                           ? "text-green-700"
                           : confirmAction === "return"
-                          ? "text-amber-600"
-                          : "text-red-600"
+                            ? "text-amber-600"
+                            : "text-red-600"
                       }`}
                     >
                       {confirmAction === "approve" ? (
@@ -666,8 +736,8 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                       {confirmAction === "approve"
                         ? "ความเห็นประกอบการพิจารณา (แนบในแบบฟอร์ม)"
                         : confirmAction === "return"
-                        ? "ระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข (เช่น แนบเอกสารใหม่)"
-                        : "ระบุเหตุผลเพื่อแจ้งกลับให้นักศึกษาทราบ"}
+                          ? "ระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข (เช่น แนบเอกสารใหม่)"
+                          : "ระบุเหตุผลเพื่อแจ้งกลับให้นักศึกษาทราบ"}
                     </h4>
 
                     <textarea
@@ -675,8 +745,8 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                         confirmAction === "approve"
                           ? "เช่น เห็นสมควรให้กู้ยืมเพื่อนำไปใช้จ่าย..."
                           : confirmAction === "return"
-                          ? "เช่น ใบแจ้งหนี้ไม่ชัดเจน กรุณาถ่ายรูปและแนบไฟล์มาใหม่..."
-                          : "เช่น เอกสารหรือเหตุผลไม่เพียงพอต่อการกู้ยืม..."
+                            ? "เช่น ใบแจ้งหนี้ไม่ชัดเจน กรุณาถ่ายรูปและแนบไฟล์มาใหม่..."
+                            : "เช่น เอกสารหรือเหตุผลไม่เพียงพอต่อการกู้ยืม..."
                       }
                       className="w-full border border-gray-300 rounded-lg p-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none h-20 mb-3 bg-white"
                       value={remark}
@@ -694,7 +764,7 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                       <button
                         onClick={() => {
                           console.log(
-                            `Action: ${confirmAction}, ID: ${selectedRequest.id}, Remark: ${remark}`
+                            `Action: ${confirmAction}, ID: ${selectedRequest.id}, Remark: ${remark}`,
                           );
                           closeAllModals();
                         }}
@@ -702,15 +772,15 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                           confirmAction === "approve"
                             ? "bg-[#059669] hover:bg-[#047857]"
                             : confirmAction === "return"
-                            ? "bg-amber-500 hover:bg-amber-600"
-                            : "bg-[#dc2626] hover:bg-[#b91c1c]"
+                              ? "bg-amber-500 hover:bg-amber-600"
+                              : "bg-[#dc2626] hover:bg-[#b91c1c]"
                         }`}
                       >
                         {confirmAction === "approve"
                           ? "ยืนยันอนุมัติ"
                           : confirmAction === "return"
-                          ? "ยืนยันส่งกลับแก้ไข"
-                          : "ยืนยันไม่อนุมัติ"}
+                            ? "ยืนยันส่งกลับแก้ไข"
+                            : "ยืนยันไม่อนุมัติ"}
                       </button>
                     </div>
                   </div>

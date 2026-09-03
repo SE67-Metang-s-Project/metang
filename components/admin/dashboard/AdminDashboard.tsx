@@ -3,7 +3,9 @@
 import React, { useState } from "react";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
+
 import WelcomeCard from "@/components/shared/WelcomeCard";
+import pendingRequests from "@/components/admin/pending/AdminPendingPage";
 
 export default function AdminDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -23,8 +25,13 @@ export default function AdminDashboard() {
 
         <main className="p-6">
           {/* Content Area */}
-          {/* แก้ไข userName เป็น name ให้ตรงกับที่ WelcomeCard รับค่า */}
           <WelcomeCard name="แอดมินคนหล่อ" description="admin" />
+
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold mb-4">รายการคำขอที่รอดำเนินการ</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+          </div>
         </main>
       </div>
     </div>
