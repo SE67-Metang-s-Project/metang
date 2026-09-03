@@ -4,20 +4,14 @@ import React, { useState } from "react";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
 
-import StudentFilters from "./StudentFilters"; 
-import StudentListTable, { Student } from "./StudentListItem"; 
+import StudentFilters from "./StudentFilters";
+import StudentListTable, { Student } from "./StudentListItem";
 
-// นำเข้าข้อมูล Mock Data ที่คุณสร้างไว้
-import { mockAdvisorRequests } from "@/components/shared/mockAdvisorRequests"; 
+// นำเข้าข้อมูล Mock Data
+import { mockAdvisorRequests } from "@/components/shared/mock-data/mockAdvisorRequests";
 
-// ตั้งค่า Tabs โดยลบ "ไม่มีคำร้อง" ออก
-const filterTabs = [
-  "ทั้งหมด",
-  "มีคำร้องดำเนินการ",
-  "มีหนี้คงเหลือ",
-  "ชำระครบ",
-  "เคยชำระล่าช้า",
-];
+// ตั้งค่า Tabs
+const filterTabs = ["ทั้งหมด", "มีคำร้องดำเนินการ", "มีหนี้คงเหลือ", "ชำระครบ", "เคยชำระล่าช้า"];
 
 export default function StudentList() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -25,18 +19,16 @@ export default function StudentList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [degreeFilter, setDegreeFilter] = useState("ทั้งหมด");
 
-  // แปลง ActionRequest ให้เป็น Student Type เพื่อแสดงในตาราง
   const mappedStudents: Student[] = mockAdvisorRequests.map((req) => {
-    // กำหนดเงื่อนไข: พฤติกรรมการชำระเงิน มีแค่ ชำระตรงเวลา และ ชำระล่าช้า (แดง/เขียว)
     const isLate = (req.paymentBehavior?.lateInstallments ?? 0) > 0;
     const paymentStatus = isLate ? "ชำระล่าช้า" : "ชำระตรงเวลา";
     const paymentStatusType = isLate ? "bad" : "good";
-    
-    // แปลงยอดกู้เป็นตัวเลขเพื่อใส่ลูกน้ำ (,)
+
     const formattedAmount = Number(req.amount).toLocaleString();
-    
-    // (จำลองข้อมูล Balance) สมมติว่ายอดคงเหลือก็คือยอดที่กู้
-    const mockBalance = req.requestStatus === "อนุมัติแล้ว" ? formattedAmount : "0"; 
+
+    // จำลองยอดคงเหลือ
+    const mockBalance =
+      req.requestStatus === "disbursed" || req.requestStatus === "closed" ? formattedAmount : "0";
 
     return {
       initial: req.name.charAt(0),
@@ -44,40 +36,49 @@ export default function StudentList() {
       studentId: req.studentId,
       major: req.major,
       year: req.year,
-      requestStatus: req.requestStatus,
+      requestStatus: req.requestStatus, // ปล่อยให้แสดงเป็น string status ไปก่อน (ถ้าอยากให้เป็นป้ายสี ต้องแปลงกลับเป็นไทยแบบใน RequestCard)
       paymentStatus: paymentStatus,
       paymentStatusType: paymentStatusType,
       totalBorrowed: formattedAmount,
       balance: mockBalance,
-      delayDays: req.isOverdue ? req.waitDays.toString() : "0",
+      delayDays: req.isOverdue ? String(req.waitDays) : "0",
     };
   });
 
-  // ใช้ฟังก์ชัน Filter ข้อมูลก่อนส่งไปแสดงผล
   const filteredStudents = mappedStudents.filter((student) => {
-    // 1. กรองด้วยช่องค้นหา (ชื่อ หรือ รหัสนักศึกษา)
-    const matchesSearch = student.name.includes(searchQuery) || student.studentId.includes(searchQuery);
+    // 1. กรองด้วยช่องค้นหา
+    const matchesSearch =
+      student.name.includes(searchQuery) || student.studentId.includes(searchQuery);
 
-    // 2. กรองด้วยระดับการศึกษา (อิงคำจาก Major)
+    // 2. กรองด้วยระดับการศึกษา (เช็คจากรหัสนักศึกษา หลักที่ 5)
     let matchesDegree = true;
     if (degreeFilter !== "ทั้งหมด") {
-      if (degreeFilter === "ป.ตรี") matchesDegree = student.major.includes("บัณฑิต");
-      else if (degreeFilter === "ป.โท") matchesDegree = student.major.includes("มหาบัณฑิต");
-      else if (degreeFilter === "ป.เอก") matchesDegree = student.major.includes("ดุษฎีบัณฑิต");
-      else if (degreeFilter === "ประกาศนียบัตรผู้ช่วยพยาบาล") matchesDegree = student.major.includes("ผู้ช่วยพยาบาล");
+      const degreeCode = student.studentId.charAt(4); // หลักที่ 5 คือ index ที่ 4
+
+      if (degreeFilter === "ประกาศนียบัตรผู้ช่วยพยาบาล") {
+        matchesDegree = degreeCode === "0";
+      } else if (degreeFilter === "ป.ตรี") {
+        matchesDegree = degreeCode === "1";
+      } else if (degreeFilter === "ป.โท") {
+        matchesDegree = degreeCode === "3";
+      } else if (degreeFilter === "ป.เอก") {
+        matchesDegree = degreeCode === "5";
+      }
     }
 
     // 3. กรองด้วย Tabs
     let matchesTab = true;
     if (activeTab === "มีคำร้องดำเนินการ") {
-      matchesTab = student.requestStatus === "รอพิจารณา" || student.requestStatus.includes("รอ");
+      matchesTab = student.requestStatus.includes("pending");
     } else if (activeTab === "เคยชำระล่าช้า") {
       matchesTab = student.paymentStatusType === "bad";
     } else if (activeTab === "มีหนี้คงเหลือ") {
-      // เอาคอมม่าออกแล้วเช็คว่า > 0 หรือไม่
-      matchesTab = Number(student.balance.replace(/,/g, "")) > 0; 
+      matchesTab = Number(student.balance.replace(/,/g, "")) > 0;
     } else if (activeTab === "ชำระครบ") {
-      matchesTab = Number(student.balance.replace(/,/g, "")) === 0;
+      // ถ้ายอดกู้ > 0 และ ยอดคงเหลือ = 0 แปลว่าชำระครบ
+      const total = Number(student.totalBorrowed.replace(/,/g, ""));
+      const balance = Number(student.balance.replace(/,/g, ""));
+      matchesTab = total > 0 && balance === 0;
     }
 
     return matchesSearch && matchesDegree && matchesTab;
@@ -85,11 +86,9 @@ export default function StudentList() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-800">
-      {/* SideNav */}
       <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="advisor" />
 
       <main className="flex-1 flex flex-col w-full min-h-screen lg:ml-64 transition-all duration-300">
-        
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
           userName="ผศ.ดร. สุนีย์ วงค์ประเสริฐ"
@@ -97,14 +96,14 @@ export default function StudentList() {
         />
 
         <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto space-y-6">
-          
-          {/* Header Title ของหน้า */}
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">นักศึกษาในความดูแล</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">
+              นักศึกษาในความดูแล
+            </h1>
             <p className="text-[13px] text-gray-500">รายชื่อนักศึกษาที่อยู่ภายใต้การดูแลของท่าน</p>
           </div>
 
-          <StudentFilters 
+          <StudentFilters
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             filterTabs={filterTabs}
@@ -117,7 +116,6 @@ export default function StudentList() {
           <div className="mt-2">
             <StudentListTable students={filteredStudents} />
           </div>
-
         </div>
       </main>
     </div>

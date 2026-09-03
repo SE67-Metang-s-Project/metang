@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter"; 
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard"; 
-import { mockAdminRequests } from "@/components/shared/mockAdminRequests"; 
+import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests"; 
 
 export default function AdminRequestsList() {
   const [filter, setFilter] = useState<FilterStatus>("pending");

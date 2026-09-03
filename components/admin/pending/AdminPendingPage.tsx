@@ -19,12 +19,12 @@ export default function PendingPage() {
         {/* เอา div ที่เคยครอบตรงนี้ออก แล้ววาง TopNav เลย */}
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
-          userName="ผศ.ดร. สุนีย์ วงค์ประเสริฐ"
+          userName="แอดมินนี่"
           userId="T1002"
         />
 
         {/* แนะนำให้เพิ่มจัดกึ่งกลางและ padding ให้เหมือนหน้าอื่น */}
-        <main className="p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto space-y-6">
+        <main className="p-6">
           <PendingRequestsList />
         </main>
       </div>

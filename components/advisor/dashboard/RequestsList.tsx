@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { mockPendingRequests } from "@/lib/mock-data/pending-requests";
-import PendingFilter, { FilterStatus } from "../pending/PendingFilter";
+import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
 import RequestsCard from "../pending/RequestsCard";
 
 export default function RequestsList() {

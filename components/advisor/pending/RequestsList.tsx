@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
-import { mockAdvisorRequests } from "@/components/shared/mockAdvisorRequests"; 
+import { mockAdvisorRequests } from "@/components/shared//mock-data/mockAdvisorRequests"; 
 
 export default function RequestsList() {
   const [filter, setFilter] = useState<FilterStatus>("pending");
