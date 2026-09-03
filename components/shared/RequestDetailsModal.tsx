@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import type { ActionRequest } from "@/components/advisor/pending/RequestsCard";
+import styles from "@/app/student/student.module.css";
 
 interface RequestDetailsModalProps {
   request: ActionRequest;
@@ -26,20 +27,20 @@ export default function RequestDetailsModal({ request, onClose }: RequestDetails
   const [remark, setRemark] = useState("");
   const latestAction = request.history.at(-1)?.action;
   const canDecide = latestAction === "ยื่นคำขอกู้ยืม";
+  const executiveStatus = canDecide ? "รอผู้บริหารอนุมัติ" : latestAction;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
       <div className="relative flex max-h-[90vh] w-full max-w-[600px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
         <div className="flex items-start justify-between border-b border-gray-100 bg-white px-4 py-4 sm:px-6">
           <div className="pr-2">
-            <h2 className="text-lg font-bold leading-tight text-gray-900">{request.name}</h2>
-            <p className="mt-1 text-[13px] text-gray-500">
-              {request.id} · ยื่นเมื่อ {request.submitDate}
-            </p>
+            <h2 className="text-[20px] font-bold leading-tight text-gray-900">คำร้อง {request.id}</h2>
           </div>
           <div className="flex shrink-0 items-center gap-3">
-            <span className="hidden rounded-md bg-yellow-100 px-2.5 py-1 text-[12px] font-bold text-yellow-800 sm:inline-block">
-              {latestAction}
+            <span
+              className={`hidden sm:inline-block ${styles.loanDetailStatus} ${styles.waitingExecutiveApproval}`}
+            >
+              {executiveStatus}
             </span>
             <button
               onClick={onClose}
@@ -53,8 +54,8 @@ export default function RequestDetailsModal({ request, onClose }: RequestDetails
 
         <div className="flex-1 space-y-4 overflow-y-auto bg-[#f8fafc] p-4 sm:p-6">
           <div className="sm:hidden">
-            <span className="inline-block rounded-md bg-yellow-100 px-2.5 py-1 text-[12px] font-bold text-yellow-800">
-              สถานะ: {latestAction}
+            <span className={`${styles.loanDetailStatus} ${styles.waitingExecutiveApproval}`}>
+              สถานะ: {executiveStatus}
             </span>
           </div>
           <div className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -63,7 +64,7 @@ export default function RequestDetailsModal({ request, onClose }: RequestDetails
             </div>
             <div>
               <h3 className="text-[15px] font-bold text-gray-900">คณะพยาบาลศาสตร์</h3>
-              <p className="mt-0.5 text-[13px] text-gray-500">
+              <p className="mt-0.5 text-[14px] text-gray-500">
                 {request.major} · {request.degree ?? "ปริญญาตรี"} · ปี {request.year}
               </p>
             </div>
@@ -71,28 +72,28 @@ export default function RequestDetailsModal({ request, onClose }: RequestDetails
 
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-              <p className="flex items-center gap-1.5 text-[12px] text-gray-500"><Wallet size={14} /> จำนวนที่ขอ</p>
+              <p className="flex items-center gap-1.5 text-[14px] text-gray-500"><Wallet size={14} /> จำนวนที่ขอ</p>
               <p className="mt-1 text-[18px] font-bold text-[#ea580c]">{formatAmount(request.amount)}</p>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-              <p className="flex items-center gap-1.5 text-[12px] text-gray-500"><Clock size={14} /> จำนวนงวดที่ผ่อน</p>
+              <p className="flex items-center gap-1.5 text-[14px] text-gray-500"><Clock size={14} /> จำนวนงวดที่ผ่อน</p>
               <p className="mt-1 text-[18px] font-bold text-gray-900">{request.term} งวด</p>
             </div>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <p className="flex items-center gap-1.5 border-b border-gray-100 pb-2 text-[13px] font-semibold text-gray-700"><FileText size={15} className="text-gray-400" /> รายละเอียดคำร้อง</p>
+            <p className="flex items-center gap-1.5 border-b border-gray-100 pb-2 text-[14px] font-semibold text-gray-700"><FileText size={15} className="text-gray-400" /> รายละเอียดคำร้อง</p>
             <p className="mt-2.5 text-[14px] leading-relaxed text-gray-800">{request.objective}</p>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-2">
-              <p className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-700"><CreditCard size={15} className="text-[#ea580c]" /> พฤติกรรมการชำระ</p>
-              <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-bold ${(request.paymentBehavior?.lateInstallments ?? 0) === 0 ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}`}>
+              <p className="flex items-center gap-1.5 text-[14px] font-semibold text-gray-700"><CreditCard size={15} className="text-[#ea580c]" /> พฤติกรรมการชำระ</p>
+              <span className={`rounded-full border px-2.5 py-0.5 text-[14px] font-bold ${(request.paymentBehavior?.lateInstallments ?? 0) === 0 ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}`}>
                 ● {request.paymentBehavior?.onTimeStatusLabel ?? "ชำระตรงเวลา"}
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
+            <div className="grid grid-cols-3 gap-2 text-center text-[14px]">
               <div className="rounded-lg border border-gray-100 bg-gray-50/80 p-2.5 text-gray-500">ประวัติกู้ยืม<p className="mt-0.5 text-[14px] font-bold text-gray-900">{request.paymentBehavior?.totalLoanRequests ?? 3} ครั้ง</p></div>
               <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 p-2.5 text-emerald-700">ตรงเวลา<p className="mt-0.5 text-[14px] font-bold text-emerald-800">{request.paymentBehavior?.onTimeInstallments ?? 12} งวด</p></div>
               <div className="rounded-lg border border-gray-100 bg-gray-50/80 p-2.5 text-gray-500">ล่าช้า<p className="mt-0.5 text-[14px] font-bold text-gray-900">{request.paymentBehavior?.lateInstallments ?? 0} งวด</p></div>
@@ -100,9 +101,9 @@ export default function RequestDetailsModal({ request, onClose }: RequestDetails
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <p className="mb-4 flex items-center gap-1.5 border-b border-gray-100 pb-2 text-[13px] font-semibold text-gray-700"><History size={15} className="text-gray-400" /> ประวัติการดำเนินการ</p>
+            <p className="mb-4 flex items-center gap-1.5 border-b border-gray-100 pb-2 text-[14px] font-semibold text-gray-700"><History size={15} className="text-gray-400" /> ประวัติการดำเนินการ</p>
             <div className="ml-2 space-y-5 border-l-2 border-blue-200">
-              {request.history.map((step, index) => <div key={`${step.action}-${step.date}`} className="relative pl-5"><span className={`absolute -left-[7px] top-1 h-3 w-3 rounded-full ${index === request.history.length - 1 ? "bg-blue-500 ring-4 ring-blue-50" : "bg-gray-300"}`} /><p className="text-[14px] font-bold text-gray-900">{step.action}</p><p className="mt-0.5 text-[13px] text-gray-500">{step.date} · {step.actor}</p></div>)}
+              {request.history.map((step, index) => <div key={`${step.action}-${step.date}`} className="relative pl-5"><span className={`absolute -left-[7px] top-1 h-3 w-3 rounded-full ${index === request.history.length - 1 ? "bg-blue-500 ring-4 ring-blue-50" : "bg-gray-300"}`} /><p className="text-[14px] font-bold text-gray-900">{step.action}</p><p className="mt-0.5 text-[14px] text-gray-500">{step.date} · {step.actor}</p></div>)}
             </div>
           </div>
         </div>
