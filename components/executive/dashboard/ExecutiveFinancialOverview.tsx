@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CircleDollarSign, FileCheck2, WalletCards } from "lucide-react";
-import { getMockExecutiveFinancialOverview } from "@/lib/mock-data/executive-financial-overview";
+import type { ExecutiveFinancialOverviewData } from "@/lib/financial-overview-types";
 
 type Period = "monthly" | "quarterly";
-type Overview = ReturnType<typeof getMockExecutiveFinancialOverview>;
+type Overview = ExecutiveFinancialOverviewData;
+
 type Point = Overview["monthly"][number];
 
 const money = (value: number) =>
@@ -58,30 +59,43 @@ function Metric({
   );
 }
 
-export default function ExecutiveFinancialOverview() {
-  const [data, setData] = useState<Overview>(() => getMockExecutiveFinancialOverview());
+type ExecutiveFinancialOverviewProps = {
+  initialData?: Overview;
+};
+
+export default function ExecutiveFinancialOverview({
+  initialData,
+}: ExecutiveFinancialOverviewProps = {}) {
+  const [data, setData] = useState<Overview | null>(initialData ?? null);
+
   const [period, setPeriod] = useState<Period>("monthly");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [hoveredPieIndex, setHoveredPieIndex] = useState<number | null>(null);
   const [pieTooltipPosition, setPieTooltipPosition] = useState({ x: 150, y: 150 });
   const pieRef = useRef<HTMLDivElement>(null);
 
-  // useEffect(() => {
-  //   const controller = new AbortController();
-  //   fetch("/api/executive/financial-overview", { signal: controller.signal })
-  //     .then(async (response) => {
-  //       if (!response.ok) throw new Error("Unable to load financial overview");
-  //       return response.json() as Promise<{ data: Overview }>;
-  //     })
-  //     .then(({ data: overview }) => setData(overview))
-  //     .catch((error: unknown) => {
-  //       if (!(error instanceof DOMException && error.name === "AbortError")) console.error(error);
-  //     });
-  //   return () => controller.abort();
-  // }, []);
+  useEffect(() => {
+    if (initialData) return;
+
+    const controller = new AbortController();
+    fetch("/api/executive/financial-overview", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Unable to load financial overview");
+        return response.json() as Promise<{ data: Overview }>;
+      })
+      .then(({ data: overview }) => setData(overview))
+      .catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          console.error("Failed to load financial overview from API", error);
+        }
+      });
+    return () => controller.abort();
+  }, [initialData]);
 
   const points = useMemo<Point[]>(() => {
+    if (!data) return [];
     if (period === "monthly") return data.monthly;
+    if (data.quarterly && data.quarterly.length === 4) return data.quarterly;
     return [0, 1, 2, 3].map((quarter) =>
       data.monthly.slice(quarter * 3, quarter * 3 + 3).reduce<Point>(
         (total, point) => ({
@@ -108,8 +122,18 @@ export default function ExecutiveFinancialOverview() {
     );
   }, [data, period]);
 
-  const balancePercent = (data.fundBalance / data.totalSystem) * 100;
-  const approvedPercent = (data.approvedAmount / data.totalSystem) * 100;
+  if (!data) {
+    return (
+      <div className="rounded-2xl border border-[#e9e3dc] bg-white p-8 text-center text-slate-500 font-[family-name:var(--font-kanit)]">
+        กำลังโหลดข้อมูลรายงานและสถิติทางการเงิน...
+      </div>
+    );
+  }
+
+  const balancePercent = data.totalSystem > 0 ? (data.fundBalance / data.totalSystem) * 100 : 0;
+  const approvedPercent =
+    data.totalSystem > 0 ? (data.approvedAmount / data.totalSystem) * 100 : 0;
+
   const pieDetails = [
     {
       label: "เงินคงเหลือในระบบ",
@@ -379,7 +403,7 @@ export default function ExecutiveFinancialOverview() {
             />
             <Summary
               label="อัตราการคืนเงินเฉลี่ยทั้งปี"
-              value={`${((data.totalRepayments / data.totalLoans) * 100).toFixed(2)}%`}
+              value={`${data.totalLoans > 0 ? ((data.totalRepayments / data.totalLoans) * 100).toFixed(2) : "0.00"}%`}
               detail="ของยอดการกู้ยืม"
               green
             />

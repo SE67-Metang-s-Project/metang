@@ -1,5 +1,6 @@
 import "server-only";
 
+import { redirect } from "next/navigation";
 import { getCmuDisplayName, getCmuSession, type CmuProfile, type CmuSession } from "@/lib/cmu-auth";
 import { getNurseAccessDecision } from "@/lib/nurse-auth";
 import { isDevelopmentApiAccess, isDevelopmentEnvironment } from "@/lib/development-access";
@@ -278,4 +279,90 @@ export async function getExecutiveAccess(): Promise<ExecutiveAccess> {
 export async function getExecutiveContext(): Promise<LoanUserContext | null> {
   const access = await getExecutiveAccess();
   return access.status === "authorized" ? access.context : null;
+}
+
+export async function requireExecutiveAccess(
+  errorRedirectUrl = "/error?type=forbidden",
+  loginRedirectUrl = "/error?type=unauthenticated",
+): Promise<LoanUserContext> {
+  const access = await getExecutiveAccess();
+
+  if (access.status === "unauthenticated") {
+    redirect(loginRedirectUrl);
+  }
+
+  if (access.status === "forbidden") {
+    redirect(errorRedirectUrl);
+  }
+
+  return access.context;
+}
+
+export async function requireAdminAccess(
+  errorRedirectUrl = "/error?type=forbidden",
+  loginRedirectUrl = "/error?type=unauthenticated",
+): Promise<LoanUserContext> {
+  const access = await getAdminAccess();
+
+  if (access.status === "unauthenticated") {
+    redirect(loginRedirectUrl);
+  }
+
+  if (access.status === "forbidden") {
+    redirect(errorRedirectUrl);
+  }
+
+  return access.context;
+}
+
+export async function requireSuperAdminAccess(
+  errorRedirectUrl = "/error?type=forbidden",
+  loginRedirectUrl = "/error?type=unauthenticated",
+): Promise<LoanUserContext> {
+  const access = await getSuperAdminAccess();
+
+  if (access.status === "unauthenticated") {
+    redirect(loginRedirectUrl);
+  }
+
+  if (access.status === "forbidden") {
+    redirect(errorRedirectUrl);
+  }
+
+  return access.context;
+}
+
+export async function requireAdvisorAccess(
+  advisorName?: string,
+  errorRedirectUrl = "/error?type=forbidden",
+  loginRedirectUrl = "/error?type=unauthenticated",
+): Promise<LoanUserContext> {
+  const session = await getCmuSession();
+  if (!session) {
+    redirect(loginRedirectUrl);
+  }
+
+  const context = await getAdvisorContext(advisorName);
+  if (!context) {
+    redirect(errorRedirectUrl);
+  }
+
+  return context;
+}
+
+export async function requireStudentAccess(
+  errorRedirectUrl = "/error?type=forbidden",
+  loginRedirectUrl = "/error?type=unauthenticated",
+): Promise<LoanUserContext> {
+  const session = await getCmuSession();
+  if (!session) {
+    redirect(loginRedirectUrl);
+  }
+
+  const context = await getStudentContext();
+  if (!context) {
+    redirect(errorRedirectUrl);
+  }
+
+  return context;
 }
