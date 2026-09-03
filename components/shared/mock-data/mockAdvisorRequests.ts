@@ -1,139 +1,200 @@
 import { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
 export const mockAdvisorRequests: ActionRequest[] = [
+  // 1. รายการที่รออาจารย์ที่ปรึกษาพิจารณา (จะแสดงในแท็บ "รอพิจารณา")
   {
-    id: "REQ-2024-0015",
-    name: "วิภาวี พยาบาล",
-    // 66 (ปีเข้า) + 12 (คณะพยาบาล) + 1 (ป.ตรี) + 0045 (ลำดับที่)
-    studentId: "661210045", 
-    major: "พยาบาลศาสตร์ (ป.ตรี)",
-    year: "2",
-    phone: "081-111-2222",
-    objective: "ยืมเพื่อจ่ายค่าหอพักฉุกเฉิน",
-    amount: "15000",
-    term: "6",
-    expectedReturnDate: "มิ.ย. 2568",
-    requestStatus: "pending_advisor",
-    submitDate: "15 ต.ค. 2567",
-    waitDays: 2,
-    isOverdue: false,
-    bankDetails: {
-      bankName: "ธนาคารกรุงไทย",
-      accountNumber: "111-2-33333-4",
-      accountName: "นางสาว วิภาวี พยาบาล",
-    },
-    paymentBehavior: { totalLoanRequests: 0, onTimeInstallments: 0, lateInstallments: 0 },
-    approvals: [], 
-    history: [
-      { action: "นักศึกษายื่นคำร้อง", date: "15 ต.ค. 2567 09:30", actor: "วิภาวี พยาบาล" }
-    ],
-  },
-  {
-    id: "REQ-2024-0016",
-    name: "สมหญิง ขยันอ่าน",
-    // 67 (ปีเข้า) + 12 (คณะพยาบาล) + 0 (ผู้ช่วยพยาบาล) + 0122 (ลำดับที่)
-    studentId: "671200122",
-    major: "ประกาศนียบัตรผู้ช่วยพยาบาล",
-    year: "1",
-    phone: "082-333-4444",
-    objective: "ซื้ออุปกรณ์ตรวจวัดความดัน",
-    amount: "4500",
-    term: "3",
-    expectedReturnDate: "ม.ค. 2568",
-    requestStatus: "pending_admin",
-    submitDate: "14 ต.ค. 2567",
-    waitDays: 3,
-    isOverdue: false,
-    bankDetails: {
-      bankName: "ธนาคารกสิกรไทย",
-      accountNumber: "222-3-44444-5",
-      accountName: "นางสาว สมหญิง ขยันอ่าน",
-    },
-    paymentBehavior: { totalLoanRequests: 1, onTimeInstallments: 6, lateInstallments: 0 },
-    approvals: [
-      {
-        step: "advisor",
-        actorName: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
-        comment: "นักศึกษามีความจำเป็นเร่งด่วน อนุมัติ",
-        decision: "approved",
-        date: "15 ต.ค. 2567"
-      }
-    ],
-    history: [
-      { action: "นักศึกษายื่นคำร้อง", date: "14 ต.ค. 2567 10:00", actor: "สมหญิง ขยันอ่าน" },
-      { action: "อ.ที่ปรึกษา อนุมัติ", date: "15 ต.ค. 2567 08:30", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" }
-    ],
-  },
-  {
-    id: "REQ-2024-0017",
-    name: "กิตติพงษ์ หลงทาง",
-    // 65 (ปีเข้า) + 12 (คณะพยาบาล) + 3 (ป.โท) + 0005 (ลำดับที่)
-    studentId: "651230005",
-    major: "พยาบาลศาสตร์ (ป.โท)",
+    id: "REQ-67001",
+    name: "นางสาวสมหญิง รักเรียน",
+    studentId: "651234567",
+    major: "พยาบาลศาสตร์",
+    program: "พยาบาลศาสตรบัณฑิต",
     year: "3",
-    phone: "082-222-3333",
-    objective: "ยืมเงินเพื่อไปทำวิจัย",
-    amount: "25000",
-    term: "12",
-    expectedReturnDate: "ธ.ค. 2568",
-    requestStatus: "rejected",
-    submitDate: "11 ต.ค. 2567",
-    waitDays: 0,
-    isOverdue: false,
+    phone: "081-111-1111",
+    objective: "เพื่อนำไปจ่ายค่าเช่าหอพักและค่าครองชีพประจำเดือน เนื่องจากทางบ้านส่งเงินให้ล่าช้า",
+    amount: "5000",
+    term: "5",
+    submitDate: "15 ต.ค. 2567",
+    requestStatus: "pending_advisor",
+    history: [
+      {
+        action: "ยื่นคำร้องขอกู้ยืม",
+        date: "15 ต.ค. 2567 09:30",
+        actor: "นางสาวสมหญิง รักเรียน",
+      },
+    ],
+    paymentBehavior: {
+      totalLoanRequests: 1,
+      onTimeInstallments: 5,
+      lateInstallments: 0,
+    },
     bankDetails: {
       bankName: "ธนาคารไทยพาณิชย์",
-      accountNumber: "555-6-77777-8",
-      accountName: "นาย กิตติพงษ์ หลงทาง",
+      accountNumber: "123-4-56789-0",
+      accountName: "นางสาวสมหญิง รักเรียน",
     },
-    paymentBehavior: { totalLoanRequests: 2, onTimeInstallments: 2, lateInstallments: 3 }, // ตั้งใจให้ late เพื่อทดสอบ tab "เคยชำระล่าช้า"
-    approvals: [
-      {
-        step: "advisor",
-        actorName: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
-        comment: "วัตถุประสงค์ไม่ตรงตามระเบียบ",
-        decision: "rejected",
-        date: "12 ต.ค. 2567"
-      }
-    ],
-    history: [
-      { action: "นักศึกษายื่นคำร้อง", date: "11 ต.ค. 2567 13:45", actor: "กิตติพงษ์ หลงทาง" },
-      { action: "อ.ที่ปรึกษา ไม่อนุมัติ", date: "12 ต.ค. 2567 09:10", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" }
-    ],
   },
   {
-    id: "REQ-2024-0018",
-    name: "อาจารย์ สมรักษ์",
-    // 64 (ปีเข้า) + 12 (คณะพยาบาล) + 5 (ป.เอก) + 0001 (ลำดับที่)
-    studentId: "641250001",
-    major: "พยาบาลศาสตร์ (ป.เอก)",
-    year: "4",
-    phone: "089-999-8888",
-    objective: "ค่าใช้จ่ายในการตีพิมพ์ผลงานวิชาการ",
-    amount: "30000",
-    term: "6",
-    expectedReturnDate: "พ.ค. 2568",
-    requestStatus: "disbursed", // ให้โชว์ว่ามียอดคงเหลือเพื่อทดสอบ tab "มีหนี้คงเหลือ"
-    submitDate: "01 ต.ค. 2567",
-    waitDays: 0,
-    isOverdue: true,
-    bankDetails: {
-      bankName: "ธนาคารกรุงเทพ",
-      accountNumber: "888-9-99999-0",
-      accountName: "นาย สมรักษ์ สมชื่อ",
+    id: "REQ-67002",
+    name: "นายสมชาย ใจสู้",
+    studentId: "661234568",
+    major: "พยาบาลศาสตร์",
+    program: "พยาบาลศาสตรบัณฑิต",
+    year: "2",
+    phone: "082-222-2222",
+    objective: "ใช้จ่ายเป็นค่าอุปกรณ์การเรียนและค่ารักษาพยาบาลฉุกเฉิน",
+    amount: "3000",
+    term: "3",
+    submitDate: "16 ต.ค. 2567",
+    requestStatus: "pending_advisor",
+    history: [
+      {
+        action: "ยื่นคำร้องขอกู้ยืม",
+        date: "16 ต.ค. 2567 14:15",
+        actor: "นายสมชาย ใจสู้",
+      },
+    ],
+    paymentBehavior: {
+      totalLoanRequests: 0,
+      onTimeInstallments: 0,
+      lateInstallments: 0,
     },
-    paymentBehavior: { totalLoanRequests: 3, onTimeInstallments: 12, lateInstallments: 0 },
+    bankDetails: {
+      bankName: "ธนาคารกสิกรไทย",
+      accountNumber: "098-7-65432-1",
+      accountName: "นายสมชาย ใจสู้",
+    },
+  },
+
+  // 2. รายการที่ผ่านอาจารย์ไปแล้ว รอเจ้าหน้าที่ (จะแสดงในแท็บ "อนุมัติแล้ว" หรือ "รอเจ้าหน้าที่")
+  {
+    id: "REQ-67003",
+    name: "นางสาววิลาสินี ดีงาม",
+    studentId: "641234569",
+    major: "พยาบาลศาสตร์",
+    program: "พยาบาลศาสตรบัณฑิต",
+    year: "4",
+    phone: "083-333-3333",
+    objective: "ค่าใช้จ่ายในการทำวิจัยและปริญญานิพนธ์",
+    amount: "4500",
+    term: "4",
+    submitDate: "10 ต.ค. 2567",
+    requestStatus: "pending_admin", // ผ่าน advisor แล้ว
+    history: [
+      {
+        action: "ยื่นคำร้องขอกู้ยืม",
+        date: "10 ต.ค. 2567 10:00",
+        actor: "นางสาววิลาสินี ดีงาม",
+      },
+      {
+        action: "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ",
+        date: "11 ต.ค. 2567 09:00",
+        actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+      },
+    ],
     approvals: [
       {
         step: "advisor",
         actorName: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
-        comment: "เห็นสมควร",
+        comment: "นักศึกษามีความจำเป็นจริงและประพฤติตัวดี เห็นสมควรให้กู้ยืม",
         decision: "approved",
-        date: "02 ต.ค. 2567"
-      }
+        date: "11 ต.ค. 2567",
+      },
     ],
+    paymentBehavior: {
+      totalLoanRequests: 2,
+      onTimeInstallments: 8,
+      lateInstallments: 0,
+    },
+  },
+
+  // 3. รายการที่ถูกส่งกลับให้แก้ไข (จะแสดงในแท็บ "ไม่อนุมัติ/ส่งกลับ")
+  {
+    id: "REQ-67004",
+    name: "นายณัฐวุฒิ เรียนดี",
+    studentId: "671234570",
+    major: "พยาบาลศาสตร์",
+    program: "พยาบาลศาสตรบัณฑิต",
+    year: "1",
+    phone: "084-444-4444",
+    objective: "ซื้อไอแพดสำหรับใช้เรียน",
+    amount: "15000",
+    term: "10",
+    submitDate: "12 ต.ค. 2567",
+    requestStatus: "returned",
     history: [
-      { action: "นักศึกษายื่นคำร้อง", date: "01 ต.ค. 2567 09:00", actor: "สมรักษ์ สมชื่อ" },
-      { action: "โอนเงินเรียบร้อย", date: "05 ต.ค. 2567 10:00", actor: "ระบบ" }
+      {
+        action: "ยื่นคำร้องขอกู้ยืม",
+        date: "12 ต.ค. 2567 11:20",
+        actor: "นายณัฐวุฒิ เรียนดี",
+      },
+      {
+        action: "ส่งกลับให้นักศึกษาแก้ไข",
+        date: "13 ต.ค. 2567 15:30",
+        actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+      },
     ],
+    approvals: [
+      {
+        step: "advisor",
+        actorName: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+        comment: "วงเงินสูงเกินไป และวัตถุประสงค์ยังไม่สอดคล้องกับเกณฑ์กองทุนฉุกเฉิน ขอให้ปรับลดวงเงินหรือชี้แจงความจำเป็นเพิ่มเติม",
+        decision: "returned",
+        date: "13 ต.ค. 2567",
+      },
+    ],
+  },
+  
+  // 4. รายการที่รอผู้บริหารพิจารณาขั้นสุดท้าย (จะแสดงในแท็บ "อนุมัติแล้ว" หากดูในมุม Advisor)
+  {
+    id: "REQ-67005",
+    name: "นางสาวอรทัย ใจบุญ",
+    studentId: "651234571",
+    major: "พยาบาลศาสตร์",
+    program: "พยาบาลศาสตรบัณฑิต",
+    year: "3",
+    phone: "085-555-5555",
+    objective: "ค่าใช้จ่ายส่วนตัวระหว่างฝึกงาน",
+    amount: "4000",
+    term: "4",
+    submitDate: "08 ต.ค. 2567",
+    requestStatus: "pending_executive",
+    history: [
+      {
+        action: "ยื่นคำร้องขอกู้ยืม",
+        date: "08 ต.ค. 2567 08:30",
+        actor: "นางสาวอรทัย ใจบุญ",
+      },
+      {
+        action: "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ",
+        date: "09 ต.ค. 2567 10:15",
+        actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+      },
+      {
+        action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+        date: "10 ต.ค. 2567 14:00",
+        actor: "นางจินตนา เจ้าหน้าที่คณะ",
+      },
+    ],
+    approvals: [
+      {
+        step: "advisor",
+        actorName: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+        comment: "เห็นควรอนุมัติ",
+        decision: "approved",
+        date: "09 ต.ค. 2567",
+      },
+      {
+        step: "admin",
+        actorName: "นางจินตนา เจ้าหน้าที่คณะ",
+        comment: "เอกสารครบถ้วน ถูกต้อง",
+        decision: "approved",
+        date: "10 ต.ค. 2567",
+      },
+    ],
+    paymentBehavior: {
+      totalLoanRequests: 1,
+      onTimeInstallments: 3,
+      lateInstallments: 1,
+    },
   }
 ];

@@ -1,5 +1,5 @@
-import ExecutiveDashboard from "@/components/executive/dashboard/ExecutiveDashboard";
+import PendingExecutivePage from "@/components/executive/pending-executive/PendingExecutivePage";
 
-export default function ExecutivePage() {
-  return <ExecutiveDashboard />;
+export default function Page() {
+  return <PendingExecutivePage />;
 }
