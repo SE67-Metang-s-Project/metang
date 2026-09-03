@@ -14,7 +14,6 @@ import {
   Wallet,
   FileSignature,
   FileSearch,
-  PieChart,
   Settings,
   UserCog,
   Bug,
@@ -36,13 +35,12 @@ interface SideNavProps {
 }
 
 const ALL_MENU_ITEMS: MenuItem[] = [
-  { title: 'แดชบอร์ด', icon: LayoutDashboard, href: (role) => `/${role}`, roles: ['student', 'admin', 'executive', 'superadmin'] },
+  { title: 'หน้าหลัก', icon: LayoutDashboard, href: (role) => `/${role}`, roles: ['student', 'admin', 'executive', 'superadmin'] },
   { title: 'ยื่นคำร้องขอกู้ยืม', icon: FileText, href: '/student/request', roles: ['student'] },
   { title: 'ชำระเงินคืน (e-Slip)', icon: Wallet, href: '/student/payment', roles: ['student'] },
   { title: 'ประวัติคำร้อง', icon: History, href: '/student/history', roles: ['student'] },
   { title: 'คำร้องรอพิจารณา', icon: FileCheck, href: (role) => `/${role}/pending`, roles: ['advisor', 'admin' ,'executive'] },
   { title: 'นักศึกษาในความดูแล', icon: Users, href: (role) => `/${role}/students`, roles: ['advisor', 'executive'] },
-  { title: 'รายงานและสถิติ', icon: PieChart, href: '/executive/reports', roles: ['executive'] },
   { title: 'เบิกจ่ายหนี้', icon: FileSignature, href: '/admin/disburse-debt', roles: ['admin'] },
   { title: 'ตรวจสอบสลิปชำระเงิน', icon: FileSearch, href: '/admin/verify-slip', roles: ['admin'] },
   { title: 'จัดการผู้ใช้งาน', icon: UserCog, href: '/superadmin/users', roles: ['superadmin'] },

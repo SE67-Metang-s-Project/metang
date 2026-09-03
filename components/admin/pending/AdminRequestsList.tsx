@@ -5,30 +5,48 @@ import PendingFilter, { FilterStatus } from "@/components/shared/pending/Pending
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard"; 
 import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests"; 
 
-export default function AdminRequestsList() {
+interface AdminRequestsListProps {
+  userRole?: "admin" | "executive";
+  tableLayout?: "default" | "executive";
+}
+
+export default function AdminRequestsList({
+  userRole = "admin",
+  tableLayout = "executive",
+}: AdminRequestsListProps) {
   const [filter, setFilter] = useState<FilterStatus>("pending");
   const [searchQuery, setSearchQuery] = useState("");
 
   const [requests, setRequests] = useState<ActionRequest[]>(mockAdminRequests);
 
-  // นับจำนวนรายการที่รอ Admin ทำงาน (ทั้งตรวจสอบเอกสารและเบิกจ่าย)
+  // นับจำนวนรายการที่รอผู้ใช้ปัจจุบันดำเนินการ
   const pendingCount = requests.filter((req) => 
-    ["pending_admin", "pending_disbursement"].includes(req.requestStatus)
+    userRole === "executive"
+      ? req.requestStatus === "pending_executive"
+      : ["pending_admin", "pending_disbursement"].includes(req.requestStatus)
   ).length;
 
   // กรองข้อมูลตามสถานะและคำค้นหา
   const filteredRequests = requests.filter((req) => {
     let isStatusMatch = false;
 
-    // === ลอจิกการกรอง (Filter) ของ Admin โดยอิงจาก Enum ===
+    // กรองตามสถานะที่แต่ละบทบาทต้องดำเนินการ
     if (filter === "all") {
       isStatusMatch = true;
     } else if (filter === "pending") {
-      isStatusMatch = ["pending_admin", "pending_disbursement"].includes(req.requestStatus);
+      isStatusMatch = userRole === "executive"
+        ? req.requestStatus === "pending_executive"
+        : ["pending_admin", "pending_disbursement"].includes(req.requestStatus);
     } else if (filter === "approved") {
       isStatusMatch = ["pending_executive", "disbursed", "closed"].includes(req.requestStatus);
     } else if (filter === "rejected") {
       isStatusMatch = ["returned", "rejected", "cancelled"].includes(req.requestStatus);
+    } else if (filter === "pending_admin") {
+      isStatusMatch = req.requestStatus === "pending_admin";
+    } else if (filter === "cancelled") {
+      isStatusMatch = req.requestStatus === "cancelled";
+    } else if (filter === "pending_executive") {
+      isStatusMatch = req.requestStatus === "pending_executive";
     }
 
     const lowerQuery = searchQuery.toLowerCase();
@@ -46,11 +64,10 @@ export default function AdminRequestsList() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         pendingCount={pendingCount} // ส่งจำนวนเข้าไปแสดงบน Badge
-        pendingLabel="รอตรวจสอบ" // ตั้งชื่อแท็บให้เข้ากับ Admin
+        pendingLabel={userRole === "executive" ? "รอพิจารณา" : "รอตรวจสอบ"}
       />
 
-      {/* ส่ง userRole="admin" เพื่อเปิดการเข้าถึงข้อมูลบัญชีธนาคาร และเปลี่ยนลอจิกปุ่ม */}
-      <RequestsCard requests={filteredRequests} userRole="admin" />
+      <RequestsCard requests={filteredRequests} userRole={userRole} tableLayout={tableLayout} />
     </div>
   );
 }

@@ -3,13 +3,15 @@
 import React, { useState } from "react";
 import { mockPendingRequests } from "@/lib/mock-data/pending-requests";
 import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
-import RequestsCard from "../pending/RequestsCard";
+import RequestsCard, { type ActionRequest } from "@/components/shared/pending/RequestsCard";
 
 export default function RequestsList() {
   const [filter, setFilter] = useState<FilterStatus>("pending");
   const [searchQuery, setSearchQuery] = useState("");
-  const requests = mockPendingRequests.map((request) => ({
+  const requests: ActionRequest[] = mockPendingRequests.map((request) => ({
     ...request,
+    phone: "-",
+    program: request.major,
     requestStatus: request.requestStatus ?? (request.id === "REQ-65001" ? "รอพิจารณา" : "อนุมัติแล้ว"),
   }));
 
@@ -20,6 +22,9 @@ export default function RequestsList() {
     else if (filter === "pending") isStatusMatch = req.requestStatus === "รอพิจารณา";
     else if (filter === "approved") isStatusMatch = req.requestStatus === "อนุมัติแล้ว";
     else if (filter === "rejected") isStatusMatch = req.requestStatus === "ไม่อนุมัติ";
+    else if (filter === "cancelled") isStatusMatch = req.requestStatus === "ยกเลิกคำร้อง";
+    else if (filter === "pending_admin") isStatusMatch = false;
+    else if (filter === "pending_executive") isStatusMatch = false;
 
     // 2.2 กรองตามคำค้นหา (ชื่อ หรือ รหัสนักศึกษา)
     const lowerQuery = searchQuery.toLowerCase();

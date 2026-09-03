@@ -41,6 +41,7 @@ export type ActionRequest = {
   name: string;
   studentId: string;
   major: string;
+  program?: string;
   year: string;
   phone: string;
   objective: string;

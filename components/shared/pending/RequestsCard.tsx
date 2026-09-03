@@ -25,6 +25,7 @@ export type StudentInfo = {
   name: string;
   studentId: string;
   major: string;
+  program?: string;
   year: string;
   phone: string;
 };
@@ -102,6 +103,7 @@ export type UserRole = "advisor" | "executive" | "admin" | "super_admin";
 interface RequestsCardProps {
   requests: ActionRequest[];
   userRole?: UserRole;
+  tableLayout?: "default" | "executive";
 }
 
 // ==========================================
@@ -158,6 +160,13 @@ const formatAmount = (amountStr: string) => {
   return num.toLocaleString();
 };
 
+const getSubmittedTime = (req: ActionRequest) => {
+  const submittedAt = req.history?.[0]?.date;
+  const time = submittedAt?.match(/\d{1,2}:\d{2}/)?.[0];
+
+  return time ? `${time} น.` : null;
+};
+
 const getStatusDisplay = (status: LoanStatus) => {
   switch (status) {
     case "draft":
@@ -208,11 +217,16 @@ const checkCanTakeAction = (role: UserRole, status: LoanStatus) => {
   return false;
 };
 
-export default function RequestsCard({ requests, userRole = "advisor" }: RequestsCardProps) {
+export default function RequestsCard({
+  requests,
+  userRole = "advisor",
+  tableLayout = "executive",
+}: RequestsCardProps) {
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
   const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | "return" | null>(null);
   const [remark, setRemark] = useState("");
   const selectedRequestHistory = selectedRequest?.history ?? [];
+  const isExecutiveTable = tableLayout === "executive";
 
   const canViewSensitiveData = userRole === "admin" || userRole === "super_admin";
 
@@ -223,9 +237,10 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
   };
 
   const renderActionButton = (req: ActionRequest, isMobile: boolean) => {
+    const textSize = isExecutiveTable ? "text-[14px]" : "text-[13px]";
     const baseClasses = isMobile
-      ? "px-4 py-2 text-[13px] rounded-lg transition-colors border whitespace-nowrap text-center"
-      : "px-3 py-1.5 text-[13px] rounded-lg transition-colors border whitespace-nowrap text-center";
+      ? `w-fit max-w-full px-4 py-2 ${textSize} rounded-lg transition-colors border text-center`
+      : `w-fit max-w-full px-3 py-1.5 ${textSize} rounded-lg transition-colors border text-center`;
 
     const isActionable = checkCanTakeAction(userRole, req.requestStatus);
     const statusLabel = getStatusDisplay(req.requestStatus);
@@ -235,9 +250,9 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
       return (
         <button
           onClick={() => setSelectedRequest(req)}
-          className={`${baseClasses} text-[#ea580c] hover:text-[#c2410c] font-bold bg-orange-50 hover:bg-orange-100 border-orange-200`}
+          className={`${baseClasses} text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200`}
         >
-          ตรวจสอบ
+          <span className="block truncate">ตรวจสอบ</span>
         </button>
       );
     }
@@ -268,9 +283,9 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
     return (
       <button
         onClick={() => setSelectedRequest(req)}
-        className={`${baseClasses} font-medium ${colorClass}`}
+        className={`${baseClasses} font-normal ${colorClass}`}
       >
-        {statusLabel}
+        <span className="block truncate">{statusLabel}</span>
       </button>
     );
   };
@@ -316,28 +331,49 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
 
       {/* 2. มุมมองสำหรับ Desktop/Tablet (แสดงเป็นตาราง) */}
       <div className="hidden md:block overflow-x-auto relative rounded-xl border border-gray-300 shadow-sm">
-        <table className="w-full text-left border-collapse min-w-[900px] bg-white">
+        <table className="w-full table-fixed text-left border-collapse min-w-[1050px] bg-white">
+          <colgroup>
+            <col className="w-[130px]" />
+            <col className="w-[28%]" />
+            <col className="w-[12%]" />
+            <col className="w-[21%]" />
+            <col className="w-[7.5%]" />
+            <col className="w-[7.5%]" />
+            <col className="w-[14%]" />
+          </colgroup>
           <thead>
             <tr className="bg-gray-100/70 border-b border-gray-300 text-gray-700 text-[14px]">
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
-                รหัสคำร้อง
+              <th className="min-w-[130px] py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
+                <span className="lg:hidden">
+                  รหัส<br />คำร้อง
+                </span>
+                <span className="hidden lg:inline">รหัสคำร้อง</span>
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 min-w-[200px]">
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 min-w-[200px]">
                 ชื่อ - ข้อมูลนักศึกษา
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
-                วันที่ยื่น
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300">
+                {isExecutiveTable ? (
+                  <>
+                    <span className="lg:hidden">
+                      วันที่-เวลา<br />ยื่นคำร้อง
+                    </span>
+                    <span className="hidden lg:inline">วันที่-เวลายื่นคำร้อง</span>
+                  </>
+                ) : (
+                  "วันที่ยื่น"
+                )}
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 min-w-[200px]">
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 min-w-[200px]">
                 รายละเอียดเพื่อนำไปใช้
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 จำนวนเงิน
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 จำนวนงวด
               </th>
-              <th className="py-3.5 px-4 font-semibold text-center whitespace-nowrap">จัดการ</th>
+              <th className="py-3.5 px-4 text-center font-bold whitespace-nowrap">จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -346,26 +382,49 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                 key={idx}
                 className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
               >
-                <td className="py-4 px-4 text-gray-600 border-r border-gray-200">{req.id}</td>
+                <td className="min-w-[130px] py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                  {req.id}
+                </td>
                 <td className="py-4 px-4 border-r border-gray-200">
-                  <div className="font-bold text-gray-900">{req.name}</div>
-                  <div className="text-[13px] text-gray-500 mt-0.5">
-                    {req.studentId} • {req.major} • ปี {req.year}
+                  <div
+                    className={
+                      isExecutiveTable
+                        ? "truncate font-normal text-gray-900"
+                        : "font-bold text-gray-900"
+                    }
+                  >
+                    {isExecutiveTable ? `${req.name} • ${req.studentId}` : req.name}
+                  </div>
+                  <div
+                    className={`mt-0.5 ${isExecutiveTable ? "truncate text-[14px]" : "text-[13px]"} text-gray-500`}
+                  >
+                    {isExecutiveTable
+                      ? `${req.program ?? "พยาบาลศาสตรบัณฑิต"} • ปริญญาตรี • ปี ${req.year}`
+                      : `${req.studentId} • ${req.major} • ปี ${req.year}`}
                   </div>
                 </td>
-                <td className="py-4 px-4 text-gray-600 border-r border-gray-200 whitespace-nowrap">
-                  {req.submitDate}
+                <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                  {isExecutiveTable ? (
+                    <div className="flex flex-col items-center leading-relaxed">
+                      <span>{req.submitDate}</span>
+                      {getSubmittedTime(req) && <span>{getSubmittedTime(req)}</span>}
+                    </div>
+                  ) : (
+                    req.submitDate
+                  )}
                 </td>
-                <td className="py-4 px-4 text-gray-700 border-r border-gray-200">
+                <td className="py-4 px-4 text-left font-normal text-gray-700 border-r border-gray-200">
                   <div className="line-clamp-2">{req.objective}</div>
                 </td>
-                <td className="py-4 px-4 text-gray-900 font-bold border-r border-gray-200 whitespace-nowrap">
+                <td className="py-4 px-4 text-center font-normal text-gray-900 border-r border-gray-200 whitespace-nowrap">
                   {formatAmount(req.amount)}
                 </td>
-                <td className="py-4 px-4 text-gray-700 border-r border-gray-200 whitespace-nowrap">
+                <td className="py-4 px-4 text-center font-normal text-gray-700 border-r border-gray-200 whitespace-nowrap">
                   {req.term} งวด
                 </td>
-                <td className="py-4 px-4 text-center">{renderActionButton(req, false)}</td>
+                <td className="py-4 px-4 align-middle">
+                  <div className="flex justify-center">{renderActionButton(req, false)}</div>
+                </td>
               </tr>
             ))}
           </tbody>
