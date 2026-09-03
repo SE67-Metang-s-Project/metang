@@ -210,7 +210,7 @@ const checkCanTakeAction = (role: UserRole, status: LoanStatus) => {
 
 export default function RequestsCard({ requests, userRole = "advisor" }: RequestsCardProps) {
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
-  const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | null>(null);
+  const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | "return" | null>(null);
   const [remark, setRemark] = useState("");
 
   const canViewSensitiveData = userRole === "admin" || userRole === "super_admin";
@@ -620,35 +620,53 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
             {/* Footer Buttons - แสดงปุ่มอนุมัติ/ไม่อนุมัติเฉพาะเมื่อตรงเงื่อนไขของ Role */}
             {checkCanTakeAction(userRole, selectedRequest.requestStatus) && (
               <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex flex-col shrink-0">
-                {/* ถ้ายังไม่ได้กดเลือก ให้โชว์ 2 ปุ่ม */}
+                {/* ถ้ายังไม่ได้กดเลือก ให้โชว์ 3 ปุ่ม */}
                 {!confirmAction ? (
-                  <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <button
                       onClick={() => setConfirmAction("reject")}
                       className="w-full sm:flex-1 py-3 flex items-center justify-center gap-2 rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98]"
                     >
-                      <XCircle size={18} /> ไม่อนุมัติ / ส่งกลับแก้ไข
+                      <XCircle size={18} /> ไม่อนุมัติ
                     </button>
+
+                    <button
+                      onClick={() => setConfirmAction("return")}
+                      className="w-full sm:flex-1 py-3 flex items-center justify-center gap-2 rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-bold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
+                    >
+                      <ShieldAlert size={18} /> ส่งกลับแก้ไข
+                    </button>
+
                     <button
                       onClick={() => setConfirmAction("approve")}
                       className="w-full sm:flex-1 py-3 flex items-center justify-center gap-2 rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98]"
                     >
-                      <CheckCircle2 size={18} /> อนุมัติ / ดำเนินการต่อ
+                      <CheckCircle2 size={18} /> อนุมัติ
                     </button>
                   </div>
                 ) : (
-                  // ถ้ากดเลือกแล้ว ให้โชว์กล่องข้อความขยายลงมา (แทนที่ปุ่มเดิม)
+                  // ถ้ากดเลือกแล้ว ให้โชว์กล่องข้อความขยายลงมา
                   <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2">
                     <h4
-                      className={`font-bold text-[14px] mb-2 flex items-center gap-2 ${confirmAction === "approve" ? "text-green-700" : "text-red-600"}`}
+                      className={`font-bold text-[14px] mb-2 flex items-center gap-2 ${
+                        confirmAction === "approve"
+                          ? "text-green-700"
+                          : confirmAction === "return"
+                          ? "text-amber-600"
+                          : "text-red-600"
+                      }`}
                     >
                       {confirmAction === "approve" ? (
                         <CheckCircle2 size={16} />
+                      ) : confirmAction === "return" ? (
+                        <ShieldAlert size={16} />
                       ) : (
                         <XCircle size={16} />
                       )}
                       {confirmAction === "approve"
                         ? "ความเห็นประกอบการพิจารณา (แนบในแบบฟอร์ม)"
+                        : confirmAction === "return"
+                        ? "ระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข (เช่น แนบเอกสารใหม่)"
                         : "ระบุเหตุผลเพื่อแจ้งกลับให้นักศึกษาทราบ"}
                     </h4>
 
@@ -656,7 +674,9 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                       placeholder={
                         confirmAction === "approve"
                           ? "เช่น เห็นสมควรให้กู้ยืมเพื่อนำไปใช้จ่าย..."
-                          : "เช่น เอกสารหรือเหตุผลไม่เพียงพอ..."
+                          : confirmAction === "return"
+                          ? "เช่น ใบแจ้งหนี้ไม่ชัดเจน กรุณาถ่ายรูปและแนบไฟล์มาใหม่..."
+                          : "เช่น เอกสารหรือเหตุผลไม่เพียงพอต่อการกู้ยืม..."
                       }
                       className="w-full border border-gray-300 rounded-lg p-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none h-20 mb-3 bg-white"
                       value={remark}
@@ -674,17 +694,23 @@ export default function RequestsCard({ requests, userRole = "advisor" }: Request
                       <button
                         onClick={() => {
                           console.log(
-                            `Action: ${confirmAction}, ID: ${selectedRequest.id}, Remark: ${remark}`,
+                            `Action: ${confirmAction}, ID: ${selectedRequest.id}, Remark: ${remark}`
                           );
                           closeAllModals();
                         }}
                         className={`px-4 py-2 text-[13px] font-bold text-white rounded-lg shadow-sm ${
                           confirmAction === "approve"
                             ? "bg-[#059669] hover:bg-[#047857]"
+                            : confirmAction === "return"
+                            ? "bg-amber-500 hover:bg-amber-600"
                             : "bg-[#dc2626] hover:bg-[#b91c1c]"
                         }`}
                       >
-                        {confirmAction === "approve" ? "ยืนยันอนุมัติ" : "ยืนยันไม่อนุมัติ"}
+                        {confirmAction === "approve"
+                          ? "ยืนยันอนุมัติ"
+                          : confirmAction === "return"
+                          ? "ยืนยันส่งกลับแก้ไข"
+                          : "ยืนยันไม่อนุมัติ"}
                       </button>
                     </div>
                   </div>
