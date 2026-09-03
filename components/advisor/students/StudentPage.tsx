@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
 
-import StudentFilters from "./StudentFilters";
+import StudentFilters from "../../shared/filter/StudentFilters";
 import StudentListTable, { Student } from "./StudentListItem";
 
 // นำเข้าข้อมูล Mock Data

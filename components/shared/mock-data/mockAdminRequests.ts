@@ -1,5 +1,4 @@
-// ไฟล์: src/components/shared/mockAdminRequests.ts
-import { ActionRequest } from "@/components/shared/pending/RequestsCard";
+import { ActionRequest } from "@/components/admin/verify-slip/VerifySlipCard";
 
 export const mockAdminRequests: ActionRequest[] = [
   {
@@ -36,6 +35,19 @@ export const mockAdminRequests: ActionRequest[] = [
       { action: "นักศึกษายื่นคำร้อง", date: "12 ต.ค. 2567 09:00", actor: "สมชาย ใจดี" },
       { action: "อ.ที่ปรึกษา อนุมัติ", date: "14 ต.ค. 2567 10:30", actor: "รศ.ดร. มานี มีสุข" }
     ],
+    // ----------------------------------------------------
+    // [เพิ่มใหม่] ประวัติการแนบสลิป (มี pending จะโชว์ปุ่มสีส้ม)
+    // ----------------------------------------------------
+    paymentHistory: [
+      {
+        id: "EVID-001",
+        installmentNumber: 1,
+        amount: "1000",
+        paidAt: "15 ต.ค. 2567 10:00 น.",
+        status: "pending", // รอตรวจสอบ
+        slipImageUrl: "https://images.unsplash.com/photo-1542044801-44cd4e20959f?w=400&q=80",
+      }
+    ]
   },
   {
     id: "REQ-2024-0020",
@@ -48,7 +60,7 @@ export const mockAdminRequests: ActionRequest[] = [
     amount: "15000",
     term: "6",
     expectedReturnDate: "มิ.ย. 2568",
-    requestStatus: "pending_executive", // เปลี่ยนจาก disbursement ให้มาอยู่ที่ executive เพื่อทดสอบโชว์ 2 ความเห็น
+    requestStatus: "pending_executive", 
     submitDate: "05 ต.ค. 2567",
     waitDays: 5,
     isOverdue: false,
@@ -79,6 +91,28 @@ export const mockAdminRequests: ActionRequest[] = [
       { action: "อ.ที่ปรึกษา อนุมัติ", date: "06 ต.ค. 2567 10:30", actor: "อ.ณัฐพล โค้ดดิ้ง" },
       { action: "เจ้าหน้าที่ ตรวจสอบผ่าน", date: "07 ต.ค. 2567 14:00", actor: "Admin สมปอง" }
     ],
+    // ----------------------------------------------------
+    // [เพิ่มใหม่] จำลองว่ามีสลิปที่ตรวจผ่านแล้ว 1 ใบ และกำลังรอตรวจอีก 1 ใบ
+    // ----------------------------------------------------
+    paymentHistory: [
+      {
+        id: "EVID-003",
+        installmentNumber: 2,
+        amount: "2500",
+        paidAt: "05 พ.ย. 2567 14:30 น.",
+        status: "pending", // รอตรวจสอบ
+        slipImageUrl: "https://images.unsplash.com/photo-1607944024060-0450380effd5?w=400&q=80",
+      },
+      {
+        id: "EVID-002",
+        installmentNumber: 1,
+        amount: "2500",
+        paidAt: "05 ต.ค. 2567 09:15 น.",
+        verifiedAt: "06 ต.ค. 2567 10:00 น.",
+        status: "verified", // ตรวจผ่านแล้ว
+        slipImageUrl: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80",
+      }
+    ]
   },
   {
     id: "REQ-2024-0022",
@@ -122,5 +156,19 @@ export const mockAdminRequests: ActionRequest[] = [
       { action: "อ.ที่ปรึกษา อนุมัติ", date: "14 ต.ค. 2567 15:00", actor: "ผศ.ดร. สมศรี ดีใจ" },
       { action: "เจ้าหน้าที่ ส่งกลับแก้ไข", date: "15 ต.ค. 2567 09:30", actor: "Admin สมปอง" }
     ],
+    // ----------------------------------------------------
+    // [เพิ่มใหม่] จำลองการแนบสลิปแล้วโดนปฏิเสธ (ไม่มีปุ่มสีส้มที่ตาราง)
+    // ----------------------------------------------------
+    paymentHistory: [
+      {
+        id: "EVID-004",
+        installmentNumber: 1,
+        amount: "2500",
+        paidAt: "13 ต.ค. 2567 12:00 น.",
+        verifiedAt: "15 ต.ค. 2567 09:30 น.",
+        status: "rejected", // โดนปฏิเสธ
+        slipImageUrl: "https://images.unsplash.com/photo-1589828135899-3171353eb81a?w=400&q=80",
+      }
+    ]
   }
 ];
