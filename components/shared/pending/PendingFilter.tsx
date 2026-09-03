@@ -4,7 +4,14 @@ import React, { useState, useRef, useEffect } from "react";
 import { Search, ChevronDown } from "lucide-react";
 
 // กำหนด Type สำหรับสถานะตัวกรองของ UI
-export type FilterStatus = "all" | "pending" | "approved" | "rejected";
+export type FilterStatus =
+  | "all"
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "pending_admin"
+  | "cancelled"
+  | "pending_executive";
 
 interface PendingFilterProps {
   currentFilter: FilterStatus;
@@ -50,7 +57,15 @@ export default function PendingFilter({
     { id: "pending", label: pendingLabel }, // ใช้ Label ตามที่ส่งเข้ามา
   ];
 
-  const isDropdownActive = ["approved", "rejected"].includes(currentFilter);
+  const statusOptions: { id: Exclude<FilterStatus, "all" | "pending">; label: string }[] = [
+    { id: "approved", label: "อนุมัติแล้ว" },
+    { id: "rejected", label: "ไม่อนุมัติ" },
+    { id: "pending_admin", label: "รอเจ้าหน้าที่ตรวจสอบ" },
+    { id: "cancelled", label: "นักศึกษายกเลิกคำร้อง" },
+    { id: "pending_executive", label: "รอผู้บริหารอนุมัติ" },
+  ];
+  const selectedStatus = statusOptions.find((option) => option.id === currentFilter);
+  const isDropdownActive = selectedStatus !== undefined;
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -90,26 +105,20 @@ export default function PendingFilter({
 
       {/* 2. ดรอปดาวน์ และ ช่องค้นหา */}
       <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-        <div className="relative w-full sm:w-auto min-w-[140px]" ref={dropdownRef}>
+        <div className="relative w-full sm:w-auto min-w-[220px]" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className={`
-              flex items-center justify-between w-full px-4 py-2.5 bg-white border rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 shadow-sm transition-colors
+              flex items-center justify-between w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 shadow-sm transition-colors
               ${
                 isDropdownActive
-                  ? "border-[#ffedd5] bg-[#fff7ed] text-[#ea580c] font-medium"
-                  : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                  ? "bg-[#fff7ed] text-[#ea580c] font-medium"
+                  : "text-gray-700 hover:bg-gray-50"
               }
             `}
           >
-            <span>
-              {currentFilter === "approved"
-                ? "อนุมัติแล้ว"
-                : currentFilter === "rejected"
-                  ? "ไม่อนุมัติ / ส่งกลับ"
-                  : "สถานะอื่นๆ..."}
-            </span>
+            <span>{selectedStatus?.label ?? "เลือกดูสถานะ"}</span>
             <ChevronDown
               className={`w-4 h-4 ml-2 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}
             />
@@ -117,26 +126,19 @@ export default function PendingFilter({
 
           {isDropdownOpen && (
             <div className="absolute top-full mt-1.5 right-0 w-full bg-white border border-gray-100 rounded-xl shadow-lg z-10 py-1.5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-              <button
-                onClick={() => handleDropdownSelect("approved")}
-                className={`w-full text-left px-4 py-2 text-[14px] transition-colors hover:bg-orange-50 ${
-                  currentFilter === "approved"
-                    ? "text-[#ea580c] bg-orange-50/50 font-medium"
-                    : "text-gray-700"
-                }`}
-              >
-                อนุมัติแล้ว
-              </button>
-              <button
-                onClick={() => handleDropdownSelect("rejected")}
-                className={`w-full text-left px-4 py-2 text-[14px] transition-colors hover:bg-orange-50 ${
-                  currentFilter === "rejected"
-                    ? "text-[#ea580c] bg-orange-50/50 font-medium"
-                    : "text-gray-700"
-                }`}
-              >
-                ไม่อนุมัติ / ส่งกลับ
-              </button>
+              {statusOptions.map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => handleDropdownSelect(option.id)}
+                  className={`w-full text-left px-4 py-2 text-[14px] transition-colors hover:bg-orange-50 ${
+                    currentFilter === option.id
+                      ? "text-[#ea580c] bg-orange-50/50 font-medium"
+                      : "text-gray-700"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
           )}
         </div>

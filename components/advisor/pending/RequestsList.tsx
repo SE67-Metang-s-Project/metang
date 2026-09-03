@@ -33,6 +33,12 @@ export default function RequestsList() {
       ].includes(req.requestStatus);
     } else if (filter === "rejected") {
       isStatusMatch = ["returned", "rejected", "cancelled"].includes(req.requestStatus);
+    } else if (filter === "pending_admin") {
+      isStatusMatch = req.requestStatus === "pending_admin";
+    } else if (filter === "cancelled") {
+      isStatusMatch = req.requestStatus === "cancelled";
+    } else if (filter === "pending_executive") {
+      isStatusMatch = req.requestStatus === "pending_executive";
     }
 
     const lowerQuery = searchQuery.toLowerCase();

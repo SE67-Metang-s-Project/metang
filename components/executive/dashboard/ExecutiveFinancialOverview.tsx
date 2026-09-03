@@ -416,16 +416,37 @@ function TransferredRequestsChart({
     cancelledCount: number;
   }>;
 }) {
+  const [period, setPeriod] = useState<Period>("monthly");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const points = useMemo(() => {
+    if (period === "monthly") return requests;
+
+    return [0, 1, 2, 3].map((quarter) =>
+      requests.slice(quarter * 3, quarter * 3 + 3).reduce(
+        (total, request) => ({
+          label: `ไตรมาส ${quarter + 1}`,
+          transferredCount: total.transferredCount + request.transferredCount,
+          rejectedCount: total.rejectedCount + request.rejectedCount,
+          cancelledCount: total.cancelledCount + request.cancelledCount,
+        }),
+        {
+          label: `ไตรมาส ${quarter + 1}`,
+          transferredCount: 0,
+          rejectedCount: 0,
+          cancelledCount: 0,
+        },
+      ),
+    );
+  }, [period, requests]);
   const max = Math.max(
     1,
-    ...requests.flatMap((request) => [
+    ...points.flatMap((request) => [
       request.transferredCount,
       request.rejectedCount,
       request.cancelledCount,
     ]),
   );
-  const totals = requests.reduce(
+  const totals = points.reduce(
     (sum, request) => ({
       transferredCount: sum.transferredCount + request.transferredCount,
       rejectedCount: sum.rejectedCount + request.rejectedCount,
@@ -433,14 +454,38 @@ function TransferredRequestsChart({
     }),
     { transferredCount: 0, rejectedCount: 0, cancelledCount: 0 },
   );
-  const active = hoveredIndex === null ? null : requests[hoveredIndex];
-  const tooltipLeft = `${(((hoveredIndex ?? 0) + 0.5) / requests.length) * 100}%`;
+  const active = hoveredIndex === null ? null : points[hoveredIndex];
+  const tooltipLeft = `${(((hoveredIndex ?? 0) + 0.5) / points.length) * 100}%`;
 
   return (
     <article className="rounded-2xl border border-[#e9e3dc] bg-[#fffefd] p-5 shadow-[0_3px_14px_rgba(69,51,39,0.06)] sm:p-6">
-      <div>
-        <h3 className="text-lg font-semibold text-slate-800">จำนวนคำร้องประจำปี {year}</h3>
-        <UpdatedAt value={updatedAt} />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-800">จำนวนคำร้องประจำปี {year}</h3>
+          <UpdatedAt value={updatedAt} />
+        </div>
+        <div className="flex rounded-lg bg-[#f4f0ec] p-1 text-sm font-medium">
+          <button
+            type="button"
+            onClick={() => {
+              setPeriod("monthly");
+              setHoveredIndex(null);
+            }}
+            className={`rounded-md px-3 py-1.5 ${period === "monthly" ? "bg-[#f75c12] text-white shadow-sm" : "text-slate-600"}`}
+          >
+            รายเดือน
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPeriod("quarterly");
+              setHoveredIndex(null);
+            }}
+            className={`rounded-md px-3 py-1.5 ${period === "quarterly" ? "bg-[#f75c12] text-white shadow-sm" : "text-slate-600"}`}
+          >
+            รายไตรมาส
+          </button>
+        </div>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
@@ -474,7 +519,7 @@ function TransferredRequestsChart({
             ))}
           </div>
           <div className="relative flex items-end justify-around gap-1 border-b border-[#e5ddd5] px-1 pt-3">
-            {requests.map((request, index) => (
+            {points.map((request, index) => (
               <div
                 key={request.label}
                 className="flex h-full min-w-0 flex-1 items-end justify-center gap-1 sm:gap-1.5"
@@ -505,9 +550,9 @@ function TransferredRequestsChart({
           </div>
           <div
             className="grid"
-            style={{ gridTemplateColumns: `repeat(${requests.length}, minmax(0, 1fr))` }}
+            style={{ gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }}
           >
-            {requests.map((request) => (
+            {points.map((request) => (
               <span
                 key={request.label}
                 className="mt-2 text-center text-[10px] text-slate-600 sm:text-xs"

@@ -26,6 +26,12 @@ export const tempLoanApplication = {
 };
 
 export const tempLoanFormOptions = {
+  educationLevels: [
+    "ประกาศนียบัตรผู้ช่วยพยาบาล",
+    "ปริญญาตรี",
+    "ปริญญาโท",
+    "ปริญญาเอก",
+  ].map((educationLevel) => ({ label: educationLevel, value: educationLevel })),
   academicYears: ["1", "2", "3", "4"].map((year) => ({ label: year, value: year })),
   advisors: ["พิมพา มีโชค", "วรัญญู มีโชค"].map((advisor) => ({
     label: advisor,
@@ -65,6 +71,7 @@ export const tempLoanAgreement = {
 };
 
 export type TempLoanFormData = {
+  educationLevel: string;
   academicYear: string;
   advisorName: string;
   phoneNumber: string;
@@ -78,6 +85,7 @@ export type TempLoanFormData = {
 };
 
 export const tempLoanFormDefaults: TempLoanFormData = {
+  educationLevel: "",
   academicYear: "",
   advisorName: "",
   phoneNumber: "",

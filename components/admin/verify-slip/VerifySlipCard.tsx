@@ -41,6 +41,7 @@ export type ActionRequest = {
   name: string;
   studentId: string;
   major: string;
+  program?: string;
   year: string;
   phone: string;
   objective: string;
@@ -61,8 +62,14 @@ export type ActionRequest = {
     lateInstallments?: number;
     totalLoanRequests?: number;
   };
-  approvals?: any[];
-  history?: any[];
+  approvals?: {
+    step: "advisor" | "admin" | "executive";
+    actorName: string;
+    comment: string;
+    decision: "approved" | "rejected" | "returned" | "pending";
+    date: string;
+  }[];
+  history?: { action: string; date: string; actor: string }[];
   // สิ่งที่เพิ่มเข้ามาสำหรับหน้านี้:
   paymentHistory?: PaymentEvidence[];
 };

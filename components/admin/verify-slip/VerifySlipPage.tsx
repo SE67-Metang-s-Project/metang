@@ -44,14 +44,7 @@ export default function VerifySlipPage() {
             </p>
           </div>
 
-          {/* 
-            เรียกใช้ VerifySlipCard (เวอร์ชัน monolithic ที่รวมตารางและ Modal ไว้ด้วยกัน)
-            ใช้ 'as any' ชั่วคราวเผื่อ Type ใน mockAdminRequests มีฟิลด์ไม่ครบตามที่กำหนดไว้ใหม่ 
-          */}
-          <VerifySlipCard 
-            requests={requests as any} 
-            userRole="admin" 
-          />
+          <VerifySlipCard requests={requests} userRole="admin" />
           
         </main>
       </div>

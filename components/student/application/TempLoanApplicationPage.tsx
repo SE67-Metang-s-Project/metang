@@ -22,6 +22,7 @@ type FormErrors = Partial<Record<RequiredFormField, string>>;
 
 const requiredFieldMessage = "โปรดระบุข้อมูลในช่องนี้";
 const requiredFormFields: RequiredFormField[] = [
+  "educationLevel",
   "academicYear",
   "advisorName",
   "phoneNumber",
@@ -99,6 +100,7 @@ export default function TempLoanApplicationPage() {
   const handleLoanFormNext = () => {
     const errors = validateLoanForm();
     setTouchedFields({
+      educationLevel: true,
       academicYear: true,
       advisorName: true,
       phoneNumber: true,
@@ -241,6 +243,36 @@ export default function TempLoanApplicationPage() {
             </section>
 
             <div className={styles.loanFormFields}>
+              <label
+                className={[
+                  styles.loanFormField,
+                  formErrors.educationLevel ? styles.loanFormFieldInvalid : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                ref={(element) => {
+                  fieldRefs.current.educationLevel = element ?? undefined;
+                }}
+              >
+                <span>วุฒิการศึกษา</span>
+                <LoanFormSelect
+                  error={formErrors.educationLevel}
+                  onBlur={() => handleFieldBlur("educationLevel")}
+                  onChange={(value) => updateFormField("educationLevel", value)}
+                  options={tempLoanFormOptions.educationLevels}
+                  placeholder="เลือกวุฒิการศึกษา"
+                  value={formData.educationLevel}
+                />
+                <small>
+                  เลือกครั้งเดียวตอนกู้ยืมครั้งแรกเท่านั้น การกู้ยืมครั้งถัดไปจะแสดงข้อมูลเดิม
+                </small>
+                {formErrors.educationLevel ? (
+                  <small className={styles.loanFormFieldError}>
+                    {formErrors.educationLevel}
+                  </small>
+                ) : null}
+              </label>
+
               <label
                 className={[styles.loanFormField, formErrors.academicYear ? styles.loanFormFieldInvalid : ""]
                   .filter(Boolean)

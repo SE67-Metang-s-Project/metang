@@ -26,6 +26,7 @@ export type ActionRequest = {
   name: string;
   studentId: string;
   major: string;
+  program?: string;
   year: string;
   phone?: string;
   objective: string;
@@ -36,8 +37,9 @@ export type ActionRequest = {
   submitDate: string;
   waitDays?: number;
   isOverdue?: boolean;
-  bankDetails: BankDetails;
-  [key: string]: any; // อนุญาตให้มีฟิลด์อื่นๆ เพิ่มเติมจาก mock ได้ (เช่น paymentBehavior, approvals)
+  history?: { action: string; date: string; actor: string }[];
+  bankDetails?: BankDetails;
+  [key: string]: unknown; // อนุญาตให้มีฟิลด์อื่นๆ เพิ่มเติมจาก mock ได้ (เช่น paymentBehavior, approvals)
 };
 
 interface DisburseDebtCardProps {
@@ -59,6 +61,13 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
     return isNaN(num) ? amountStr : num.toLocaleString();
   };
 
+  const getSubmittedTime = (req: ActionRequest) => {
+    const submittedAt = req.history?.[0]?.date;
+    const time = submittedAt?.match(/\d{1,2}:\d{2}/)?.[0];
+
+    return time ? `${time} น.` : null;
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -72,30 +81,45 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
       {/* ========================================== */}
       {/* ส่วนที่ 1: ตารางรายการ */}
       {/* ========================================== */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden font-sans">
+      <div className="overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[1000px]">
+          <table className="w-full min-w-[1050px] table-fixed border-collapse text-left">
+            <colgroup>
+              <col className="w-[130px]" />
+              <col className="w-[28%]" />
+              <col className="w-[12%]" />
+              <col className="w-[21%]" />
+              <col className="w-[7.5%]" />
+              <col className="w-[7.5%]" />
+              <col className="w-[14%]" />
+            </colgroup>
             <thead>
-              <tr className="bg-[#f8f9fa] border-b border-gray-200 text-gray-800 text-[14px]">
-                <th className="py-3 px-4 font-semibold border-r border-gray-200 w-[15%]">
-                  รหัสคำร้อง
+              <tr className="border-b border-gray-300 bg-gray-100/70 text-[14px] text-gray-700">
+                <th className="min-w-[130px] whitespace-nowrap border-r border-gray-300 px-4 py-3.5 text-center font-semibold">
+                  <span className="lg:hidden">
+                    รหัส<br />คำร้อง
+                  </span>
+                  <span className="hidden lg:inline">รหัสคำร้อง</span>
                 </th>
-                <th className="py-3 px-4 font-semibold border-r border-gray-200 w-[22%]">
+                <th className="min-w-[200px] border-r border-gray-300 px-4 py-3.5 text-center font-semibold">
                   ชื่อ - ข้อมูลนักศึกษา
                 </th>
-                <th className="py-3 px-4 font-semibold border-r border-gray-200 w-[10%]">
-                  วันที่ยื่น
+                <th className="border-r border-gray-300 px-4 py-3.5 text-center font-semibold">
+                  <span className="lg:hidden">
+                    วันที่-เวลา<br />ยื่นคำร้อง
+                  </span>
+                  <span className="hidden lg:inline">วันที่-เวลายื่นคำร้อง</span>
                 </th>
-                <th className="py-3 px-4 font-semibold border-r border-gray-200 w-[25%]">
+                <th className="min-w-[200px] border-r border-gray-300 px-4 py-3.5 text-center font-semibold">
                   รายละเอียดเพื่อนำไปใช้
                 </th>
-                <th className="py-3 px-4 font-semibold border-r border-gray-200 w-[10%]">
+                <th className="whitespace-nowrap border-r border-gray-300 px-4 py-3.5 text-center font-semibold">
                   จำนวนเงิน
                 </th>
-                <th className="py-3 px-4 font-semibold border-r border-gray-200 w-[8%] whitespace-nowrap">
+                <th className="whitespace-nowrap border-r border-gray-300 px-4 py-3.5 text-center font-semibold">
                   จำนวนงวด
                 </th>
-                <th className="py-3 px-4 font-semibold text-center w-[10%] whitespace-nowrap">
+                <th className="whitespace-nowrap px-4 py-3.5 text-center font-bold">
                   จัดการ
                 </th>
               </tr>
@@ -104,37 +128,51 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
               {requests.map((req) => (
                 <tr
                   key={req.id}
-                  className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50/50 transition-colors"
+                  className="border-b border-gray-200 text-[14px] transition-colors hover:bg-orange-50/20 last:border-b-0"
                 >
-                  <td className="py-4 px-4 border-r border-gray-200 text-gray-600">{req.id}</td>
-                  <td className="py-4 px-4 border-r border-gray-200">
-                    <div className="font-bold text-gray-900">{req.name}</div>
-                    <div className="text-[13px] text-gray-500 mt-0.5">
-                      {req.studentId} • {req.major} • ปี {req.year}
+                  <td className="min-w-[130px] whitespace-nowrap border-r border-gray-200 px-4 py-4 text-center font-normal text-gray-600">
+                    {req.id}
+                  </td>
+                  <td className="border-r border-gray-200 px-4 py-4">
+                    <div className="truncate font-normal text-gray-900">
+                      {req.name} • {req.studentId}
+                    </div>
+                    <div className="mt-0.5 truncate text-[14px] text-gray-500">
+                      {req.program ?? "พยาบาลศาสตรบัณฑิต"} • ปริญญาตรี • ปี {req.year}
                     </div>
                   </td>
-                  <td className="py-4 px-4 border-r border-gray-200">{req.submitDate}</td>
-                  <td className="py-4 px-4 border-r border-gray-200 text-gray-600">{req.objective}</td>
-                  <td className="py-4 px-4 border-r border-gray-200 font-bold text-gray-900">
+                  <td className="whitespace-nowrap border-r border-gray-200 px-4 py-4 text-center font-normal text-gray-600">
+                    <div className="flex flex-col items-center leading-relaxed">
+                      <span>{req.submitDate}</span>
+                      {getSubmittedTime(req) && <span>{getSubmittedTime(req)}</span>}
+                    </div>
+                  </td>
+                  <td className="border-r border-gray-200 px-4 py-4 text-left font-normal text-gray-700">
+                    <div className="line-clamp-2">{req.objective}</div>
+                  </td>
+                  <td className="whitespace-nowrap border-r border-gray-200 px-4 py-4 text-center font-normal text-gray-900">
                     {formatAmount(req.amount)}
                   </td>
-                  <td className="py-4 px-4 border-r border-gray-200 whitespace-nowrap">
+                  <td className="whitespace-nowrap border-r border-gray-200 px-4 py-4 text-center font-normal text-gray-700">
                     {req.term} งวด
                   </td>
-                  <td className="py-4 px-4 text-center">
+                  <td className="px-4 py-4 align-middle">
                     {/* เนื่องจาก mock ตัวนี้สถานะหลากหลาย เพื่อให้เทสต์ปุ่มตรวจสอบได้ จะเช็คว่าถ้าสถานะไม่ใช่ 'disbursed' ให้โชว์ปุ่ม */}
-                    {req.requestStatus !== "disbursed" ? (
-                      <button
-                        onClick={() => setSelectedReq(req)}
-                        className="inline-flex items-center justify-center px-4 py-1.5 bg-white border border-orange-200 text-[#ea580c] hover:bg-orange-50 text-[13px] font-bold rounded-md transition-colors whitespace-nowrap"
-                      >
-                        ตรวจสอบ
-                      </button>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-bold bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
-                        <CheckCircle2 size={14} /> สำเร็จ
-                      </span>
-                    )}
+                    <div className="flex justify-center">
+                      {req.requestStatus !== "disbursed" ? (
+                        <button
+                          onClick={() => setSelectedReq(req)}
+                          className="inline-flex w-fit max-w-full items-center justify-center rounded-md border border-orange-200 bg-white px-4 py-1.5 text-[14px] font-bold text-[#ea580c] transition-colors hover:bg-orange-50"
+                        >
+                          <span className="block truncate">ตรวจสอบ</span>
+                        </button>
+                      ) : (
+                        <span className="inline-flex w-fit max-w-full items-center justify-center gap-1 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-[14px] font-bold text-green-700">
+                          <CheckCircle2 size={14} className="shrink-0" />
+                          <span className="truncate">สำเร็จ</span>
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -199,25 +237,25 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   <div className="bg-white p-3 rounded-lg border border-blue-100">
                     <span className="block text-[11px] text-gray-500 mb-0.5">ธนาคาร</span>
                     <span className="font-bold text-gray-900">
-                      {selectedReq.bankDetails.bankName}
+                      {selectedReq.bankDetails?.bankName ?? "-"}
                     </span>
                   </div>
                   <div className="bg-white p-3 rounded-lg border border-blue-100">
                     <span className="block text-[11px] text-gray-500 mb-0.5">ชื่อบัญชี</span>
                     <span className="font-bold text-gray-900">
-                      {selectedReq.bankDetails.accountName}
+                      {selectedReq.bankDetails?.accountName ?? "-"}
                     </span>
                   </div>
                   <div className="bg-white p-3 rounded-lg border border-blue-100 sm:col-span-2 flex justify-between items-center">
                     <div>
                       <span className="block text-[11px] text-gray-500 mb-0.5">เลขที่บัญชี</span>
                       <span className="font-mono font-bold text-xl text-blue-700 tracking-wider">
-                        {selectedReq.bankDetails.accountNumber}
+                        {selectedReq.bankDetails?.accountNumber ?? "-"}
                       </span>
                     </div>
                     <button
                       onClick={() =>
-                        navigator.clipboard.writeText(selectedReq.bankDetails.accountNumber)
+                        navigator.clipboard.writeText(selectedReq.bankDetails?.accountNumber ?? "")
                       }
                       className="px-3 py-1.5 text-xs font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md transition-colors"
                     >

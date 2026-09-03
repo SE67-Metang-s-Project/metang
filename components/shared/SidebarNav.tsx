@@ -1,33 +1,31 @@
-'use client';
+"use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
+import {
+  LayoutDashboard,
   FileCheck,
-  GraduationCap, 
+  GraduationCap,
   X,
   FileText,
-  Files,
   Users,
   History,
   Wallet,
   FileSignature,
   FileSearch,
-  PieChart,
   Settings,
   UserCog,
-  Bug 
+  Bug,
 } from "lucide-react";
 
-export type UserRole = 'student' | 'advisor' | 'admin' | 'executive' | 'superadmin';
+export type UserRole = "student" | "advisor" | "admin" | "executive" | "superadmin";
 
 interface MenuItem {
   title: string;
   icon: React.ElementType;
-  href: string | ((role: UserRole) => string); 
-  roles: UserRole[]; 
+  href: string | ((role: UserRole) => string);
+  roles: UserRole[];
 }
 
 interface SideNavProps {
@@ -37,38 +35,68 @@ interface SideNavProps {
 }
 
 const ALL_MENU_ITEMS: MenuItem[] = [
-  { title: 'หน้าหลัก', icon: LayoutDashboard, href: (role) => `/${role}`, roles: ['student', 'admin', 'executive', 'superadmin'] },
-  { title: 'ยื่นคำร้องขอกู้ยืม', icon: FileText, href: '/student/request', roles: ['student'] },
-  { title: 'ชำระเงินคืน (e-Slip)', icon: Wallet, href: '/student/payment', roles: ['student'] },
-  { title: 'ประวัติคำร้อง', icon: History, href: '/student/history', roles: ['student'] },
+  // ลบอันที่ซ้ำออก และเพิ่ม 'advisor' เข้าไป
+  {
+    title: "หน้าหลัก",
+    icon: LayoutDashboard,
+    href: (role) => `/${role}`,
+    roles: ["student", "admin", "executive", "superadmin"],
+  },
+  { title: "ยื่นคำร้องขอกู้ยืม", icon: FileText, href: "/student/request", roles: ["student"] },
+  { title: "ชำระเงินคืน (e-Slip)", icon: Wallet, href: "/student/payment", roles: ["student"] },
+  { title: "ประวัติคำร้อง", icon: History, href: "/student/history", roles: ["student"] },
 
   // ==========================================
   // แยกเมนู "คำร้องรอพิจารณา" ตาม Role
   // ==========================================
   // 1. สำหรับอาจารย์ที่ปรึกษา
-  { title: 'คำร้องรอพิจารณา จากอาจารย์ที่ปรึกษา', icon: FileCheck, href: '/advisor/pending', roles: ['advisor'] },
-  
+  {
+    title: "คำร้องรอพิจารณา จากอาจารย์ที่ปรึกษา",
+    icon: FileCheck,
+    href: "/advisor/pending",
+    roles: ["advisor"],
+  },
+
   // 2. สำหรับเจ้าหน้าที่ (Admin)
-  { title: 'คำร้องรอพิจารณา จากเจ้าหน้าที่', icon: FileCheck, href: '/admin/pending', roles: ['admin'] },
-  
+  {
+    title: "คำร้องรอพิจารณา จากเจ้าหน้าที่",
+    icon: FileCheck,
+    href: "/admin/pending",
+    roles: ["admin"],
+  },
+
   // 3. สำหรับผู้บริหาร (แสดง 2 เมนู ตามที่ระบุ)
-  { title: 'คำร้องรอพิจารณา จากอาจารย์ที่ปรึกษา', icon: FileCheck, href: '/executive/pending-advisor', roles: ['executive'] },
-  { title: 'คำร้องรอพิจารณา จากผู้บริหาร', icon: FileCheck, href: '/executive/pending-executive', roles: ['executive'] },
+  {
+    title: "คำร้องรอพิจารณา จากอาจารย์ที่ปรึกษา",
+    icon: FileCheck,
+    href: "/executive/pending-advisor",
+    roles: ["executive"],
+  },
+  {
+    title: "คำร้องรอพิจารณา จากผู้บริหาร",
+    icon: FileCheck,
+    href: "/executive/pending-executive",
+    roles: ["executive"],
+  },
   // ==========================================
 
-  { title: 'นักศึกษาในความดูแล', icon: Users, href: (role) => `/${role}/students`, roles: ['advisor', 'executive'] },
-  { title: 'รายงานและสถิติ', icon: PieChart, href: '/executive/reports', roles: ['executive'] },
-  { title: 'เบิกจ่ายหนี้', icon: FileSignature, href: '/admin/disburse-debt', roles: ['admin'] },
-  { title: 'ตรวจสอบสลิปชำระเงิน', icon: FileSearch, href: '/admin/verify-slip', roles: ['admin'] },
-  { title: 'จัดการผู้ใช้งาน', icon: UserCog, href: '/superadmin/users', roles: ['superadmin'] },
-  { title: 'ตั้งค่าระบบ', icon: Settings, href: '/superadmin/settings', roles: ['superadmin'] },
+  {
+    title: "นักศึกษาในความดูแล",
+    icon: Users,
+    href: (role) => `/${role}/students`,
+    roles: ["advisor", "executive"],
+  },
+  { title: "เบิกจ่ายหนี้", icon: FileSignature, href: "/admin/disburse-debt", roles: ["admin"] },
+  { title: "ตรวจสอบสลิปชำระเงิน", icon: FileSearch, href: "/admin/verify-slip", roles: ["admin"] },
+  { title: "จัดการผู้ใช้งาน", icon: UserCog, href: "/superadmin/users", roles: ["superadmin"] },
+  { title: "ตั้งค่าระบบ", icon: Settings, href: "/superadmin/settings", roles: ["superadmin"] },
 ];
 
 export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
-  const pathname = usePathname(); 
-
+  const pathname = usePathname();
   const [debugRole, setDebugRole] = useState<UserRole>(role);
-  
+
+  // นำ isMounted กลับมาใช้งาน เพื่อป้องกัน Hydration Error
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -79,7 +107,8 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
     setDebugRole(role);
   }, [role]);
 
-  const allowedMenus = ALL_MENU_ITEMS.filter(item => item.roles.includes(debugRole));
+  const activeRole = process.env.NODE_ENV === "development" ? debugRole : role;
+  const allowedMenus = ALL_MENU_ITEMS.filter((item) => item.roles.includes(activeRole));
 
   return (
     <>
@@ -115,8 +144,10 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
         <nav className="flex-1 py-6 px-4 space-y-1.5 text-sm font-medium overflow-y-auto">
           {allowedMenus.map((item, index) => {
             const Icon = item.icon;
-            const resolvedHref = typeof item.href === 'function' ? item.href(debugRole) : item.href;
-            
+            // ใช้ activeRole แทน debugRole เพื่อให้ทำงานได้ชัวร์ในระดับ Production
+            const resolvedHref =
+              typeof item.href === "function" ? item.href(activeRole) : item.href;
+
             const isActive = isMounted ? pathname === resolvedHref : false;
 
             return (
@@ -127,12 +158,12 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
                   if (window.innerWidth < 1024) onClose();
                 }}
                 className={`flex items-center px-4 py-3 rounded-xl transition-all ${
-                  isActive 
-                    ? "text-white bg-[#ea580c] shadow-md shadow-orange-500/20" 
+                  isActive
+                    ? "text-white bg-[#ea580c] shadow-md shadow-orange-500/20"
                     : "text-gray-600 hover:bg-orange-50 hover:text-[#ea580c]"
                 }`}
               >
-                <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : ''}`} />
+                <Icon className={`w-5 h-5 mr-3 ${isActive ? "text-white" : ""}`} />
                 {item.title}
               </Link>
             );

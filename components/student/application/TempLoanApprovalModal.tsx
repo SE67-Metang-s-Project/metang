@@ -85,6 +85,10 @@ export default function TempLoanApprovalModal({
               <dd>{tempStudentProfile.programName}</dd>
             </div>
             <div>
+              <dt>วุฒิการศึกษา:</dt>
+              <dd>{formData.educationLevel || "-"}</dd>
+            </div>
+            <div>
               <dt>ชั้นปีการศึกษา:</dt>
               <dd>ชั้นปีที่ {formData.academicYear}</dd>
             </div>

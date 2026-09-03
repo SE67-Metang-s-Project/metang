@@ -4,7 +4,7 @@
 @theme inline {
   --color-page-background: var(--color-background);
   --color-page-foreground: var(--color-text);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-kanit);
   --font-mono: var(--font-geist-mono);
 }
 
