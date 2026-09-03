@@ -22,6 +22,9 @@ export default function PendingPage() {
           userId="T1002"
         />
         <main className="p-6">
+          {/* <h2 className="text-lg font-semibold mb-4">รายการคำขอที่รอดำเนินการ</h2>
+          <p className="text-gray-600 mb-6">รายการคำขอที่รอการพิจารณาจากอาจารย์ที่ปรึกษา</p> */}
+          {/* แสดงรายการคำขอที่รอดำเนินการ */}
           <PendingRequestsList />
         </main>
       </div>

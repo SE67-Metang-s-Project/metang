@@ -37,11 +37,25 @@ interface SideNavProps {
 }
 
 const ALL_MENU_ITEMS: MenuItem[] = [
-  { title: 'แดชบอร์ด', icon: LayoutDashboard, href: (role) => `/${role}`, roles: ['student', 'admin', 'executive', 'superadmin'] },
+  { title: 'หน้าหลัก', icon: LayoutDashboard, href: (role) => `/${role}`, roles: ['student', 'admin', 'executive', 'superadmin'] },
   { title: 'ยื่นคำร้องขอกู้ยืม', icon: FileText, href: '/student/request', roles: ['student'] },
   { title: 'ชำระเงินคืน (e-Slip)', icon: Wallet, href: '/student/payment', roles: ['student'] },
   { title: 'ประวัติคำร้อง', icon: History, href: '/student/history', roles: ['student'] },
-  { title: 'คำร้องรอพิจารณา', icon: FileCheck, href: (role) => `/${role}/pending`, roles: ['advisor', 'admin' ,'executive'] },
+
+  // ==========================================
+  // แยกเมนู "คำร้องรอพิจารณา" ตาม Role
+  // ==========================================
+  // 1. สำหรับอาจารย์ที่ปรึกษา
+  { title: 'คำร้องรอพิจารณา จากอาจารย์ที่ปรึกษา', icon: FileCheck, href: '/advisor/pending', roles: ['advisor'] },
+  
+  // 2. สำหรับเจ้าหน้าที่ (Admin)
+  { title: 'คำร้องรอพิจารณา จากเจ้าหน้าที่', icon: FileCheck, href: '/admin/pending', roles: ['admin'] },
+  
+  // 3. สำหรับผู้บริหาร (แสดง 2 เมนู ตามที่ระบุ)
+  { title: 'คำร้องรอพิจารณา จากอาจารย์ที่ปรึกษา', icon: FileCheck, href: '/executive/pending-advisor', roles: ['executive'] },
+  { title: 'คำร้องรอพิจารณา จากผู้บริหาร', icon: FileCheck, href: '/executive/pending-executive', roles: ['executive'] },
+  // ==========================================
+
   { title: 'นักศึกษาในความดูแล', icon: Users, href: (role) => `/${role}/students`, roles: ['advisor', 'executive'] },
   { title: 'รายงานและสถิติ', icon: PieChart, href: '/executive/reports', roles: ['executive'] },
   { title: 'เบิกจ่ายหนี้', icon: FileSignature, href: '/admin/disburse-debt', roles: ['admin'] },
@@ -55,10 +69,8 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
 
   const [debugRole, setDebugRole] = useState<UserRole>(role);
   
-  // 1. เพิ่ม State เช็คว่า Component Mount บน Browser หรือยัง
   const [isMounted, setIsMounted] = useState(false);
 
-  // 2. ใช้ useEffect สั่งให้ isMounted เป็น true เมื่อฝั่ง Client โหลดเสร็จ
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -105,8 +117,6 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
             const Icon = item.icon;
             const resolvedHref = typeof item.href === 'function' ? item.href(debugRole) : item.href;
             
-            // 3. เปลี่ยนเงื่อนไข isActive โดยนำ isMounted มาครอบ
-            // เพื่อให้ Server และ Client เรนเดอร์เป็น false ตรงกันในตอนแรก แล้วค่อยคำนวณใหม่บน Browser
             const isActive = isMounted ? pathname === resolvedHref : false;
 
             return (
