@@ -2,7 +2,7 @@ import type { Prisma } from "@/lib/generated/prisma/client";
 
 export const LOAN_REVIEW_REQUESTED_EVENT = "loan.review_requested" as const;
 
-export type LoanReviewRequestedStep = "advisor" | "admin";
+export type LoanReviewRequestedStep = "advisor" | "admin" | "executive";
 
 export type LoanReviewRequestedDedupeKey =
   `loan:${string}:review:${LoanReviewRequestedStep}:${number}`;
@@ -17,6 +17,11 @@ export type LoanReviewRequestedPayload =
       loanId: string;
       step: "admin";
       recipient: { roles: ["admin", "super_admin"] };
+    }
+  | {
+      loanId: string;
+      step: "executive";
+      recipient: { roles: ["executive"] };
     };
 
 export type EnqueueNotificationInput = {
