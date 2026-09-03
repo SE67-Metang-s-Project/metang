@@ -35,7 +35,7 @@ interface SideNavProps {
 }
 
 const ALL_MENU_ITEMS: MenuItem[] = [
-  // ลบอันที่ซ้ำออก และเพิ่ม 'advisor' เข้าไป
+  // เพิ่ม 'advisor' กลับเข้าไปในหน้าหลักด้วย (ถ้าต้องการให้ Advisor มีหน้า Dashboard)
   {
     title: "หน้าหลัก",
     icon: LayoutDashboard,
@@ -47,47 +47,52 @@ const ALL_MENU_ITEMS: MenuItem[] = [
   { title: "ประวัติคำร้อง", icon: History, href: "/student/history", roles: ["student"] },
 
   // ==========================================
-  // แยกเมนู "คำร้องรอพิจารณา" ตาม Role
+  // เมนูของ Advisor และ Executive
   // ==========================================
-  // 1. สำหรับอาจารย์ที่ปรึกษา
   {
-    title: "คำร้องรอพิจารณา จากอาจารย์ที่ปรึกษา",
+    title: "คำร้องรอพิจารณา (อ.ที่ปรึกษา)",
     icon: FileCheck,
     href: "/advisor/pending",
-    roles: ["advisor"],
-  },
-
-  // 2. สำหรับเจ้าหน้าที่ (Admin)
-  {
-    title: "คำร้องรอพิจารณา จากเจ้าหน้าที่",
-    icon: FileCheck,
-    href: "/admin/pending",
-    roles: ["admin"],
-  },
-
-  // 3. สำหรับผู้บริหาร (แสดง 2 เมนู ตามที่ระบุ)
-  {
-    title: "คำร้องรอพิจารณา จากอาจารย์ที่ปรึกษา",
-    icon: FileCheck,
-    href: "/executive/pending-advisor",
-    roles: ["executive"],
+    roles: ["advisor", "executive"],
   },
   {
-    title: "คำร้องรอพิจารณา จากผู้บริหาร",
+    title: "คำร้องรอพิจารณา (ผู้บริหาร)",
     icon: FileCheck,
     href: "/executive/pending-executive",
     roles: ["executive"],
   },
-  // ==========================================
-
   {
     title: "นักศึกษาในความดูแล",
     icon: Users,
     href: (role) => `/${role}/students`,
     roles: ["advisor", "executive"],
   },
-  { title: "เบิกจ่ายหนี้", icon: FileSignature, href: "/admin/disburse-debt", roles: ["admin"] },
-  { title: "ตรวจสอบสลิปชำระเงิน", icon: FileSearch, href: "/admin/verify-slip", roles: ["admin"] },
+
+  // ==========================================
+  // เมนูของ Admin และ Super Admin (ใช้ร่วมกัน)
+  // ==========================================
+  {
+    title: "คำร้องรอตรวจสอบ",
+    icon: FileCheck,
+    href: (role) => `/${role}/pending`, // ถ้าเป็น admin ไป /admin/pending, ถ้าเป็น superadmin ไป /superadmin/pending
+    roles: ["admin", "superadmin"],
+  },
+  {
+    title: "เบิกจ่ายหนี้",
+    icon: FileSignature,
+    href: (role) => `/${role}/disburse-debt`,
+    roles: ["admin", "superadmin"],
+  },
+  {
+    title: "ตรวจสอบสลิปชำระเงิน",
+    icon: FileSearch,
+    href: (role) => `/${role}/verify-slip`,
+    roles: ["admin", "superadmin"],
+  },
+
+  // ==========================================
+  // เมนูเฉพาะ Super Admin
+  // ==========================================
   { title: "จัดการผู้ใช้งาน", icon: UserCog, href: "/superadmin/users", roles: ["superadmin"] },
   { title: "ตั้งค่าระบบ", icon: Settings, href: "/superadmin/settings", roles: ["superadmin"] },
 ];
