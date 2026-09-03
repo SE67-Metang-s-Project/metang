@@ -66,19 +66,19 @@ export default function ExecutiveFinancialOverview() {
   const [pieTooltipPosition, setPieTooltipPosition] = useState({ x: 150, y: 150 });
   const pieRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch("/api/executive/financial-overview", { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Unable to load financial overview");
-        return response.json() as Promise<{ data: Overview }>;
-      })
-      .then(({ data: overview }) => setData(overview))
-      .catch((error: unknown) => {
-        if (!(error instanceof DOMException && error.name === "AbortError")) console.error(error);
-      });
-    return () => controller.abort();
-  }, []);
+  // useEffect(() => {
+  //   const controller = new AbortController();
+  //   fetch("/api/executive/financial-overview", { signal: controller.signal })
+  //     .then(async (response) => {
+  //       if (!response.ok) throw new Error("Unable to load financial overview");
+  //       return response.json() as Promise<{ data: Overview }>;
+  //     })
+  //     .then(({ data: overview }) => setData(overview))
+  //     .catch((error: unknown) => {
+  //       if (!(error instanceof DOMException && error.name === "AbortError")) console.error(error);
+  //     });
+  //   return () => controller.abort();
+  // }, []);
 
   const points = useMemo<Point[]>(() => {
     if (period === "monthly") return data.monthly;
