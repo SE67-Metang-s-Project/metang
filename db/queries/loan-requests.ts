@@ -2,6 +2,10 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
 import type { ExecutiveDecision, LoanDecision } from "@/lib/loan-validation";
+import {
+  enqueueNotification,
+  LOAN_REVIEW_REQUESTED_EVENT,
+} from "@/db/queries/notifications";
 
 export type LoanRequestVisibility = { scope: "global" } | { scope: "assigned"; advisorId: string };
 
@@ -196,6 +200,15 @@ export async function decideLoanRequest({
       });
       const attempt = (latestAdmin?.attempt ?? 0) + 1;
       await tx.loanApproval.create({ data: { loanId: id, step: "admin", attempt } });
+      await enqueueNotification(tx, {
+        dedupeKey: `loan:${id}:review:admin:${attempt}`,
+        eventType: LOAN_REVIEW_REQUESTED_EVENT,
+        payload: {
+          loanId: id,
+          step: "admin",
+          recipient: { roles: ["admin", "super_admin"] },
+        },
+      });
     }
 
     const final = await tx.loanRequest.findUniqueOrThrow({
@@ -294,6 +307,15 @@ export async function decideAdminLoanRequest({
       const attempt = (latestExecutive?.attempt ?? 0) + 1;
       await tx.loanApproval.create({
         data: { loanId: id, step: "executive", attempt },
+      });
+      await enqueueNotification(tx, {
+        dedupeKey: `loan:${id}:review:executive:${attempt}`,
+        eventType: LOAN_REVIEW_REQUESTED_EVENT,
+        payload: {
+          loanId: id,
+          step: "executive",
+          recipient: { roles: ["executive"] },
+        },
       });
     }
 

@@ -505,6 +505,22 @@
   outline: 2px solid var(--color-detail-orange-soft);
 }
 
+.loanFormFieldInvalid input,
+.loanFormFieldInvalid select,
+.loanFormFieldInvalid textarea {
+  border-color: #dc2626;
+}
+
+.loanFormFieldInvalid input:focus,
+.loanFormFieldInvalid select:focus,
+.loanFormFieldInvalid textarea:focus {
+  outline-color: color-mix(in srgb, #dc2626 25%, transparent);
+}
+
+.loanFormFieldError {
+  color: #dc2626 !important;
+}
+
 .loanFormField small {
   color: var(--color-detail-muted);
   font-size: 13px;
@@ -676,14 +692,14 @@
 
 .loanApprovalInfoCard dl {
   display: grid;
-  gap: 2px;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 28px;
+  row-gap: 6px;
   margin: 0;
 }
 
 .loanApprovalInfoCard dl > div {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: 8px;
+  display: contents;
   min-width: 0;
 }
 

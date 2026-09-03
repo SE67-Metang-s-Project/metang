@@ -15,7 +15,6 @@ import {
   Wallet,
   FileSignature,
   FileSearch,
-  PieChart,
   Settings,
   UserCog,
   Bug 

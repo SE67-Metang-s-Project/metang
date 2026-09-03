@@ -9,6 +9,10 @@ import {
   getStudentSessionContext,
   resolveStoredStudent,
 } from "@/lib/loan-auth";
+import {
+  enqueueNotification,
+  LOAN_REVIEW_REQUESTED_EVENT,
+} from "@/db/queries/notifications";
 
 const loanInclude = {
   approvals: { orderBy: [{ step: "asc" as const }, { attempt: "asc" as const }] },
@@ -143,6 +147,15 @@ export async function POST(request: Request) {
         },
       });
       await tx.loanApproval.create({ data: { loanId: created.id, step: "advisor", attempt: 1 } });
+      await enqueueNotification(tx, {
+        dedupeKey: `loan:${created.id}:review:advisor:1`,
+        eventType: LOAN_REVIEW_REQUESTED_EVENT,
+        payload: {
+          loanId: created.id,
+          step: "advisor",
+          recipient: { userId: created.advisorId },
+        },
+      });
       await tx.auditLog.create({
         data: {
           actorId: student.id,

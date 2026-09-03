@@ -36,7 +36,6 @@ export default function TempStudentDashboard() {
           requests={tempLoanRequestHistory}
           sectionClassName={styles.tempHistorySection}
           showAllRequests={showAllRequests}
-          showMoreButton
         />
       </div>
     </main>

@@ -40,6 +40,16 @@ enum LoanStatus {
   @@map("loan_status")
 }
 
+enum NotificationStatus {
+  pending
+  processing
+  retry
+  delivered
+  failed
+
+  @@map("notification_status")
+}
+
 enum UserRoleName {
   student
   advisor
@@ -58,6 +68,7 @@ model AppUser {
   fullNameTh        String            @map("full_name_th") @db.Text
   fullNameEn        String?           @map("full_name_en") @db.Text
   phone             String?           @db.Text
+  educationLevel    String?           @map("education_level") @db.Text
   createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   studentLoans      LoanRequest[]     @relation("StudentLoans")
@@ -197,6 +208,23 @@ model AuditLog {
 
   @@index([entityType, entityId], map: "audit_log_entity_idx")
   @@map("audit_log")
+}
+
+model NotificationOutbox {
+  id           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dedupeKey    String             @unique(map: "notification_outbox_dedupe_key") @map("dedupe_key") @db.Text
+  eventType    String             @map("event_type") @db.Text
+  payload      Json               @db.JsonB
+  status       NotificationStatus @default(pending)
+  attemptCount Int                @default(0) @map("attempt_count") @db.Integer
+  availableAt  DateTime           @default(now()) @map("available_at") @db.Timestamptz(6)
+  deliveredAt  DateTime?          @map("delivered_at") @db.Timestamptz(6)
+  lastError    String?            @map("last_error") @db.Text
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, availableAt], map: "notification_outbox_status_available_at_idx")
+  @@map("notification_outbox")
 }
 
 model UserRole {

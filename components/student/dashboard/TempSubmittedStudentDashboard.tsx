@@ -70,7 +70,6 @@ export default function TempSubmittedStudentDashboard() {
           onShowMore={() => setShowAllRequests((current) => !current)}
           requests={tempLoanRequestHistory}
           showAllRequests={showAllRequests}
-          showMoreButton
         />
         {isSlipModalOpen ? (
           <TransferSlipModal
