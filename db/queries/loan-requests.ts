@@ -1,11 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@/lib/generated/prisma/client";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
 import type { ExecutiveDecision, LoanDecision } from "@/lib/loan-validation";
-import {
-  enqueueNotification,
-  LOAN_REVIEW_REQUESTED_EVENT,
-} from "@/db/queries/notifications";
+
 
 export type LoanRequestVisibility = { scope: "global" } | { scope: "assigned"; advisorId: string };
 
@@ -41,23 +38,72 @@ const loanSummarySelect = {
   updatedAt: true,
 } satisfies Prisma.LoanRequestSelect;
 
-const approvalHistory = {
-  include: { decider: { select: userSummarySelect } },
+const advisorApprovalHistory = {
+  select: {
+    id: true,
+    loanId: true,
+    step: true,
+    attempt: true,
+    decision: true,
+    decidedBy: true,
+    decidedAt: true,
+    comment: true,
+    decider: { select: userSummarySelect },
+  },
   orderBy: [{ step: "asc" }, { attempt: "asc" }],
 } satisfies Prisma.LoanRequest$approvalsArgs;
+
+const staffApprovalHistory = {
+  select: {
+    id: true,
+    loanId: true,
+    step: true,
+    attempt: true,
+    decision: true,
+    decidedBy: true,
+    decidedAt: true,
+    comment: true,
+    createdAt: true,
+    decider: { select: userSummarySelect },
+  },
+  orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+} satisfies Prisma.LoanRequest$approvalsArgs;
+
+const studentApprovalHistory = {
+  select: {
+    id: true,
+    loanId: true,
+    step: true,
+    attempt: true,
+    decision: true,
+    decidedBy: true,
+    decidedAt: true,
+    comment: true,
+  },
+  orderBy: [{ step: "asc" }, { attempt: "asc" }],
+} satisfies Prisma.LoanRequest$approvalsArgs;
+
+export const studentLoanSelect = {
+  ...loanSummarySelect,
+  bankName: true,
+  bankAccountNo: true,
+  bankAccountName: true,
+  advisor: { select: userSummarySelect },
+  approvals: studentApprovalHistory,
+} satisfies Prisma.LoanRequestSelect;
 
 export const advisorLoanSelect = {
   ...loanSummarySelect,
   student: { select: studentSummarySelect },
   advisor: { select: userSummarySelect },
-  approvals: approvalHistory,
+  approvals: advisorApprovalHistory,
 } satisfies Prisma.LoanRequestSelect;
 
 export const adminQueueSelect = {
   ...loanSummarySelect,
   student: { select: { ...studentSummarySelect, phone: true } },
   advisor: { select: userSummarySelect },
-  approvals: approvalHistory,
+  approvals: staffApprovalHistory,
 } satisfies Prisma.LoanRequestSelect;
 
 export const adminLoanDetailSelect = {
@@ -71,6 +117,11 @@ export const executiveLoanSelect = {
   ...adminQueueSelect,
 } satisfies Prisma.LoanRequestSelect;
 
+const executiveDecisionSelect = {
+  ...executiveLoanSelect,
+  assignedAdminId: true,
+} satisfies Prisma.LoanRequestSelect;
+
 const globalLoanSelect = {
   ...loanSummarySelect,
   student: {
@@ -82,7 +133,7 @@ const globalLoanSelect = {
   advisor: { select: userSummarySelect },
   cancelledByUser: { select: userSummarySelect },
   approvals: {
-    ...approvalHistory,
+    ...advisorApprovalHistory,
   },
   installments: {
     orderBy: { seq: "asc" },
@@ -200,15 +251,7 @@ export async function decideLoanRequest({
       });
       const attempt = (latestAdmin?.attempt ?? 0) + 1;
       await tx.loanApproval.create({ data: { loanId: id, step: "admin", attempt } });
-      await enqueueNotification(tx, {
-        dedupeKey: `loan:${id}:review:admin:${attempt}`,
-        eventType: LOAN_REVIEW_REQUESTED_EVENT,
-        payload: {
-          loanId: id,
-          step: "admin",
-          recipient: { roles: ["admin", "super_admin"] },
-        },
-      });
+
     }
 
     const final = await tx.loanRequest.findUniqueOrThrow({
@@ -232,6 +275,7 @@ export async function decideLoanRequest({
 export type AdminDecisionErrorCode =
   | "NOT_FOUND"
   | "STALE_DECISION"
+  | "ACCESS_REVOKED"
   | "INVALID_APPROVED_AMOUNT"
   | "AMOUNT_EXCEEDS_REQUEST"
   | "REDUCTION_COMMENT_REQUIRED";
@@ -256,14 +300,21 @@ export async function decideAdminLoanRequest({
   comment: string | null;
 }) {
   return prisma.$transaction(async (tx) => {
-    const current = await tx.loanRequest.findUnique({
-      where: { id },
+    const effectiveRole = await tx.userRole.findFirst({
+      where: { userId: adminId, role: { in: ["admin", "super_admin"] } },
+      select: { userId: true },
+    });
+    if (!effectiveRole) throw new AdminDecisionError("ACCESS_REVOKED");
+
+    const current = await tx.loanRequest.findFirst({
+      where: {
+        id,
+        status: "pending_admin",
+        OR: [{ assignedAdminId: null }, { assignedAdminId: adminId }],
+      },
       select: adminLoanDetailSelect,
     });
     if (!current) throw new AdminDecisionError("NOT_FOUND");
-    if (current.status !== "pending_admin") {
-      throw new AdminDecisionError("STALE_DECISION");
-    }
 
     const pending = await tx.loanApproval.findFirst({
       where: { loanId: id, step: "admin", decision: "pending" },
@@ -285,10 +336,15 @@ export async function decideAdminLoanRequest({
 
     const nextStatus = decision === "approved" ? "pending_executive" : decision;
     const changed = await tx.loanRequest.updateMany({
-      where: { id, status: "pending_admin" },
+      where: {
+        id,
+        status: "pending_admin",
+        OR: [{ assignedAdminId: null }, { assignedAdminId: adminId }],
+      },
       data: {
         status: nextStatus,
         approvedAmount: decision === "approved" ? approvedAmount : null,
+        assignedAdminId: decision === "approved" ? adminId : null,
       },
     });
     if (changed.count !== 1) throw new AdminDecisionError("STALE_DECISION");
@@ -299,24 +355,10 @@ export async function decideAdminLoanRequest({
     });
 
     if (decision === "approved") {
-      const latestExecutive = await tx.loanApproval.findFirst({
-        where: { loanId: id, step: "executive" },
-        orderBy: { attempt: "desc" },
-        select: { attempt: true },
-      });
-      const attempt = (latestExecutive?.attempt ?? 0) + 1;
       await tx.loanApproval.create({
-        data: { loanId: id, step: "executive", attempt },
+        data: { loanId: id, step: "executive", attempt: pending.attempt },
       });
-      await enqueueNotification(tx, {
-        dedupeKey: `loan:${id}:review:executive:${attempt}`,
-        eventType: LOAN_REVIEW_REQUESTED_EVENT,
-        payload: {
-          loanId: id,
-          step: "executive",
-          recipient: { roles: ["executive"] },
-        },
-      });
+
     }
 
     const final = await tx.loanRequest.findUniqueOrThrow({
@@ -334,10 +376,10 @@ export async function decideAdminLoanRequest({
       },
     });
     return final;
-  });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }
 
-export type ExecutiveDecisionErrorCode = "NOT_FOUND" | "STALE_DECISION";
+export type ExecutiveDecisionErrorCode = "NOT_FOUND" | "STALE_DECISION" | "MISSING_ADMIN_ASSIGNMENT";
 
 export class ExecutiveDecisionError extends Error {
   constructor(readonly code: ExecutiveDecisionErrorCode) {
@@ -357,10 +399,19 @@ export async function decideExecutiveLoanRequest({
   comment: string | null;
 }) {
   return prisma.$transaction(async (tx) => {
-    const current = await tx.loanRequest.findUnique({ where: { id }, select: executiveLoanSelect });
+    const effectiveRole = await tx.userRole.findFirst({
+      where: { userId: executiveId, role: "executive" },
+      select: { userId: true },
+    });
+    if (!effectiveRole) throw new ExecutiveDecisionError("NOT_FOUND");
+
+    const current = await tx.loanRequest.findUnique({ where: { id }, select: executiveDecisionSelect });
     if (!current) throw new ExecutiveDecisionError("NOT_FOUND");
     if (current.status !== "pending_executive") {
       throw new ExecutiveDecisionError("STALE_DECISION");
+    }
+    if (!current.assignedAdminId) {
+      throw new ExecutiveDecisionError("MISSING_ADMIN_ASSIGNMENT");
     }
 
     const pending = await tx.loanApproval.findFirst({
@@ -369,10 +420,13 @@ export async function decideExecutiveLoanRequest({
     });
     if (!pending) throw new ExecutiveDecisionError("STALE_DECISION");
 
-    const nextStatus = decision === "approved" ? "pending_disbursement" : "rejected";
+    const nextStatus = decision === "approved" ? "pending_disbursement" : "pending_admin";
     const changed = await tx.loanRequest.updateMany({
       where: { id, status: "pending_executive" },
-      data: { status: nextStatus },
+      data: {
+        status: nextStatus,
+        assignedAdminId: decision === "approved" ? null : current.assignedAdminId,
+      },
     });
     if (changed.count !== 1) throw new ExecutiveDecisionError("STALE_DECISION");
 
@@ -380,6 +434,11 @@ export async function decideExecutiveLoanRequest({
       where: { id: pending.id },
       data: { decision, decidedBy: executiveId, decidedAt: new Date(), comment },
     });
+    if (decision === "returned") {
+      await tx.loanApproval.create({
+        data: { loanId: id, step: "admin", attempt: pending.attempt + 1 },
+      });
+    }
 
     const final = await tx.loanRequest.findUniqueOrThrow({
       where: { id },
@@ -396,5 +455,5 @@ export async function decideExecutiveLoanRequest({
       },
     });
     return final;
-  });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }

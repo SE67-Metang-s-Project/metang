@@ -70,6 +70,38 @@ export async function mutateUserRole({
         const superAdminCount = await tx.userRole.count({ where: { role: "super_admin" } });
         if (superAdminCount <= 1) throw new RoleMutationError("FINAL_SUPER_ADMIN");
       }
+
+      if (role === "admin") {
+        const activeLoans = await tx.loanRequest.findMany({
+          where: {
+            assignedAdminId: targetUserId,
+            status: { in: ["pending_admin", "pending_executive"] },
+          },
+          select: { id: true, status: true, assignedAdminId: true },
+        });
+        const reassigned = await tx.loanRequest.updateMany({
+          where: {
+            assignedAdminId: targetUserId,
+            status: { in: ["pending_admin", "pending_executive"] },
+          },
+          data: { assignedAdminId: actorId },
+        });
+        if (reassigned.count !== activeLoans.length) {
+          throw new RoleMutationError("ROLE_NOT_GRANTED");
+        }
+        for (const loan of activeLoans) {
+          await tx.auditLog.create({
+            data: {
+              actorId,
+              action: "loan_request.admin_reassigned",
+              entityType: "loan_request",
+              entityId: loan.id,
+              before: { assignedAdminId: loan.assignedAdminId, status: loan.status },
+              after: { assignedAdminId: actorId, status: loan.status },
+            },
+          });
+        }
+      }
       await tx.userRole.delete({ where: { userId_role: { userId: targetUserId, role } } });
     }
 

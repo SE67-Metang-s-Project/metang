@@ -9,15 +9,9 @@ import {
   getStudentSessionContext,
   resolveStoredStudent,
 } from "@/lib/loan-auth";
-import {
-  enqueueNotification,
-  LOAN_REVIEW_REQUESTED_EVENT,
-} from "@/db/queries/notifications";
+import { studentLoanSelect } from "@/db/queries/loan-requests";
 
-const loanInclude = {
-  approvals: { orderBy: [{ step: "asc" as const }, { attempt: "asc" as const }] },
-  advisor: { select: { id: true, fullNameTh: true, fullNameEn: true } },
-};
+
 
 /**
  * List the current student's loan requests.
@@ -36,7 +30,7 @@ export async function GET() {
 
   const loans = await prisma.loanRequest.findMany({
     where: { studentId: user.id },
-    include: loanInclude,
+    select: studentLoanSelect,
     orderBy: { createdAt: "desc" },
   });
   return apiOk(serializeJson(loans));
@@ -147,15 +141,7 @@ export async function POST(request: Request) {
         },
       });
       await tx.loanApproval.create({ data: { loanId: created.id, step: "advisor", attempt: 1 } });
-      await enqueueNotification(tx, {
-        dedupeKey: `loan:${created.id}:review:advisor:1`,
-        eventType: LOAN_REVIEW_REQUESTED_EVENT,
-        payload: {
-          loanId: created.id,
-          step: "advisor",
-          recipient: { userId: created.advisorId },
-        },
-      });
+
       await tx.auditLog.create({
         data: {
           actorId: student.id,
@@ -165,7 +151,7 @@ export async function POST(request: Request) {
           after: serializeJson(created),
         },
       });
-      return tx.loanRequest.findUniqueOrThrow({ where: { id: created.id }, include: loanInclude });
+      return tx.loanRequest.findUniqueOrThrow({ where: { id: created.id }, select: studentLoanSelect });
     });
 
     return apiOk(serializeJson(loan), 201);

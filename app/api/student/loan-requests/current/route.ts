@@ -2,6 +2,7 @@ import { apiError, apiOk } from "@/lib/api-response";
 import { getStudentSessionContext, resolveStoredStudent } from "@/lib/loan-auth";
 import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/serialization";
+import { studentLoanSelect } from "@/db/queries/loan-requests";
 
 /**
  * Get the current student's open loan request.
@@ -22,10 +23,7 @@ export async function GET() {
       studentId: user.id,
       status: { notIn: ["closed", "rejected", "cancelled"] },
     },
-    include: {
-      advisor: { select: { id: true, fullNameTh: true, fullNameEn: true } },
-      approvals: { orderBy: [{ step: "asc" }, { attempt: "asc" }] },
-    },
+    select: studentLoanSelect,
     orderBy: { createdAt: "desc" },
   });
   return apiOk(serializeJson(loan));

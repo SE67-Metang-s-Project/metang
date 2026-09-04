@@ -32,7 +32,11 @@ export async function GET(_request: Request, { params }: Params) {
 
   try {
     const loan = await prisma.loanRequest.findFirst({
-      where: { id, status: "pending_admin" },
+      where: {
+        id,
+        status: "pending_admin",
+        OR: [{ assignedAdminId: null }, { assignedAdminId: access.context.user.id }],
+      },
       select: adminLoanDetailSelect,
     });
     if (!loan) return apiError("NOT_FOUND", "Loan request not found", 404);

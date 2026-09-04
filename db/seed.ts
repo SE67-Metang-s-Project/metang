@@ -125,6 +125,7 @@ const loans: Prisma.LoanRequestCreateManyInput[] = loanScenarios.map(
     installmentCount,
     firstDueDate: dateFromNow(dueOffset),
     status,
+    assignedAdminId: status === LoanStatus.pending_executive ? id(3) : null,
     submittedAt: [201, 210].includes(number) ? null : dateFromNow(-7),
     cancelledAt: status === LoanStatus.cancelled ? dateFromNow(-1) : null,
     cancelledBy: number === 210 ? id(110) : number === 211 ? id(3) : null,

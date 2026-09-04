@@ -24,7 +24,10 @@ export async function GET() {
 
   try {
     const loans = await prisma.loanRequest.findMany({
-      where: { status: "pending_admin" },
+      where: {
+        status: "pending_admin",
+        OR: [{ assignedAdminId: null }, { assignedAdminId: access.context.user.id }],
+      },
       select: adminQueueSelect,
       orderBy: [{ submittedAt: "asc" }, { id: "asc" }],
     });

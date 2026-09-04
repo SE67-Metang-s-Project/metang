@@ -56,6 +56,9 @@ export async function POST(request: Request, { params }: Params) {
     if (error instanceof ExecutiveDecisionError && error.code === "STALE_DECISION") {
       return apiError("CONFLICT", "The request was already decided", 409);
     }
+    if (error instanceof ExecutiveDecisionError && error.code === "MISSING_ADMIN_ASSIGNMENT") {
+      return apiError("CONFLICT", "The request has no assigned Admin", 409);
+    }
     if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2002", "P2034"].includes(error.code)) {
       return apiError("CONFLICT", "The request was already decided", 409);
     }

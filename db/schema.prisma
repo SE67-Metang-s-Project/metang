@@ -40,16 +40,6 @@ enum LoanStatus {
   @@map("loan_status")
 }
 
-enum NotificationStatus {
-  pending
-  processing
-  retry
-  delivered
-  failed
-
-  @@map("notification_status")
-}
-
 enum UserRoleName {
   student
   advisor
@@ -74,6 +64,7 @@ model AppUser {
   studentLoans      LoanRequest[]     @relation("StudentLoans")
   advisorLoans      LoanRequest[]     @relation("AdvisorLoans")
   cancelledLoans    LoanRequest[]     @relation("CancelledLoans")
+  assignedAdminLoans LoanRequest[]    @relation("AssignedAdminLoans")
   approvalDecisions LoanApproval[]
   confirmedPayments Payment[]
   fundTransactions  FundTransaction[]
@@ -89,6 +80,7 @@ model LoanRequest {
   id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   studentId        String            @map("student_id") @db.Uuid
   advisorId        String            @map("advisor_id") @db.Uuid
+  assignedAdminId  String?           @map("assigned_admin_id") @db.Uuid
   amount           Int               @db.Integer
   approvedAmount   Int?              @map("approved_amount") @db.Integer
   studentYear      Int               @map("student_year") @db.SmallInt
@@ -109,6 +101,7 @@ model LoanRequest {
   updatedAt        DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   student          AppUser           @relation("StudentLoans", fields: [studentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   advisor          AppUser           @relation("AdvisorLoans", fields: [advisorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  assignedAdmin    AppUser?          @relation("AssignedAdminLoans", fields: [assignedAdminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   cancelledByUser  AppUser?          @relation("CancelledLoans", fields: [cancelledBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   approvals        LoanApproval[]
   installments     Installment[]
@@ -118,6 +111,7 @@ model LoanRequest {
   @@unique([studentId], map: "one_open_loan_per_student", where: raw("status <> ALL (ARRAY['closed'::loan_status, 'rejected'::loan_status, 'cancelled'::loan_status])"))
   @@index([advisorId, status], map: "loan_request_advisor_idx")
   @@index([studentId], map: "loan_request_student_idx")
+  @@index([assignedAdminId, status], map: "loan_request_assigned_admin_idx")
   @@map("loan_request")
 }
 
@@ -130,6 +124,7 @@ model LoanApproval {
   decidedBy String?      @map("decided_by") @db.Uuid
   decidedAt DateTime?    @map("decided_at") @db.Timestamptz(6)
   comment   String?      @db.Text
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   loan      LoanRequest  @relation(fields: [loanId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   decider   AppUser?     @relation(fields: [decidedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -204,23 +199,6 @@ model AuditLog {
 
   @@index([entityType, entityId], map: "audit_log_entity_idx")
   @@map("audit_log")
-}
-
-model NotificationOutbox {
-  id           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  dedupeKey    String             @unique(map: "notification_outbox_dedupe_key") @map("dedupe_key") @db.Text
-  eventType    String             @map("event_type") @db.Text
-  payload      Json               @db.JsonB
-  status       NotificationStatus @default(pending)
-  attemptCount Int                @default(0) @map("attempt_count") @db.Integer
-  availableAt  DateTime           @default(now()) @map("available_at") @db.Timestamptz(6)
-  deliveredAt  DateTime?          @map("delivered_at") @db.Timestamptz(6)
-  lastError    String?            @map("last_error") @db.Text
-  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  @@index([status, availableAt], map: "notification_outbox_status_available_at_idx")
-  @@map("notification_outbox")
 }
 
 model UserRole {

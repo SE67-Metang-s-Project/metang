@@ -209,6 +209,7 @@ export type AdminQueueItem = {
     decidedBy: string | null;
     decidedAt: string | null;
     comment: string | null;
+    createdAt: string;
     decider: {
       id: string;
       fullNameTh: string;
@@ -262,7 +263,7 @@ export type PhoneNumberResponse = {
 
 export type ExecutiveDecisionBody =
   | { decision: "approved"; comment?: string | null }
-  | { decision: "rejected"; comment: string };
+  | { decision: "returned"; comment: string };
 
 export type ExecutiveQueueItem = {
   id: string;
@@ -314,6 +315,7 @@ export type ExecutiveQueueItem = {
     decidedBy: string | null;
     decidedAt: string | null;
     comment: string | null;
+    createdAt: string;
     decider: {
       id: string;
       fullNameTh: string;

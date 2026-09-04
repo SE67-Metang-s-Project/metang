@@ -67,6 +67,9 @@ export async function POST(request: Request, { params }: Params) {
     if (error instanceof AdminDecisionError && error.code === "STALE_DECISION") {
       return apiError("CONFLICT", "The request was already decided", 409);
     }
+    if (error instanceof AdminDecisionError && error.code === "ACCESS_REVOKED") {
+      return apiError("CONFLICT", "The request changed; please retry", 409);
+    }
     if (error instanceof AdminDecisionError && error.code === "INVALID_APPROVED_AMOUNT") {
       return apiError("VALIDATION_ERROR", "approvedAmount is invalid", 422);
     }

@@ -3,6 +3,7 @@ import { getStudentContext } from "@/lib/loan-auth";
 import { isUuid } from "@/lib/loan-validation";
 import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/serialization";
+import { studentLoanSelect } from "@/db/queries/loan-requests";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -24,10 +25,7 @@ export async function GET(_request: Request, { params }: Params) {
 
   const loan = await prisma.loanRequest.findFirst({
     where: { id, studentId: context.user.id },
-    include: {
-      advisor: { select: { id: true, fullNameTh: true, fullNameEn: true } },
-      approvals: { orderBy: [{ step: "asc" }, { attempt: "asc" }] },
-    },
+    select: studentLoanSelect,
   });
   if (!loan) return apiError("NOT_FOUND", "Loan request not found", 404);
   return apiOk(serializeJson(loan));
