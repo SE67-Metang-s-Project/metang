@@ -4166,17 +4166,6 @@
                   "type": "string",
                   "nullable": true
                 },
-                "slipOcrStatus": {
-                  "type": "string"
-                },
-                "ocrAmount": {
-                  "type": "number",
-                  "nullable": true
-                },
-                "ocrPaidAt": {
-                  "type": "string",
-                  "nullable": true
-                },
                 "status": {
                   "type": "string"
                 },
@@ -4203,9 +4192,6 @@
                 "amount",
                 "slipUrl",
                 "slipRef",
-                "slipOcrStatus",
-                "ocrAmount",
-                "ocrPaidAt",
                 "status",
                 "confirmedBy",
                 "confirmedAt",
@@ -4266,17 +4252,6 @@
             "type": "string",
             "nullable": true
           },
-          "slipOcrStatus": {
-            "type": "string"
-          },
-          "ocrAmount": {
-            "type": "number",
-            "nullable": true
-          },
-          "ocrPaidAt": {
-            "type": "string",
-            "nullable": true
-          },
           "status": {
             "type": "string"
           },
@@ -4303,9 +4278,6 @@
           "amount",
           "slipUrl",
           "slipRef",
-          "slipOcrStatus",
-          "ocrAmount",
-          "ocrPaidAt",
           "status",
           "confirmedBy",
           "confirmedAt",
@@ -4608,17 +4580,6 @@
                         "type": "string",
                         "nullable": true
                       },
-                      "slipOcrStatus": {
-                        "type": "string"
-                      },
-                      "ocrAmount": {
-                        "type": "number",
-                        "nullable": true
-                      },
-                      "ocrPaidAt": {
-                        "type": "string",
-                        "nullable": true
-                      },
                       "status": {
                         "type": "string"
                       },
@@ -4645,9 +4606,6 @@
                       "amount",
                       "slipUrl",
                       "slipRef",
-                      "slipOcrStatus",
-                      "ocrAmount",
-                      "ocrPaidAt",
                       "status",
                       "confirmedBy",
                       "confirmedAt",

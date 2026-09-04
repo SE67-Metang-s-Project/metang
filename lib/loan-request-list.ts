@@ -52,9 +52,6 @@ export type LoanRequestListPayment = {
   amount: number;
   slipUrl: string | null;
   slipRef: string | null;
-  slipOcrStatus: string;
-  ocrAmount: number | null;
-  ocrPaidAt: string | null;
   status: string;
   confirmedBy: string | null;
   confirmedAt: string | null;
