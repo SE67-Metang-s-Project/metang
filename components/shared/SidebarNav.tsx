@@ -50,13 +50,13 @@ const ALL_MENU_ITEMS: MenuItem[] = [
   // เมนูของ Advisor และ Executive
   // ==========================================
   {
-    title: "คำร้องรอพิจารณา (อ.ที่ปรึกษา)",
+    title: "คำร้องรอพิจารณา\nโดยอาจารย์ที่ปรึกษา",
     icon: FileCheck,
     href: (role) => (role === "executive" ? "/executive/pending-advisor" : "/advisor/pending"),
     roles: ["advisor", "executive"],
   },
   {
-    title: "คำร้องรอพิจารณา (ผู้บริหาร)",
+    title: "คำร้องรอพิจารณา\nโดยผู้บริหาร",
     icon: FileCheck,
     href: "/executive/pending-executive",
     roles: ["executive"],
@@ -118,13 +118,13 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 bg-gray-900/50 z-40 lg:hidden transition-opacity"
+          className="fixed inset-0 bg-gray-900/50 z-40 min-[1576px]:hidden transition-opacity"
           onClick={onClose}
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col h-screen transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col h-screen transition-transform duration-300 ease-in-out min-[1576px]:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -140,7 +140,10 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
               <p className="text-[12px] text-gray-500">ระบบทุนกู้ยืม</p>
             </div>
           </div>
-          <button onClick={onClose} className="lg:hidden text-gray-400 hover:text-gray-700 p-1">
+          <button
+            onClick={onClose}
+            className="min-[1576px]:hidden text-gray-400 hover:text-gray-700 p-1"
+          >
             <X size={20} />
           </button>
         </div>
@@ -159,7 +162,7 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
                 key={index}
                 href={resolvedHref}
                 onClick={() => {
-                  if (window.innerWidth < 1024) onClose();
+                  if (window.innerWidth < 1576) onClose();
                 }}
                 className={`flex items-center px-4 py-3 rounded-xl transition-all ${
                   isActive
@@ -168,7 +171,7 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
                 }`}
               >
                 <Icon className={`w-5 h-5 mr-3 ${isActive ? "text-white" : ""}`} />
-                {item.title}
+                <span className="whitespace-pre-line leading-tight">{item.title}</span>
               </Link>
             );
           })}

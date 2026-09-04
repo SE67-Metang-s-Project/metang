@@ -13,13 +13,20 @@ export type FilterStatus =
   | "cancelled"
   | "pending_executive";
 
+export type DropdownStatusOption = {
+  id: Exclude<FilterStatus, "all" | "pending">;
+  label: string;
+};
+
 interface PendingFilterProps {
   currentFilter: FilterStatus;
   onFilterChange: (status: FilterStatus) => void;
   pendingCount?: number;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
+  searchPlaceholder?: string;
   pendingLabel?: string; // เพิ่ม Prop นี้เพื่อให้แต่ละ Role ตั้งชื่อแท็บได้เอง
+  statusOptions?: DropdownStatusOption[];
 }
 
 export default function PendingFilter({
@@ -28,7 +35,9 @@ export default function PendingFilter({
   pendingCount = 0,
   searchQuery = "",
   onSearchChange,
+  searchPlaceholder = "ค้นหารหัสคำร้อง ชื่อ วันที่...",
   pendingLabel = "รอพิจารณา", // ค่าเริ่มต้น
+  statusOptions: customStatusOptions,
 }: PendingFilterProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -57,13 +66,14 @@ export default function PendingFilter({
     { id: "pending", label: pendingLabel }, // ใช้ Label ตามที่ส่งเข้ามา
   ];
 
-  const statusOptions: { id: Exclude<FilterStatus, "all" | "pending">; label: string }[] = [
+  const defaultStatusOptions: DropdownStatusOption[] = [
     { id: "approved", label: "อนุมัติแล้ว" },
     { id: "rejected", label: "ไม่อนุมัติ" },
     { id: "pending_admin", label: "รอเจ้าหน้าที่ตรวจสอบ" },
     { id: "cancelled", label: "นักศึกษายกเลิกคำร้อง" },
     { id: "pending_executive", label: "รอผู้บริหารอนุมัติ" },
   ];
+  const statusOptions = customStatusOptions ?? defaultStatusOptions;
   const selectedStatus = statusOptions.find((option) => option.id === currentFilter);
   const isDropdownActive = selectedStatus !== undefined;
 
@@ -143,7 +153,7 @@ export default function PendingFilter({
           )}
         </div>
 
-        <div className="relative w-full sm:w-72">
+        <div className="relative w-full sm:w-[220px]">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-gray-400" />
           </div>
@@ -151,7 +161,7 @@ export default function PendingFilter({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange?.(e.target.value)}
-            placeholder="ค้นหาชื่อ หรือ รหัสนักศึกษา..."
+            placeholder={searchPlaceholder}
             className="block w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-[14px] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 shadow-sm transition-colors"
           />
         </div>

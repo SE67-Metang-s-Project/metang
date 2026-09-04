@@ -103,9 +103,9 @@ export const loanContact: LoanContact = {
 };
 
 export const studentProfile = {
-  displayName: "นางสาวอนุชนก",
+  displayName: "นางสาวอนุชนก มีโชค",
   programName: "พยาบาลศาสตรบัณฑิต",
-  yearLabel: "ชั้นปีที่ 3",
+  yearLabel: "ปี 3",
   studentId: "661215001",
   initials: "MT",
 };

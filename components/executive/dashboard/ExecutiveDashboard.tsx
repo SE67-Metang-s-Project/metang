@@ -29,7 +29,7 @@ export default function ExecutiveDashboard({
         role="executive"
       />
 
-      <main className="flex-1 flex flex-col w-full min-h-screen lg:ml-64 transition-all duration-300">
+      <main className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64 transition-all duration-300">
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
           userName={userName}

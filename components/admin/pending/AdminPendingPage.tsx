@@ -3,10 +3,10 @@
 import React, { useState } from "react";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
-// เปลี่ยนไปดึง Shared Component แทนของเดิม
-import SharedRequestsList from "@/components/shared/pending/SharedRequestsList";
 
-export default function AdminPendingPage() {
+import PendingRequestsList from "./AdminRequestsList";
+
+export default function PendingPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
@@ -15,24 +15,17 @@ export default function AdminPendingPage() {
       <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="admin" />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col w-full min-h-screen lg:ml-64 transition-all duration-300">
+      <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64 transition-all duration-300">
+        {/* เอา div ที่เคยครอบตรงนี้ออก แล้ววาง TopNav เลย */}
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
-          userName="เจ้าหน้าที่ สมศรี"
-          userId="S2001"
+          userName="แอดมินนี่"
+          userId="T1002"
         />
 
-        <main className="p-4 sm:p-6 lg:p-8">
-          {/* เพิ่ม Header แจ้งให้ทราบว่าอยู่ในหน้านี้ทำอะไร */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">คำร้องรอตรวจสอบ (Admin)</h1>
-            <p className="text-gray-500 mt-1 text-sm">
-              ตรวจสอบเอกสารและพิจารณาความถูกต้องของคำร้อง
-            </p>
-          </div>
-
-          {/* ส่ง userRole="admin" เพื่อให้ List ทำงานแบบแอดมินปกติ (แก้เลขวงเงินได้เหมือนกัน) */}
-          <SharedRequestsList userRole="admin" />
+        {/* แนะนำให้เพิ่มจัดกึ่งกลางและ padding ให้เหมือนหน้าอื่น */}
+        <main className="p-6">
+          <PendingRequestsList />
         </main>
       </div>
     </div>

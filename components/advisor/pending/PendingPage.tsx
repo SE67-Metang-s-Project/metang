@@ -15,7 +15,7 @@ export default function PendingPage() {
       <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="advisor" />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col w-full min-h-screen lg:ml-64 transition-all duration-300">
+      <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64 transition-all duration-300">
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
           userName="ผศ.ดร. สุนีย์ วงค์ประเสริฐ"

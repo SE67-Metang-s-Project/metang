@@ -18,6 +18,7 @@ import PaymentModal from "../payments/PaymentModal";
 import type { InstallmentPayment } from "@/app/student/studentMockData";
 import { MedicalBagIcon, MoneyIllustration } from "./StudentIllustrations";
 import ContactFooter from "../loan-details/ContactFooter";
+import TopNav from "@/components/shared/TopNav";
 import styles from "@/app/student/student.module.css";
 
 export default function StudentDashboard() {
@@ -53,15 +54,19 @@ export default function StudentDashboard() {
 
   return (
     <main className={styles.studentPage}>
-      {activeView === "loan-details" && activeLoanDetails ? (
-        <LoanDetailsPage details={activeLoanDetails} onBack={() => setActiveView("dashboard")} />
-      ) : (
-        <div className={styles.studentContent}>
-          <header className={styles.studentHeader}>
-            <div className={styles.brandMark}>Metang LOGO</div>
-            <div className={styles.profileMark}>{studentProfile.initials}</div>
-          </header>
+      <TopNav
+        userName={studentProfile.displayName}
+        userId={studentProfile.studentId}
+        userRole="นักศึกษา"
+        userEmail={`${studentProfile.studentId}@cmu.ac.th`}
+        showSidebarButton={false}
+      />
 
+      <div className={styles.studentPageContent}>
+        {activeView === "loan-details" && activeLoanDetails ? (
+          <LoanDetailsPage details={activeLoanDetails} onBack={() => setActiveView("dashboard")} />
+        ) : (
+        <div className={styles.studentContent}>
           <LoanSummaryCard
             medicalBag={<MedicalBagIcon />}
             onOpenDetails={() => setActiveView("loan-details")}
@@ -79,7 +84,8 @@ export default function StudentDashboard() {
           />
           <ContactFooter />
         </div>
-      )}
+        )}
+      </div>
 
       {activePayment ? (
         <PaymentModal

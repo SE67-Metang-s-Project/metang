@@ -17,7 +17,7 @@ export default function ExecutiveApprovePage() {
         role="executive"
       />
 
-      <main className="flex flex-col flex-1 w-full min-h-screen transition-all duration-300 lg:ml-64">
+      <main className="flex flex-col flex-1 w-full min-h-screen transition-all duration-300 min-[1576px]:ml-64">
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
           userName="ผศ.ดร. สุนีย์ วงค์ประเสริฐ"

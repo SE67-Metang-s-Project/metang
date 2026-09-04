@@ -9,6 +9,7 @@ import {
   tempStudentProfile,
   type TempLoanFormData,
 } from "@/app/student/temp/tempMockData";
+import { saveStudentEducationLevel, useStudentEducationLevel } from "@/lib/student-education";
 import { formatThaiBahtText } from "@/app/student/studentFormatters";
 import TempLoanApprovalModal from "./TempLoanApprovalModal";
 import TempLoanDetailsStep from "./TempLoanDetailsStep";
@@ -61,10 +62,15 @@ export default function TempLoanApplicationPage() {
   const [hasAcceptedAgreement, setHasAcceptedAgreement] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [formData, setFormData] = useState(tempLoanFormDefaults);
+  const savedEducationLevel = useStudentEducationLevel();
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [touchedFields, setTouchedFields] = useState<
     Partial<Record<RequiredFormField, boolean>>
   >({});
+  const savedFormData = {
+    ...formData,
+    educationLevel: savedEducationLevel ?? formData.educationLevel,
+  };
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -79,7 +85,7 @@ export default function TempLoanApplicationPage() {
 
   const validateLoanForm = () => {
     return requiredFormFields.reduce<FormErrors>((errors, field) => {
-      const error = validateField(field, formData[field]);
+      const error = validateField(field, savedFormData[field]);
 
       if (error) {
         errors[field] = error;
@@ -261,10 +267,13 @@ export default function TempLoanApplicationPage() {
                   onChange={(value) => updateFormField("educationLevel", value)}
                   options={tempLoanFormOptions.educationLevels}
                   placeholder="เลือกวุฒิการศึกษา"
-                  value={formData.educationLevel}
+                  disabled={Boolean(savedEducationLevel)}
+                  value={savedEducationLevel ?? formData.educationLevel}
                 />
                 <small>
-                  เลือกครั้งเดียวตอนกู้ยืมครั้งแรกเท่านั้น การกู้ยืมครั้งถัดไปจะแสดงข้อมูลเดิม
+                  {savedEducationLevel
+                    ? "วุฒิการศึกษาถูกบันทึกแล้วและไม่สามารถแก้ไขได้"
+                    : "เลือกครั้งเดียวตอนกู้ยืมครั้งแรกเท่านั้น การกู้ยืมครั้งถัดไปจะแสดงข้อมูลเดิม"}
                 </small>
                 {formErrors.educationLevel ? (
                   <small className={styles.loanFormFieldError}>
@@ -499,7 +508,7 @@ export default function TempLoanApplicationPage() {
             </div>
           </section>
         ) : (
-          <TempLoanDetailsStep formData={formData} />
+          <TempLoanDetailsStep formData={savedFormData} />
         )}
 
         {currentStep === 1 ? (
@@ -559,9 +568,12 @@ export default function TempLoanApplicationPage() {
 
       {isApprovalModalOpen ? (
         <TempLoanApprovalModal
-          formData={formData}
+          formData={savedFormData}
           onClose={() => setIsApprovalModalOpen(false)}
           onConfirm={() => {
+            if (!savedEducationLevel) {
+              saveStudentEducationLevel(formData.educationLevel);
+            }
             setIsApprovalModalOpen(false);
             setCurrentStep(3);
           }}

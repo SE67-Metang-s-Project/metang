@@ -1,5 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { activeLoan, studentProfile } from "@/app/student/studentMockData";
+import { useStudentEducationLevel } from "@/lib/student-education";
 import styles from "@/app/student/student.module.css";
 
 type LoanSummaryCardProps = {
@@ -8,13 +11,21 @@ type LoanSummaryCardProps = {
 };
 
 export default function LoanSummaryCard({ onOpenDetails, medicalBag }: LoanSummaryCardProps) {
+  const educationLevel = useStudentEducationLevel();
+  const paidAmount = Number(activeLoan.paidAmount.replace(/,/g, ""));
+  const totalAmount = Number(activeLoan.totalAmount.replace(/,/g, ""));
+  const remainingPercent =
+    totalAmount > 0 ? Math.max(0, ((totalAmount - paidAmount) / totalAmount) * 100) : 0;
+
   return (
     <section className={styles.loanSummary} aria-labelledby="loan-summary-title">
       <div className={styles.summaryIntro}>
         <div>
           <h1 id="loan-summary-title">สวัสดี, {studentProfile.displayName}</h1>
           <p>
-            {studentProfile.programName} · {studentProfile.yearLabel} · {studentProfile.studentId}
+            {[studentProfile.programName, educationLevel, studentProfile.yearLabel, studentProfile.studentId]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
         </div>
         {/* {medicalBag} */}
@@ -32,8 +43,8 @@ export default function LoanSummaryCard({ onOpenDetails, medicalBag }: LoanSumma
           <span>/ {activeLoan.totalAmount}</span>
         </div>
         <div className={styles.progressTrack}>
-          <span style={{ width: `${activeLoan.progressPercent}%` }} />
-          <b style={{ left: `${activeLoan.progressPercent}%` }} />
+          <span style={{ width: `${remainingPercent}%` }} />
+          <b style={{ left: `${remainingPercent}%` }} />
         </div>
         <p>
           ชำระงวดที่ {activeLoan.nextInstallmentNumber} ก่อนวันที่ {activeLoan.nextDueDate}

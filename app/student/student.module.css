@@ -1,12 +1,22 @@
 /* Student page layout styles live here; shared colors are in app/styles/colors.css. */
 .studentPage {
   min-height: 100svh;
-  padding: 24px 20px 48px;
+  padding: 0;
   background-color: var(--color-background);
   background-image: linear-gradient(180deg, var(--color-background-tint) 0%, transparent 34%);
   color: var(--color-text);
   font-family: var(--font-kanit), "Kanit", sans-serif;
   font-size: 15px;
+}
+
+.studentPageContent {
+  padding: 24px 20px 48px;
+}
+
+@media (max-width: 639px) {
+  .studentPageContent {
+    padding: 16px;
+  }
 }
 
 .studentPage button {
@@ -523,7 +533,7 @@
 
 .loanFormField small {
   color: var(--color-detail-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .loanInstallmentField {
@@ -1576,7 +1586,7 @@
 .installmentBalance span,
 .historyAmount span {
   color: var(--color-card-muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .installmentBalance span {
@@ -2262,7 +2272,7 @@
   background: var(--color-detail-orange-pale);
   color: var(--color-detail-orange-dark);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
 }
 
@@ -2670,7 +2680,7 @@
   border: 1px solid var(--color-border);
   color: var(--color-detail-orange-dark);
   font-family: var(--font-kanit), "Kanit", sans-serif;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -2704,7 +2714,7 @@
 .paymentQrSection > small {
   margin: 1px 0 0;
   color: var(--color-detail-muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.25;
 }
 
@@ -2719,7 +2729,7 @@
   border-top: 2px solid var(--color-detail-orange);
   color: #a4a4a4;
   font-family: var(--font-kanit), "Kanit", sans-serif;
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .paymentBankNotice::first-letter {
@@ -2946,7 +2956,7 @@
 
 @media (min-width: 1024px) {
   .studentPage {
-    padding: 48px 48px 72px;
+    padding: 0;
   }
 
   .studentContent {
@@ -2982,8 +2992,8 @@
 
 @media (max-width: 480px) {
   .studentPage {
-    padding-right: 10px;
-    padding-left: 10px;
+    padding-right: 0;
+    padding-left: 0;
   }
 
   .loanSummary {
@@ -2992,7 +3002,7 @@
   }
 
   .summaryFooter span {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .behaviorHeading {

@@ -6,6 +6,7 @@ type LoanFormSelectOption = {
 };
 
 type LoanFormSelectProps = {
+  disabled?: boolean;
   error?: string;
   onBlur?: () => void;
   onChange: (value: string) => void;
@@ -15,6 +16,7 @@ type LoanFormSelectProps = {
 };
 
 export default function LoanFormSelect({
+  disabled = false,
   error,
   onBlur,
   onChange,
@@ -27,6 +29,7 @@ export default function LoanFormSelect({
       <select
         aria-invalid={Boolean(error)}
         className={value ? "" : styles.loanFormSelectPlaceholder}
+        disabled={disabled}
         onBlur={onBlur}
         onChange={(event) => onChange(event.target.value)}
         value={value}

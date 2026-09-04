@@ -9,7 +9,7 @@ export default function TempDetailCard() {
         <dl className={styles.tempDetailDefinitionList}>
           <div>
             <dt>ชื่อ-นามสกุล:</dt>
-            <dd>{studentProfile.displayName} มีโชค</dd>
+            <dd>{studentProfile.displayName}</dd>
           </div>
           <div>
             <dt>รหัสนักศึกษา:</dt>

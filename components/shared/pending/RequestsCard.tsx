@@ -17,6 +17,7 @@ import {
   ShieldAlert,
   MessageSquare,
   Pencil, // <--- เพิ่ม Import Icon สำหรับแก้ไข
+  SearchX,
 } from "lucide-react";
 
 // ==========================================
@@ -160,6 +161,18 @@ const formatAmount = (amountStr: string) => {
   if (isNaN(num)) return amountStr;
   return num.toLocaleString();
 };
+
+function EmptyRequestsState() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+      <div className="rounded-full bg-gray-100 p-3 text-gray-400">
+        <SearchX className="h-6 w-6" aria-hidden="true" />
+      </div>
+      <p className="font-medium text-gray-700">ไม่พบข้อมูลที่ค้นหา</p>
+      <p className="text-sm text-gray-500">ยังไม่มีข้อมูลในขณะนี้ หรือลองเปลี่ยนคำค้นหาอีกครั้ง</p>
+    </div>
+  );
+}
 
 const getSubmittedTime = (req: ActionRequest) => {
   const submittedAt = req.history?.[0]?.date;
@@ -320,7 +333,9 @@ export default function RequestsCard({
     <div className="w-full">
       {/* 1. มุมมองสำหรับ Mobile (แสดงเป็นการ์ด) */}
       <div className="md:hidden space-y-4">
-        {requests.map((req, idx) => (
+        {requests.length === 0 ? (
+          <EmptyRequestsState />
+        ) : requests.map((req, idx) => (
           <div
             key={idx}
             className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md"
@@ -357,7 +372,7 @@ export default function RequestsCard({
 
       {/* 2. มุมมองสำหรับ Desktop/Tablet (แสดงเป็นตาราง) */}
       <div className="hidden md:block overflow-x-auto relative rounded-xl border border-gray-300 shadow-sm">
-        <table className="w-full table-fixed text-left border-collapse min-w-[1050px] bg-white">
+        <table className="w-full table-fixed text-left border-collapse min-w-[1050px] max-[1299px]:min-w-[1300px] bg-white">
           <colgroup>
             <col className="w-[130px]" />
             <col className="w-[28%]" />
@@ -407,7 +422,13 @@ export default function RequestsCard({
             </tr>
           </thead>
           <tbody>
-            {requests.map((req, idx) => (
+            {requests.length === 0 ? (
+              <tr>
+                <td colSpan={7}>
+                  <EmptyRequestsState />
+                </td>
+              </tr>
+            ) : requests.map((req, idx) => (
               <tr
                 key={idx}
                 className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
@@ -420,13 +441,15 @@ export default function RequestsCard({
                     className={
                       isExecutiveTable
                         ? "truncate font-normal text-gray-900"
-                        : "font-bold text-gray-900"
+                        : "font-bold text-gray-900 max-[1201px]:line-clamp-1"
                     }
                   >
                     {isExecutiveTable ? `${req.name} • ${req.studentId}` : req.name}
                   </div>
                   <div
-                    className={`mt-0.5 ${isExecutiveTable ? "truncate text-[14px]" : "text-[13px]"} text-gray-500`}
+                    className={`mt-0.5 ${
+                      isExecutiveTable ? "truncate text-[14px]" : "text-[13px] max-[1201px]:truncate"
+                    } text-gray-500`}
                   >
                     {isExecutiveTable
                       ? `${req.program ?? "พยาบาลศาสตรบัณฑิต"} • ปริญญาตรี • ปี ${req.year}`

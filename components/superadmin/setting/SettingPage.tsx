@@ -18,7 +18,7 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-800">
       <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="superadmin" />
 
-      <div className="flex-1 flex flex-col w-full min-h-screen lg:ml-64 transition-all duration-300">
+      <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64 transition-all duration-300">
         <TopNav onOpenSidebar={() => setIsSidebarOpen(true)} userName="SuperAdmin" userId="SA-001" />
 
         <main className="p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto w-full">

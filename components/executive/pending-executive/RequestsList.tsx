@@ -28,11 +28,24 @@ export default function RequestsListExecutive() {
       isStatusMatch = ["pending_disbursement", "disbursed", "closed"].includes(req.requestStatus);
     } else if (filter === "rejected") {
       isStatusMatch = ["returned", "rejected", "cancelled"].includes(req.requestStatus);
+    } else if (filter === "cancelled") {
+      isStatusMatch = req.requestStatus === "cancelled";
+    } else if (filter === "pending_admin") {
+      isStatusMatch = req.requestStatus === "pending_admin";
     }
 
     const lowerQuery = searchQuery.toLowerCase();
-    const isSearchMatch =
-      req.name.toLowerCase().includes(lowerQuery) || req.studentId.includes(lowerQuery);
+    const formattedAmount = Number(req.amount.replace(/[^\d.-]/g, "")).toLocaleString("en-US");
+    const isSearchMatch = [
+      req.id,
+      req.studentId,
+      req.amount,
+      formattedAmount,
+      req.name,
+      req.objective,
+      req.submitDate,
+      ...(req.history?.map((entry) => entry.date) ?? []),
+    ].some((value) => value.toLowerCase().includes(lowerQuery));
 
     return isStatusMatch && isSearchMatch;
   });
@@ -44,8 +57,15 @@ export default function RequestsListExecutive() {
         onFilterChange={setFilter}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        searchPlaceholder="ค้นหารหัสคำร้อง ชื่อ วันที่..."
         pendingCount={pendingCount} 
         pendingLabel="รออนุมัติ" 
+        statusOptions={[
+          { id: "approved", label: "อนุมัติแล้ว" },
+          { id: "rejected", label: "ไม่อนุมัติ" },
+          { id: "cancelled", label: "นักศึกษายกเลิกคำร้อง" },
+          { id: "pending_admin", label: "รอเจ้าหน้าที่ตรวจสอบ" },
+        ]}
       />
 
       {/* 
