@@ -3,13 +3,27 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { getCmuDisplayName, getCmuSession, type CmuProfile, type CmuSession } from "@/lib/cmu-auth";
 import { getNurseAccessDecision } from "@/lib/nurse-auth";
-import { isDevelopmentApiAccess, isDevelopmentEnvironment } from "@/lib/development-access";
+import {
+  isDevelopmentApiBypass,
+  isDevelopmentEnvironment,
+  isDevelopmentRoleEnabled,
+  type DevelopmentApiRole,
+} from "@/lib/development-access";
 import { prisma } from "@/lib/prisma";
 import type { AppUser, UserRoleName } from "@/lib/generated/prisma/client";
 
 const STUDENT_ID_KEYS = ["student_id", "studentId", "student_code", "studentCode"];
 const EMAIL_KEYS = ["email", "mail", "email_address", "cmuitaccount", "cmuitaccount_name"];
 const CMU_ACCOUNT_KEYS = ["cmuitaccount", "cmuitaccount_name", "cmu_account", "cmuAccount"];
+
+const DEVELOPMENT_USER_IDS: Record<DevelopmentApiRole, string> = {
+  executive: "00000000-0000-0000-0000-000000000001",
+  super_admin: "00000000-0000-0000-0000-000000000002",
+  admin: "00000000-0000-0000-0000-000000000003",
+  advisor: "00000000-0000-0000-0000-000000000004",
+};
+const DEVELOPMENT_STUDENT_ID = "00000000-0000-0000-0000-000000000101";
+const DEVELOPMENT_API_ROLES: DevelopmentApiRole[] = ["advisor", "admin", "super_admin", "executive"];
 
 export type LoanIdentity = {
   cmuAccount: string | null;
@@ -90,24 +104,7 @@ export async function resolveAdvisor(identity: LoanIdentity, advisorName?: strin
   return user;
 }
 
-async function getDevelopmentLoanContext(
-  role: "admin" | "advisor" | "executive" | "super_admin" | "staff",
-) {
-  const user = await prisma.appUser.findFirst({
-    where: {
-      roles:
-        role === "staff"
-          ? { some: { role: { in: ["admin", "super_admin", "executive", "advisor"] } } }
-          : role === "admin"
-            ? { some: { role: { in: ["admin", "super_admin"] } } }
-            : { some: { role } },
-      ...(role === "advisor" ? { advisorLoans: { some: {} } } : {}),
-    },
-    include: { roles: { select: { role: true } } },
-    orderBy: { id: "asc" },
-  });
-  if (!user) return null;
-
+function createDevelopmentLoanContext(user: LoanUserContext["user"]): LoanUserContext {
   const profile: CmuProfile = {
     cmuitaccount: user.cmuAccount,
     email: user.email,
@@ -125,10 +122,52 @@ async function getDevelopmentLoanContext(
       displayName: user.fullNameTh,
     },
     user,
-  } satisfies LoanUserContext;
+  };
+}
+
+async function getDevelopmentStudentContext(): Promise<LoanUserContext | null> {
+  if (!isDevelopmentApiBypass()) return null;
+
+  const user = await prisma.appUser.findUnique({
+    where: { id: DEVELOPMENT_STUDENT_ID },
+    include: { roles: { select: { role: true } } },
+  });
+  if (!user || !user.studentCode || !user.roles.some(({ role }) => role === "student")) return null;
+
+  return createDevelopmentLoanContext(user);
+}
+
+async function getDevelopmentLoanContext(
+  role: "admin" | "advisor" | "executive" | "super_admin" | "staff",
+) {
+  const bypass = isDevelopmentApiBypass();
+  const developmentRole =
+    role === "staff"
+      ? DEVELOPMENT_API_ROLES.find((candidate) => bypass || isDevelopmentRoleEnabled(candidate))
+      : role;
+  if (!developmentRole || (!bypass && !isDevelopmentRoleEnabled(developmentRole))) return null;
+
+  const user = await prisma.appUser.findUnique({
+    where: {
+      id: DEVELOPMENT_USER_IDS[developmentRole],
+    },
+    include: { roles: { select: { role: true } } },
+  });
+  if (!user) return null;
+  const hasRequestedRole =
+    role === "staff"
+      ? user.roles.some(({ role: userRole }) => DEVELOPMENT_API_ROLES.some((role) => role === userRole))
+      : role === "admin"
+        ? hasAdminRole(user.roles)
+        : user.roles.some(({ role: userRole }) => userRole === role);
+  if (!hasRequestedRole) return null;
+
+  return createDevelopmentLoanContext(user);
 }
 
 export async function getStudentContext(): Promise<LoanUserContext | null> {
+  if (isDevelopmentApiBypass()) return getDevelopmentStudentContext();
+
   const context = await getStudentSessionContext();
   if (!context) return null;
   const user = await resolveStoredStudent(context.identity);
@@ -138,6 +177,12 @@ export async function getStudentContext(): Promise<LoanUserContext | null> {
 }
 
 export async function getStudentSessionContext(): Promise<LoanSessionContext | null> {
+  if (isDevelopmentApiBypass()) {
+    const context = await getDevelopmentStudentContext();
+    if (!context) return null;
+    return { session: context.session, profile: context.profile, identity: context.identity };
+  }
+
   const session = await getCmuSession();
   if (!session) {
     console.info("Student session rejected", { reason: "missing_or_invalid_session" });
@@ -162,7 +207,9 @@ export async function getStudentSessionContext(): Promise<LoanSessionContext | n
 }
 
 export async function getAdvisorContext(advisorName?: string): Promise<LoanUserContext | null> {
-  if (isDevelopmentApiAccess()) return getDevelopmentLoanContext("advisor");
+  if (isDevelopmentApiBypass() || isDevelopmentRoleEnabled("advisor")) {
+    return getDevelopmentLoanContext("advisor");
+  }
 
   const session = await getCmuSession();
   if (!session) return null;
@@ -202,7 +249,7 @@ function hasSuperAdminRole(roles: { role: UserRoleName }[]) {
 }
 
 export async function getAdminAccess(): Promise<AdminAccess> {
-  if (isDevelopmentApiAccess()) {
+  if (isDevelopmentApiBypass() || isDevelopmentRoleEnabled("admin")) {
     const context = await getDevelopmentLoanContext("admin");
     return context ? { status: "authorized", context } : { status: "forbidden" };
   }
@@ -226,7 +273,7 @@ export async function getAdminContext(): Promise<LoanUserContext | null> {
 }
 
 export async function getSuperAdminAccess(): Promise<SuperAdminAccess> {
-  if (isDevelopmentApiAccess()) {
+  if (isDevelopmentApiBypass() || isDevelopmentRoleEnabled("super_admin")) {
     const context = await getDevelopmentLoanContext("super_admin");
     return context ? { status: "authorized", context } : { status: "forbidden" };
   }
@@ -245,12 +292,15 @@ export async function getSuperAdminAccess(): Promise<SuperAdminAccess> {
 }
 
 export async function getDevelopmentStaffContext() {
-  if (!isDevelopmentApiAccess()) return null;
+  if (
+    !isDevelopmentApiBypass() &&
+    !DEVELOPMENT_API_ROLES.some((role) => isDevelopmentRoleEnabled(role))
+  ) return null;
   return getDevelopmentLoanContext("staff");
 }
 
 export async function getExecutiveAccess(): Promise<ExecutiveAccess> {
-  if (isDevelopmentApiAccess()) {
+  if (isDevelopmentApiBypass() || isDevelopmentRoleEnabled("executive")) {
     const context = await getDevelopmentLoanContext("executive");
     return context ? { status: "authorized", context } : { status: "forbidden" };
   }
