@@ -2149,6 +2149,9 @@
                   "type": "string",
                   "nullable": true
                 },
+                "createdAt": {
+                  "type": "string"
+                },
                 "decider": {
                   "type": "object",
                   "properties": {
@@ -2180,6 +2183,7 @@
                 "decidedBy",
                 "decidedAt",
                 "comment",
+                "createdAt",
                 "decider"
               ]
             }
@@ -2381,6 +2385,9 @@
                       "type": "string",
                       "nullable": true
                     },
+                    "createdAt": {
+                      "type": "string"
+                    },
                     "decider": {
                       "type": "object",
                       "properties": {
@@ -2412,6 +2419,7 @@
                     "decidedBy",
                     "decidedAt",
                     "comment",
+                    "createdAt",
                     "decider"
                   ]
                 }
@@ -2615,6 +2623,9 @@
                   "type": "string",
                   "nullable": true
                 },
+                "createdAt": {
+                  "type": "string"
+                },
                 "decider": {
                   "type": "object",
                   "properties": {
@@ -2646,6 +2657,7 @@
                 "decidedBy",
                 "decidedAt",
                 "comment",
+                "createdAt",
                 "decider"
               ]
             }
@@ -2849,6 +2861,9 @@
                         "type": "string",
                         "nullable": true
                       },
+                      "createdAt": {
+                        "type": "string"
+                      },
                       "decider": {
                         "type": "object",
                         "properties": {
@@ -2880,6 +2895,7 @@
                       "decidedBy",
                       "decidedAt",
                       "comment",
+                      "createdAt",
                       "decider"
                     ]
                   }
