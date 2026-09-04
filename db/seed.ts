@@ -230,25 +230,20 @@ async function main() {
       };
 
       const paymentRows = [
-        [301, 208, 1, 1000, "verified", "confirmed"],
-        [302, 208, 2, 1000, "manual", "confirmed"],
-        [303, 208, 3, 1000, "verified", "confirmed"],
-        [304, 207, 2, 500, "pending", "pending_review"],
-        [305, 207, 1, 1500, "failed", "rejected"],
+        [301, 208, 1, 1000, "confirmed"],
+        [302, 208, 2, 1000, "confirmed"],
+        [303, 208, 3, 1000, "confirmed"],
+        [304, 207, 2, 500, "pending_review"],
+        [305, 207, 1, 1500, "rejected"],
       ] as const;
       const payments: Prisma.PaymentCreateManyInput[] = paymentRows.map(
-        ([number, loanNumber, seq, amount, ocrState, status]) => ({
+        ([number, loanNumber, seq, amount, status]) => ({
           id: id(number),
           loanId: id(loanNumber),
           installmentId: installmentId(loanNumber, seq),
           amount,
           slipUrl: `/mock/slips/${number}.jpg`,
           slipRef: `MOCK-SLIP-${number}`,
-          slipOcrStatus: ocrState,
-          ocrAmount: ocrState === "verified" ? amount : ocrState === "failed" ? 150 : null,
-          ocrPaidAt: ocrState === "pending" ? null : dateFromNow(-3),
-          slipOcrRaw:
-            ocrState === "pending" ? undefined : { source: "mock", state: ocrState },
           status,
           confirmedBy: status === "pending_review" ? null : id(3),
           confirmedAt: status === "pending_review" ? null : dateFromNow(-2),
