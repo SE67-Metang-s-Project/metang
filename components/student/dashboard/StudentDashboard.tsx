@@ -16,7 +16,7 @@ import PaymentBehaviorCard from "./PaymentBehaviorCard";
 import InstallmentList from "../payments/InstallmentList";
 import PaymentModal from "../payments/PaymentModal";
 import type { InstallmentPayment } from "@/app/student/studentMockData";
-import { MedicalBagIcon, MoneyIllustration } from "./StudentIllustrations";
+import { MedicalBagIcon } from "./StudentIllustrations";
 import ContactFooter from "../loan-details/ContactFooter";
 import TopNav from "@/components/shared/TopNav";
 import styles from "@/app/student/student.module.css";
@@ -71,7 +71,7 @@ export default function StudentDashboard() {
             medicalBag={<MedicalBagIcon />}
             onOpenDetails={() => setActiveView("loan-details")}
           />
-          <PaymentBehaviorCard moneyIllustration={<MoneyIllustration />} />
+          <PaymentBehaviorCard />
           <InstallmentList
             installments={installmentPayments}
             onPay={setActivePayment}

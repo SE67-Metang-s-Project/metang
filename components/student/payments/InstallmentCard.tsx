@@ -25,7 +25,7 @@ export default function InstallmentCard({ installment, onPay }: InstallmentCardP
         <div className={styles.installmentTitle}>
           <strong>งวดที่ {installment.installmentNumber}</strong>
           {!isUpcoming ? (
-            <span className={styles.statusPill}>{getStatusLabel(installment.status)}</span>
+            <span className={styles.statusPill}>● {getStatusLabel(installment.status)}</span>
           ) : null}
         </div>
         <div className={styles.installmentBalance}>

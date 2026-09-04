@@ -105,6 +105,8 @@ export const loanContact: LoanContact = {
 export const studentProfile = {
   displayName: "นางสาวอนุชนก มีโชค",
   programName: "พยาบาลศาสตรบัณฑิต",
+  // This student has submitted a loan application before, so their saved education level is shown.
+  educationLevel: "ปริญญาตรี",
   yearLabel: "ปี 3",
   studentId: "661215001",
   initials: "MT",
@@ -123,6 +125,7 @@ export const activeLoan = {
 export const paymentBehavior = {
   onTimeStatusLabel: "ชำระตรงเวลา",
   onTimeInstallments: 12,
+  lateInstallments: 0,
   totalLoanRequests: 4,
   totalInstallments: 12,
 };
@@ -229,7 +232,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
   },
   {
     requestNumber: "SL-2568-0007",
-    statusLabel: "รอเจ้าหน้าที่ตรวจสอบเอกสาร",
+    statusLabel: "รอเจ้าหน้าที่ตรวจสอบ",
     statusType: "waitingDocumentReview",
     submittedAt: "ยื่นเมื่อ 12 ต.ค. 2569 08:50 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 2/2568",

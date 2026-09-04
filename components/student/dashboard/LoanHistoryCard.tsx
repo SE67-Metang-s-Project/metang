@@ -31,7 +31,7 @@ export default function LoanHistoryCard({ onOpenRequest, request }: LoanHistoryC
         <div className={styles.historyCardTitle}>
           <strong>คำร้อง {request.requestNumber}</strong>
           <span className={`${styles.historyStatus} ${styles[request.statusType]}`}>
-            {request.statusLabel}
+            ● {request.statusLabel}
           </span>
         </div>
         <p>{request.submittedAt}</p>

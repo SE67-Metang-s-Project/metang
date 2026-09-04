@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock3, Copy, Mail, MapPin, Phone } from "lucide-react";
+import { Clock3, Copy, Headphones, Mail, MapPin, Phone } from "lucide-react";
 import { loanContact } from "@/app/student/studentMockData";
 import styles from "@/app/student/student.module.css";
 
@@ -14,7 +14,12 @@ export default function ContactFooter() {
       aria-label="ช่องทางการติดต่อ"
       className={styles.contactFooter}
     >
-      <h2>ติดต่อเจ้าหน้าที่</h2>
+      <header className={styles.sectionCardHeading}>
+        <h2>
+          <Headphones aria-hidden="true" size={27} strokeWidth={2.2} />
+          ติดต่อเจ้าหน้าที่
+        </h2>
+      </header>
       <div className={styles.contactFooterGrid}>
         <div className={styles.contactFooterItem}>
           <Phone aria-hidden="true" />

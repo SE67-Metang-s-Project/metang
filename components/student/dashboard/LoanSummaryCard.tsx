@@ -11,11 +11,11 @@ type LoanSummaryCardProps = {
 };
 
 export default function LoanSummaryCard({ onOpenDetails, medicalBag }: LoanSummaryCardProps) {
-  const educationLevel = useStudentEducationLevel();
+  const savedEducationLevel = useStudentEducationLevel();
+  const educationLevel = savedEducationLevel ?? studentProfile.educationLevel;
   const paidAmount = Number(activeLoan.paidAmount.replace(/,/g, ""));
   const totalAmount = Number(activeLoan.totalAmount.replace(/,/g, ""));
-  const remainingPercent =
-    totalAmount > 0 ? Math.max(0, ((totalAmount - paidAmount) / totalAmount) * 100) : 0;
+  const transferPercent = totalAmount > 0 ? Math.min(100, (paidAmount / totalAmount) * 100) : 0;
 
   return (
     <section className={styles.loanSummary} aria-labelledby="loan-summary-title">
@@ -43,8 +43,8 @@ export default function LoanSummaryCard({ onOpenDetails, medicalBag }: LoanSumma
           <span>/ {activeLoan.totalAmount}</span>
         </div>
         <div className={styles.progressTrack}>
-          <span style={{ width: `${remainingPercent}%` }} />
-          <b style={{ left: `${remainingPercent}%` }} />
+          <span style={{ width: `${transferPercent}%` }} />
+          <b style={{ left: `${transferPercent}%` }} />
         </div>
         <p>
           ชำระงวดที่ {activeLoan.nextInstallmentNumber} ก่อนวันที่ {activeLoan.nextDueDate}

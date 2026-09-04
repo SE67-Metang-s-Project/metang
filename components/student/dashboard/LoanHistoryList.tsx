@@ -1,3 +1,4 @@
+import { History } from "lucide-react";
 import type { LoanRequestHistoryItem } from "@/app/student/studentMockData";
 import LoanHistoryCard from "./LoanHistoryCard";
 import styles from "@/app/student/student.module.css";
@@ -39,7 +40,12 @@ export default function LoanHistoryList({
       className={[styles.historySection, sectionClassName].filter(Boolean).join(" ")}
       aria-labelledby="history-title"
     >
-      <h2 id="history-title">ประวัติคำร้องกู้ยืม</h2>
+      <header className={styles.sectionCardHeading}>
+        <h2 id="history-title">
+          <History aria-hidden="true" size={27} strokeWidth={2.2} />
+          ประวัติคำร้องกู้ยืม
+        </h2>
+      </header>
       <div className={styles.historyList}>
         {visibleRequests.map((request, index) => (
           <LoanHistoryCard
