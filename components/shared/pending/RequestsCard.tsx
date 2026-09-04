@@ -211,7 +211,7 @@ const getRoleDisplay = (step: string) => {
 const checkCanTakeAction = (role: UserRole, status: LoanStatus) => {
   const s = String(status).toLowerCase();
   if (role === "advisor" && (s === "pending_advisor" || s.includes("รอพิจารณา"))) return true;
-  if (role === "admin" && (s === "pending_admin" || s.includes("รอเจ้าหน้าที่ตรวจสอบ")))
+  if ((role === "admin" || role === "super_admin") && (s === "pending_admin" || s.includes("รอเจ้าหน้าที่ตรวจสอบ")))
     return true;
   if (role === "executive" && (s === "pending_executive" || s.includes("รอผู้บริหารอนุมัติ")))
     return true;
