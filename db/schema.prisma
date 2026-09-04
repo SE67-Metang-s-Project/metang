@@ -161,10 +161,6 @@ model Payment {
   amount        Int          @db.Integer
   slipUrl       String?      @map("slip_url") @db.Text
   slipRef       String?      @unique(map: "payment_slip_ref_key") @map("slip_ref") @db.Text
-  slipOcrStatus String       @default("pending") @map("slip_ocr_status") @db.Text
-  ocrAmount     Int?         @map("ocr_amount") @db.Integer
-  ocrPaidAt     DateTime?    @map("ocr_paid_at") @db.Timestamptz(6)
-  slipOcrRaw    Json?        @map("slip_ocr_raw") @db.JsonB
   status        String       @default("pending_review") @db.Text
   confirmedBy   String?      @map("confirmed_by") @db.Uuid
   confirmedAt   DateTime?    @map("confirmed_at") @db.Timestamptz(6)

@@ -142,23 +142,19 @@ Table installment {
 }
 
 Table payment {
-  id              uuid [pk, default: `gen_random_uuid()`]
-  loan_id         uuid [ref: > loan_request.id, not null]
-  installment_id  bigint [ref: > installment.id]
-  amount          integer [not null]
-  slip_url        text
-  slip_ref        text [unique, note: 'bank transaction ref: same slip cannot be reused']
-  slip_ocr_status text [not null, default: 'pending', note: 'pending | verified | failed | manual']
-  ocr_amount      integer [note: 'whole baht; what OCR read — compare against `amount`, which the student typed']
-  ocr_paid_at     timestamptz [note: 'transfer date OCR read off the slip']
-  slip_ocr_raw    jsonb [note: 'everything else OCR returned']
-  status          text [not null, default: 'pending_review', note: 'pending_review | confirmed | rejected']
-  confirmed_by    uuid [ref: > app_user.id]
-  confirmed_at    timestamptz
-  paid_at         timestamptz
-  created_at      timestamptz [not null, default: `now()`]
+  id             uuid [pk, default: `gen_random_uuid()`]
+  loan_id        uuid [ref: > loan_request.id, not null]
+  installment_id bigint [ref: > installment.id]
+  amount         integer [not null]
+  slip_url       text
+  slip_ref       text [unique, note: 'bank transaction ref: same slip cannot be reused']
+  status         text [not null, default: 'pending_review', note: 'pending_review | confirmed | rejected']
+  confirmed_by   uuid [ref: > app_user.id]
+  confirmed_at   timestamptz
+  paid_at        timestamptz
+  created_at     timestamptz [not null, default: `now()`]
 
-  Note: 'NAT-31 slip evidence, NAT-32 OCR, NAT-33 confirmation status.'
+  Note: 'NAT-31 slip evidence and NAT-33 confirmation status.'
 }
 
 Table fund_transaction {
