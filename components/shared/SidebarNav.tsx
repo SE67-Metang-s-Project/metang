@@ -93,7 +93,6 @@ const ALL_MENU_ITEMS: MenuItem[] = [
   // ==========================================
   // เมนูเฉพาะ Super Admin
   // ==========================================
-  { title: "จัดการผู้ใช้งาน", icon: UserCog, href: "/superadmin/users", roles: ["superadmin"] },
   { title: "ตั้งค่าระบบ", icon: Settings, href: "/superadmin/settings", roles: ["superadmin"] },
 ];
 
