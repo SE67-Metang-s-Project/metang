@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { apiError, apiOk } from "@/lib/api-response";
 import { getExecutiveAccess } from "@/lib/loan-auth";
 import {
@@ -8,6 +8,8 @@ import {
 
 /** Financial summary and activity for the executive dashboard. */
 export async function GET(request: NextRequest) {
+  let targetYear: number | undefined;
+
   try {
     const access = await getExecutiveAccess();
     if (access.status === "unauthenticated") {
@@ -18,7 +20,6 @@ export async function GET(request: NextRequest) {
     }
 
     const rawYear = request.nextUrl.searchParams.get("year");
-    let targetYear: number | undefined;
 
     if (rawYear) {
       const parsed = parseInt(rawYear, 10);

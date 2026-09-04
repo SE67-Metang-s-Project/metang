@@ -5563,6 +5563,28 @@
         "responses": {}
       }
     },
+    "/executive/financial-overview": {
+      "get": {
+        "operationId": "get-executive-financial-overview",
+        "summary": "Financial summary and activity for the executive dashboard.",
+        "description": "",
+        "tags": [
+          "Executive"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "example"
+          }
+        ],
+        "responses": {}
+      }
+    },
     "/executive/loan-requests": {
       "get": {
         "operationId": "get-executive-loan-requests",
@@ -6524,6 +6546,9 @@
     },
     {
       "name": "Auth"
+    },
+    {
+      "name": "Executive"
     },
     {
       "name": "Executive loans"
