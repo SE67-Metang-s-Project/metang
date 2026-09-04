@@ -40,7 +40,7 @@ const ALL_MENU_ITEMS: MenuItem[] = [
     title: "หน้าหลัก",
     icon: LayoutDashboard,
     href: (role) => `/${role}`,
-    roles: ["student", "admin", "executive", "superadmin"],
+    roles: ["student",'advisor', "admin", "executive", "superadmin"],
   },
   { title: "ยื่นคำร้องขอกู้ยืม", icon: FileText, href: "/student/request", roles: ["student"] },
   { title: "ชำระเงินคืน (e-Slip)", icon: Wallet, href: "/student/payment", roles: ["student"] },

@@ -1,0 +1,227 @@
+"use client";
+
+import React, { useMemo, useState } from "react";
+import Link from "next/link";
+import SideNav from "@/components/shared/SidebarNav";
+import TopNav from "@/components/shared/TopNav";
+import WelcomeCard from "@/components/shared/WelcomeCard";
+import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
+import StudentListTable, { Student } from "@/components/shared/students/StudentListItem";
+import { mockAdvisorRequests } from "@/components/shared/mock-data/mockAdvisorRequests";
+import {
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Users,
+  ArrowRight,
+  GraduationCap,
+  FileText,
+  ChevronRight,
+  ShieldCheck,
+} from "lucide-react";
+
+interface AdvisorDashboardProps {
+  userName?: string;
+  userId?: string;
+  initialRequests?: ActionRequest[];
+}
+
+export default function AdvisorDashboard({
+  userName = "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+  userId = "T1002",
+  initialRequests,
+}: AdvisorDashboardProps) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [requests] = useState<ActionRequest[]>(initialRequests || mockAdvisorRequests);
+
+  // คำร้องรออาจารย์ที่ปรึกษาพิจารณา
+  const pendingRequests = useMemo(
+    () => requests.filter((req) => req.requestStatus === "pending_advisor"),
+    [requests],
+  );
+
+  // คำร้องที่อาจารย์พิจารณาให้ความเห็นชอบแล้ว และส่งต่อไปยังขั้นตอนถัดไป
+  const approvedRequests = useMemo(
+    () =>
+      requests.filter((req) =>
+        [
+          "pending_admin",
+          "pending_executive",
+          "pending_disbursement",
+          "disbursed",
+          "closed",
+        ].includes(req.requestStatus),
+      ),
+    [requests],
+  );
+
+  // คำร้องที่ถูกส่งกลับให้แก้ไข หรือปฏิเสธ หรือยกเลิก
+  const returnedRequests = useMemo(
+    () =>
+      requests.filter((req) => ["returned", "rejected", "cancelled"].includes(req.requestStatus)),
+    [requests],
+  );
+
+  // แปลงรายการคำร้องเป็นรายชื่อนักศึกษาในความดูแล (ไม่ซ้ำ)
+  const studentsList: Student[] = useMemo(() => {
+    const seen = new Set<string>();
+    const uniqueReqs: ActionRequest[] = [];
+
+    for (const req of requests) {
+      if (!seen.has(req.studentId)) {
+        seen.add(req.studentId);
+        uniqueReqs.push(req);
+      }
+    }
+
+    return uniqueReqs.map((req) => {
+      const isLate = (req.paymentBehavior?.lateInstallments ?? 0) > 0;
+      const paymentStatus = isLate ? "ชำระล่าช้า" : "ชำระตรงเวลา";
+      const paymentStatusType: "good" | "bad" = isLate ? "bad" : "good";
+      const formattedAmount = Number(req.amount).toLocaleString();
+      const mockBalance =
+        req.requestStatus === "disbursed" || req.requestStatus === "closed" ? formattedAmount : "0";
+
+      return {
+        initial: req.name.charAt(0),
+        name: req.name,
+        studentId: req.studentId,
+        major: req.major,
+        year: req.year,
+        requestStatus: req.requestStatus,
+        paymentStatus,
+        paymentStatusType,
+        totalBorrowed: formattedAmount,
+        balance: mockBalance,
+        delayDays: req.isOverdue ? String(req.waitDays ?? 0) : "0",
+      };
+    });
+  }, [requests]);
+
+  // คำนวณยอดเงินรวมของคำร้องที่รอพิจารณา
+  const totalPendingAmount = useMemo(
+    () => pendingRequests.reduce((sum, req) => sum + (Number(req.amount) || 0), 0),
+    [pendingRequests],
+  );
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-800">
+      {/* เมนูด้านข้าง (Sidebar) */}
+      <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="advisor" />
+
+      {/* เนื้อหาหลัก */}
+      <div className="flex-1 flex flex-col w-full min-h-screen lg:ml-64 transition-all duration-300">
+        <TopNav onOpenSidebar={() => setIsSidebarOpen(true)} userName={userName} userId={userId} />
+
+        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto space-y-8">
+          {/* การ์ดต้อนรับ */}
+          <WelcomeCard
+            name={userName}
+            description="อาจารย์ที่ปรึกษา คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่"
+          />
+
+          {/* ส่วนที่ 1: รายการคำร้องรอพิจารณา (ล่าสุด) */}
+          <section className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-bold text-[#1e293b]">คำร้องรอพิจารณา</h2>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  รายการคำร้องที่ต้องการความเห็นชอบจากอาจารย์ที่ปรึกษา
+                </p>
+              </div>
+              <Link
+                href="/advisor/pending"
+                className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+              >
+                <span>ดูคำร้องทั้งหมด</span>
+                <ChevronRight size={16} />
+              </Link>
+            </div>
+
+            {pendingRequests.length > 0 ? (
+              <RequestsCard requests={pendingRequests} userRole="advisor" />
+            ) : (
+              <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+                  <ShieldCheck size={24} />
+                </div>
+                <h3 className="font-semibold text-gray-800 text-base mb-1">
+                  ไม่มีคำร้องรอพิจารณาในขณะนี้
+                </h3>
+                <p className="text-sm text-gray-500 max-w-md mx-auto">
+                  ท่านได้พิจารณาคำร้องของนักศึกษาในความดูแลครบถ้วนแล้ว
+                  หากมีคำร้องใหม่จากนักศึกษาจะปรากฏในส่วนนี้ทันที
+                </p>
+              </div>
+            )}
+          </section>
+
+          {/* ส่วนที่ 2: นักศึกษาในความดูแลล่าสุด */}
+          <section className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-bold text-[#1e293b]">นักศึกษาในความดูแลล่าสุด</h2>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  รายชื่อและประวัติการกู้ยืมของนักศึกษาภายใต้การดูแล
+                </p>
+              </div>
+              <Link
+                href="/advisor/students"
+                className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+              >
+                <span>ดูรายชื่อทั้งหมด</span>
+                <ChevronRight size={16} />
+              </Link>
+            </div>
+
+            <StudentListTable students={studentsList.slice(0, 5)} />
+          </section>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+interface StatCardProps {
+  title: string;
+  value: number;
+  description: string;
+  icon: React.ReactNode;
+  highlight?: boolean;
+  badgeText?: string;
+}
+
+function StatCard({
+  title,
+  value,
+  description,
+  icon,
+  highlight = false,
+  badgeText,
+}: StatCardProps) {
+  return (
+    <div
+      className={`bg-white rounded-2xl border p-5 shadow-sm transition-all hover:shadow-md ${
+        highlight ? "border-orange-200 ring-1 ring-orange-100" : "border-gray-200"
+      }`}
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-sm text-gray-500 font-medium">{title}</p>
+            {badgeText && value > 0 && (
+              <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                {badgeText}
+              </span>
+            )}
+          </div>
+          <p className="text-3xl font-bold text-[#1e293b]">{value}</p>
+          <p className="text-xs text-gray-400 mt-2">{description}</p>
+        </div>
+        <div className="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+}

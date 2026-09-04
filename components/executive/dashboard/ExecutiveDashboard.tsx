@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import ExecutiveFinancialOverview from "./ExecutiveFinancialOverview";
+import ExecutiveFinancialOverview from "@/components/shared/financial/FinancialOverview";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
 import WelcomeCard from "@/components/shared/WelcomeCard";
