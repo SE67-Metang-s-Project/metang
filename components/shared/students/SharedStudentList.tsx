@@ -1,25 +1,24 @@
+// components/shared/students/SharedStudentList.tsx
 "use client";
 
 import React, { useState } from "react";
-import SideNav from "@/components/shared/SidebarNav";
-import TopNav from "@/components/shared/TopNav";
+import StudentFilters from "@/components/shared/filter/StudentFilters";
+import StudentListTable, { Student } from "./StudentListItem"; // ตรวจสอบ path ให้ตรงกับไฟล์ของคุณ
 
-import StudentFilters from "../../shared/filter/StudentFilters";
-import StudentListTable, { Student } from "./StudentListItem";
-
-// นำเข้าข้อมูล Mock Data
-import { mockAdvisorRequests } from "@/components/shared/mock-data/mockAdvisorRequests";
-
-// ตั้งค่า Tabs
 const filterTabs = ["ทั้งหมด", "มีคำร้องดำเนินการ", "มีหนี้คงเหลือ", "ชำระครบ", "เคยชำระล่าช้า"];
 
-export default function StudentList() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+interface SharedStudentListProps {
+  // รับข้อมูลคำร้อง/นักศึกษาเข้ามาจากหน้า Page
+  rawRequests: any[];
+}
+
+export default function SharedStudentList({ rawRequests }: SharedStudentListProps) {
   const [activeTab, setActiveTab] = useState("ทั้งหมด");
   const [searchQuery, setSearchQuery] = useState("");
   const [degreeFilter, setDegreeFilter] = useState("ทั้งหมด");
 
-  const mappedStudents: Student[] = mockAdvisorRequests.map((req) => {
+  // แปลงข้อมูลให้อยู่ในฟอร์แมตที่ StudentListTable ต้องการ
+  const mappedStudents: Student[] = rawRequests.map((req) => {
     const isLate = (req.paymentBehavior?.lateInstallments ?? 0) > 0;
     const paymentStatus = isLate ? "ชำระล่าช้า" : "ชำระตรงเวลา";
     const paymentStatusType = isLate ? "bad" : "good";
@@ -36,7 +35,7 @@ export default function StudentList() {
       studentId: req.studentId,
       major: req.major,
       year: req.year,
-      requestStatus: req.requestStatus, // ปล่อยให้แสดงเป็น string status ไปก่อน (ถ้าอยากให้เป็นป้ายสี ต้องแปลงกลับเป็นไทยแบบใน RequestCard)
+      requestStatus: req.requestStatus,
       paymentStatus: paymentStatus,
       paymentStatusType: paymentStatusType,
       totalBorrowed: formattedAmount,
@@ -45,6 +44,7 @@ export default function StudentList() {
     };
   });
 
+  // กรองข้อมูล
   const filteredStudents = mappedStudents.filter((student) => {
     // 1. กรองด้วยช่องค้นหา
     const matchesSearch =
@@ -85,39 +85,20 @@ export default function StudentList() {
   });
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-800">
-      <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="advisor" />
+    <div className="space-y-6">
+      <StudentFilters
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        filterTabs={filterTabs}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        degreeFilter={degreeFilter}
+        setDegreeFilter={setDegreeFilter}
+      />
 
-      <main className="flex-1 flex flex-col w-full min-h-screen lg:ml-64 transition-all duration-300">
-        <TopNav
-          onOpenSidebar={() => setIsSidebarOpen(true)}
-          userName="ผศ.ดร. สุนีย์ วงค์ประเสริฐ"
-          userId="T1002"
-        />
-
-        <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto space-y-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">
-              นักศึกษาในความดูแล
-            </h1>
-            <p className="text-[13px] text-gray-500">รายชื่อนักศึกษาที่อยู่ภายใต้การดูแลของท่าน</p>
-          </div>
-
-          <StudentFilters
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            filterTabs={filterTabs}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            degreeFilter={degreeFilter}
-            setDegreeFilter={setDegreeFilter}
-          />
-
-          <div className="mt-2">
-            <StudentListTable students={filteredStudents} />
-          </div>
-        </div>
-      </main>
+      <div className="mt-2">
+        <StudentListTable students={filteredStudents} />
+      </div>
     </div>
   );
 }

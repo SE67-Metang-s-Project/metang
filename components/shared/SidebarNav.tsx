@@ -52,7 +52,7 @@ const ALL_MENU_ITEMS: MenuItem[] = [
   {
     title: "คำร้องรอพิจารณา (อ.ที่ปรึกษา)",
     icon: FileCheck,
-    href: "/advisor/pending",
+    href: (role) => (role === "executive" ? "/executive/pending-advisor" : "/advisor/pending"),
     roles: ["advisor", "executive"],
   },
   {
