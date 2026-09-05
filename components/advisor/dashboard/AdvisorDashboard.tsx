@@ -124,11 +124,15 @@ export default function AdvisorDashboard({
           <section className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
               <div>
-                <h2 className="text-lg font-bold text-[#1e293b]">คำร้องรอพิจารณา</h2>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  รายการคำร้องที่ต้องการความเห็นชอบจากอาจารย์ที่ปรึกษา
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                  คำร้องรอพิจารณา (ในฐานะอาจารย์ที่ปรึกษา)
+                </h2>
+                <p className="text-gray-500 mt-1 text-sm">
+                  รายการคำขอขอกู้ยืมจากนักศึกษาที่อยู่ในความดูแลของท่าน
+                  ซึ่งรอการพิจารณาและอนุมัติจากอาจารย์ที่ปรึกษา
                 </p>
               </div>
+
               <Link
                 href="/advisor/pending"
                 className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
@@ -160,7 +164,7 @@ export default function AdvisorDashboard({
           <section className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
               <div>
-                <h2 className="text-lg font-bold text-[#1e293b]">นักศึกษาในความดูแลล่าสุด</h2>
+                <h2 className="text-lg font-bold text-[#1e293b]">นักศึกษาในความดูแล</h2>
                 <p className="text-sm text-gray-500 mt-0.5">
                   รายชื่อและประวัติการกู้ยืมของนักศึกษาภายใต้การดูแล
                 </p>

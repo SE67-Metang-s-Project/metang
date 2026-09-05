@@ -6,9 +6,9 @@ import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
 import WelcomeCard from "@/components/shared/WelcomeCard";
 
-import AdminRequestsList from "@/components/admin/pending/AdminRequestsList";
-import DisburseDebtCard from "@/components/admin/disburse-debt/DisburseDebtCard";
-import VerifySlipCard from "@/components/admin/verify-slip/VerifySlipCard";
+import SharedRequestsList from "@/components/shared/pending/SharedRequestsList";
+import DisburseDebtCard from "@/components/shared/disburse-debt/DisburseDebtCard";
+import VerifySlipCard from "@/components/shared/verify-slip/VerifySlipCard";
 
 import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
 
@@ -21,18 +21,14 @@ export default function AdminDashboard() {
   // 1. คำร้องที่รอ Admin พิจารณา
   // =====================================================
   const pendingRequests = useMemo(() => {
-    return requests.filter(
-      (req) => req.requestStatus === "pending_admin"
-    );
+    return requests.filter((req) => req.requestStatus === "pending_admin");
   }, [requests]);
 
   // =====================================================
   // 2. รายการที่ผู้บริหารอนุมัติแล้ว และรอ Admin โอนเงิน
   // =====================================================
   const disbursementRequests = useMemo(() => {
-    return requests.filter(
-      (req) => req.requestStatus === "pending_disbursement"
-    );
+    return requests.filter((req) => req.requestStatus === "pending_disbursement");
   }, [requests]);
 
   // =====================================================
@@ -42,30 +38,22 @@ export default function AdminDashboard() {
     return requests.filter((req) => {
       return (
         Array.isArray(req.paymentHistory) &&
-        req.paymentHistory.some(
-          (payment: any) => payment.status === "pending"
-        )
+        req.paymentHistory.some((payment: any) => payment.status === "pending")
       );
     });
   }, [requests]);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-800">
-
       {/* =====================================================
           Sidebar
       ===================================================== */}
-      <SideNav
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        role="admin"
-      />
+      <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="admin" />
 
       {/* =====================================================
           Main Content
       ===================================================== */}
       <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64">
-
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
           userName="แอดมินคนหล่อ"
@@ -73,20 +61,15 @@ export default function AdminDashboard() {
         />
 
         <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
-
           {/* =====================================================
               Welcome
           ===================================================== */}
-          <WelcomeCard
-            name="แอดมินคนหล่อ"
-            description="admin"
-          />
+          <WelcomeCard name="แอดมินคนหล่อ" description="admin" />
 
           {/* =====================================================
               1. Pending Review
           ===================================================== */}
           <section className="mb-10">
-
             <SectionHeader
               title="คำร้องรอพิจารณา"
               description="รายการคำร้องที่ต้องตรวจสอบและดำเนินการ"
@@ -94,21 +77,14 @@ export default function AdminDashboard() {
             />
 
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-
-              <AdminRequestsList
-                hideFilters
-                dashboardMode="pending"
-              />
-
+              <SharedRequestsList dashboardMode="pending" hideFilters userRole="admin" />
             </div>
-
           </section>
 
           {/* =====================================================
               2. Disbursement
           ===================================================== */}
           <section className="mb-10">
-
             <SectionHeader
               title="รายการเบิกจ่าย"
               description="รายการที่ผ่านการอนุมัติจากผู้บริหารและรอการโอนเงิน"
@@ -116,9 +92,7 @@ export default function AdminDashboard() {
             />
 
             {disbursementRequests.length > 0 ? (
-              <DisburseDebtCard
-                requests={disbursementRequests as any}
-              />
+              <DisburseDebtCard requests={disbursementRequests as any} />
             ) : (
               <EmptyState
                 icon="💸"
@@ -126,14 +100,12 @@ export default function AdminDashboard() {
                 description="ขณะนี้ยังไม่มีรายการที่รอการเบิกจ่าย"
               />
             )}
-
           </section>
 
           {/* =====================================================
               3. Verify Slip
           ===================================================== */}
           <section className="mb-10">
-
             <SectionHeader
               title="ตรวจสอบสลิปชำระเงิน"
               description="หลักฐานการโอนเงินที่นักศึกษาแนบเข้ามาและรอตรวจสอบ"
@@ -141,10 +113,7 @@ export default function AdminDashboard() {
             />
 
             {verifySlipRequests.length > 0 ? (
-              <VerifySlipCard
-                requests={verifySlipRequests as any}
-                userRole="admin"
-              />
+              <VerifySlipCard requests={verifySlipRequests as any} userRole="admin" />
             ) : (
               <EmptyState
                 icon="🧾"
@@ -152,15 +121,12 @@ export default function AdminDashboard() {
                 description="ขณะนี้ยังไม่มีหลักฐานการโอนเงินที่รอตรวจสอบ"
               />
             )}
-
           </section>
-
         </main>
       </div>
     </div>
   );
 }
-
 
 /* =====================================================
    Dashboard Stat Card
@@ -179,32 +145,22 @@ function DashboardStatCard({
 }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
-
       <div className="flex items-start justify-between">
-
         <div>
-          <p className="text-sm text-gray-500 mb-2">
-            {title}
-          </p>
+          <p className="text-sm text-gray-500 mb-2">{title}</p>
 
-          <p className="text-3xl font-bold text-[#1e293b]">
-            {value}
-          </p>
+          <p className="text-3xl font-bold text-[#1e293b]">{value}</p>
 
-          <p className="text-xs text-gray-400 mt-2">
-            {description}
-          </p>
+          <p className="text-xs text-gray-400 mt-2">{description}</p>
         </div>
 
         <div className="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center text-xl">
           {icon}
         </div>
-
       </div>
     </div>
   );
 }
-
 
 /* =====================================================
    Section Header
@@ -221,15 +177,10 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-end justify-between mb-4">
-
       <div>
-        <h2 className="text-lg font-bold text-[#1e293b]">
-          {title}
-        </h2>
+        <h2 className="text-lg font-bold text-[#1e293b]">{title}</h2>
 
-        <p className="text-sm text-gray-500 mt-1">
-          {description}
-        </p>
+        <p className="text-sm text-gray-500 mt-1">{description}</p>
       </div>
 
       <a
@@ -238,11 +189,9 @@ function SectionHeader({
       >
         ดูทั้งหมด →
       </a>
-
     </div>
   );
 }
-
 
 /* =====================================================
    Empty State
@@ -259,19 +208,11 @@ function EmptyState({
 }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 text-center">
+      <div className="text-4xl mb-3">{icon}</div>
 
-      <div className="text-4xl mb-3">
-        {icon}
-      </div>
+      <h3 className="text-base font-semibold text-gray-700">{title}</h3>
 
-      <h3 className="text-base font-semibold text-gray-700">
-        {title}
-      </h3>
-
-      <p className="text-sm text-gray-400 mt-1">
-        {description}
-      </p>
-
+      <p className="text-sm text-gray-400 mt-1">{description}</p>
     </div>
   );
 }

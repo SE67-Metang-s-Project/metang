@@ -36,6 +36,20 @@ export default function SharedRequestsList({
     }
   };
 
+  const getPendingLabel = (role: UserRole) => {
+    switch (role) {
+      case "advisor":
+        return "รอพิจารณา";
+      case "executive":
+        return "รออนุมัติ";
+      case "super_admin":
+        return "รอตรวจสอบ (Super Admin)";
+      case "admin":
+      default:
+        return "รอตรวจสอบ";
+    }
+  };
+
   const targetPendingStatus = getTargetPendingStatus(userRole);
   const pendingCount = requests.filter((req) => req.requestStatus === targetPendingStatus).length;
 
@@ -92,9 +106,7 @@ export default function SharedRequestsList({
             onSearchChange={setSearchQuery}
             pendingCount={pendingCount}
             // เปลี่ยน Label ให้ตรงกับ Role แบบอัตโนมัติ
-            pendingLabel={
-              userRole === "super_admin" ? "รอตรวจสอบ (Super Admin)" : "รอตรวจสอบ (Admin)"
-            }
+            pendingLabel={getPendingLabel(userRole)}
           />
         </div>
       )}

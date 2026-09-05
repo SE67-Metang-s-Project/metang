@@ -499,26 +499,13 @@ export default function RequestsCard({
                   <td className="min-w-[130px] py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
                     {req.id}
                   </td>
+                  {/* เปลี่ยนแปลงการแสดงผลในส่วนของข้อมูลนักศึกษา */}
                   <td className="py-4 px-4 border-r border-gray-200">
-                    <div
-                      className={
-                        isExecutiveTable
-                          ? "truncate font-normal text-gray-900"
-                          : "font-bold text-gray-900 max-[1201px]:line-clamp-1"
-                      }
-                    >
-                      {isExecutiveTable ? `${req.name} • ${req.studentId}` : req.name}
+                    <div className="font-bold text-gray-900 max-[1201px]:line-clamp-1">
+                      {req.name}
                     </div>
-                    <div
-                      className={`mt-0.5 ${
-                        isExecutiveTable
-                          ? "truncate text-[14px]"
-                          : "text-[13px] max-[1201px]:truncate"
-                      } text-gray-500`}
-                    >
-                      {isExecutiveTable
-                        ? `${req.program ?? "พยาบาลศาสตรบัณฑิต"} • ปริญญาตรี • ปี ${req.year}`
-                        : `${req.studentId} • ${req.major} • ปี ${req.year}`}
+                    <div className="mt-0.5 text-[13px] text-gray-500 max-[1201px]:truncate">
+                      {req.studentId} • {req.major} • ปี {req.year}
                     </div>
                   </td>
                   <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
