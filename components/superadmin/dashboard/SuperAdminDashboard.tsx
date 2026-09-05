@@ -25,21 +25,34 @@ import type {
 } from "@/lib/financial-overview-types";
 import { getMockExecutiveFinancialOverview } from "@/lib/mock-data/executive-financial-overview";
 import { Users, Wallet } from "lucide-react";
+import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
+import type { SuperAdminUser } from "@/lib/loan-api-types";
 
 type SuperAdminDashboardProps = {
   userName?: string;
   userId?: string;
+  currentUserId?: string;
   financialOverview?: ExecutiveFinancialOverviewData;
+  initialRequests?: ActionRequest[];
+  initialUsers?: SuperAdminUser[];
 };
 
 export default function SuperAdminDashboard({
   userName = "Super Admin สูงสุด",
   userId = "SA-001",
+  currentUserId,
   financialOverview,
+  initialRequests,
+  initialUsers,
 }: SuperAdminDashboardProps = {}) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const [requests] = useState(mockAdminRequests);
+  const requests = useMemo(() => {
+    if (initialRequests && initialRequests.length > 0) {
+      return initialRequests;
+    }
+    return mockAdminRequests as unknown as ActionRequest[];
+  }, [initialRequests]);
 
   // Fallback mock financial data if not passed from server
   const fallbackOverview = useMemo(() => {
@@ -70,7 +83,7 @@ export default function SuperAdminDashboard({
       return (
         Array.isArray(req.paymentHistory) &&
         req.paymentHistory.some(
-          (payment: PaymentEvidence) => payment.status === "pending"
+          (payment: { status?: string }) => payment.status === "pending"
         )
       );
     });
@@ -126,7 +139,7 @@ export default function SuperAdminDashboard({
             />
 
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <SuperAdminRequestsList hideFilters dashboardMode="pending" />
+              <SuperAdminRequestsList hideFilters dashboardMode="pending" initialRequests={requests} />
             </div>
           </section>
 
@@ -219,7 +232,9 @@ export default function SuperAdminDashboard({
                 </button>
               </div>
 
-              {settingsSubTab === "users" && <UserRolesTab />}
+              {settingsSubTab === "users" && (
+                <UserRolesTab initialUsers={initialUsers} currentUserId={currentUserId} />
+              )}
               {settingsSubTab === "budget" && <SystemBudgetTab />}
             </div>
           </section>
