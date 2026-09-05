@@ -7,14 +7,28 @@ import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminReques
 
 interface SharedVerifySlipListProps {
   userRole: "admin" | "super_admin";
+  initialRequests?: any[];
 }
 
-export default function SharedVerifySlipList({ userRole }: SharedVerifySlipListProps) {
+export default function SharedVerifySlipList({
+  userRole,
+  initialRequests,
+}: SharedVerifySlipListProps) {
   const [searchQuery, setSearchQuery] = useState("");
+
+  const rawRequests = useMemo(() => {
+    if (initialRequests && initialRequests.length > 0) {
+      const withSlips = initialRequests.filter(
+        (r) => r.paymentHistory && r.paymentHistory.length > 0,
+      );
+      return withSlips.length > 0 ? withSlips : mockAdminRequests;
+    }
+    return mockAdminRequests;
+  }, [initialRequests]);
 
   // กรองข้อมูล: เอาเฉพาะคำร้องที่มี paymentHistory (มีการแนบสลิป) มาแสดง
   const filteredRequests = useMemo(() => {
-    return mockAdminRequests.filter((req) => {
+    return rawRequests.filter((req: any) => {
       // 1. เช็คว่ามีประวัติสลิปหรือไม่ ถ้าไม่มีให้ข้ามไป
       const hasSlip = req.paymentHistory && req.paymentHistory.length > 0;
       if (!hasSlip) return false;
@@ -22,12 +36,15 @@ export default function SharedVerifySlipList({ userRole }: SharedVerifySlipListP
       // 2. ค้นหาจากชื่อหรือรหัสนักศึกษา (ถ้ามีการพิมพ์ค้นหา)
       if (searchQuery) {
         const lowerQ = searchQuery.toLowerCase();
-        return req.name.toLowerCase().includes(lowerQ) || req.studentId.includes(lowerQ);
+        return (
+          req.name?.toLowerCase().includes(lowerQ) ||
+          req.studentId?.includes(lowerQ)
+        );
       }
 
       return true;
     });
-  }, [searchQuery]);
+  }, [rawRequests, searchQuery]);
 
   return (
     <div className="w-full">

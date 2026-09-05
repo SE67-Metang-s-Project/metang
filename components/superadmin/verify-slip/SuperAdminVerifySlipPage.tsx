@@ -7,7 +7,17 @@ import TopNav from "@/components/shared/TopNav";
 // เรียกใช้ Shared Component
 import SharedVerifySlipList from "@/components/shared/verify-slip/SharedVerifySlipList";
 
-export default function SuperAdminVerifySlipPage() {
+interface SuperAdminVerifySlipPageProps {
+  userName?: string;
+  userId?: string;
+  initialRequests?: any[];
+}
+
+export default function SuperAdminVerifySlipPage({
+  userName = "SuperAdmin",
+  userId = "SA-001",
+  initialRequests,
+}: SuperAdminVerifySlipPageProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
@@ -17,8 +27,8 @@ export default function SuperAdminVerifySlipPage() {
       <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64 transition-all duration-300">
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
-          userName="Super Admin สูงสุด"
-          userId="SA-001"
+          userName={userName}
+          userId={userId}
         />
 
         <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
@@ -32,7 +42,7 @@ export default function SuperAdminVerifySlipPage() {
           </div>
 
           {/* ส่ง Role เข้าไป */}
-          <SharedVerifySlipList userRole="super_admin" />
+          <SharedVerifySlipList userRole="super_admin" initialRequests={initialRequests} />
         </main>
       </div>
     </div>
