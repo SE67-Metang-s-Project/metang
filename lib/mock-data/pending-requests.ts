@@ -1,4 +1,4 @@
-import type { ActionRequest } from "@/components/advisor/pending/RequestsCard";
+import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
 export const mockPendingRequests: ActionRequest[] = [
   {
