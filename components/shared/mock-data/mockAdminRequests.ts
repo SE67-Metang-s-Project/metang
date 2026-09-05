@@ -1,176 +1,131 @@
-import { ActionRequest } from "@/components/admin/verify-slip/VerifySlipCard";
+// เปลี่ยน Path ให้ชี้ไปที่โฟลเดอร์ shared ที่เราเพิ่งย้ายไป
+import { ActionRequest } from "@/components/shared/verify-slip/VerifySlipCard";
 
+// ใส่ Type : ActionRequest[] เพื่อให้ TypeScript ตรวจสอบความถูกต้องของข้อมูล
 export const mockAdminRequests: ActionRequest[] = [
+  // ==========================================
+  // สถานะ: รอตรวจสอบ (pending_admin)
+  // ==========================================
   {
-    id: "REQ-2024-0012",
-    name: "สมชาย ใจดี",
-    studentId: "64010123",
+    id: "REQ-2609-101",
+    name: "นายใจดี มีสุข",
+    studentId: "650610999",
+    major: "พยาบาลศาสตร์",
+    program: "พยาบาลศาสตรบัณฑิต",
+    year: "3",
+    phone: "081-111-2222",
+    objective: "เพื่อเป็นค่าใช้จ่ายในการซื้ออุปกรณ์การเรียนและหนังสือ",
+    amount: "4500",
+    term: "3",
+    submitDate: "5 ก.ย. 2569",
+    requestStatus: "pending_admin",
+    history: [
+      { action: "ยื่นคำร้อง", date: "5 ก.ย. 2569 08:00", actor: "ใจดี มีสุข" },
+      { action: "อนุมัติโดยอาจารย์ที่ปรึกษา", date: "6 ก.ย. 2569 10:00", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" }
+    ]
+  },
+
+  // ==========================================
+  // สถานะ: รอโอนเงิน (pending_disbursement)
+  // ==========================================
+  {
+    id: "REQ-2609-001",
+    name: "นางสาวสมหญิง รักเรียน",
+    studentId: "650610012",
     major: "พยาบาลศาสตร์",
     program: "พยาบาลศาสตรบัณฑิต",
     year: "3",
     phone: "081-234-5678",
-    objective: "ใช้จ่ายค่าหอพักและค่าครองชีพเนื่องจากผู้ปกครองขาดรายได้กะทันหัน",
+    objective: "เพื่อเป็นค่าใช้จ่ายในการทำวิจัยและฝึกปฏิบัติงานบนหอผู้ป่วย",
     amount: "5000",
-    term: "5",
-    expectedReturnDate: "พ.ค. 2568",
-    requestStatus: "pending_admin",
-    submitDate: "12 ต.ค. 2567",
-    waitDays: 2,
-    isOverdue: false,
+    term: "3",
+    submitDate: "1 ก.ย. 2569",
+    requestStatus: "pending_disbursement",
     bankDetails: {
       bankName: "ธนาคารไทยพาณิชย์",
       accountNumber: "123-4-56789-0",
-      accountName: "นาย สมชาย ใจดี",
+      accountName: "นางสาวสมหญิง รักเรียน"
     },
-    paymentBehavior: { totalLoanRequests: 1, onTimeInstallments: 5, lateInstallments: 0 },
-    approvals: [
-      {
-        step: "advisor",
-        actorName: "รศ.ดร. มานี มีสุข",
-        comment: "นักศึกษามีความจำเป็นจริง เห็นควรให้ความช่วยเหลือเบื้องต้น",
-        decision: "approved",
-        date: "14 ต.ค. 2567"
-      }
-    ],
     history: [
-      { action: "นักศึกษายื่นคำร้อง", date: "12 ต.ค. 2567 09:00", actor: "สมชาย ใจดี" },
-      { action: "อ.ที่ปรึกษา อนุมัติ", date: "14 ต.ค. 2567 10:30", actor: "รศ.ดร. มานี มีสุข" }
-    ],
-    // ----------------------------------------------------
-    // [เพิ่มใหม่] ประวัติการแนบสลิป (มี pending จะโชว์ปุ่มสีส้ม)
-    // ----------------------------------------------------
-    paymentHistory: [
-      {
-        id: "EVID-001",
-        installmentNumber: 1,
-        amount: "1000",
-        paidAt: "15 ต.ค. 2567 10:00 น.",
-        status: "pending", // รอตรวจสอบ
-        slipImageUrl: "https://images.unsplash.com/photo-1542044801-44cd4e20959f?w=400&q=80",
-      }
+      { action: "ยื่นคำร้อง", date: "1 ก.ย. 2569 09:00", actor: "สมหญิง รักเรียน" },
+      { action: "อนุมัติโดยอาจารย์ที่ปรึกษา", date: "2 ก.ย. 2569 10:30", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" },
+      { action: "เจ้าหน้าที่ตรวจสอบผ่าน", date: "3 ก.ย. 2569 14:00", actor: "เจ้าหน้าที่ สมศรี" },
+      { action: "ผู้บริหารอนุมัติวงเงิน", date: "4 ก.ย. 2569 11:15", actor: "รศ.ดร. ประเสริฐ กิตติคุณ" }
     ]
   },
   {
-    id: "REQ-2024-0020",
-    name: "ดวงเดือน ดารา",
-    studentId: "63050999",
-    major: "วิศวกรรมซอฟต์แวร์",
-    program: "พยาบาลศาสตรบัณฑิต (หลักสูตรนานาชาติ)",
-    year: "4",
-    phone: "089-123-4567",
-    objective: "ชำระค่าธรรมเนียมการศึกษา",
-    amount: "15000",
-    term: "6",
-    expectedReturnDate: "มิ.ย. 2568",
-    requestStatus: "pending_executive", 
-    submitDate: "05 ต.ค. 2567",
-    waitDays: 5,
-    isOverdue: false,
-    bankDetails: {
-      bankName: "ธนาคารกรุงเทพ",
-      accountNumber: "987-6-54321-0",
-      accountName: "นางสาว ดวงเดือน ดารา",
-    },
-    paymentBehavior: { totalLoanRequests: 0, onTimeInstallments: 0, lateInstallments: 0 },
-    approvals: [
-      {
-        step: "advisor",
-        actorName: "อ.ณัฐพล โค้ดดิ้ง",
-        comment: "เอกสารครบถ้วน อนุมัติ",
-        decision: "approved",
-        date: "06 ต.ค. 2567"
-      },
-      {
-        step: "admin",
-        actorName: "สมปอง (เจ้าหน้าที่)",
-        comment: "เอกสารทางการเงินและประวัติการชำระถูกต้องเรียบร้อย",
-        decision: "approved",
-        date: "07 ต.ค. 2567"
-      }
-    ],
-    history: [
-      { action: "นักศึกษายื่นคำร้อง", date: "05 ต.ค. 2567 09:00", actor: "ดวงเดือน ดารา" },
-      { action: "อ.ที่ปรึกษา อนุมัติ", date: "06 ต.ค. 2567 10:30", actor: "อ.ณัฐพล โค้ดดิ้ง" },
-      { action: "เจ้าหน้าที่ ตรวจสอบผ่าน", date: "07 ต.ค. 2567 14:00", actor: "Admin สมปอง" }
-    ],
-    // ----------------------------------------------------
-    // [เพิ่มใหม่] จำลองว่ามีสลิปที่ตรวจผ่านแล้ว 1 ใบ และกำลังรอตรวจอีก 1 ใบ
-    // ----------------------------------------------------
-    paymentHistory: [
-      {
-        id: "EVID-003",
-        installmentNumber: 2,
-        amount: "2500",
-        paidAt: "05 พ.ย. 2567 14:30 น.",
-        status: "pending", // รอตรวจสอบ
-        slipImageUrl: "https://images.unsplash.com/photo-1607944024060-0450380effd5?w=400&q=80",
-      },
-      {
-        id: "EVID-002",
-        installmentNumber: 1,
-        amount: "2500",
-        paidAt: "05 ต.ค. 2567 09:15 น.",
-        verifiedAt: "06 ต.ค. 2567 10:00 น.",
-        status: "verified", // ตรวจผ่านแล้ว
-        slipImageUrl: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80",
-      }
-    ]
-  },
-  {
-    id: "REQ-2024-0022",
-    name: "เอกชัย ถ่ายเอกสาร",
-    studentId: "65010222",
+    id: "REQ-2609-002",
+    name: "นายมานะ อดทน",
+    studentId: "660610055",
     major: "พยาบาลศาสตร์",
     program: "พยาบาลศาสตรบัณฑิต",
     year: "2",
-    phone: "084-555-6666",
-    objective: "ชำระค่าลงทะเบียนเรียน",
-    amount: "10000",
-    term: "4",
-    expectedReturnDate: "มี.ค. 2568",
-    requestStatus: "returned",
-    submitDate: "13 ต.ค. 2567",
-    waitDays: 0,
-    isOverdue: false,
+    phone: "089-876-5432",
+    objective: "เป็นค่าใช้จ่ายฉุกเฉินสำหรับค่าหอพักและอุปกรณ์การแพทย์เบื้องต้น",
+    amount: "3000",
+    term: "2",
+    submitDate: "28 ส.ค. 2569",
+    requestStatus: "pending_disbursement",
     bankDetails: {
-      bankName: "ธนาคารไทยพาณิชย์",
-      accountNumber: "111-5-55555-5",
-      accountName: "นาย เอกชัย ถ่ายเอกสาร",
+      bankName: "ธนาคารกสิกรไทย",
+      accountNumber: "098-7-65432-1",
+      accountName: "นายมานะ อดทน"
     },
-    paymentBehavior: { totalLoanRequests: 0, onTimeInstallments: 0, lateInstallments: 0 },
-    approvals: [
-      {
-        step: "advisor",
-        actorName: "ผศ.ดร. สมศรี ดีใจ",
-        comment: "เห็นควรอนุมัติ",
-        decision: "approved",
-        date: "14 ต.ค. 2567"
-      },
-      {
-        step: "admin",
-        actorName: "สมปอง (เจ้าหน้าที่)",
-        comment: "ไฟล์เอกสารใบแจ้งหนี้เบลอมาก อ่านไม่เห็นตัวเลข กรุณาแนบใหม่",
-        decision: "returned",
-        date: "15 ต.ค. 2567"
-      }
-    ],
     history: [
-      { action: "นักศึกษายื่นคำร้อง", date: "13 ต.ค. 2567 11:20", actor: "เอกชัย ถ่ายเอกสาร" },
-      { action: "อ.ที่ปรึกษา อนุมัติ", date: "14 ต.ค. 2567 15:00", actor: "ผศ.ดร. สมศรี ดีใจ" },
-      { action: "เจ้าหน้าที่ ส่งกลับแก้ไข", date: "15 ต.ค. 2567 09:30", actor: "Admin สมปอง" }
+      { action: "ยื่นคำร้อง", date: "28 ส.ค. 2569 13:45", actor: "มานะ อดทน" },
+      { action: "อนุมัติโดยอาจารย์ที่ปรึกษา", date: "29 ส.ค. 2569 09:30", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" },
+      { action: "เจ้าหน้าที่ตรวจสอบผ่าน", date: "30 ส.ค. 2569 10:00", actor: "เจ้าหน้าที่ สมศรี" },
+      { action: "ผู้บริหารอนุมัติวงเงิน", date: "31 ส.ค. 2569 15:20", actor: "รศ.ดร. ประเสริฐ กิตติคุณ" }
+    ]
+  },
+
+  // ==========================================
+  // สถานะ: โอนเงินแล้ว (disbursed)
+  // ==========================================
+  {
+    id: "REQ-2608-114",
+    name: "นางสาวใจดี เรียนเก่ง",
+    studentId: "640610111",
+    major: "พยาบาลศาสตร์",
+    program: "พยาบาลศาสตรบัณฑิต",
+    year: "4",
+    phone: "082-345-6789",
+    objective: "จ่ายค่าหอพักและค่าครองชีพระหว่างรอทุนการศึกษาของมหาวิทยาลัย",
+    amount: "10000",
+    term: "6",
+    submitDate: "15 ส.ค. 2569",
+    requestStatus: "disbursed",
+    bankDetails: {
+      bankName: "ธนาคารกรุงไทย",
+      accountNumber: "111-2-33344-5",
+      accountName: "นางสาวใจดี เรียนเก่ง"
+    },
+    history: [
+      { action: "ยื่นคำร้อง", date: "15 ส.ค. 2569 08:30", actor: "ใจดี เรียนเก่ง" },
+      { action: "อนุมัติโดยอาจารย์ที่ปรึกษา", date: "16 ส.ค. 2569 11:00", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" },
+      { action: "เจ้าหน้าที่ตรวจสอบผ่าน", date: "17 ส.ค. 2569 14:20", actor: "เจ้าหน้าที่ สมศรี" },
+      { action: "ผู้บริหารอนุมัติวงเงิน", date: "18 ส.ค. 2569 10:15", actor: "รศ.ดร. ประเสริฐ กิตติคุณ" },
+      { action: "เบิกจ่ายเงินสำเร็จ", date: "19 ส.ค. 2569 13:45", actor: "เจ้าหน้าที่ สมศรี" }
     ],
-    // ----------------------------------------------------
-    // [เพิ่มใหม่] จำลองการแนบสลิปแล้วโดนปฏิเสธ (ไม่มีปุ่มสีส้มที่ตาราง)
-    // ----------------------------------------------------
+    // เพิ่มประวัติการชำระเงินเข้ามา เพื่อให้หน้า "ตรวจสอบสลิป" ใช้งานได้ด้วย
     paymentHistory: [
       {
-        id: "EVID-004",
+        id: "PAY-001",
         installmentNumber: 1,
-        amount: "2500",
-        paidAt: "13 ต.ค. 2567 12:00 น.",
-        verifiedAt: "15 ต.ค. 2567 09:30 น.",
-        status: "rejected", // โดนปฏิเสธ
-        slipImageUrl: "https://images.unsplash.com/photo-1589828135899-3171353eb81a?w=400&q=80",
+        amount: "1666.67",
+        paidAt: "25 ส.ค. 2569",
+        paidTime: "14:30",
+        status: "verified",
+        slipImageUrl: "https://placehold.co/400x600/f8fafc/a1a1aa?text=Slip+Verified"
+      },
+      {
+        id: "PAY-002",
+        installmentNumber: 2,
+        amount: "1666.67",
+        paidAt: "2 ก.ย. 2569",
+        paidTime: "10:00",
+        status: "pending",
+        slipImageUrl: "https://placehold.co/400x600/f8fafc/a1a1aa?text=Slip+Pending"
       }
     ]
   }

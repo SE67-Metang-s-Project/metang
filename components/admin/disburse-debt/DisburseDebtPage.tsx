@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
-// 1. เรียกใช้ Shared Component แทน
+// 1. นำเข้า Shared Component
 import SharedDisburseDebtList from "@/components/shared/disburse-debt/SharedDisburseDebtList";
 
 export default function DisburseDebtPage() {
@@ -20,7 +20,7 @@ export default function DisburseDebtPage() {
           userId="T1002"
         />
 
-        <main className="p-6">
+        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
           <div className="mb-6">
             <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">
               เบิกจ่ายเงินให้นักศึกษา (Disbursement)
@@ -31,9 +31,8 @@ export default function DisburseDebtPage() {
             </p>
           </div>
 
-          {/* 2. เรียกใช้ Shared Component และส่ง role เข้าไป */}
+          {/* 2. เรียกใช้งาน Shared Component พร้อมระบุ Role */}
           <SharedDisburseDebtList userRole="admin" />
-          
         </main>
       </div>
     </div>

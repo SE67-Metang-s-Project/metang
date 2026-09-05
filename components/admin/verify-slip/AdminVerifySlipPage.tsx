@@ -21,7 +21,7 @@ export default function AdminVerifySlipPage() {
           userId="S2001"
         />
 
-        <main className="p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full mx-auto">
+        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
           <div className="mb-6">
             <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">
               ตรวจสอบสลิปชำระเงิน (Admin)
