@@ -14,7 +14,7 @@ import type { AppUser, UserRoleName } from "@/lib/generated/prisma/client";
 
 const STUDENT_ID_KEYS = ["student_id", "studentId", "student_code", "studentCode"];
 const EMAIL_KEYS = ["email", "mail", "email_address", "cmuitaccount", "cmuitaccount_name"];
-const CMU_ACCOUNT_KEYS = ["cmuitaccount", "cmuitaccount_name", "cmu_account", "cmuAccount"];
+const CMU_ACCOUNT_KEYS = ["cmuitaccount_name", "cmuitaccount", "cmu_account", "cmuAccount"];
 
 const DEVELOPMENT_USER_IDS: Record<DevelopmentApiRole, string> = {
   executive: "00000000-0000-0000-0000-000000000001",
@@ -58,13 +58,14 @@ function profileText(profile: CmuProfile, keys: string[]) {
 }
 
 export function normalizeLoanIdentity(profile: CmuProfile): LoanIdentity {
-  const cmuAccount = profileText(profile, CMU_ACCOUNT_KEYS).toLowerCase() || null;
+  const rawAccount = profileText(profile, CMU_ACCOUNT_KEYS).toLowerCase();
+  const cmuAccount = rawAccount ? rawAccount.split("@")[0] : null;
   const email = profileText(profile, EMAIL_KEYS).toLowerCase() || null;
   const studentCode = profileText(profile, STUDENT_ID_KEYS) || null;
 
   return {
     cmuAccount,
-    email: email?.includes("@") ? email : null,
+    email: email?.includes("@") ? email : (cmuAccount ? `${cmuAccount}@cmu.ac.th` : null),
     studentCode,
     displayName: getCmuDisplayName(profile).trim() || "CMU user",
   };
@@ -75,14 +76,11 @@ export async function resolveStudentIdentity(identity: LoanIdentity) {
 
   return prisma.appUser.findFirst({
     where: {
-      ...(identity.cmuAccount
-        ? { cmuAccount: identity.cmuAccount }
-        : {
-            OR: [
-              ...(identity.email ? [{ email: identity.email }] : []),
-              ...(identity.studentCode ? [{ studentCode: identity.studentCode }] : []),
-            ],
-          }),
+      OR: [
+        ...(identity.cmuAccount ? [{ cmuAccount: identity.cmuAccount }] : []),
+        ...(identity.email ? [{ email: identity.email }] : []),
+        ...(identity.studentCode ? [{ studentCode: identity.studentCode }] : []),
+      ],
     },
     include: { roles: { select: { role: true } } },
   });
