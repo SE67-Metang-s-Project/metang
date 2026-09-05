@@ -34,7 +34,7 @@ export default function SuperAdminPendingPage({
           userId={userId}
         />
 
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
           {/* เพิ่ม Header แจ้งให้ทราบว่าอยู่ในหน้าของใคร เพื่อกันความสับสน */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">

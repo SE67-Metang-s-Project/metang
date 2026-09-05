@@ -21,7 +21,7 @@ export default function PendingPage() {
           userName="ผศ.ดร. สุนีย์ วงค์ประเสริฐ"
           userId="T1002"
         />
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
               คำร้องรอพิจารณา (ในฐานะอาจารย์ที่ปรึกษา)

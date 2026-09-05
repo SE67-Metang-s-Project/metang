@@ -36,7 +36,7 @@ export default function ExecutiveDashboard({
           userId={userId}
         />
 
-        <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto space-y-8">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto space-y-8">
           <div className="w-full">
             <WelcomeCard name={userName} description="ผู้บริหาร" />
           </div>

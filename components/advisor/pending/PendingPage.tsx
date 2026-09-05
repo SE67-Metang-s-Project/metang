@@ -42,14 +42,14 @@ export default function AdvisorPendingPage({
       <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="advisor" />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col w-full min-h-screen lg:ml-64 transition-all duration-300">
+      <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64 transition-all duration-300">
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
           userName={userName}
           userId={userId}
         />
 
-        <main className="p-6">
+        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
           <div className="mb-6">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
               คำร้องรอพิจารณา (ในฐานะอาจารย์ที่ปรึกษา)

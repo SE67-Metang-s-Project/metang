@@ -14,14 +14,14 @@ export default function SuperAdminVerifySlipPage() {
     <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-800">
       <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="superadmin" />
 
-      <div className="flex-1 flex flex-col w-full min-h-screen lg:ml-64 transition-all duration-300">
+      <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64 transition-all duration-300">
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
           userName="Super Admin สูงสุด"
           userId="SA-001"
         />
 
-        <main className="p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full mx-auto">
+        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
           <div className="mb-6">
             <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">
               ตรวจสอบสลิปชำระเงิน (Super Admin)
