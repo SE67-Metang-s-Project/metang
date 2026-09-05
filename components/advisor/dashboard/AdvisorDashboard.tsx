@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
 import WelcomeCard from "@/components/shared/WelcomeCard";
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
 import StudentListTable, { Student } from "@/components/shared/students/StudentListItem";
-import { mockAdvisorRequests } from "@/components/shared/mock-data/mockAdvisorRequests";
 import {
   Clock,
   CheckCircle2,
@@ -47,12 +46,34 @@ const getTranslateStatus = (status: string) => {
 };
 
 export default function AdvisorDashboard({
-  userName = "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
-  userId = "T1002",
-  initialRequests,
+  userName = "อาจารย์ที่ปรึกษา",
+  userId = "Advisor",
+  initialRequests = [],
 }: AdvisorDashboardProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [requests] = useState<ActionRequest[]>(initialRequests || mockAdvisorRequests);
+  const [requests, setRequests] = useState<ActionRequest[]>(initialRequests);
+
+  useEffect(() => {
+    setRequests(initialRequests);
+  }, [initialRequests]);
+
+  const handleRequestDecided = (requestId: string, decision: string) => {
+    setRequests((prev) =>
+      prev.map((req) =>
+        req.id === requestId
+          ? {
+              ...req,
+              requestStatus:
+                decision === "approved"
+                  ? "pending_admin"
+                  : decision === "returned"
+                    ? "returned"
+                    : "rejected",
+            }
+          : req,
+      ),
+    );
+  };
 
   // คำร้องรออาจารย์ที่ปรึกษาพิจารณา
   const pendingRequests = useMemo(
@@ -171,7 +192,11 @@ export default function AdvisorDashboard({
 
             {pendingRequests.length > 0 ? (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                <RequestsCard requests={pendingRequests} userRole="advisor" />
+                <RequestsCard
+                  requests={pendingRequests}
+                  userRole="advisor"
+                  onRequestDecided={handleRequestDecided}
+                />
               </div>
             ) : (
               <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center">

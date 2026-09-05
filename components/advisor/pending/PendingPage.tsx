@@ -1,17 +1,34 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
-import RequestsCard from "@/components/shared/pending/RequestsCard";
+import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
 import { ShieldCheck } from "lucide-react";
-import { mockAdvisorRequests } from "@/components/shared/mock-data/mockAdvisorRequests";
 
-export default function AdvisorPendingPage() {
+type AdvisorPendingPageProps = {
+  userName?: string;
+  userId?: string;
+  initialRequests?: ActionRequest[];
+};
+
+export default function AdvisorPendingPage({
+  userName = "อาจารย์ที่ปรึกษา",
+  userId = "Advisor",
+  initialRequests = [],
+}: AdvisorPendingPageProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // กำหนด State ให้กับ requests โดยดึงข้อมูลมาจาก Mock Data ของ Advisor
-  const [requests] = useState(mockAdvisorRequests);
+  // กำหนด State ให้กับ requests จาก DB
+  const [requests, setRequests] = useState<ActionRequest[]>(initialRequests);
+
+  useEffect(() => {
+    setRequests(initialRequests);
+  }, [initialRequests]);
+
+  const handleRequestDecided = (requestId: string) => {
+    setRequests((prev) => prev.filter((req) => req.id !== requestId));
+  };
 
   // กรองเฉพาะคำร้องที่รออาจารย์ที่ปรึกษาพิจารณา
   const pendingRequests = useMemo(
@@ -28,8 +45,8 @@ export default function AdvisorPendingPage() {
       <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64 transition-all duration-300">
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
-          userName="ผศ.ดร. สุนีย์ วงค์ประเสริฐ"
-          userId="T1002"
+          userName={userName}
+          userId={userId}
         />
 
         <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
@@ -46,7 +63,11 @@ export default function AdvisorPendingPage() {
           {/* แสดงรายการคำร้อง หรือ ข้อความเมื่อไม่มีคำร้อง */}
           {pendingRequests.length > 0 ? (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <RequestsCard requests={pendingRequests} userRole="advisor" />
+              <RequestsCard
+                requests={pendingRequests}
+                userRole="advisor"
+                onRequestDecided={handleRequestDecided}
+              />
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center mt-4">
