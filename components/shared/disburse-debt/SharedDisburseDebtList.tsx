@@ -4,14 +4,15 @@
 import React, { useState } from "react";
 import DisburseDebtCard from "./DisburseDebtCard";
 import StudentFilters from "@/components/shared/filter/StudentFilters";
-import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
+// import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
+import { mockDisburseRequests } from "@/components/shared/mock-data/mockDisburseRequests";
 
 interface SharedDisburseDebtListProps {
   userRole: "admin" | "super_admin";
 }
 
 export default function SharedDisburseDebtList({ userRole }: SharedDisburseDebtListProps) {
-  const [requests] = useState(mockAdminRequests);
+  const [requests] = useState(mockDisburseRequests);
 
   // State สำหรับตัวกรอง
   const [activeTab, setActiveTab] = useState("ทั้งหมด");

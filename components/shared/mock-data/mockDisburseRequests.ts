@@ -1,46 +1,11 @@
-// src/components/shared/mock-data/mockAdminRequests.ts
+// src/components/shared/mock-data/mockDisburseRequests.ts
 
-import { ActionRequest } from "@/components/shared/verify-slip/VerifySlipCard";
+// เปลี่ยน Path ให้ตรงกับที่เก็บไฟล์ DisburseDebtCard.tsx ของคุณ
+import { ActionRequest } from "@/components/shared/disburse-debt/DisburseDebtCard";
 
-export const mockAdminRequests: ActionRequest[] = [
+export const mockDisburseRequests: ActionRequest[] = [
   // ==========================================
-  // สถานะ: รอตรวจสอบ (pending_admin)
-  // ==========================================
-  {
-    id: "REQ-2609-101",
-    name: "นายใจดี มีสุข",
-    studentId: "650610999",
-    major: "พยาบาลศาสตร์",
-    program: "พยาบาลศาสตรบัณฑิต",
-    year: "3",
-    phone: "081-111-2222",
-    objective: "เพื่อเป็นค่าใช้จ่ายในการซื้ออุปกรณ์การเรียนและหนังสือ",
-    amount: "4500",
-    term: "3",
-    submitDate: "5 ก.ย. 2569",
-    requestStatus: "pending_admin",
-    paymentBehavior: {
-      totalLoanRequests: 1,
-      onTimeInstallments: 3,
-      lateInstallments: 0,
-    },
-    approvals: [
-      {
-        step: "advisor",
-        actorName: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
-        comment: "เห็นสมควรให้กู้ยืมเพื่อซื้ออุปกรณ์การเรียน เนื่องจากนักศึกษามีความจำเป็นจริงและผลการเรียนดี",
-        decision: "approved",
-        date: "6 ก.ย. 2569",
-      }
-    ],
-    history: [
-      { action: "ยื่นคำร้อง", date: "5 ก.ย. 2569 08:00", actor: "ใจดี มีสุข" },
-      { action: "อนุมัติโดยอาจารย์ที่ปรึกษา", date: "6 ก.ย. 2569 10:00", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" }
-    ]
-  },
-
-  // ==========================================
-  // สถานะ: รอโอนเงิน (pending_disbursement)
+  // สถานะ: รอโอนเงิน (pending_disbursement) - เคสที่ 1
   // ==========================================
   {
     id: "REQ-2609-001",
@@ -56,7 +21,7 @@ export const mockAdminRequests: ActionRequest[] = [
     submitDate: "1 ก.ย. 2569",
     requestStatus: "pending_disbursement",
     bankDetails: {
-      bankName: "ธนาคารไทยพาณิชย์",
+      bankName: "ธนาคารไทยพาณิชย์ (SCB)",
       accountNumber: "123-4-56789-0",
       accountName: "นางสาวสมหญิง รักเรียน"
     },
@@ -93,8 +58,13 @@ export const mockAdminRequests: ActionRequest[] = [
       { action: "อนุมัติโดยอาจารย์ที่ปรึกษา", date: "2 ก.ย. 2569 10:30", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" },
       { action: "เจ้าหน้าที่ตรวจสอบผ่าน", date: "3 ก.ย. 2569 14:00", actor: "เจ้าหน้าที่ สมศรี" },
       { action: "ผู้บริหารอนุมัติวงเงิน", date: "4 ก.ย. 2569 11:15", actor: "รศ.ดร. ประเสริฐ กิตติคุณ" }
-    ]
+    ],
+    paymentHistory: [] // ยังไม่มีการชำระคืนเพราะเพิ่งรอโอนเงิน
   },
+
+  // ==========================================
+  // สถานะ: รอโอนเงิน (pending_disbursement) - เคสที่ 2
+  // ==========================================
   {
     id: "REQ-2609-002",
     name: "นายมานะ อดทน",
@@ -109,7 +79,7 @@ export const mockAdminRequests: ActionRequest[] = [
     submitDate: "28 ส.ค. 2569",
     requestStatus: "pending_disbursement",
     bankDetails: {
-      bankName: "ธนาคารกสิกรไทย",
+      bankName: "ธนาคารกสิกรไทย (KBank)",
       accountNumber: "098-7-65432-1",
       accountName: "นายมานะ อดทน"
     },
@@ -121,7 +91,7 @@ export const mockAdminRequests: ActionRequest[] = [
     approvals: [
       {
         step: "advisor",
-        actorName: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+        actorName: "อ.ดร. สมชาย ใจดี",
         comment: "นักศึกษามีปัญหาด้านการเงินฉุกเฉิน สมควรให้ความช่วยเหลือโดยด่วน",
         decision: "approved",
         date: "29 ส.ค. 2569",
@@ -136,21 +106,22 @@ export const mockAdminRequests: ActionRequest[] = [
       {
         step: "executive",
         actorName: "รศ.ดร. ประเสริฐ กิตติคุณ",
-        comment: "อนุมัติตามระเบียบกองทุน",
+        comment: "อนุมัติตามระเบียบกองทุนฉุกเฉิน",
         decision: "approved",
         date: "31 ส.ค. 2569",
       }
     ],
     history: [
       { action: "ยื่นคำร้อง", date: "28 ส.ค. 2569 13:45", actor: "มานะ อดทน" },
-      { action: "อนุมัติโดยอาจารย์ที่ปรึกษา", date: "29 ส.ค. 2569 09:30", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" },
+      { action: "อนุมัติโดยอาจารย์ที่ปรึกษา", date: "29 ส.ค. 2569 09:30", actor: "อ.ดร. สมชาย ใจดี" },
       { action: "เจ้าหน้าที่ตรวจสอบผ่าน", date: "30 ส.ค. 2569 10:00", actor: "เจ้าหน้าที่ สมศรี" },
       { action: "ผู้บริหารอนุมัติวงเงิน", date: "31 ส.ค. 2569 15:20", actor: "รศ.ดร. ประเสริฐ กิตติคุณ" }
-    ]
+    ],
+    paymentHistory: []
   },
 
   // ==========================================
-  // สถานะ: โอนเงินแล้ว (disbursed)
+  // สถานะ: โอนเงินแล้ว (disbursed) - เคสที่มีรูปสลิปแล้ว
   // ==========================================
   {
     id: "REQ-2608-114",
@@ -166,14 +137,16 @@ export const mockAdminRequests: ActionRequest[] = [
     submitDate: "15 ส.ค. 2569",
     requestStatus: "disbursed",
     bankDetails: {
-      bankName: "ธนาคารกรุงไทย",
+      bankName: "ธนาคารกรุงไทย (KTB)",
       accountNumber: "111-2-33344-5",
       accountName: "นางสาวใจดี เรียนเก่ง"
     },
+    // 👇 แนบ URL สลิปจำลอง เพื่อให้ปุ่ม "ดูหลักฐาน" ทำงานและแสดงรูปสลิป
+    slipUrl: "https://placehold.co/400x600/e2e8f0/64748b?text=Disbursement+Slip+Proof",
     paymentBehavior: {
       totalLoanRequests: 3,
       onTimeInstallments: 11,
-      lateInstallments: 1,
+      lateInstallments: 1, // ทดสอบให้มีชำระล่าช้า 1 ครั้ง
     },
     approvals: [
       {
@@ -186,14 +159,14 @@ export const mockAdminRequests: ActionRequest[] = [
       {
         step: "admin",
         actorName: "เจ้าหน้าที่ สมศรี",
-        comment: "เอกสารใบแจ้งหนี้ค่าหอพักถูกต้อง ประวัติการชำระเงินรอบก่อนหน้ามีความล่าช้า 1 งวด แต่ชำระครบถ้วนแล้ว",
+        comment: "เอกสารใบแจ้งหนี้ถูกต้อง ประวัติเก่าเคยช้า 1 งวด แต่เคลียร์ยอดครบแล้ว",
         decision: "approved",
         date: "17 ส.ค. 2569",
       },
       {
         step: "executive",
         actorName: "รศ.ดร. ประเสริฐ กิตติคุณ",
-        comment: "อนุมัติวงเงิน 10,000 บาท ตามที่เสนอ",
+        comment: "อนุมัติวงเงิน 10,000 บาท",
         decision: "approved",
         date: "18 ส.ค. 2569",
       }
@@ -203,26 +176,19 @@ export const mockAdminRequests: ActionRequest[] = [
       { action: "อนุมัติโดยอาจารย์ที่ปรึกษา", date: "16 ส.ค. 2569 11:00", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" },
       { action: "เจ้าหน้าที่ตรวจสอบผ่าน", date: "17 ส.ค. 2569 14:20", actor: "เจ้าหน้าที่ สมศรี" },
       { action: "ผู้บริหารอนุมัติวงเงิน", date: "18 ส.ค. 2569 10:15", actor: "รศ.ดร. ประเสริฐ กิตติคุณ" },
-      { action: "เบิกจ่ายเงินสำเร็จ", date: "19 ส.ค. 2569 13:45", actor: "เจ้าหน้าที่ สมศรี" }
+      { action: "โอนเงินสำเร็จ", date: "19 ส.ค. 2569 13:45", actor: "ผู้ดูแลระบบ (Admin)" }
     ],
+    // ข้อมูลจำลองการผ่อนชำระ (นักศึกษาชำระคืนกองทุน)
     paymentHistory: [
       {
-        id: "PAY-001",
         installmentNumber: 1,
         amount: "1666.67",
-        paidAt: "25 ส.ค. 2569",
-        paidTime: "14:30",
         status: "verified",
-        slipImageUrl: "https://placehold.co/400x600/f8fafc/a1a1aa?text=Slip+Verified"
       },
       {
-        id: "PAY-002",
         installmentNumber: 2,
         amount: "1666.67",
-        paidAt: "2 ก.ย. 2569",
-        paidTime: "10:00",
-        status: "pending",
-        slipImageUrl: "https://placehold.co/400x600/f8fafc/a1a1aa?text=Slip+Pending"
+        status: "verified", // จ่ายงวด 2 แล้ว สถานะตารางผ่อนจะขึ้นติ๊กถูกสีเขียว
       }
     ]
   }
