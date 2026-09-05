@@ -7,7 +7,6 @@ import TopNav from "@/components/shared/TopNav";
 import WelcomeCard from "@/components/shared/WelcomeCard";
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
 import StudentListTable, { Student } from "@/components/shared/students/StudentListItem";
-import { mockAdvisorRequests } from "@/components/shared/mock-data/mockAdvisorRequests";
 import {
   Clock,
   CheckCircle2,
@@ -47,12 +46,12 @@ const getTranslateStatus = (status: string) => {
 };
 
 export default function AdvisorDashboard({
-  userName = "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
-  userId = "T1002",
-  initialRequests,
+  userName = "อาจารย์ที่ปรึกษา",
+  userId = "Advisor",
+  initialRequests = [],
 }: AdvisorDashboardProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [requests] = useState<ActionRequest[]>(initialRequests || mockAdvisorRequests);
+  const [requests] = useState<ActionRequest[]>(initialRequests);
 
   // คำร้องรออาจารย์ที่ปรึกษาพิจารณา
   const pendingRequests = useMemo(
