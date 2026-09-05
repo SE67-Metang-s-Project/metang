@@ -10,10 +10,10 @@ type LoanPaymentHistoryProps = {
   items: LoanPaymentHistoryItem[];
 };
 
-const paymentStatusTones = {
-  verified: "success",
-  checking: "warning",
-  failed: "danger",
+const paymentStatusClassNames = {
+  verified: styles.completed,
+  checking: styles.revisionRequired,
+  failed: styles.rejectedExecutive,
 } as const;
 
 export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
@@ -72,7 +72,11 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
               <p>{item.checkedAt}</p>
             </div>
             <span className={styles.paymentVerifiedPill}>
-              <StatusPill label={item.statusLabel} tone={paymentStatusTones[item.status]} />
+              <StatusPill
+                className={paymentStatusClassNames[item.status]}
+                label={item.statusLabel}
+                tone="neutral"
+              />
             </span>
           </button>
         ))}

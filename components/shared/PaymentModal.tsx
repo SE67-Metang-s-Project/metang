@@ -34,6 +34,7 @@ function parseDateInputValue(value: string) {
 }
 
 export default function PaymentModal({ installment, account, onClose, onConfirm }: PaymentModalProps) {
+  const [isQrSaveNoticeOpen, setIsQrSaveNoticeOpen] = useState(false);
   const [fileName, setFileName] = useState("");
   const [receiptPreview, setReceiptPreview] = useState("");
   const [transferDate, setTransferDate] = useState("");
@@ -234,6 +235,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                 className="group mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-orange-300 hover:bg-orange-50 active:border-orange-400 active:bg-orange-100"
                 download="payment-qr-code"
                 href={account.qrImageSrc}
+                onClick={() => setIsQrSaveNoticeOpen(true)}
               >
                 <Download
                   aria-hidden="true"
@@ -585,6 +587,28 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
           </button>
         </footer>
       </section>
+      {isQrSaveNoticeOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
+          <section
+            aria-labelledby="qr-save-notice-title"
+            aria-modal="true"
+            className="w-full max-w-xs rounded-2xl bg-white p-6 text-center shadow-2xl"
+            role="alertdialog"
+          >
+            <h2 className="text-xl font-bold text-gray-900" id="qr-save-notice-title">
+              บันทึกรูปภาพแล้ว
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">ดาวน์โหลด QR Code สำหรับชำระงเงินสำเร็จ</p>
+            <button
+              className="mt-5 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-green-700"
+              onClick={() => setIsQrSaveNoticeOpen(false)}
+              type="button"
+            >
+              ตกลง
+            </button>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
