@@ -1,8 +1,16 @@
 import React from "react";
-// Import ให้ชื่อตรงกับที่ Export มาจากไฟล์ เพื่อลดความสับสน
 import VerifySlipPage from "@/components/admin/verify-slip/AdminVerifySlipPage";
+import { requireAdminAccess } from "@/lib/loan-auth";
+import { getAdminActionRequests } from "@/db/queries/loan-requests";
 
-export default function Page() {
-  // เรียกใช้งานหน้า VerifySlipPage ที่รวม Layout (Sidebar, TopNav) ไว้แล้วได้เลย
-  return <VerifySlipPage />;
+export const dynamic = "force-dynamic";
+
+export default async function Page() {
+  await requireAdminAccess();
+  const requests = await getAdminActionRequests().catch((error) => {
+    console.error("Unable to load admin verify-slip requests from DB", error);
+    return [];
+  });
+
+  return <VerifySlipPage initialRequests={requests} />;
 }

@@ -78,7 +78,8 @@ export default function SuperAdminDashboard({
       return (
         Array.isArray(req.paymentHistory) &&
         req.paymentHistory.some(
-          (payment: { status?: string }) => payment.status === "pending"
+          (payment: { status?: string }) =>
+            payment.status === "pending" || payment.status === "pending_review"
         )
       );
     });

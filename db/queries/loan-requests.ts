@@ -666,10 +666,20 @@ export async function getActionRequests(
 
     const paymentHistory = (loan.payments || []).map((p) => {
       const matchingInst = (loan.installments || []).find((i) => i.id === p.installmentId);
+      const mappedStatus =
+        p.status === "confirmed"
+          ? "verified"
+          : p.status === "pending_review"
+            ? "pending"
+            : p.status;
+
       return {
+        id: p.id,
         installmentNumber: matchingInst ? matchingInst.seq : 1,
-        amount: p.amount,
-        status: p.status === "confirmed" ? "verified" : p.status,
+        amount: String(p.amount),
+        paidAt: p.paidAt ? formatThaiDate(p.paidAt) : formatThaiDate(p.createdAt),
+        status: mappedStatus,
+        slipImageUrl: p.slipUrl ?? "",
       };
     });
 

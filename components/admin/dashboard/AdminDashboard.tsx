@@ -9,13 +9,25 @@ import WelcomeCard from "@/components/shared/WelcomeCard";
 import SharedRequestsList from "@/components/shared/pending/SharedRequestsList";
 import DisburseDebtCard from "@/components/shared/disburse-debt/DisburseDebtCard";
 import VerifySlipCard from "@/components/shared/verify-slip/VerifySlipCard";
+import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
 import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
 
-export default function AdminDashboard() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+type AdminDashboardProps = {
+  userName?: string;
+  initialRequests?: ActionRequest[];
+};
 
-  const [requests] = useState(mockAdminRequests);
+export default function AdminDashboard({
+  userName = "ผู้ดูแลระบบ",
+  initialRequests,
+}: AdminDashboardProps = {}) {
+  const requests = useMemo(() => {
+    if (initialRequests && initialRequests.length > 0) {
+      return initialRequests;
+    }
+    return mockAdminRequests as unknown as ActionRequest[];
+  }, [initialRequests]);
 
   // =====================================================
   // 1. คำร้องที่รอ Admin พิจารณา
@@ -38,92 +50,81 @@ export default function AdminDashboard() {
     return requests.filter((req) => {
       return (
         Array.isArray(req.paymentHistory) &&
-        req.paymentHistory.some((payment: any) => payment.status === "pending")
+        req.paymentHistory.some(
+          (payment: any) => payment.status === "pending" || payment.status === "pending_review"
+        )
       );
     });
   }, [requests]);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-800">
+    <div className="space-y-10">
       {/* =====================================================
-          Sidebar
+          Welcome
       ===================================================== */}
-      <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="admin" />
+      <WelcomeCard name={userName} description="เจ้าหน้าที่ / ผู้ดูแลระบบ (Admin)" />
 
       {/* =====================================================
-          Main Content
+          1. Pending Review
       ===================================================== */}
-      <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64">
-        <TopNav
-          onOpenSidebar={() => setIsSidebarOpen(true)}
-          userName="แอดมินคนหล่อ"
-          userId="Admin001"
+      <section className="mb-10">
+        <SectionHeader
+          title="คำร้องรอพิจารณา"
+          description="รายการคำร้องที่ต้องตรวจสอบและดำเนินการ"
+          href="/admin/pending"
         />
 
-        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
-          {/* =====================================================
-              Welcome
-          ===================================================== */}
-          <WelcomeCard name="แอดมินคนหล่อ" description="admin" />
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <SharedRequestsList
+            dashboardMode="pending"
+            hideFilters
+            userRole="admin"
+            initialRequests={requests}
+          />
+        </div>
+      </section>
 
-          {/* =====================================================
-              1. Pending Review
-          ===================================================== */}
-          <section className="mb-10">
-            <SectionHeader
-              title="คำร้องรอพิจารณา"
-              description="รายการคำร้องที่ต้องตรวจสอบและดำเนินการ"
-              href="/admin/pending"
-            />
+      {/* =====================================================
+          2. Disbursement
+      ===================================================== */}
+      <section className="mb-10">
+        <SectionHeader
+          title="รายการเบิกจ่าย"
+          description="รายการที่ผ่านการอนุมัติจากผู้บริหารและรอการโอนเงิน"
+          href="/admin/disburse-debt"
+        />
 
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <SharedRequestsList dashboardMode="pending" hideFilters userRole="admin" />
-            </div>
-          </section>
+        {disbursementRequests.length > 0 ? (
+          <DisburseDebtCard requests={disbursementRequests as any} />
+        ) : (
+          <EmptyState
+            icon="💸"
+            title="ไม่มีรายการรอโอนเงิน"
+            description="ขณะนี้ยังไม่มีรายการที่รอการเบิกจ่าย"
+          />
+        )}
+      </section>
 
-          {/* =====================================================
-              2. Disbursement
-          ===================================================== */}
-          <section className="mb-10">
-            <SectionHeader
-              title="รายการเบิกจ่าย"
-              description="รายการที่ผ่านการอนุมัติจากผู้บริหารและรอการโอนเงิน"
-              href="/admin/disburse-debt"
-            />
+      {/* =====================================================
+          3. Verify Slip
+      ===================================================== */}
+      <section className="mb-10">
+        <SectionHeader
+          title="ตรวจสอบสลิปชำระเงิน"
+          description="หลักฐานการโอนเงินที่นักศึกษาแนบเข้ามาและรอตรวจสอบ"
+          href="/admin/verify-slip"
+        />
 
-            {disbursementRequests.length > 0 ? (
-              <DisburseDebtCard requests={disbursementRequests as any} />
-            ) : (
-              <EmptyState
-                icon="💸"
-                title="ไม่มีรายการรอโอนเงิน"
-                description="ขณะนี้ยังไม่มีรายการที่รอการเบิกจ่าย"
-              />
-            )}
-          </section>
-
-          {/* =====================================================
-              3. Verify Slip
-          ===================================================== */}
-          <section className="mb-10">
-            <SectionHeader
-              title="ตรวจสอบสลิปชำระเงิน"
-              description="หลักฐานการโอนเงินที่นักศึกษาแนบเข้ามาและรอตรวจสอบ"
-              href="/admin/verify-slip"
-            />
-
-            {verifySlipRequests.length > 0 ? (
-              <VerifySlipCard requests={verifySlipRequests as any} userRole="admin" />
-            ) : (
-              <EmptyState
-                icon="🧾"
-                title="ไม่มีสลิปที่รอตรวจสอบ"
-                description="ขณะนี้ยังไม่มีหลักฐานการโอนเงินที่รอตรวจสอบ"
-              />
-            )}
-          </section>
-        </main>
-      </div>
+        {verifySlipRequests.length > 0 ? (
+          <VerifySlipCard requests={verifySlipRequests as any} userRole="admin" />
+        ) : (
+          <EmptyState
+            icon="🧾"
+            title="ไม่มีสลิปที่รอตรวจสอบ"
+            description="ขณะนี้ยังไม่มีหลักฐานการโอนเงินที่รอตรวจสอบ"
+          />
+        )}
+      </section>
     </div>
   );
 }
