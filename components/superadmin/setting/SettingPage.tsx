@@ -6,13 +6,29 @@ import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
 import { Users, Wallet, Landmark, MapPin } from "lucide-react"; // เพิ่ม Landmark และ MapPin
 
+import type { SuperAdminUser } from "@/lib/loan-api-types";
+
 // Import Components ที่เราแยกไว้
 import UserRolesTab from "@/components/superadmin/setting/UserRolesTab";
 import SystemBudgetTab from "@/components/superadmin/setting/SystemBudgetTab";
 import SystemBankTab from "@/components/superadmin/setting/SystemBankTab"; // <--- นำเข้าไฟล์ใหม่
 import SystemAddressTab from "@/components/superadmin/setting/SystemAddressTab"; // <--- นำเข้าไฟล์ใหม่
 
-export default function SettingsPage() {
+interface SettingsPageProps {
+  userName?: string;
+  userId?: string;
+  userEmail?: string;
+  currentUserId?: string;
+  initialUsers?: SuperAdminUser[];
+}
+
+export default function SettingsPage({
+  userName = "SuperAdmin",
+  userId = "SA-001",
+  userEmail,
+  currentUserId,
+  initialUsers = [],
+}: SettingsPageProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   // เพิ่ม State สำหรับ bank และ address
   const [activeTab, setActiveTab] = useState<"users" | "budget" | "bank" | "address">("users");
@@ -24,8 +40,9 @@ export default function SettingsPage() {
       <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64 transition-all duration-300">
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
-          userName="SuperAdmin"
-          userId="SA-001"
+          userName={userName}
+          userId={userId}
+          userEmail={userEmail}
         />
 
         <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
@@ -103,7 +120,9 @@ export default function SettingsPage() {
           </div>
 
           {/* Render Tab Content */}
-          {activeTab === "users" && <UserRolesTab />}
+          {activeTab === "users" && (
+            <UserRolesTab initialUsers={initialUsers} currentUserId={currentUserId} />
+          )}
           {activeTab === "budget" && <SystemBudgetTab />}
           {activeTab === "bank" && <SystemBankTab />}
           {activeTab === "address" && <SystemAddressTab />}
