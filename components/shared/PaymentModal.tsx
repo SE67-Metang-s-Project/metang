@@ -40,15 +40,18 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
-  const [selectedHour, setSelectedHour] = useState("");
-  const [selectedMinute, setSelectedMinute] = useState("");
+  const [selectedHour, setSelectedHour] = useState(() => String(new Date().getHours()).padStart(2, "0"));
+  const [selectedMinute, setSelectedMinute] = useState(() => String(new Date().getMinutes()).padStart(2, "0"));
+  const [hasSelectedTime, setHasSelectedTime] = useState(false);
   const [transferAmount, setTransferAmount] = useState("");
   const [formErrors, setFormErrors] = useState<PaymentFormErrors>({});
+  const modalBodyRef = useRef<HTMLDivElement>(null);
   const fieldRefs = useRef<Partial<Record<PaymentFormField, HTMLElement | null>>>({});
   const calendarPickerRef = useRef<HTMLDivElement>(null);
   const timePickerRef = useRef<HTMLDivElement>(null);
   const hourListRef = useRef<HTMLDivElement>(null);
   const minuteListRef = useRef<HTMLDivElement>(null);
+  const receiptInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const closePickersOnOutsidePress = (event: MouseEvent) => {
@@ -65,12 +68,18 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
   useEffect(() => {
     if (!isTimePickerOpen) return;
 
-    hourListRef.current
-      ?.querySelector<HTMLElement>(`[data-time-value="${selectedHour}"]`)
-      ?.scrollIntoView({ block: "center" });
-    minuteListRef.current
-      ?.querySelector<HTMLElement>(`[data-time-value="${selectedMinute}"]`)
-      ?.scrollIntoView({ block: "center" });
+    const scrollSelectedOptionIntoView = (list: HTMLDivElement | null, value: string) => {
+      const option = list?.querySelector<HTMLElement>(`[data-time-value="${value}"]`);
+
+      if (!list || !option) return;
+
+      list.scrollTo({
+        top: option.offsetTop - (list.clientHeight - option.offsetHeight) / 2,
+      });
+    };
+
+    scrollSelectedOptionIntoView(hourListRef.current, selectedHour);
+    scrollSelectedOptionIntoView(minuteListRef.current, selectedMinute);
   }, [isTimePickerOpen, selectedHour, selectedMinute]);
 
   const formatThaiDate = (value: string) => {
@@ -118,7 +127,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
 
     if (!fileName) errors.receipt = requiredFieldMessage;
     if (!transferDate) errors.transferDate = requiredFieldMessage;
-    if (!selectedHour || !selectedMinute) errors.transferTime = requiredFieldMessage;
+    if (!hasSelectedTime) errors.transferTime = requiredFieldMessage;
     if (!transferAmount || Number(transferAmount) <= 0) errors.transferAmount = requiredFieldMessage;
 
     return errors;
@@ -136,7 +145,17 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
 
     window.requestAnimationFrame(() => {
       const field = fieldRefs.current[firstInvalidField];
-      field?.scrollIntoView({ behavior: "smooth", block: "center" });
+      const modalBody = modalBodyRef.current;
+
+      if (field && modalBody) {
+        const fieldTop = field.getBoundingClientRect().top;
+        const modalTop = modalBody.getBoundingClientRect().top;
+        modalBody.scrollTo({
+          top: modalBody.scrollTop + fieldTop - modalTop - 16,
+          behavior: "smooth",
+        });
+      }
+
       field?.querySelector<HTMLElement>("input, button")?.focus();
     });
   };
@@ -155,7 +174,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
       <section
         aria-labelledby="payment-modal-title"
         aria-modal="true"
-        className="relative flex max-h-[90vh] w-full max-w-[500px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+        className="relative flex h-[calc(100dvh-2rem)] min-h-0 w-full max-w-[500px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
         role="dialog"
       >
         <button
@@ -167,21 +186,24 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
           <X aria-hidden="true" size={20} />
         </button>
 
-        <header className="border-b border-gray-100 px-14 py-4 text-center sm:px-16">
+        <header className="shrink-0 border-b border-gray-100 px-14 py-4 text-center sm:px-16">
           <h2 className="text-xl font-bold leading-tight text-gray-900" id="payment-modal-title">
             ชำระงวดที่ {installment.installmentNumber}
           </h2>
           <p className="mt-1 text-sm font-bold text-gray-600">ครบกำหนด {installment.dueDateLabel}</p>
         </header>
 
-        <div className="overflow-y-auto p-5 sm:p-6">
+        <div
+          className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] p-5 sm:p-6"
+          ref={modalBodyRef}
+        >
           <section className="mb-6 flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 p-4">
             <p className="text-sm font-medium text-black">ค้างชำระ</p>
             <strong className="text-2xl font-bold text-black">{installment.outstandingAmount} บาท</strong>
           </section>
 
           <section className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <h3 className="mb-3 flex items-center gap-2 text-lg font-bold text-gray-900">
+            <h3 className="mb-0 flex items-center gap-2 border-b border-gray-200 pb-3 text-lg font-bold text-gray-900">
               <Landmark aria-hidden="true" className="text-gray-400" size={21} />
               ข้อมูลบัญชีสำหรับชำระเงิน
             </h3>
@@ -194,22 +216,22 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                 <dt className="shrink-0 text-gray-500">{account.accountNameLabel}</dt>
                 <dd className="text-right font-medium text-gray-900">{account.accountName}</dd>
               </div>
-              <div className="flex items-start justify-between gap-5 pb-4 pt-2.5">
+              <div className="flex items-start justify-between gap-5 py-2.5">
                 <dt className="shrink-0 text-gray-500">{account.accountNumberLabel}</dt>
                 <dd className="break-all text-right font-medium text-gray-900">{account.accountNumber}</dd>
               </div>
             </dl>
 
-            <div className="mt-5 rounded-xl bg-gray-50 p-4 text-center">
+            <div className="mt-4 text-center">
               <Image
                 alt="QR Code สำหรับชำระเงิน"
-                className="mx-auto h-auto w-full max-w-[260px] rounded-lg border border-gray-200 bg-white p-2"
+                className="mx-auto h-auto w-full rounded-lg"
                 height={300}
                 src={account.qrImageSrc}
                 width={300}
               />
               <a
-                className="group mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-orange-300 hover:bg-orange-50 active:border-orange-400 active:bg-orange-100"
+                className="group mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-orange-300 hover:bg-orange-50 active:border-orange-400 active:bg-orange-100"
                 download="payment-qr-code"
                 href={account.qrImageSrc}
               >
@@ -228,19 +250,22 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
               <ReceiptText aria-hidden="true" className="text-gray-400" size={21} />
               หลักฐานการโอนเงิน
             </h3>
-            <label
-              className={`group flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-0 text-center transition-colors ${
+            <div
+              className={`group rounded-xl border-2 border-dashed text-center transition-colors ${
                 formErrors.receipt
                   ? "border-red-400 bg-red-50 hover:border-orange-300 hover:bg-orange-50 active:border-orange-400 active:bg-orange-100"
                   : "border-gray-300 bg-gray-50 hover:border-orange-300 hover:bg-orange-50 active:border-orange-400 active:bg-orange-100"
               }`}
-              htmlFor="payment-receipt-upload"
               ref={(node) => {
                 fieldRefs.current.receipt = node;
               }}
             >
-              {receiptPreview ? (
-                <div className="p-5">
+              <button
+                className="flex min-h-32 w-full cursor-pointer flex-col items-center justify-center p-5"
+                onClick={() => receiptInputRef.current?.click()}
+                type="button"
+              >
+                {receiptPreview ? (
                   <Image
                     alt="ตัวอย่างหลักฐานการโอนเงิน"
                     className="h-auto w-full rounded-lg object-contain"
@@ -248,20 +273,20 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                     src={receiptPreview}
                     width={240}
                   />
-                </div>
-              ) : (
-                <UploadCloud
-                  aria-hidden="true"
-                  className="text-gray-400 transition-colors group-hover:text-orange-300 group-active:text-orange-400"
-                  size={32}
-                />
-              )}
-              <strong className={`${receiptPreview ? "mt-0" : "mt-2"} text-sm text-gray-800`}>
-                {receiptPreview ? "แตะเพื่ออัปโหลดรูปภาพใหม่" : "แตะเพื่ออัปโหลดหลักฐานการโอน"}
-              </strong>
-              <span className={`mt-1 text-sm text-gray-500 ${receiptPreview ? "pb-5" : ""}`}>
-                {receiptPreview ? fileName : "รองรับ JPG, PNG (สูงสุด 500 KB)"}
-              </span>
+                ) : (
+                  <UploadCloud
+                    aria-hidden="true"
+                    className="text-gray-400 transition-colors group-hover:text-orange-300 group-active:text-orange-400"
+                    size={32}
+                  />
+                )}
+                <strong className={`${receiptPreview ? "mt-3" : "mt-2"} text-sm text-gray-800`}>
+                  {receiptPreview ? "แตะเพื่ออัปโหลดรูปภาพใหม่" : "แตะเพื่ออัปโหลดหลักฐานการโอน"}
+                </strong>
+                <span className="mt-1 text-sm text-gray-500">
+                  {receiptPreview ? fileName : "รองรับ JPG, PNG (สูงสุด 500 KB)"}
+                </span>
+              </button>
               <input
                 accept=".jpg,.jpeg,.png"
                 className="sr-only"
@@ -295,9 +320,10 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                     setReceiptPreview("");
                   }
                 }}
+                ref={receiptInputRef}
                 type="file"
               />
-            </label>
+            </div>
             {formErrors.receipt ? <p className="mt-1.5 text-sm text-red-600">{formErrors.receipt}</p> : null}
           </section>
 
@@ -334,7 +360,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                   <ChevronDown aria-hidden="true" className="text-gray-400" size={18} />
                 </button>
                 {isCalendarOpen ? (
-                  <div className="absolute left-0 top-full z-30 mt-2 w-[300px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
+                  <div className="absolute bottom-full left-0 z-30 mb-2 w-[300px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
                     <div className="mb-3 flex items-center justify-between">
                       <button
                         aria-label="เดือนก่อนหน้า"
@@ -422,16 +448,20 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                   }}
                   type="button"
                 >
-                  {selectedHour && selectedMinute ? `${selectedHour}:${selectedMinute} น.` : "เลือกเวลาที่โอน"}
+                  {hasSelectedTime ? `${selectedHour}:${selectedMinute} น.` : "เลือกเวลา"}
                   <ChevronDown aria-hidden="true" className="text-gray-400" size={18} />
                 </button>
                 {isTimePickerOpen ? (
-                  <div className="absolute left-0 top-full z-30 mt-2 grid w-[200px] grid-cols-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+                  <div className="absolute bottom-full left-0 z-30 mb-2 grid w-[200px] grid-cols-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
                     <div className="border-r border-gray-100">
                       <p className="border-b border-gray-100 bg-gray-50 px-2 py-2 text-center text-sm font-semibold text-gray-500">
                         ชั่วโมง
                       </p>
-                      <div className="max-h-44 overflow-y-auto p-1.5" ref={hourListRef} role="listbox">
+                      <div
+                        className="max-h-44 touch-pan-y overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] p-1.5"
+                        ref={hourListRef}
+                        role="listbox"
+                      >
                         <div className="py-16">
                           {Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, "0")).map((hour) => (
                             <button
@@ -443,9 +473,10 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                               }`}
                               data-time-value={hour}
                               key={hour}
-                              onClick={() => {
-                                setSelectedHour(hour);
-                                setFormErrors((current) => ({ ...current, transferTime: "" }));
+                            onClick={() => {
+                              setSelectedHour(hour);
+                              setHasSelectedTime(true);
+                              setFormErrors((current) => ({ ...current, transferTime: "" }));
                               }}
                               role="option"
                               type="button"
@@ -460,7 +491,11 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                       <p className="border-b border-gray-100 bg-gray-50 px-2 py-2 text-center text-sm font-semibold text-gray-500">
                         นาที
                       </p>
-                      <div className="max-h-44 overflow-y-auto p-1.5" ref={minuteListRef} role="listbox">
+                      <div
+                        className="max-h-44 touch-pan-y overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] p-1.5"
+                        ref={minuteListRef}
+                        role="listbox"
+                      >
                         <div className="py-16">
                           {Array.from({ length: 60 }, (_, minute) => String(minute).padStart(2, "0")).map((minute) => (
                             <button
@@ -472,9 +507,10 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                               }`}
                               data-time-value={minute}
                               key={minute}
-                              onClick={() => {
-                                setSelectedMinute(minute);
-                                setFormErrors((current) => ({ ...current, transferTime: "" }));
+                            onClick={() => {
+                              setSelectedMinute(minute);
+                              setHasSelectedTime(true);
+                              setFormErrors((current) => ({ ...current, transferTime: "" }));
                               }}
                               role="option"
                               type="button"
@@ -532,7 +568,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
           </section>
         </div>
 
-        <footer className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50 px-4 py-3 sm:px-5">
+        <footer className="flex shrink-0 justify-end gap-2 border-t border-gray-100 bg-gray-50 px-4 py-3 sm:px-5">
           <button
             className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100"
             onClick={onClose}

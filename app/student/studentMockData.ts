@@ -51,6 +51,8 @@ export type LoanTimelineItem = {
   title: string;
   dateTime: string;
   actor: string;
+  commentTitle?: string;
+  comment?: string;
   isCompleted?: boolean;
   transferDetails?: string[];
 };
@@ -68,6 +70,7 @@ export type LoanPaymentHistoryItem = {
   paidAt: string;
   checkedAt: string;
   statusLabel: string;
+  status: "verified" | "checking" | "failed";
 };
 
 export type LoanContact = {
@@ -114,7 +117,7 @@ export const studentProfile = {
 
 export const activeLoan = {
   requestNumber: "SL-2568-0001",
-  statusLabel: "กำลังผ่อนชำระ",
+  statusLabel: "อยู่ระหว่างชำระคืน",
   paidAmount: "2,500",
   totalAmount: "3,000",
   progressPercent: 83,
@@ -138,7 +141,7 @@ export const paymentAccount: PaymentAccount = {
   accountNumberLabel: "เลขที่บัญชี",
   accountNumber: "1234567890",
   qrTitle: "THAI QR PAYMENT",
-  qrImageSrc: "/mock-payment-qr.svg",
+  qrImageSrc: "/payment-qr.jpg",
   qrRecipientName: "น.ส. ชลลานนา สายคำปา",
   qrAccountName: "xxx-x-x1188-x",
   qrReference: "004999123469479",
@@ -214,7 +217,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
   },
   {
     requestNumber: "SL-2568-0005",
-    statusLabel: "รออาจารย์ที่ปรึกษาอนุมัติ",
+    statusLabel: "รออาจารย์ที่ปรึกษา",
     statusType: "waitingAdvisorApproval",
     submittedAt: "ยื่นเมื่อ 22 ต.ค. 2569 14:20 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 2/2568",
@@ -223,7 +226,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
   },
   {
     requestNumber: "SL-2568-0006",
-    statusLabel: "รอผู้บริหารอนุมัติ",
+    statusLabel: "รอผู้บริหาร",
     statusType: "waitingExecutiveApproval",
     submittedAt: "ยื่นเมื่อ 18 ต.ค. 2569 10:45 น.",
     purpose: "ค่าใช้จ่ายเกี่ยวกับการศึกษา",
@@ -232,7 +235,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
   },
   {
     requestNumber: "SL-2568-0007",
-    statusLabel: "รอเจ้าหน้าที่ตรวจสอบ",
+    statusLabel: "รอเจ้าหน้าที่",
     statusType: "waitingDocumentReview",
     submittedAt: "ยื่นเมื่อ 12 ต.ค. 2569 08:50 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 2/2568",
@@ -262,7 +265,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
     additionalReasonLabel: "หมายเหตุเพิ่มเติม",
     additionalReason: "สถานการณ์ทางการเงิน",
     downloadLabel: "ดาวน์โหลดสัญญาการกู้ยืม",
-    transferSlipImage: "/mock-transfer-slip.svg",
+    transferSlipImage: "/mock-payment-receipt-2.jpg",
     timeline: [
       {
         title: "ส่งคำร้องกู้ยืม",
@@ -273,6 +276,8 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
         title: "อาจารย์ที่ปรึกษาอนุมัติ",
         dateTime: "18 ธ.ค. 2569 10:00 น.",
         actor: "พิมพา มีโชค",
+        commentTitle: "ความคิดเห็นของอาจารย์ที่ปรึกษา",
+        comment: "ตรวจสอบข้อมูลแล้ว เห็นควรอนุมัติคำร้อง",
       },
       {
         title: "เจ้าหน้าที่ตรวจสอบเอกสาร",
@@ -283,6 +288,8 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
         title: "ผู้บริหารพิจารณาอนุมัติ",
         dateTime: "18 ธ.ค. 2569 10:00 น.",
         actor: "เอกฤทธิ์ มีโชค",
+        commentTitle: "ความคิดเห็นของผู้บริหาร",
+        comment: "อนุมัติตามความจำเป็นและความเหมาะสมของคำร้อง",
       },
       {
         title: "เจ้าหน้าที่โอนเงิน จำนวน 3,000",
@@ -317,26 +324,38 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
       {
         installmentNumber: 1,
         amount: "1,000",
-        receiptImage: "/mock-transfer-slip.svg",
+        receiptImage: "/mock-payment-receipt-1.jpg",
         paidAt: "ชำระเมื่อ 24 พ.ค. 2569 10:00 น.",
         checkedAt: "ตรวจสอบเมื่อ 25 พ.ค. 2569 10:00 น.",
         statusLabel: "ตรวจสอบสำเร็จ",
+        status: "verified",
       },
       {
         installmentNumber: 2,
-        amount: "1,000",
-        receiptImage: "/mock-transfer-slip.svg",
+        amount: "500",
+        receiptImage: "/mock-payment-receipt-1.jpg",
         paidAt: "ชำระเมื่อ 27 ก.ค. 2569 10:00 น.",
-        checkedAt: "ตรวจสอบเมื่อ 28 ก.ค. 2569 10:00 น.",
-        statusLabel: "ตรวจสอบสำเร็จ",
+        checkedAt: "ตรวจสอบเมื่อ 28 ก.ค. 2569 10:00 น. · ไม่ผ่าน",
+        statusLabel: "ไม่ผ่านการตรวจสอบ",
+        status: "failed",
+      },
+      {
+        installmentNumber: 2,
+        amount: "500",
+        receiptImage: "/mock-payment-receipt-1.jpg",
+        paidAt: "ชำระเมื่อ 29 ก.ค. 2569 14:30 น.",
+        checkedAt: "กำลังรอเจ้าหน้าที่ตรวจสอบ",
+        statusLabel: "กำลังตรวจสอบ",
+        status: "checking",
       },
       {
         installmentNumber: 3,
         amount: "500",
-        receiptImage: "/mock-transfer-slip.svg",
+        receiptImage: "/mock-payment-receipt-1.jpg",
         paidAt: "ชำระเมื่อ 1 ส.ค. 2569 10:00 น.",
         checkedAt: "ตรวจสอบเมื่อ 2 ส.ค. 2569 10:00 น.",
         statusLabel: "ตรวจสอบสำเร็จ",
+        status: "verified",
       },
     ],
     contact: loanContact,

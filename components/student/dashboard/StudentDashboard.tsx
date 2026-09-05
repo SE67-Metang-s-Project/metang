@@ -1,15 +1,15 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
 import {
   activeLoan,
-  getLoanDetails,
   installmentPayments,
   loanRequestHistory,
   paymentAccount,
   studentProfile,
 } from "@/app/student/studentMockData";
-import LoanDetailsPage from "../loan-details/LoanDetailsPage";
 import LoanHistoryList from "./LoanHistoryList";
 import LoanSummaryCard from "./LoanSummaryCard";
 import PaymentBehaviorCard from "./PaymentBehaviorCard";
@@ -24,9 +24,9 @@ import styles from "@/app/student/student.module.css";
 export default function StudentDashboard() {
   const [showAllRequests, setShowAllRequests] = useState(false);
   const [activePayment, setActivePayment] = useState<InstallmentPayment | null>(null);
-  const [activeView, setActiveView] = useState<"dashboard" | "loan-details">("dashboard");
-  const [activeRequestNumber, setActiveRequestNumber] = useState(activeLoan.requestNumber);
+  const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState(false);
   const preservedScrollPosition = useRef<number | null>(null);
+  const router = useRouter();
 
   useLayoutEffect(() => {
     if (preservedScrollPosition.current === null) {
@@ -42,14 +42,13 @@ export default function StudentDashboard() {
     setShowAllRequests((current) => !current);
   };
 
-  const activeLoanDetails = getLoanDetails(activeRequestNumber);
   const openLoanDetails = (requestNumber: string) => {
-    const loanDetails = getLoanDetails(requestNumber);
+    router.push(`/student/detail?request=${encodeURIComponent(requestNumber)}`);
+  };
 
-    if (loanDetails) {
-      setActiveRequestNumber(requestNumber);
-      setActiveView("loan-details");
-    }
+  const handlePaymentConfirmed = () => {
+    setActivePayment(null);
+    setIsPaymentSuccessOpen(true);
   };
 
   return (
@@ -63,13 +62,10 @@ export default function StudentDashboard() {
       />
 
       <div className={styles.studentPageContent}>
-        {activeView === "loan-details" && activeLoanDetails ? (
-          <LoanDetailsPage details={activeLoanDetails} onBack={() => setActiveView("dashboard")} />
-        ) : (
         <div className={styles.studentContent}>
           <LoanSummaryCard
             medicalBag={<MedicalBagIcon />}
-            onOpenDetails={() => setActiveView("loan-details")}
+            onOpenDetails={() => openLoanDetails(activeLoan.requestNumber)}
           />
           <PaymentBehaviorCard />
           <InstallmentList
@@ -84,7 +80,6 @@ export default function StudentDashboard() {
           />
           <ContactFooter />
         </div>
-        )}
       </div>
 
       {activePayment ? (
@@ -92,8 +87,36 @@ export default function StudentDashboard() {
           account={paymentAccount}
           installment={activePayment}
           onClose={() => setActivePayment(null)}
-          onConfirm={() => setActivePayment(null)}
+          onConfirm={handlePaymentConfirmed}
         />
+      ) : null}
+
+      {isPaymentSuccessOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
+          role="presentation"
+        >
+          <section
+            aria-labelledby="payment-success-title"
+            aria-modal="true"
+            className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl"
+            role="alertdialog"
+          >
+            <CheckCircle2 aria-hidden="true" className="mx-auto text-green-500" size={64} strokeWidth={1.5} />
+            <h2 className="mt-4 text-2xl font-bold text-gray-900" id="payment-success-title">
+              ดำเนินการสำเร็จ!
+            </h2>
+            <p className="mt-2 text-gray-600">ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว</p>
+            <p className="mt-1 text-sm text-gray-500">เจ้าหน้าที่จะตรวจสอบและแจ้งผลให้ทราบภายหลัง</p>
+            <button
+              className="mt-6 w-full rounded-lg bg-green-600 px-4 py-3 font-bold text-white transition-colors hover:bg-green-700"
+              onClick={() => setIsPaymentSuccessOpen(false)}
+              type="button"
+            >
+              ตกลง
+            </button>
+          </section>
+        </div>
       ) : null}
     </main>
   );
