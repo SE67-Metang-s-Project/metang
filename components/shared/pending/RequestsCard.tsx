@@ -1,3 +1,4 @@
+// src/components/superadmin/setting/RequestsCard.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -604,7 +605,6 @@ export default function RequestsCard({
                   <td className="min-w-[130px] py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
                     {req.id}
                   </td>
-                  {/* เปลี่ยนแปลงการแสดงผลในส่วนของข้อมูลนักศึกษา */}
                   <td className="py-4 px-4 border-r border-gray-200">
                     <div className="font-bold text-gray-900 max-[1201px]:line-clamp-1">
                       {req.name}
@@ -871,35 +871,62 @@ export default function RequestsCard({
                 </div>
               )}
 
-              {/* ความเห็นประกอบการพิจารณา */}
-              {selectedRequest.approvals && selectedRequest.approvals.length > 0 && (
-                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                  <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-3 border-b border-gray-100 pb-2">
-                    <MessageSquare size={15} className="text-[#ea580c]" /> ความเห็นประกอบการพิจารณา
-                  </div>
+              {/* ============================================================== */}
+              {/* ความเห็นประกอบการพิจารณาจาก Role ต่างๆ (ย้ายมาไว้บน พฤติกรรมการชำระ) */}
+              {/* ============================================================== */}
+              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-3 border-b border-gray-100 pb-2">
+                  <MessageSquare size={15} className="text-[#ea580c]" /> ความเห็นประกอบการพิจารณา
+                </div>
+
+                {selectedRequest.approvals && selectedRequest.approvals.length > 0 ? (
                   <div className="space-y-3">
-                    {selectedRequest.approvals.map((approval, idx) => (
-                      <div
-                        key={idx}
-                        className="bg-orange-50/50 p-3.5 rounded-lg border border-orange-100/50"
-                      >
-                        <div className="flex justify-between items-start mb-1">
-                          <div className="font-bold text-gray-900 text-[13px]">
-                            {approval.actorName}{" "}
-                            <span className="text-gray-500 font-normal text-[12px]">
-                              ({getRoleDisplay(approval.step)})
+                    {selectedRequest.approvals.map((approval, idx) => {
+                      // กำหนดสีและสไตล์ตาม Role
+                      let roleBadgeClass = "bg-gray-100 text-gray-700 border-gray-200";
+                      let boxBgClass = "bg-gray-50 border-gray-100";
+
+                      if (approval.step === "advisor") {
+                        roleBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                        boxBgClass = "bg-emerald-50/40 border-emerald-100";
+                      } else if (approval.step === "admin") {
+                        roleBadgeClass = "bg-blue-100 text-blue-800 border-blue-200";
+                        boxBgClass = "bg-blue-50/40 border-blue-100";
+                      } else if (approval.step === "executive") {
+                        roleBadgeClass = "bg-purple-100 text-purple-800 border-purple-200";
+                        boxBgClass = "bg-purple-50/40 border-purple-100";
+                      }
+
+                      return (
+                        <div key={idx} className={`p-3.5 rounded-lg border ${boxBgClass}`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                              <span className="font-bold text-gray-900 text-[13px]">
+                                {approval.actorName}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${roleBadgeClass}`}
+                              >
+                                {getRoleDisplay(approval.step)}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-gray-500 shrink-0">
+                              {approval.date}
                             </span>
                           </div>
-                          <span className="text-[11px] text-gray-500">{approval.date}</span>
+                          <p className="text-[13px] text-gray-700 leading-relaxed italic">
+                            &ldquo;{approval.comment}&rdquo;
+                          </p>
                         </div>
-                        <p className="text-[13px] text-gray-700 leading-relaxed italic">
-                          &ldquo;{approval.comment}&rdquo;
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-4 bg-gray-50 rounded-lg border border-gray-100 border-dashed">
+                    <p className="text-[13px] text-gray-500">ยังไม่มีความเห็นประกอบการพิจารณา</p>
+                  </div>
+                )}
+              </div>
 
               {/* พฤติกรรมการชำระ */}
               <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">

@@ -40,14 +40,14 @@ export default function UserRolesTab() {
             placeholder="ค้นหาชื่อ / อีเมล / รหัส CMU"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-sm"
           />
         </div>
         <div className="w-full sm:w-48">
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm cursor-pointer appearance-none"
+            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 shadow-sm cursor-pointer appearance-none"
           >
             <option value="ทุกบทบาท">ทุกบทบาท</option>
             <option value="นักศึกษา">นักศึกษา</option>
@@ -77,12 +77,12 @@ export default function UserRolesTab() {
               <div
                 key={user.id}
                 className={`flex flex-col gap-3 p-3.5 rounded-xl border ${
-                  index === 0 ? "border-blue-400 bg-blue-50/30" : "border-gray-200 bg-white"
+                  index === 0 ? "border-orange-400 bg-orange-50/30" : "border-gray-200 bg-white"
                 } transition-colors group shadow-sm`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-semibold shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-semibold shrink-0">
                       {user.initials}
                     </div>
                     <div>
@@ -91,7 +91,7 @@ export default function UserRolesTab() {
                           {user.name}
                         </span>
                         {user.isStarred && (
-                          <Star size={14} className="fill-purple-500 text-purple-500" />
+                          <Star size={14} className="fill-orange-500 text-orange-500" />
                         )}
                       </div>
                       <div className="text-[12px] text-gray-500 mt-0.5">{user.id}</div>
@@ -107,7 +107,7 @@ export default function UserRolesTab() {
                     <select
                       value={user.role}
                       onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                      className="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-[12px] font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 outline-none cursor-pointer transition-all focus:ring-2 focus:ring-blue-500/20"
+                      className="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-[12px] font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 outline-none cursor-pointer transition-all focus:ring-2 focus:ring-orange-500/20"
                     >
                       <option value="นักศึกษา">นักศึกษา</option>
                       <option value="อาจารย์ที่ปรึกษา">อาจารย์ที่ปรึกษา</option>
@@ -160,18 +160,18 @@ export default function UserRolesTab() {
                   <tr
                     key={user.id}
                     className={`border-b border-gray-100 hover:bg-slate-50 transition-colors group ${
-                      index === 0 ? "bg-blue-50/20" : ""
+                      index === 0 ? "bg-orange-50/20" : ""
                     }`}
                   >
                     <td className="py-3 px-6 border-r border-gray-100">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[13px] font-semibold shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-[13px] font-semibold shrink-0">
                           {user.initials}
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-gray-900 text-[14px]">{user.name}</span>
                           {user.isStarred && (
-                            <Star size={14} className="fill-purple-500 text-purple-500" />
+                            <Star size={14} className="fill-orange-500 text-orange-500" />
                           )}
                         </div>
                       </div>
@@ -187,7 +187,7 @@ export default function UserRolesTab() {
                           <select
                             value={user.role}
                             onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                            className="w-full appearance-none pl-4 pr-8 py-1.5 rounded-lg text-[13px] font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 outline-none cursor-pointer transition-all focus:ring-2 focus:ring-blue-500/20"
+                            className="w-full appearance-none pl-4 pr-8 py-1.5 rounded-lg text-[13px] font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 outline-none cursor-pointer transition-all focus:ring-2 focus:ring-orange-500/20"
                           >
                             <option value="นักศึกษา">นักศึกษา</option>
                             <option value="อาจารย์ที่ปรึกษา">อาจารย์ที่ปรึกษา</option>
