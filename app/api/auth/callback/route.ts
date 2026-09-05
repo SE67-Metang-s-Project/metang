@@ -12,6 +12,7 @@ import {
   type OAuthTransaction,
 } from "@/lib/cmu-auth";
 import { getNurseAccessDecision } from "@/lib/nurse-auth";
+import { syncUserFromCmuProfile } from "@/db/queries/users";
 
 type TokenResponse = {
   access_token?: string;
@@ -122,6 +123,13 @@ export async function GET(request: NextRequest) {
       loggedInAt: Date.now(),
       expiresAt: Date.now() + SESSION_MAX_AGE * 1000,
     };
+
+    try {
+      await syncUserFromCmuProfile(profile);
+    } catch (dbError) {
+      console.error("Failed to sync user to database during CMU login callback", dbError);
+    }
+
     const response = redirectHome(request);
     response.cookies.set(CMU_SESSION_COOKIE, seal(session), {
       httpOnly: true,

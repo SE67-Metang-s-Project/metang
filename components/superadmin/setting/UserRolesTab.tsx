@@ -132,26 +132,21 @@ export default function UserRolesTab({
       return;
     }
 
+    if (targetRole === "executive") {
+      const execUser = usersList.find(
+        (u) => u.id !== user.id && u.roles.some((r) => r.role === "executive"),
+      );
+      if (execUser) {
+        const execName = execUser.fullNameTh || execUser.fullNameEn || execUser.email;
+        showToast("error", `มีผู้บริหารในระบบแล้ว (${execName}) กรุณาเปลี่ยนบทบาทผู้บริหารเดิมก่อน`);
+        return;
+      }
+    }
+
     setMutatingUserId(user.id);
 
     try {
-      // 1. If changing away from super_admin, try removing super_admin first to trigger final admin safeguard
-      if (currentRoleNames.includes("super_admin") && targetRole !== "super_admin") {
-        const removeRes = await fetch(`/api/super-admin/users/${user.id}/roles`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "remove", role: "super_admin" }),
-        });
-        if (!removeRes.ok) {
-          const errJson = await removeRes.json().catch(() => ({}));
-          if (errJson.error?.code === "FINAL_SUPER_ADMIN" || removeRes.status === 409) {
-            throw new Error("ไม่สามารถยกเลิกบทบาทผู้ดูแลระบบคนสุดท้ายได้");
-          }
-          throw new Error(errJson.error?.message || "ไม่สามารถเปลี่ยนบทบาทผู้ใช้ได้");
-        }
-      }
-
-      // 2. Grant new role if not already assigned
+      // 1. Grant new role first (keeps admin permissions active if editing self)
       if (!currentRoleNames.includes(targetRole)) {
         const grantRes = await fetch(`/api/super-admin/users/${user.id}/roles`, {
           method: "POST",
@@ -164,9 +159,9 @@ export default function UserRolesTab({
         }
       }
 
-      // 3. Remove remaining old roles
+      // 2. Remove all old roles that are not the target role
       for (const oldRole of currentRoleNames) {
-        if (oldRole === targetRole || oldRole === "super_admin") continue;
+        if (oldRole === targetRole) continue;
         const remRes = await fetch(`/api/super-admin/users/${user.id}/roles`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -174,6 +169,9 @@ export default function UserRolesTab({
         });
         if (!remRes.ok) {
           const errJson = await remRes.json().catch(() => ({}));
+          if (errJson.error?.code === "FINAL_SUPER_ADMIN" || remRes.status === 409) {
+            throw new Error("ไม่สามารถยกเลิกบทบาทผู้ดูแลระบบคนสุดท้ายได้");
+          }
           console.warn(`Failed to remove old role ${oldRole}:`, errJson);
         }
       }
@@ -319,6 +317,10 @@ export default function UserRolesTab({
               );
               const isMutating = mutatingUserId === user.id;
 
+              const isAnotherUserExecutive = usersList.some(
+                (u) => u.id !== user.id && u.roles.some((r) => r.role === "executive"),
+              );
+
               return (
                 <div
                   key={user.id}
@@ -380,7 +382,9 @@ export default function UserRolesTab({
                             <option value="นักศึกษา">นักศึกษา</option>
                             <option value="อาจารย์ที่ปรึกษา">อาจารย์ที่ปรึกษา</option>
                             <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
-                            <option value="ผู้บริหาร">ผู้บริหาร</option>
+                            <option value="ผู้บริหาร" disabled={isAnotherUserExecutive}>
+                              ผู้บริหาร{isAnotherUserExecutive ? " (มีผู้บริหารแล้ว)" : ""}
+                            </option>
                             <option value="ผู้ดูแลระบบ">ผู้ดูแลระบบ</option>
                           </select>
                           <ChevronDown
@@ -445,6 +449,9 @@ export default function UserRolesTab({
                     (r) => r.role === "super_admin" || r.role === "executive",
                   );
                   const isMutating = mutatingUserId === user.id;
+                  const isAnotherUserExecutive = usersList.some(
+                    (u) => u.id !== user.id && u.roles.some((r) => r.role === "executive"),
+                  );
 
                   return (
                     <tr
@@ -505,7 +512,9 @@ export default function UserRolesTab({
                                   <option value="นักศึกษา">นักศึกษา</option>
                                   <option value="อาจารย์ที่ปรึกษา">อาจารย์ที่ปรึกษา</option>
                                   <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
-                                  <option value="ผู้บริหาร">ผู้บริหาร</option>
+                                  <option value="ผู้บริหาร" disabled={isAnotherUserExecutive}>
+                                    ผู้บริหาร{isAnotherUserExecutive ? " (มีผู้บริหารแล้ว)" : ""}
+                                  </option>
                                   <option value="ผู้ดูแลระบบ">ผู้ดูแลระบบ</option>
                                 </select>
                                 <ChevronDown

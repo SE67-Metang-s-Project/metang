@@ -14,7 +14,7 @@ import type { AppUser, UserRoleName } from "@/lib/generated/prisma/client";
 
 const STUDENT_ID_KEYS = ["student_id", "studentId", "student_code", "studentCode"];
 const EMAIL_KEYS = ["email", "mail", "email_address", "cmuitaccount", "cmuitaccount_name"];
-const CMU_ACCOUNT_KEYS = ["cmuitaccount", "cmuitaccount_name", "cmu_account", "cmuAccount"];
+const CMU_ACCOUNT_KEYS = ["cmuitaccount_name", "cmuitaccount", "cmu_account", "cmuAccount"];
 
 const DEVELOPMENT_USER_IDS: Record<DevelopmentApiRole, string> = {
   executive: "00000000-0000-0000-0000-000000000001",
@@ -58,13 +58,14 @@ function profileText(profile: CmuProfile, keys: string[]) {
 }
 
 export function normalizeLoanIdentity(profile: CmuProfile): LoanIdentity {
-  const cmuAccount = profileText(profile, CMU_ACCOUNT_KEYS).toLowerCase() || null;
+  const rawAccount = profileText(profile, CMU_ACCOUNT_KEYS).toLowerCase();
+  const cmuAccount = rawAccount ? rawAccount.split("@")[0] : null;
   const email = profileText(profile, EMAIL_KEYS).toLowerCase() || null;
   const studentCode = profileText(profile, STUDENT_ID_KEYS) || null;
 
   return {
     cmuAccount,
-    email: email?.includes("@") ? email : null,
+    email: email?.includes("@") ? email : (cmuAccount ? `${cmuAccount}@cmu.ac.th` : null),
     studentCode,
     displayName: getCmuDisplayName(profile).trim() || "CMU user",
   };
@@ -75,14 +76,11 @@ export async function resolveStudentIdentity(identity: LoanIdentity) {
 
   return prisma.appUser.findFirst({
     where: {
-      ...(identity.cmuAccount
-        ? { cmuAccount: identity.cmuAccount }
-        : {
-            OR: [
-              ...(identity.email ? [{ email: identity.email }] : []),
-              ...(identity.studentCode ? [{ studentCode: identity.studentCode }] : []),
-            ],
-          }),
+      OR: [
+        ...(identity.cmuAccount ? [{ cmuAccount: identity.cmuAccount }] : []),
+        ...(identity.email ? [{ email: identity.email }] : []),
+        ...(identity.studentCode ? [{ studentCode: identity.studentCode }] : []),
+      ],
     },
     include: { roles: { select: { role: true } } },
   });
@@ -206,10 +204,15 @@ export async function getStudentSessionContext(): Promise<LoanSessionContext | n
   return { session, profile: session.profile, identity };
 }
 
-export type AdvisorAccess =
+export type RoleAccess =
   | { status: "authorized"; context: LoanUserContext }
   | { status: "unauthenticated" }
   | { status: "forbidden" };
+
+export type AdvisorAccess = RoleAccess;
+export type AdminAccess = RoleAccess;
+export type ExecutiveAccess = RoleAccess;
+export type SuperAdminAccess = RoleAccess;
 
 export async function getAdvisorAccess(advisorName?: string): Promise<AdvisorAccess> {
   if (isDevelopmentApiBypass() || isDevelopmentRoleEnabled("advisor")) {
@@ -235,24 +238,9 @@ export async function getAdvisorContext(advisorName?: string): Promise<LoanUserC
   return access.status === "authorized" ? access.context : null;
 }
 
-export type AdminAccess =
-  | { status: "authorized"; context: LoanUserContext }
-  | { status: "unauthenticated" }
-  | { status: "forbidden" };
-
 function hasAdminRole(roles: { role: UserRoleName }[]) {
   return roles.some(({ role }) => role === "admin" || role === "super_admin");
 }
-
-export type ExecutiveAccess =
-  | { status: "authorized"; context: LoanUserContext }
-  | { status: "unauthenticated" }
-  | { status: "forbidden" };
-
-export type SuperAdminAccess =
-  | { status: "authorized"; context: LoanUserContext }
-  | { status: "unauthenticated" }
-  | { status: "forbidden" };
 
 function hasExecutiveRole(roles: { role: UserRoleName }[]) {
   return roles.some(({ role }) => role === "executive");
@@ -345,11 +333,22 @@ export async function getExecutiveContext(): Promise<LoanUserContext | null> {
   return access.status === "authorized" ? access.context : null;
 }
 
-export async function requireExecutiveAccess(
-  errorRedirectUrl = "/error?type=forbidden",
-  loginRedirectUrl = "/error?type=unauthenticated",
+export async function getStudentAccess(): Promise<RoleAccess> {
+  const session = await getCmuSession();
+  if (!session) return { status: "unauthenticated" };
+
+  const context = await getStudentContext();
+  if (!context) return { status: "forbidden" };
+
+  return { status: "authorized", context };
+}
+
+async function requireRoleAccess(
+  accessPromise: Promise<RoleAccess>,
+  errorRedirectUrl: string,
+  loginRedirectUrl: string,
 ): Promise<LoanUserContext> {
-  const access = await getExecutiveAccess();
+  const access = await accessPromise;
 
   if (access.status === "unauthenticated") {
     redirect(loginRedirectUrl);
@@ -360,40 +359,27 @@ export async function requireExecutiveAccess(
   }
 
   return access.context;
+}
+
+export async function requireExecutiveAccess(
+  errorRedirectUrl = "/error?type=forbidden",
+  loginRedirectUrl = "/error?type=unauthenticated",
+): Promise<LoanUserContext> {
+  return requireRoleAccess(getExecutiveAccess(), errorRedirectUrl, loginRedirectUrl);
 }
 
 export async function requireAdminAccess(
   errorRedirectUrl = "/error?type=forbidden",
   loginRedirectUrl = "/error?type=unauthenticated",
 ): Promise<LoanUserContext> {
-  const access = await getAdminAccess();
-
-  if (access.status === "unauthenticated") {
-    redirect(loginRedirectUrl);
-  }
-
-  if (access.status === "forbidden") {
-    redirect(errorRedirectUrl);
-  }
-
-  return access.context;
+  return requireRoleAccess(getAdminAccess(), errorRedirectUrl, loginRedirectUrl);
 }
 
 export async function requireSuperAdminAccess(
   errorRedirectUrl = "/error?type=forbidden",
   loginRedirectUrl = "/error?type=unauthenticated",
 ): Promise<LoanUserContext> {
-  const access = await getSuperAdminAccess();
-
-  if (access.status === "unauthenticated") {
-    redirect(loginRedirectUrl);
-  }
-
-  if (access.status === "forbidden") {
-    redirect(errorRedirectUrl);
-  }
-
-  return access.context;
+  return requireRoleAccess(getSuperAdminAccess(), errorRedirectUrl, loginRedirectUrl);
 }
 
 export async function requireAdvisorAccess(
@@ -401,32 +387,12 @@ export async function requireAdvisorAccess(
   errorRedirectUrl = "/error?type=forbidden",
   loginRedirectUrl = "/error?type=unauthenticated",
 ): Promise<LoanUserContext> {
-  const access = await getAdvisorAccess(advisorName);
-
-  if (access.status === "unauthenticated") {
-    redirect(loginRedirectUrl);
-  }
-
-  if (access.status === "forbidden") {
-    redirect(errorRedirectUrl);
-  }
-
-  return access.context;
+  return requireRoleAccess(getAdvisorAccess(advisorName), errorRedirectUrl, loginRedirectUrl);
 }
 
 export async function requireStudentAccess(
   errorRedirectUrl = "/error?type=forbidden",
   loginRedirectUrl = "/error?type=unauthenticated",
 ): Promise<LoanUserContext> {
-  const session = await getCmuSession();
-  if (!session) {
-    redirect(loginRedirectUrl);
-  }
-
-  const context = await getStudentContext();
-  if (!context) {
-    redirect(errorRedirectUrl);
-  }
-
-  return context;
+  return requireRoleAccess(getStudentAccess(), errorRedirectUrl, loginRedirectUrl);
 }
