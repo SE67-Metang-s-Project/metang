@@ -24,7 +24,7 @@ export default function ExecutiveApprovePage() {
           userId="T1002"
         />
 
-        <div className="w-full max-w-[1200px] p-4 mx-auto space-y-8 sm:p-6 lg:p-8">
+        <div className="w-full max-w-[1600px] p-4 mx-auto space-y-8 sm:p-6 lg:p-8">
           <div>
             <h1 className="text-xl font-semibold text-slate-800 sm:text-2xl">พิจารณาคำร้อง</h1>
             <p className="mt-1 text-sm text-slate-500">ตรวจสอบและพิจารณาอนุมัติคำร้อง</p>
