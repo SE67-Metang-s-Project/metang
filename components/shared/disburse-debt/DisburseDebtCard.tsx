@@ -10,6 +10,7 @@ import {
   UploadCloud,
   FileImage,
   AlertCircle,
+  Copy, // <--- เพิ่มไอคอน Copy เข้ามา
 } from "lucide-react";
 
 // ==========================================
@@ -39,7 +40,7 @@ export type ActionRequest = {
   isOverdue?: boolean;
   history?: { action: string; date: string; actor: string }[];
   bankDetails?: BankDetails;
-  [key: string]: unknown; // อนุญาตให้มีฟิลด์อื่นๆ เพิ่มเติมจาก mock ได้ (เช่น paymentBehavior, approvals)
+  [key: string]: unknown;
 };
 
 interface DisburseDebtCardProps {
@@ -49,11 +50,13 @@ interface DisburseDebtCardProps {
 export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
   const [selectedReq, setSelectedReq] = useState<ActionRequest | null>(null);
   const [uploadedSlip, setUploadedSlip] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false); // <--- State สำหรับเช็คว่ากดคัดลอกหรือยัง
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const closeAllModals = () => {
     setSelectedReq(null);
     setUploadedSlip(null);
+    setIsCopied(false); // รีเซ็ตสถานะปุ่มคัดลอกเมื่อปิด Modal
   };
 
   const formatAmount = (amountStr: string) => {
@@ -74,6 +77,15 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
       const imageUrl = URL.createObjectURL(file);
       setUploadedSlip(imageUrl);
     }
+  };
+
+  // ฟังก์ชันสำหรับคัดลอกและเปลี่ยนสถานะปุ่ม
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setIsCopied(true);
+    setTimeout(() => {
+      setIsCopied(false);
+    }, 2000); // กลับเป็นเหมือนเดิมหลังผ่านไป 2 วินาที
   };
 
   return (
@@ -97,7 +109,9 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
               <tr className="border-b border-gray-300 bg-gray-100/70 text-[14px] text-gray-700">
                 <th className="min-w-[130px] whitespace-nowrap border-r border-gray-300 px-4 py-3.5 text-center font-semibold">
                   <span className="lg:hidden">
-                    รหัส<br />คำร้อง
+                    รหัส
+                    <br />
+                    คำร้อง
                   </span>
                   <span className="hidden lg:inline">รหัสคำร้อง</span>
                 </th>
@@ -106,7 +120,9 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                 </th>
                 <th className="border-r border-gray-300 px-4 py-3.5 text-center font-semibold">
                   <span className="lg:hidden">
-                    วันที่-เวลา<br />ยื่นคำร้อง
+                    วันที่-เวลา
+                    <br />
+                    ยื่นคำร้อง
                   </span>
                   <span className="hidden lg:inline">วันที่-เวลายื่นคำร้อง</span>
                 </th>
@@ -119,9 +135,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                 <th className="whitespace-nowrap border-r border-gray-300 px-4 py-3.5 text-center font-semibold">
                   จำนวนงวด
                 </th>
-                <th className="whitespace-nowrap px-4 py-3.5 text-center font-bold">
-                  จัดการ
-                </th>
+                <th className="whitespace-nowrap px-4 py-3.5 text-center font-bold">จัดการ</th>
               </tr>
             </thead>
             <tbody className="text-[14px] text-gray-700">
@@ -157,7 +171,6 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     {req.term} งวด
                   </td>
                   <td className="px-4 py-4 align-middle">
-                    {/* เนื่องจาก mock ตัวนี้สถานะหลากหลาย เพื่อให้เทสต์ปุ่มตรวจสอบได้ จะเช็คว่าถ้าสถานะไม่ใช่ 'disbursed' ให้โชว์ปุ่ม */}
                     <div className="flex justify-center">
                       {req.requestStatus !== "disbursed" ? (
                         <button
@@ -206,23 +219,32 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
 
             {/* Body */}
             <div className="p-6 overflow-y-auto bg-gray-50/50 space-y-5">
-              {/* ยอดเงินและผู้รับ */}
-              <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
+              {/* ========================================== */}
+              {/* แยกส่วนข้อมูลเป็น 2 กล่อง: ข้อมูลนักศึกษา และ ยอดเงิน */}
+              {/* ========================================== */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* กล่องข้อมูลนักศึกษา */}
+                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
                     <User size={24} />
                   </div>
                   <div>
                     <div className="text-[12px] text-gray-500">โอนเงินให้แก่นักศึกษา</div>
-                    <div className="font-bold text-gray-900 text-[16px]">
+                    <div className="font-bold text-gray-900 text-[15px] mt-0.5">
                       {selectedReq.name}
                     </div>
-                    <div className="text-[13px] text-gray-600">รหัส: {selectedReq.studentId}</div>
+                    <div className="text-[13px] text-gray-600 mt-0.5">
+                      รหัส: {selectedReq.studentId}
+                    </div>
                   </div>
                 </div>
-                <div className="text-center sm:text-right">
-                  <div className="text-[12px] text-gray-500 mb-0.5">ยอดเงินที่ต้องโอน</div>
-                  <div className="font-black text-[#ea580c] text-[24px]">
+
+                {/* กล่องยอดเงินที่ต้องโอน */}
+                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center sm:items-end text-left sm:text-right">
+                  <div className="text-[13px] text-gray-500 mb-1 flex items-center gap-1.5">
+                    <Wallet size={15} /> ยอดเงินที่ต้องโอน
+                  </div>
+                  <div className="font-black text-[#ea580c] text-[26px] leading-tight">
                     ฿{formatAmount(selectedReq.amount)}
                   </div>
                 </div>
@@ -246,7 +268,9 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                       {selectedReq.bankDetails?.accountName ?? "-"}
                     </span>
                   </div>
-                  <div className="bg-white p-3 rounded-lg border border-blue-100 sm:col-span-2 flex justify-between items-center">
+
+                  {/* เปลี่ยนแปลง: เพิ่มลูกเล่นปุ่มคัดลอก */}
+                  <div className="bg-white p-3 rounded-lg border border-blue-100 sm:col-span-2 flex justify-between items-center transition-all">
                     <div>
                       <span className="block text-[11px] text-gray-500 mb-0.5">เลขที่บัญชี</span>
                       <span className="font-mono font-bold text-xl text-blue-700 tracking-wider">
@@ -254,12 +278,22 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                       </span>
                     </div>
                     <button
-                      onClick={() =>
-                        navigator.clipboard.writeText(selectedReq.bankDetails?.accountNumber ?? "")
-                      }
-                      className="px-3 py-1.5 text-xs font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md transition-colors"
+                      onClick={() => handleCopy(selectedReq.bankDetails?.accountNumber ?? "")}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
+                        isCopied
+                          ? "bg-green-100 text-green-700 shadow-sm"
+                          : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                      }`}
                     >
-                      คัดลอก
+                      {isCopied ? (
+                        <>
+                          <CheckCircle2 size={14} /> คัดลอกแล้ว
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={14} /> คัดลอก
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
