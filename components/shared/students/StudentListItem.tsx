@@ -11,7 +11,9 @@ export interface Student {
   studentId: string;
   major: string;
   year: string;
-  requestStatus: string;
+  rawStatus: string;
+  requestStatusLabel: string;
+  requestStatusColor: "blue" | "orange" | "green" | "gray";
   paymentStatus: string;
   paymentStatusType: "good" | "bad";
   totalBorrowed: string;
@@ -22,6 +24,37 @@ export interface Student {
 interface StudentListTableProps {
   students: Student[];
 }
+
+// ----------------------------------------------------
+// ฟังก์ชันเลือก CSS ให้ป้าย Badge ตามสีที่ส่งมา
+// ----------------------------------------------------
+const getBadgeStyles = (colorTheme: string) => {
+  switch (colorTheme) {
+    case "blue":
+      return "bg-blue-50 text-blue-700 border-blue-200";
+    case "orange":
+      return "bg-orange-50 text-orange-700 border-orange-200";
+    case "green":
+      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    case "gray":
+    default:
+      return "bg-gray-100 text-gray-600 border-gray-200";
+  }
+};
+
+const getBadgeDotColor = (colorTheme: string) => {
+  switch (colorTheme) {
+    case "blue":
+      return "bg-blue-500";
+    case "orange":
+      return "bg-orange-500";
+    case "green":
+      return "bg-emerald-500";
+    case "gray":
+    default:
+      return "bg-gray-400";
+  }
+};
 
 export default function StudentListTable({ students }: StudentListTableProps) {
   return (
@@ -48,7 +81,9 @@ export default function StudentListTable({ students }: StudentListTableProps) {
             <div className="grid grid-cols-3 gap-3 border-t border-gray-50 pt-3">
               <div>
                 <div className="text-[11px] text-gray-500 mb-0.5">ยอดกู้ยืม</div>
-                <div className="font-semibold text-gray-700 text-[13px]">{student.totalBorrowed}</div>
+                <div className="font-semibold text-gray-700 text-[13px]">
+                  {student.totalBorrowed}
+                </div>
               </div>
               <div>
                 <div className="text-[11px] text-gray-500 mb-0.5">คงเหลือ</div>
@@ -63,11 +98,17 @@ export default function StudentListTable({ students }: StudentListTableProps) {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <span className="bg-[#f1f5f9] text-[#64748b] px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5 w-fit">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#94a3b8]"></span>
-                {student.requestStatus}
+              {/* ป้ายแสดงสถานะคำร้อง */}
+              <span
+                className={`px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5 border w-fit ${getBadgeStyles(student.requestStatusColor)}`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${getBadgeDotColor(student.requestStatusColor)}`}
+                ></span>
+                {student.requestStatusLabel}
               </span>
 
+              {/* ป้ายพฤติกรรมการชำระเงิน */}
               {student.paymentStatusType === "good" ? (
                 <span className="bg-[#dcfce7] text-[#16a34a] px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5 border border-[#bbf7d0] w-fit">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
@@ -89,16 +130,31 @@ export default function StudentListTable({ students }: StudentListTableProps) {
         <table className="w-full text-left border-collapse min-w-[1000px] bg-white">
           <thead>
             <tr className="bg-gray-100/70 border-b border-gray-300 text-gray-700 text-[14px]">
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 min-w-[250px]">ชื่อ - ข้อมูลนักศึกษา</th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">พฤติกรรมการชำระเงิน</th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">การกู้ยืมทั้งหมด</th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap">ยอดหนี้คงเหลือ</th>
-              <th className="py-3.5 px-4 font-semibold whitespace-nowrap text-center">ล่าช้า (วัน)</th>
+              {/* เพิ่ม text-center เข้าไปในทุก th */}
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 min-w-[250px] text-center">
+                ชื่อ - ข้อมูลนักศึกษา
+              </th>
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap text-center">
+                สถานะคำร้องปัจจุบัน
+              </th>
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap text-center">
+                พฤติกรรมชำระเงิน
+              </th>
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap text-center">
+                การกู้ยืมทั้งหมด
+              </th>
+              <th className="py-3.5 px-4 font-semibold whitespace-nowrap text-center">
+                หนี้คงเหลือ
+              </th>
             </tr>
           </thead>
           <tbody>
             {students.map((student, idx) => (
-              <tr key={idx} className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]">
+              <tr
+                key={idx}
+                className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
+              >
+                {/* ข้อมูลชื่อและรหัสนักศึกษา */}
                 <td className="py-3 px-4 border-r border-gray-200">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[10px] bg-[#fff7ed] flex items-center justify-center font-bold text-[#ea580c] text-[16px] shrink-0 border border-[#ffedd5]">
@@ -112,27 +168,47 @@ export default function StudentListTable({ students }: StudentListTableProps) {
                     </div>
                   </div>
                 </td>
-                <td className="py-3 px-4 border-r border-gray-200 whitespace-nowrap">
+
+                {/* คอลัมน์สถานะคำร้องปัจจุบัน */}
+                <td className="py-3 px-4 border-r border-gray-200 whitespace-nowrap text-center">
+                  <span
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border ${getBadgeStyles(student.requestStatusColor)}`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${getBadgeDotColor(student.requestStatusColor)}`}
+                    ></span>
+                    {student.requestStatusLabel}
+                  </span>
+                </td>
+
+                {/* คอลัมน์พฤติกรรมชำระเงิน */}
+                <td className="py-3 px-4 border-r border-gray-200 whitespace-nowrap text-center">
                   {student.paymentStatusType === "good" ? (
                     <span className="bg-[#dcfce7] text-[#16a34a] px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border border-[#bbf7d0]">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
                       {student.paymentStatus}
                     </span>
                   ) : (
-                    <span className="bg-[#fee2e2] text-[#dc2626] px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border border-[#fecaca]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>
-                      {student.paymentStatus}
-                    </span>
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      <span className="bg-[#fee2e2] text-[#dc2626] px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border border-[#fecaca]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>
+                        {student.paymentStatus}
+                      </span>
+                      <span className="text-[11px] text-red-500 font-medium">
+                        (ช้า {student.delayDays} วัน)
+                      </span>
+                    </div>
                   )}
                 </td>
-                <td className="py-3 px-4 text-gray-700 font-medium border-r border-gray-200 whitespace-nowrap">
-                  {student.totalBorrowed}
+
+                {/* คอลัมน์การกู้ยืมทั้งหมด */}
+                <td className="py-3 px-4 text-gray-700 font-medium border-r border-gray-200 whitespace-nowrap text-center">
+                  ฿{student.totalBorrowed}
                 </td>
-                <td className="py-3 px-4 text-[#dc2626] font-bold border-r border-gray-200 whitespace-nowrap">
-                  {student.balance}
-                </td>
-                <td className="py-3 px-4 text-gray-600 whitespace-nowrap text-center font-medium">
-                  {student.delayDays}
+
+                {/* คอลัมน์หนี้คงเหลือ */}
+                <td className="py-3 px-4 text-[#dc2626] font-bold whitespace-nowrap text-center">
+                  ฿{student.balance}
                 </td>
               </tr>
             ))}
