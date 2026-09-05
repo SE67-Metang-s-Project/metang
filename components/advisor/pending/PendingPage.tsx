@@ -3,15 +3,25 @@
 import React, { useState, useMemo } from "react";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
-import RequestsCard from "@/components/shared/pending/RequestsCard";
+import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
 import { ShieldCheck } from "lucide-react";
 import { mockAdvisorRequests } from "@/components/shared/mock-data/mockAdvisorRequests";
 
-export default function AdvisorPendingPage() {
+type AdvisorPendingPageProps = {
+  userName?: string;
+  userId?: string;
+  initialRequests?: ActionRequest[];
+};
+
+export default function AdvisorPendingPage({
+  userName = "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+  userId = "T1002",
+  initialRequests,
+}: AdvisorPendingPageProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // กำหนด State ให้กับ requests โดยดึงข้อมูลมาจาก Mock Data ของ Advisor
-  const [requests] = useState(mockAdvisorRequests);
+  // กำหนด State ให้กับ requests โดยดึงข้อมูลมาจาก DB หรือ Mock Data ของ Advisor
+  const [requests] = useState<ActionRequest[]>(initialRequests ?? mockAdvisorRequests);
 
   // กรองเฉพาะคำร้องที่รออาจารย์ที่ปรึกษาพิจารณา
   const pendingRequests = useMemo(
@@ -28,8 +38,8 @@ export default function AdvisorPendingPage() {
       <div className="flex-1 flex flex-col w-full min-h-screen lg:ml-64 transition-all duration-300">
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
-          userName="ผศ.ดร. สุนีย์ วงค์ประเสริฐ"
-          userId="T1002"
+          userName={userName}
+          userId={userId}
         />
 
         <main className="p-6">

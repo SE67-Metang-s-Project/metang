@@ -2,6 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
 import type { ExecutiveDecision, LoanDecision } from "@/lib/loan-validation";
+import type {
+  ActionRequest,
+  ActionHistory,
+  ApprovalStep,
+  BankDetails,
+  PaymentBehaviorInfo,
+} from "@/components/shared/pending/RequestsCard";
 
 
 export type LoanRequestVisibility = { scope: "global" } | { scope: "assigned"; advisorId: string };
@@ -454,3 +461,237 @@ export async function decideExecutiveLoanRequest({
     return final;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }
+
+const THAI_MONTH_ABBRS = [
+  "ม.ค.",
+  "ก.พ.",
+  "มี.ค.",
+  "เม.ย.",
+  "พ.ค.",
+  "มิ.ย.",
+  "ก.ค.",
+  "ส.ค.",
+  "ก.ย.",
+  "ต.ค.",
+  "พ.ย.",
+  "ธ.ค.",
+] as const;
+
+function formatThaiDate(date: Date): string {
+  const day = date.getDate();
+  const month = THAI_MONTH_ABBRS[date.getMonth()];
+  const year = date.getFullYear() + 543;
+  return `${day} ${month} ${year}`;
+}
+
+function formatThaiDateTime(date: Date): string {
+  const dateStr = formatThaiDate(date);
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${dateStr} ${hours}:${minutes}`;
+}
+
+export async function getAdvisorActionRequests(advisorId: string): Promise<ActionRequest[]> {
+  const loans = await prisma.loanRequest.findMany({
+    where: { advisorId },
+    include: {
+      student: {
+        select: {
+          id: true,
+          fullNameTh: true,
+          fullNameEn: true,
+          studentCode: true,
+          phone: true,
+          educationLevel: true,
+          studentLoans: {
+            select: {
+              id: true,
+              status: true,
+              installments: {
+                select: {
+                  id: true,
+                  dueDate: true,
+                  settledAt: true,
+                  amountDue: true,
+                  amountPaid: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      approvals: {
+        include: {
+          decider: {
+            select: {
+              id: true,
+              fullNameTh: true,
+              fullNameEn: true,
+            },
+          },
+        },
+        orderBy: [{ attempt: "asc" }, { id: "asc" }],
+      },
+      installments: {
+        orderBy: { seq: "asc" },
+      },
+      payments: {
+        orderBy: { createdAt: "asc" },
+      },
+      cancelledByUser: {
+        select: {
+          fullNameTh: true,
+          fullNameEn: true,
+        },
+      },
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
+
+  return loans.map((loan) => {
+    const student = loan.student;
+    const studentLoans = student.studentLoans || [];
+    const totalLoanRequests = studentLoans.length;
+    let onTimeInstallments = 0;
+    let lateInstallments = 0;
+
+    for (const sLoan of studentLoans) {
+      for (const inst of sLoan.installments || []) {
+        if (inst.settledAt) {
+          if (new Date(inst.settledAt) <= new Date(inst.dueDate)) {
+            onTimeInstallments += 1;
+          } else {
+            lateInstallments += 1;
+          }
+        } else if (new Date(inst.dueDate) < new Date() && inst.amountPaid < inst.amountDue) {
+          lateInstallments += 1;
+        }
+      }
+    }
+
+    const paymentBehavior: PaymentBehaviorInfo = {
+      totalLoanRequests,
+      onTimeInstallments,
+      lateInstallments,
+      totalInstallments: onTimeInstallments + lateInstallments,
+      onTimeStatusLabel: lateInstallments === 0 ? "ชำระตรงเวลา" : "ชำระล่าช้า",
+    };
+
+    const submitDateObj = loan.submittedAt ?? loan.createdAt;
+    const now = new Date();
+    const waitDays = Math.max(
+      0,
+      Math.floor((now.getTime() - new Date(submitDateObj).getTime()) / (1000 * 60 * 60 * 24)),
+    );
+
+    const history: ActionHistory[] = [];
+    if (loan.submittedAt || loan.createdAt) {
+      history.push({
+        action: "ยื่นคำร้องขอกู้ยืม",
+        date: formatThaiDateTime(submitDateObj),
+        actor: student.fullNameTh,
+      });
+    }
+
+    for (const approval of loan.approvals) {
+      if (approval.decision !== "pending") {
+        let actionDesc = "";
+        if (approval.step === "advisor") {
+          actionDesc =
+            approval.decision === "approved"
+              ? "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ"
+              : approval.decision === "returned"
+                ? "ส่งกลับให้นักศึกษาแก้ไข"
+                : "อาจารย์ที่ปรึกษาไม่อนุมัติ";
+        } else if (approval.step === "admin") {
+          actionDesc =
+            approval.decision === "approved"
+              ? "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน"
+              : approval.decision === "returned"
+                ? "เจ้าหน้าที่ส่งกลับแก้ไข"
+                : "เจ้าหน้าที่ไม่อนุมัติ";
+        } else if (approval.step === "executive") {
+          actionDesc =
+            approval.decision === "approved"
+              ? "ผู้บริหารอนุมัติคำร้อง"
+              : approval.decision === "returned"
+                ? "ผู้บริหารส่งกลับแก้ไข"
+                : "ผู้บริหารไม่อนุมัติ";
+        }
+        history.push({
+          action: actionDesc,
+          date: formatThaiDateTime(approval.decidedAt ?? approval.createdAt),
+          actor:
+            approval.decider?.fullNameTh ??
+            (approval.step === "advisor"
+              ? "อาจารย์ที่ปรึกษา"
+              : approval.step === "admin"
+                ? "เจ้าหน้าที่"
+                : "ผู้บริหาร"),
+        });
+      }
+    }
+
+    if (loan.cancelledAt) {
+      history.push({
+        action: "ยกเลิกคำร้อง",
+        date: formatThaiDateTime(loan.cancelledAt),
+        actor: loan.cancelledByUser?.fullNameTh ?? "นักศึกษา",
+      });
+    }
+
+    const approvals: ApprovalStep[] = loan.approvals
+      .filter((a) => a.decision !== "pending")
+      .map((a) => ({
+        step: a.step,
+        actorName:
+          a.decider?.fullNameTh ??
+          (a.step === "advisor"
+            ? "อาจารย์ที่ปรึกษา"
+            : a.step === "admin"
+              ? "เจ้าหน้าที่"
+              : "ผู้บริหาร"),
+        comment: a.comment ?? "",
+        decision: a.decision,
+        date: formatThaiDate(a.decidedAt ?? a.createdAt),
+      }));
+
+    const bankDetails: BankDetails = {
+      bankName: loan.bankName,
+      accountNumber: loan.bankAccountNo,
+      accountName: loan.bankAccountName,
+    };
+
+    const paymentHistory = (loan.payments || []).map((p) => {
+      const matchingInst = (loan.installments || []).find((i) => i.id === p.installmentId);
+      return {
+        installmentNumber: matchingInst ? matchingInst.seq : 1,
+        amount: p.amount,
+        status: p.status === "confirmed" ? "verified" : p.status,
+      };
+    });
+
+    return {
+      id: loan.id,
+      name: student.fullNameTh,
+      studentId: student.studentCode ?? "-",
+      major: "พยาบาลศาสตร์",
+      program: "พยาบาลศาสตรบัณฑิต",
+      year: String(loan.studentYear),
+      phone: student.phone ?? "-",
+      objective: loan.purpose,
+      amount: String(loan.amount),
+      term: String(loan.installmentCount),
+      submitDate: formatThaiDate(submitDateObj),
+      requestStatus: loan.status,
+      waitDays,
+      isOverdue: waitDays > 7,
+      history,
+      approvals,
+      bankDetails,
+      paymentBehavior,
+      paymentHistory,
+    };
+  });
+}
+

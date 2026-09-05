@@ -62,3 +62,5 @@ next-env.d.ts
 
 # OpenAPI generator cache
 /.openapi-gen/
+
+.VSCodeCounter
