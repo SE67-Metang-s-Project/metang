@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
@@ -20,7 +20,15 @@ export default function AdvisorPendingPage({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // กำหนด State ให้กับ requests จาก DB
-  const [requests] = useState<ActionRequest[]>(initialRequests);
+  const [requests, setRequests] = useState<ActionRequest[]>(initialRequests);
+
+  useEffect(() => {
+    setRequests(initialRequests);
+  }, [initialRequests]);
+
+  const handleRequestDecided = (requestId: string) => {
+    setRequests((prev) => prev.filter((req) => req.id !== requestId));
+  };
 
   // กรองเฉพาะคำร้องที่รออาจารย์ที่ปรึกษาพิจารณา
   const pendingRequests = useMemo(
@@ -55,7 +63,11 @@ export default function AdvisorPendingPage({
           {/* แสดงรายการคำร้อง หรือ ข้อความเมื่อไม่มีคำร้อง */}
           {pendingRequests.length > 0 ? (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <RequestsCard requests={pendingRequests} userRole="advisor" />
+              <RequestsCard
+                requests={pendingRequests}
+                userRole="advisor"
+                onRequestDecided={handleRequestDecided}
+              />
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center mt-4">
