@@ -15,8 +15,9 @@ type LoanDetailOverviewProps = {
     | "downloadLabel"
     | "additionalReasonLabel"
     | "additionalReason"
-    | "schedule"
-  >;
+  > & {
+    schedule?: LoanDetails["schedule"];
+  };
 };
 
 const getHistoryStatusClassName = (statusLabel: string) => {
@@ -49,10 +50,12 @@ export default function LoanDetailOverview({ details }: LoanDetailOverviewProps)
           <span>จำนวนเงินที่ขอกู้</span>
           <strong>{details.amount}</strong>
         </div>
-        <div className={styles.loanDetailInstallmentSummary}>
-          <span>จำนวนงวด</span>
-          <strong>{details.schedule.length} งวด</strong>
-        </div>
+        {details.schedule ? (
+          <div className={styles.loanDetailInstallmentSummary}>
+            <span>จำนวนงวด</span>
+            <strong>{details.schedule.length} งวด</strong>
+          </div>
+        ) : null}
       </div>
       <dl className={styles.loanDetailInfoList}>
         <div className={isPurposeLong ? styles.loanDetailPurposeLong : undefined}>

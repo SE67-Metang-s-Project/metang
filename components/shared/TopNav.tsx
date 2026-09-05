@@ -33,7 +33,8 @@ export default function TopNav({
 }: TopNavProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const displayRole = userRole ?? (role ? ROLE_DISPLAY_NAMES[role] : undefined) ?? userId ?? "ผู้ใช้งาน";
+  const displayRole = userRole ?? (role ? ROLE_DISPLAY_NAMES[role] : undefined) ?? "ผู้ใช้งาน";
+  const displayCode = userId ?? displayRole;
   const displayEmail = userEmail ?? (userId ? `${userId.toLowerCase()}@cmu.ac.th` : "user@cmu.ac.th");
 
   useEffect(() => {
@@ -86,7 +87,7 @@ export default function TopNav({
             </span>
             <span className="flex flex-col">
               <span className="text-[15px] font-bold leading-tight text-gray-900">{userName}</span>
-              <span className="text-sm text-gray-500">{displayRole}</span>
+              <span className="text-sm text-gray-500">{displayCode}</span>
             </span>
             <ChevronDown
               className={`h-4 w-4 text-gray-400 transition-transform ${isProfileOpen ? "rotate-180" : ""}`}

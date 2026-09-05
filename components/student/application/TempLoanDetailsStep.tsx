@@ -42,6 +42,7 @@ export default function TempLoanDetailsStep({ formData }: TempLoanDetailsStepPro
     amount: formData.loanAmount ? `${Number(formData.loanAmount).toLocaleString("th-TH")}` : "0",
     purpose: formData.purpose || tempCurrentLoanDetails.purpose,
     additionalReason: formData.additionalNote === "-" ? "-" : formData.additionalNote,
+    schedule,
   };
 
   return (
