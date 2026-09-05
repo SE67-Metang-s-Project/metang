@@ -4,7 +4,10 @@ import {
   tempCurrentLoanDetails,
   type TempLoanFormData,
 } from "@/app/student/temp/tempMockData";
+import { HandCoins, Landmark, UserRound } from "lucide-react";
 import styles from "@/app/student/student.module.css";
+import { formatThaiBahtText } from "@/app/student/studentFormatters";
+import CardHeader from "@/components/shared/CardHeader";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import LoanDetailOverview from "../loan-details/LoanDetailOverview";
 import LoanTimeline from "../loan-details/LoanTimeline";
@@ -14,7 +17,7 @@ type TempLoanDetailsStepProps = {
 };
 
 const studentName =
-  tempStudentProfile.displayName.replace("นางสาว", "").trim() + " มีโชค";
+  tempStudentProfile.displayName.replace("นางสาว", "").trim();
 
 export default function TempLoanDetailsStep({ formData }: TempLoanDetailsStepProps) {
   const loanAmount = Number(formData.loanAmount) || 0;
@@ -57,83 +60,96 @@ export default function TempLoanDetailsStep({ formData }: TempLoanDetailsStepPro
       />
 
       <section className={styles.tempDetailCard}>
-        <h3>ข้อมูลนักศึกษา</h3>
+        <CardHeader
+          className={styles.sectionCardHeading}
+          icon={<UserRound aria-hidden="true" size={20} strokeWidth={2.2} />}
+          title="ข้อมูลนักศึกษา"
+        />
         <dl className={styles.tempDetailDefinitionList}>
           <div>
-            <dt>ชื่อ-นามสกุล:</dt>
+            <dt>ชื่อ-นามสกุล</dt>
             <dd>{studentName}</dd>
           </div>
           <div>
-            <dt>รหัสนักศึกษา:</dt>
+            <dt>รหัสนักศึกษา</dt>
             <dd>{tempStudentProfile.studentId}</dd>
           </div>
           <div>
-            <dt>หลักสูตร:</dt>
+            <dt>หลักสูตร</dt>
             <dd>{tempStudentProfile.programName}</dd>
           </div>
           <div>
-            <dt>วุฒิการศึกษา:</dt>
+            <dt>วุฒิการศึกษา</dt>
             <dd>{formData.educationLevel || "-"}</dd>
           </div>
           <div>
-            <dt>ชั้นปีการศึกษา:</dt>
+            <dt>ชั้นปีการศึกษา</dt>
             <dd>ชั้นปีที่ {formData.academicYear}</dd>
           </div>
           <div>
-            <dt>อาจารย์ที่ปรึกษา:</dt>
-            <dd>{formData.advisorName || "-"}</dd>
+            <dt>เบอร์โทรศัพท์</dt>
+            <dd>{formData.phoneNumber || "-"}</dd>
           </div>
           <div>
-            <dt>เบอร์โทรศัพท์:</dt>
-            <dd>{formData.phoneNumber || "-"}</dd>
+            <dt>อาจารย์ที่ปรึกษา</dt>
+            <dd>{formData.advisorName || "-"}</dd>
           </div>
         </dl>
       </section>
 
       <section className={styles.tempDetailCard}>
-        <h3>ข้อมูลธนาคาร</h3>
+        <CardHeader
+          className={styles.sectionCardHeading}
+          icon={<Landmark aria-hidden="true" size={20} strokeWidth={2.2} />}
+          title="ข้อมูลธนาคาร"
+        />
         <dl className={styles.tempDetailDefinitionList}>
           <div>
-            <dt>ธนาคาร:</dt>
+            <dt>ธนาคาร</dt>
             <dd>{formData.bankName || "-"}</dd>
           </div>
           <div>
-            <dt>เลขที่บัญชี:</dt>
+            <dt>เลขที่บัญชี</dt>
             <dd>{formData.accountNumber || "-"}</dd>
           </div>
           <div>
-            <dt>ชื่อบัญชี:</dt>
+            <dt>ชื่อบัญชี</dt>
             <dd>{formData.accountName || "-"}</dd>
           </div>
         </dl>
       </section>
 
       <section className={styles.tempDetailCard}>
-        <h3>ข้อมูลการกู้ยืม</h3>
+        <CardHeader
+          className={styles.sectionCardHeading}
+          icon={<HandCoins aria-hidden="true" size={20} strokeWidth={2.2} />}
+          title="ข้อมูลการกู้ยืม"
+        />
         <dl className={styles.tempDetailDefinitionList}>
           <div>
-            <dt>วัตถุประสงค์การกู้ยืม:</dt>
+            <dt>วัตถุประสงค์การกู้ยืม</dt>
             <dd>{formData.purpose || "จ่ายค่าเทอม"}</dd>
           </div>
           <div>
-            <dt>หมายเหตุเพิ่มเติม:</dt>
+            <dt>หมายเหตุเพิ่มเติม</dt>
             <dd>{formData.additionalNote || "-"}</dd>
           </div>
-          <div>
-            <dt>จำนวนเงินที่ขอกู้ยืม (บาท):</dt>
+          <div className={styles.loanAmountRow}>
+            <dt>จำนวนเงินที่ขอกู้ยืม (บาท)</dt>
             <dd>{formData.loanAmount || "0"}</dd>
           </div>
           <div>
-            <dt>จำนวนเงินตัวอักษร:</dt>
-            <dd>สามพันบาทไทยถ้วน</dd>
+            <dt>จำนวนเงินตัวอักษร</dt>
+            <dd>{formatThaiBahtText(formData.loanAmount || "0")}</dd>
           </div>
           <div>
-            <dt>จำนวนงวดการชำระ:</dt>
+            <dt>จำนวนงวดการชำระ</dt>
             <dd>{formData.installmentCount} งวด</dd>
           </div>
         </dl>
-        <LoanDetailSchedule items={schedule} />
       </section>
+
+      <LoanDetailSchedule items={schedule} />
     </section>
   );
 }

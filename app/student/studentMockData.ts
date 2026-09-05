@@ -190,7 +190,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
   },
   {
     requestNumber: "SL-2568-0002",
-    statusLabel: "ปฏิเสธโดย · ผู้บริหาร",
+    statusLabel: "ปฏิเสธ · ผู้บริหาร",
     statusType: "rejectedExecutive",
     submittedAt: "ยื่นเมื่อ 10 พ.ย. 2569 09:30 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 1/2569",

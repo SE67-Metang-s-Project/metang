@@ -7,15 +7,16 @@ export const tempCurrentLoanDetails = {
   purposeLabel: "วัตถุประสงค์การกู้ยืม",
   purpose: "ค่าเทอมภาคเรียนที่ 1/2569",
   amount: "3,000",
-  downloadLabel: "",
+  downloadLabel: "ดาวน์โหลดเอกสาร",
   additionalReasonLabel: "หมายเหตุเพิ่มเติม",
   additionalReason:
     "ข้าพเจ้ามีความจำเป็นต้องกู้ยืมเพื่อชำระค่าเทอม เนื่องจากครอบครัวขาดสภาพคล่องทางการเงิน เพื่อให้สามารถศึกษาต่อได้อย่างต่อเนื่อง",
 };
 
 export const tempStudentProfile = {
-  displayName: "นางสาวกมลชนก",
+  displayName: "นางสาวกมลชนก มีโชค",
   programName: "พยาบาลศาสตรบัณฑิต",
+  educationLevel: "ปริญญาตรี",
   yearLabel: "ชั้นปีที่ 3",
   studentId: "661215001",
   initials: "MT",
@@ -126,6 +127,8 @@ export const tempLoanTimeline = [
     title: "อาจารย์ที่ปรึกษาอนุมัติ",
     dateTime: "18 ธ.ค. 2569 10:00 น.",
     actor: "พิมพา มีโชค",
+    commentTitle: "ความคิดเห็นของอาจารย์ที่ปรึกษา",
+    comment: "ตรวจสอบข้อมูลแล้ว เห็นควรอนุมัติคำร้อง",
   },
   {
     title: "เจ้าหน้าที่ตรวจสอบเอกสาร",
@@ -136,6 +139,8 @@ export const tempLoanTimeline = [
     title: "ผู้บริหารพิจารณาอนุมัติ",
     dateTime: "18 ธ.ค. 2569 10:00 น.",
     actor: "เอกฤทธิ์ มีโชค",
+    commentTitle: "ความคิดเห็นของผู้บริหาร",
+    comment: "อนุมัติตามความจำเป็นและความเหมาะสมของคำร้อง",
   },
   {
     title: "เจ้าหน้าที่โอนเงิน จำนวน 3,000",
@@ -170,7 +175,7 @@ export const tempLoanRequestHistory: LoanRequestHistoryItem[] = [
   },
   {
     requestNumber: "SL-2568-0001",
-    statusLabel: "ปฏิเสธโดย · อาจารย์ที่ปรึกษา",
+    statusLabel: "ปฏิเสธ · อาจารย์ที่ปรึกษา",
     statusType: "rejectedExecutive",
     submittedAt: "ยื่นเมื่อ 18 ธ.ค. 2569 10:00 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 1/2569",
