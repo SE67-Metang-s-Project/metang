@@ -6,8 +6,19 @@ import TopNav from "@/components/shared/TopNav";
 
 // Import Component List ของ Super Admin ที่สร้างไว้
 import SuperAdminRequestsList from "./SuperAdminRequestsList";
+import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
-export default function SuperAdminPendingPage() {
+type SuperAdminPendingPageProps = {
+  userName?: string;
+  userId?: string;
+  initialRequests?: ActionRequest[];
+};
+
+export default function SuperAdminPendingPage({
+  userName = "Super Admin สูงสุด",
+  userId = "SA-001",
+  initialRequests = [],
+}: SuperAdminPendingPageProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
@@ -19,8 +30,8 @@ export default function SuperAdminPendingPage() {
       <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64 transition-all duration-300">
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
-          userName="Super Admin สูงสุด"
-          userId="SA-001"
+          userName={userName}
+          userId={userId}
         />
 
         <main className="p-4 sm:p-6 lg:p-8">
@@ -35,7 +46,7 @@ export default function SuperAdminPendingPage() {
           </div>
 
           {/* เรียกใช้งาน List ของ Super Admin ที่จะเปิดฟังก์ชันแก้ตัวเลขได้ */}
-          <SuperAdminRequestsList />
+          <SuperAdminRequestsList initialRequests={initialRequests} />
         </main>
       </div>
     </div>
