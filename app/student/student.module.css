@@ -992,6 +992,57 @@
   overflow-wrap: anywhere;
 }
 
+.loanDetailDefinitionList {
+  display: grid;
+  margin: 0;
+}
+
+.loanDetailDefinitionList > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  min-width: 0;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.loanDetailDefinitionList > div:first-child {
+  padding-top: 0;
+}
+
+.loanDetailDefinitionList > div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.loanDetailDefinitionList dt,
+.loanDetailDefinitionList dd {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.loanDetailDefinitionList dt {
+  color: var(--color-detail-muted);
+}
+
+.loanDetailDefinitionList dd {
+  min-width: 0;
+  color: var(--color-heading);
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.loanDetailDefinitionList > .bankAccountNameRow {
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.bankAccountNameRow dd {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tempDetailSchedule {
   display: grid;
   gap: 0;
@@ -2190,6 +2241,9 @@
 }
 
 .loanDetailsBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   justify-self: start;
   padding: 0 3px;
   border: 0;
@@ -2227,11 +2281,18 @@
 }
 
 .loanDetailTopline h1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
   color: var(--color-heading);
   font-size: 20px;
   font-weight: 600;
   line-height: 1.25;
+}
+
+.loanDetailTopline h1 svg {
+  color: #8b95a5;
 }
 
 .loanDetailTopline p {
@@ -2240,16 +2301,113 @@
   font-size: 14px;
 }
 
-.loanDetailStatus {
-  flex: 0 0 auto;
-  padding: 3px 8px;
-  border: 1px solid var(--color-info-border);
+.loanDetailOverviewHeader {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.loanDetailOverviewHeader h2 {
+  min-width: 0;
+}
+
+.loanDetailSummary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.loanDetailSummary > div {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: var(--color-info-soft);
-  color: var(--color-info);
+  background: var(--color-surface);
+}
+
+.loanDetailSummary > .loanDetailAmountSummary {
+  border-color: var(--color-detail-orange-border);
+  background: var(--color-detail-orange-soft);
+  color: var(--color-detail-orange-dark);
+}
+
+.loanDetailSummary > .loanDetailInstallmentSummary {
+  border-color: var(--color-history-yellow-border);
+  background: var(--color-history-yellow-soft);
+  color: var(--color-history-yellow);
+}
+
+.loanDetailSummary > .loanDetailAmountSummary span,
+.loanDetailSummary > .loanDetailAmountSummary strong,
+.loanDetailSummary > .loanDetailInstallmentSummary span,
+.loanDetailSummary > .loanDetailInstallmentSummary strong {
+  color: inherit;
+}
+
+.loanDetailSummary span,
+.loanDetailInfoList dt {
+  color: var(--color-detail-muted);
   font-size: 14px;
-  line-height: 1.2;
-  white-space: nowrap;
+  line-height: 1.35;
+}
+
+.loanDetailSummary strong {
+  color: var(--color-heading);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.loanDetailInfoList {
+  display: grid;
+  margin: 0;
+}
+
+.loanDetailInfoList > div {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 16px;
+  min-width: 0;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.loanDetailInfoList > div:first-child {
+  padding-top: 0;
+}
+
+.loanDetailInfoList > div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.loanDetailInfoList dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--color-heading);
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.loanDetailInfoList > .loanDetailAdditionalNoteLong {
+  display: block;
+}
+
+.loanDetailInfoList > .loanDetailPurposeLong {
+  display: block;
+}
+
+.loanDetailPurposeLong dt,
+.loanDetailAdditionalNoteLong dt {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.loanDetailPurposeLong dd,
+.loanDetailAdditionalNoteLong dd {
+  text-align: left;
 }
 
 .loanDetailOverviewGrid {
@@ -2327,19 +2485,23 @@
   justify-content: center;
   gap: 7px;
   margin-top: 13px;
-  padding: 7px 10px;
+  min-height: 42px;
+  padding: 10px;
   border: 0;
   border-radius: 8px;
   background: var(--color-detail-orange);
   color: var(--color-surface);
   cursor: pointer;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 800;
 }
 
-.loanDownloadButton span {
-  font-size: 18px;
-  line-height: 0.8;
+.loanDownloadButton svg {
+  flex: 0 0 auto;
+}
+
+.loanDownloadButton:hover {
+  background: var(--color-detail-orange-dark);
 }
 
 .loanTimeline {
@@ -2355,14 +2517,18 @@
   display: flex;
   gap: 9px;
   min-width: 0;
-  padding-bottom: 9px;
+  padding-bottom: 20px;
+}
+
+.loanTimelineItem:last-child {
+  padding-bottom: 0;
 }
 
 .loanTimelineItem:not(:last-child)::before {
   position: absolute;
-  top: 19px;
+  top: 23px;
   bottom: 0;
-  left: 9px;
+  left: 11px;
   width: 2px;
   background: var(--color-detail-line);
   content: "";
@@ -2372,9 +2538,9 @@
   position: relative;
   z-index: 1;
   display: grid;
-  width: 20px;
-  height: 20px;
-  flex: 0 0 20px;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
   place-items: center;
   border-radius: 50%;
   background: var(--color-detail-orange);
@@ -2382,8 +2548,8 @@
 }
 
 .timelineMarker::after {
-  width: 7px;
-  height: 12px;
+  width: 8px;
+  height: 13px;
   border: solid currentColor;
   border-width: 0 3px 3px 0;
   border-radius: 0 0 2px;
@@ -2393,6 +2559,7 @@
 
 .timelineContent {
   min-width: 0;
+  flex: 1;
   padding-top: 0;
 }
 
@@ -2412,19 +2579,58 @@
 }
 
 .transferDetails {
-  margin: 2px 0 0;
-  padding-left: 18px;
-  color: var(--color-heading);
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 6px;
+  margin: 10px 0 0 20px;
+  padding: 0;
   font-size: 14px;
   line-height: 1.35;
 }
 
-.transferDetails li::marker {
+.transferDetails dt,
+.transferDetails dd {
+  margin: 0;
+}
+
+.transferDetails dt {
   color: var(--color-detail-muted);
 }
 
-.transferDetails li > span {
-  color: var(--color-detail-muted);
+.transferDetails dd {
+  min-width: 0;
+  color: var(--color-heading);
+  overflow-wrap: anywhere;
+}
+
+.detailDashboardCard.timelineCommentCard {
+  width: 100%;
+  box-sizing: border-box;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-width: 1px;
+  border-radius: 6px;
+}
+
+.detailDashboardCard.timelineCommentCard .sectionCardHeading {
+  width: calc(100% + 16px);
+  margin: -6px -8px 0;
+  padding: 6px 8px;
+  border-radius: 5px 5px 0 0;
+  background: var(--color-detail-orange-soft);
+}
+
+.detailDashboardCard.timelineCommentCard .sectionCardHeading h2 {
+  font-size: 14px;
+}
+
+.detailDashboardCard.timelineCommentCard p {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .outlineOrangeButton {
@@ -2448,17 +2654,32 @@
 
 .loanTimelineActions .outlineOrangeButton,
 .loanTimelineActions .loanApplicationNext {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   width: 100%;
   min-width: 0;
   margin: 0;
+  min-height: 42px;
   overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.loanTimelineActionsSingle {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .loanTimelineActions .loanApplicationNext {
-  padding: 5px 9px;
+  padding: 10px 9px;
   border-radius: 7px;
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 700;
+}
+
+.loanTimelineActions .outlineOrangeButton:hover {
+  background: var(--color-detail-orange);
+  color: var(--color-surface);
 }
 
 .transferSlipModalBackdrop {
@@ -2469,7 +2690,8 @@
   overflow-y: auto;
   padding: 18px;
   place-items: center;
-  background: var(--color-overlay);
+  background: rgb(17 24 39 / 60%);
+  backdrop-filter: blur(4px);
 }
 
 .transferSlipModal {
@@ -2478,6 +2700,17 @@
   max-height: 94svh;
   overflow-y: auto;
   padding: 30px 16px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: 0 18px 45px var(--color-modal-shadow);
+}
+
+.transferSlipModal.transferProofModal {
+  width: min(100%, 560px);
+  max-height: 94svh;
+  overflow-y: auto;
+  padding: 52px 16px 16px;
   border: 1px solid var(--color-border);
   border-radius: 16px;
   background: var(--color-surface);
@@ -2523,6 +2756,10 @@
   height: auto;
 }
 
+.transferProofModal .transferSlipImageFrame {
+  border-radius: 10px;
+}
+
 .loanScheduleSection {
   border-color: var(--color-border);
 }
@@ -2536,7 +2773,7 @@
   grid-template-columns: 45px minmax(0, 1fr) max-content;
   align-items: center;
   gap: 7px;
-  min-height: 36px;
+  padding: 10px;
   border-bottom: 1px solid var(--color-border);
   color: var(--color-detail-muted);
   font-size: 14px;
@@ -2634,13 +2871,6 @@
   position: absolute;
   top: 8px;
   right: 8px;
-  padding: 3px 7px;
-  border: 1px solid var(--color-detail-green-border);
-  border-radius: 12px;
-  background: var(--color-detail-green-soft);
-  color: var(--color-detail-green-text);
-  font-size: 14px;
-  white-space: nowrap;
 }
 
 .contactDescription {
@@ -2654,6 +2884,20 @@
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: var(--color-detail-orange-pale);
+}
+
+.detailDashboardCard {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  border: 2px solid var(--color-border);
+  border-radius: 24px;
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 7%);
+}
+
+.detailDashboardCard .sectionCardHeading h2 {
+  margin: 0;
 }
 
 .contactCard h3 {

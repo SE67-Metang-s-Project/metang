@@ -179,7 +179,7 @@ export const tempLoanRequestHistory: LoanRequestHistoryItem[] = [
   },
   {
     requestNumber: "SL-2568-0002",
-    statusLabel: "รออาจารย์ที่ปรึกษาอนุมัติ",
+    statusLabel: "รออาจารย์ที่ปรึกษา",
     statusType: "waitingAdvisorApproval",
     submittedAt: "ยื่นเมื่อ 20 ม.ค. 2570 09:30 น.",
     purpose: "ค่าใช้จ่ายระหว่างการศึกษา",

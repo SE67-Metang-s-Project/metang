@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import styles from "@/app/student/student.module.css";
 
 type TransferSlipModalProps = {
@@ -20,20 +21,19 @@ export default function TransferSlipModal({ imageSrc, onClose }: TransferSlipMod
       role="presentation"
     >
       <section
-        aria-labelledby="transfer-slip-modal-title"
+        aria-label="หลักฐานการโอนเงิน"
         aria-modal="true"
-        className={styles.transferSlipModal}
+        className={`${styles.transferSlipModal} ${styles.transferProofModal}`}
         role="dialog"
       >
         <button
           aria-label="ปิดหลักฐานการโอนเงิน"
-          className={styles.transferSlipModalClose}
+          className="absolute right-5 top-4 z-10 rounded-full bg-gray-50 p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
           onClick={onClose}
           type="button"
         >
-          ×
+          <X aria-hidden="true" size={20} />
         </button>
-        <h2 id="transfer-slip-modal-title">หลักฐานการโอนเงิน</h2>
         <div className={styles.transferSlipImageFrame}>
           <img alt="รูปสลิปการโอนเงินจากเจ้าหน้าที่" src={imageSrc} />
         </div>

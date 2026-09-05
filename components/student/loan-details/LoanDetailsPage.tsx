@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { House } from "lucide-react";
 import type { LoanDetails } from "@/app/student/studentMockData";
 import ContactFooter from "./ContactFooter";
 import LoanDetailSchedule from "./LoanDetailSchedule";
@@ -18,17 +19,26 @@ type LoanDetailsPageProps = {
 
 export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProps) {
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
+  const isWaitingForTransferConfirmation = details.statusLabel === "รอยืนยันการรับเงิน";
+  const [isTransferAccepted, setIsTransferAccepted] = useState(!isWaitingForTransferConfirmation);
+  const displayedDetails =
+    isWaitingForTransferConfirmation && isTransferAccepted
+      ? { ...details, statusLabel: "อยู่ระหว่างการชำระเงิน" }
+      : details;
 
   return (
     <div className={styles.loanDetailsPage}>
       <button aria-label="กลับหน้าหลัก" className={styles.loanDetailsBack} onClick={onBack} type="button">
-        ← กลับหน้าหลัก
+        <House aria-hidden="true" size={17} />
+        กลับหน้าหลัก
       </button>
 
-      <LoanDetailOverview details={details} />
+      <LoanDetailOverview details={displayedDetails} />
 
       <LoanTimeline
         items={details.timeline}
+        isTransferAccepted={isTransferAccepted}
+        onConfirmTransfer={() => setIsTransferAccepted(true)}
         onShowTransferSlip={() => setIsSlipModalOpen(true)}
       />
       <TempDetailCard />
