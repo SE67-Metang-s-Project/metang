@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   X,
   GraduationCap,
@@ -18,6 +19,7 @@ import {
   MessageSquare,
   Pencil,
   SearchX,
+  Loader2,
 } from "lucide-react";
 
 // ==========================================
@@ -28,8 +30,9 @@ export type StudentInfo = {
   studentId: string;
   major: string;
   program?: string;
+  degree?: string;
   year: string;
-  phone: string;
+  phone?: string;
 };
 
 export type BankDetails = {
@@ -48,6 +51,7 @@ export type LoanDetails = {
 
 export type RequestStatus = {
   submitDate: string;
+  submitTime?: string;
   waitDays?: number;
   isOverdue?: boolean;
   history?: ActionHistory[];
@@ -88,6 +92,12 @@ export type ApprovalStep = {
   date: string;
 };
 
+export type PaymentRecord = {
+  status?: string;
+  installmentNumber: number;
+  amount: number | string;
+};
+
 export type ActionRequest = StudentInfo &
   LoanDetails &
   RequestStatus & {
@@ -95,7 +105,7 @@ export type ActionRequest = StudentInfo &
     requestStatus: LoanStatus;
     paymentBehavior?: PaymentBehaviorInfo;
     approvals?: ApprovalStep[];
-    paymentHistory?: any[]; // เพิ่มรองรับการเช็คประวัติชำระเงิน
+    paymentHistory?: PaymentRecord[]; // เพิ่มรองรับการเช็คประวัติชำระเงิน
   };
 
 export type UserRole = "advisor" | "executive" | "admin" | "super_admin";
@@ -104,6 +114,7 @@ interface RequestsCardProps {
   requests: ActionRequest[];
   userRole?: UserRole;
   tableLayout?: "default" | "executive";
+  onRequestDecided?: (requestId: string, decision: string) => void;
 }
 
 // ==========================================
@@ -137,7 +148,7 @@ function calculateInstallments(
   startDateStr: string,
   termStr: string,
   amountStr: string,
-  paymentHistory?: any[],
+  paymentHistory?: PaymentRecord[],
 ) {
   const termsCount = parseInt(termStr, 10) || 0;
   const totalAmount = parseFloat(amountStr) || 0;
@@ -146,7 +157,7 @@ function calculateInstallments(
   const baseAmount = totalAmount / termsCount;
 
   // 1. สร้างโครงสร้างงวดการชำระเงินเริ่มต้น
-  let schedule = Array.from({ length: termsCount }, (_, i) => ({
+  const schedule = Array.from({ length: termsCount }, (_, i) => ({
     installmentNumber: i + 1,
     expectedAmount: baseAmount,
     isPaid: false,
@@ -297,10 +308,14 @@ export default function RequestsCard({
   requests,
   userRole = "advisor",
   tableLayout = "executive",
+  onRequestDecided,
 }: RequestsCardProps) {
+  const router = useRouter();
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
   const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | "return" | null>(null);
   const [remark, setRemark] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const selectedRequestHistory = selectedRequest?.history ?? [];
   const isExecutiveTable = tableLayout === "executive";
 
@@ -311,18 +326,108 @@ export default function RequestsCard({
   const canViewSensitiveData = userRole === "admin" || userRole === "super_admin";
   const canEditAmount = userRole === "admin" || userRole === "super_admin";
 
-  useEffect(() => {
-    if (selectedRequest) {
-      setEditAmountValue(selectedRequest.amount);
-      setIsEditingAmount(false);
-    }
-  }, [selectedRequest]);
+  const openRequestModal = (req: ActionRequest) => {
+    setSelectedRequest(req);
+    setEditAmountValue(req.amount);
+    setIsEditingAmount(false);
+    setConfirmAction(null);
+    setRemark("");
+    setErrorMessage(null);
+  };
 
   const closeAllModals = () => {
     setSelectedRequest(null);
     setConfirmAction(null);
     setRemark("");
+    setErrorMessage(null);
     setIsEditingAmount(false);
+  };
+
+  const handleConfirmDecision = async () => {
+    if (!selectedRequest || !confirmAction) return;
+
+    if (confirmAction !== "approve" && !remark.trim()) {
+      setErrorMessage(
+        confirmAction === "return"
+          ? "กรุณาระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข"
+          : "กรุณาระบุเหตุผลที่ไม่อนุมัติ",
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      let endpoint = "";
+      if (userRole === "advisor") {
+        endpoint = `/api/advisor/loan-requests/${selectedRequest.id}/decision`;
+      } else if (userRole === "admin" || userRole === "super_admin") {
+        endpoint = `/api/admin/loan-requests/${selectedRequest.id}/decision`;
+      } else if (userRole === "executive") {
+        endpoint = `/api/executive/loan-requests/${selectedRequest.id}/decision`;
+      } else {
+        throw new Error("ไม่มีสิทธิ์ดำเนินการสำหรับบทบาทนี้");
+      }
+
+      const payload: {
+        decision: string;
+        comment: string | null;
+        approvedAmount?: number | null;
+      } = {
+        decision:
+          confirmAction === "approve"
+            ? "approved"
+            : confirmAction === "return"
+              ? "returned"
+              : "rejected",
+        comment: remark.trim() || null,
+      };
+
+      if ((userRole === "admin" || userRole === "super_admin") && confirmAction === "approve") {
+        const rawAmount = (editAmountValue || selectedRequest.amount || "")
+          .toString()
+          .replace(/,/g, "")
+          .trim();
+        const parsed = parseInt(rawAmount, 10);
+        if (!isNaN(parsed) && parsed > 0) {
+          payload.approvedAmount = parsed;
+        }
+      }
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(
+          data?.error?.message || data?.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล",
+        );
+      }
+
+      const targetId = selectedRequest.id;
+      const targetDecision = payload.decision;
+
+      closeAllModals();
+
+      if (onRequestDecided) {
+        onRequestDecided(targetId, targetDecision);
+      }
+
+      router.refresh();
+    } catch (err: unknown) {
+      setErrorMessage(
+        err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการส่งข้อมูล",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSaveAmount = () => {
@@ -346,7 +451,7 @@ export default function RequestsCard({
     if (isActionable) {
       return (
         <button
-          onClick={() => setSelectedRequest(req)}
+          onClick={() => openRequestModal(req)}
           className={`${baseClasses} text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200`}
         >
           <span className="block truncate">ตรวจสอบ</span>
@@ -379,7 +484,7 @@ export default function RequestsCard({
 
     return (
       <button
-        onClick={() => setSelectedRequest(req)}
+        onClick={() => openRequestModal(req)}
         className={`${baseClasses} font-normal ${colorClass}`}
       >
         <span className="block truncate">{statusLabel}</span>
@@ -882,19 +987,28 @@ export default function RequestsCard({
                 {!confirmAction ? (
                   <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <button
-                      onClick={() => setConfirmAction("reject")}
+                      onClick={() => {
+                        setConfirmAction("reject");
+                        setErrorMessage(null);
+                      }}
                       className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98]"
                     >
                       ไม่อนุมัติ
                     </button>
                     <button
-                      onClick={() => setConfirmAction("return")}
+                      onClick={() => {
+                        setConfirmAction("return");
+                        setErrorMessage(null);
+                      }}
                       className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-bold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
                     >
                       ส่งกลับแก้ไข
                     </button>
                     <button
-                      onClick={() => setConfirmAction("approve")}
+                      onClick={() => {
+                        setConfirmAction("approve");
+                        setErrorMessage(null);
+                      }}
                       className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98]"
                     >
                       อนุมัติ
@@ -933,27 +1047,35 @@ export default function RequestsCard({
                             ? "เช่น ใบแจ้งหนี้ไม่ชัดเจน กรุณาถ่ายรูปและแนบไฟล์มาใหม่..."
                             : "เช่น เอกสารหรือเหตุผลไม่เพียงพอต่อการกู้ยืม..."
                       }
-                      className="w-full border border-gray-300 rounded-lg p-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none h-20 mb-3 bg-white"
+                      className="w-full border border-gray-300 rounded-lg p-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none h-20 mb-3 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                       value={remark}
                       onChange={(e) => setRemark(e.target.value)}
+                      disabled={isSubmitting}
                       autoFocus
                     />
 
+                    {errorMessage && (
+                      <div className="text-[12px] text-red-600 mb-3 bg-red-50 p-2.5 rounded-lg border border-red-200 flex items-center gap-2">
+                        <XCircle size={14} className="shrink-0" />
+                        <span>{errorMessage}</span>
+                      </div>
+                    )}
+
                     <div className="flex gap-2 justify-end">
                       <button
-                        onClick={() => setConfirmAction(null)}
-                        className="px-4 py-2 text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
+                        onClick={() => {
+                          setConfirmAction(null);
+                          setErrorMessage(null);
+                        }}
+                        disabled={isSubmitting}
+                        className="px-4 py-2 text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                       >
                         ยกเลิก
                       </button>
                       <button
-                        onClick={() => {
-                          console.log(
-                            `Action: ${confirmAction}, ID: ${selectedRequest.id}, Remark: ${remark}`,
-                          );
-                          closeAllModals();
-                        }}
-                        className={`px-4 py-2 text-[13px] font-bold text-white rounded-lg shadow-sm ${
+                        onClick={handleConfirmDecision}
+                        disabled={isSubmitting}
+                        className={`px-4 py-2 text-[13px] font-bold text-white rounded-lg shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed ${
                           confirmAction === "approve"
                             ? "bg-[#059669] hover:bg-[#047857]"
                             : confirmAction === "return"
@@ -961,11 +1083,18 @@ export default function RequestsCard({
                               : "bg-[#dc2626] hover:bg-[#b91c1c]"
                         }`}
                       >
-                        {confirmAction === "approve"
-                          ? "ยืนยันอนุมัติ"
-                          : confirmAction === "return"
-                            ? "ยืนยันส่งกลับแก้ไข"
-                            : "ยืนยันไม่อนุมัติ"}
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin" />
+                            <span>กำลังบันทึก...</span>
+                          </>
+                        ) : confirmAction === "approve" ? (
+                          "ยืนยันอนุมัติ"
+                        ) : confirmAction === "return" ? (
+                          "ยืนยันส่งกลับแก้ไข"
+                        ) : (
+                          "ยืนยันไม่อนุมัติ"
+                        )}
                       </button>
                     </div>
                   </div>
