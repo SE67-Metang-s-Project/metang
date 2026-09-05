@@ -1,18 +1,30 @@
 // components/shared/disburse-debt/SharedDisburseDebtList.tsx
 "use client";
 
-import React, { useState } from "react";
-import DisburseDebtCard from "./DisburseDebtCard";
+import React, { useState, useEffect } from "react";
+import DisburseDebtCard, { ActionRequest } from "./DisburseDebtCard";
 import StudentFilters from "@/components/shared/filter/StudentFilters";
 // import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
 import { mockDisburseRequests } from "@/components/shared/mock-data/mockDisburseRequests";
 
 interface SharedDisburseDebtListProps {
   userRole: "admin" | "super_admin";
+  initialRequests?: ActionRequest[];
 }
 
-export default function SharedDisburseDebtList({ userRole }: SharedDisburseDebtListProps) {
-  const [requests] = useState(mockDisburseRequests);
+export default function SharedDisburseDebtList({
+  userRole,
+  initialRequests,
+}: SharedDisburseDebtListProps) {
+  const [requests, setRequests] = useState<ActionRequest[]>(
+    initialRequests && initialRequests.length > 0 ? initialRequests : mockDisburseRequests,
+  );
+
+  React.useEffect(() => {
+    if (initialRequests && initialRequests.length > 0) {
+      setRequests(initialRequests);
+    }
+  }, [initialRequests]);
 
   // State สำหรับตัวกรอง
   const [activeTab, setActiveTab] = useState("ทั้งหมด");

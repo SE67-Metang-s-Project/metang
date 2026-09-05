@@ -4,8 +4,19 @@ import React, { useState } from "react";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
 import SharedDisburseDebtList from "@/components/shared/disburse-debt/SharedDisburseDebtList";
+import type { ActionRequest } from "@/components/shared/disburse-debt/DisburseDebtCard";
 
-export default function DisburseDebtPage() {
+interface DisburseDebtPageProps {
+  userName?: string;
+  userId?: string;
+  initialRequests?: ActionRequest[];
+}
+
+export default function DisburseDebtPage({
+  userName = "SuperAdmin",
+  userId = "SA-001",
+  initialRequests,
+}: DisburseDebtPageProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
@@ -15,8 +26,8 @@ export default function DisburseDebtPage() {
       <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64 transition-all duration-300">
         <TopNav
           onOpenSidebar={() => setIsSidebarOpen(true)}
-          userName="Super Admin สูงสุด"
-          userId="SA-001"
+          userName={userName}
+          userId={userId}
         />
 
         <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
@@ -30,7 +41,7 @@ export default function DisburseDebtPage() {
             </p>
           </div>
 
-          <SharedDisburseDebtList userRole="super_admin" />
+          <SharedDisburseDebtList userRole="super_admin" initialRequests={initialRequests} />
         </main>
       </div>
     </div>

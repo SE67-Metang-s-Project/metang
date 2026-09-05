@@ -705,3 +705,9 @@ export async function getAdminActionRequests(): Promise<ActionRequest[]> {
   return getActionRequests({});
 }
 
+export async function getDisbursementActionRequests(): Promise<ActionRequest[]> {
+  return getActionRequests({
+    status: { in: ["pending_disbursement", "disbursed", "closed"] },
+  });
+}
+
