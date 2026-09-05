@@ -2,40 +2,36 @@
 "use client";
 
 import React, { useState } from "react";
-import SideNav from "@/components/shared/SidebarNav";
-import TopNav from "@/components/shared/TopNav";
-import { Users, Wallet, Landmark, MapPin } from "lucide-react"; // เพิ่ม Landmark และ MapPin
+import { Users, Wallet, Landmark, MapPin } from "lucide-react";
+
+import type { SuperAdminUser } from "@/lib/loan-api-types";
 
 // Import Components ที่เราแยกไว้
 import UserRolesTab from "@/components/superadmin/setting/UserRolesTab";
 import SystemBudgetTab from "@/components/superadmin/setting/SystemBudgetTab";
-import SystemBankTab from "@/components/superadmin/setting/SystemBankTab"; // <--- นำเข้าไฟล์ใหม่
-import SystemAddressTab from "@/components/superadmin/setting/SystemAddressTab"; // <--- นำเข้าไฟล์ใหม่
+import SystemBankTab from "@/components/superadmin/setting/SystemBankTab";
+import SystemAddressTab from "@/components/superadmin/setting/SystemAddressTab";
 
-export default function SettingsPage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  // เพิ่ม State สำหรับ bank และ address
+interface SettingsPageProps {
+  currentUserId?: string;
+  initialUsers?: SuperAdminUser[];
+}
+
+export default function SettingsPage({
+  currentUserId,
+  initialUsers = [],
+}: SettingsPageProps) {
   const [activeTab, setActiveTab] = useState<"users" | "budget" | "bank" | "address">("users");
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-800">
-      <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="superadmin" />
-
-      <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64 transition-all duration-300">
-        <TopNav
-          onOpenSidebar={() => setIsSidebarOpen(true)}
-          userName="SuperAdmin"
-          userId="SA-001"
-        />
-
-        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-[#0f172a] mb-1">ศูนย์ควบคุมระบบ</h1>
-            <p className="text-sm text-gray-500">
-              SuperAdmin · จัดการผู้ใช้ บทบาท วงเงิน บัญชี และที่อยู่
-            </p>
-          </div>
+    <div>
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-[#0f172a] mb-1">ศูนย์ควบคุมระบบ</h1>
+        <p className="text-sm text-gray-500">
+          SuperAdmin · จัดการผู้ใช้ บทบาท วงเงิน บัญชี และที่อยู่
+        </p>
+      </div>
 
           {/* Tabs Toggle (ปรับให้เลื่อนซ้ายขวาได้ในจอมือถือ) */}
           <div className="overflow-x-auto pb-2 mb-4 scrollbar-hide">
@@ -103,12 +99,12 @@ export default function SettingsPage() {
           </div>
 
           {/* Render Tab Content */}
-          {activeTab === "users" && <UserRolesTab />}
+          {activeTab === "users" && (
+            <UserRolesTab initialUsers={initialUsers} currentUserId={currentUserId} />
+          )}
           {activeTab === "budget" && <SystemBudgetTab />}
           {activeTab === "bank" && <SystemBankTab />}
           {activeTab === "address" && <SystemAddressTab />}
-        </main>
-      </div>
     </div>
   );
 }

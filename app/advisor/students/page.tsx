@@ -11,14 +11,5 @@ export default async function StudentListPage() {
     return [];
   });
 
-  const userName = context.user.fullNameTh || context.identity.displayName;
-  const userId = context.user.cmuAccount || context.identity.cmuAccount || "Advisor";
-
-  return (
-    <StudentList
-      userName={userName}
-      userId={userId}
-      initialRequests={requests}
-    />
-  );
+  return <StudentList initialRequests={requests} />;
 }

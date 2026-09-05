@@ -491,9 +491,11 @@ function formatThaiDateTime(date: Date): string {
   return `${dateStr} ${hours}:${minutes}`;
 }
 
-export async function getAdvisorActionRequests(advisorId: string): Promise<ActionRequest[]> {
+export async function getActionRequests(
+  where?: Prisma.LoanRequestWhereInput,
+): Promise<ActionRequest[]> {
   const loans = await prisma.loanRequest.findMany({
-    where: { advisorId },
+    where,
     include: {
       student: {
         select: {
@@ -664,10 +666,20 @@ export async function getAdvisorActionRequests(advisorId: string): Promise<Actio
 
     const paymentHistory = (loan.payments || []).map((p) => {
       const matchingInst = (loan.installments || []).find((i) => i.id === p.installmentId);
+      const mappedStatus =
+        p.status === "confirmed"
+          ? "verified"
+          : p.status === "pending_review"
+            ? "pending"
+            : p.status;
+
       return {
+        id: p.id,
         installmentNumber: matchingInst ? matchingInst.seq : 1,
-        amount: p.amount,
-        status: p.status === "confirmed" ? "verified" : p.status,
+        amount: String(p.amount),
+        paidAt: p.paidAt ? formatThaiDate(p.paidAt) : formatThaiDate(p.createdAt),
+        status: mappedStatus,
+        slipImageUrl: p.slipUrl ?? "",
       };
     });
 
@@ -692,6 +704,20 @@ export async function getAdvisorActionRequests(advisorId: string): Promise<Actio
       paymentBehavior,
       paymentHistory,
     };
+  });
+}
+
+export async function getAdvisorActionRequests(advisorId: string): Promise<ActionRequest[]> {
+  return getActionRequests({ advisorId });
+}
+
+export async function getAdminActionRequests(): Promise<ActionRequest[]> {
+  return getActionRequests({});
+}
+
+export async function getDisbursementActionRequests(): Promise<ActionRequest[]> {
+  return getActionRequests({
+    status: { in: ["pending_disbursement", "disbursed", "closed"] },
   });
 }
 

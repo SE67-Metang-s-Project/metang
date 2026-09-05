@@ -12,12 +12,10 @@ export default async function AdvisorPage() {
   });
 
   const userName = context.user.fullNameTh || context.identity.displayName;
-  const userId = context.user.cmuAccount || context.identity.cmuAccount || "Advisor";
 
   return (
     <AdvisorDashboard
       userName={userName}
-      userId={userId}
       initialRequests={requests}
     />
   );

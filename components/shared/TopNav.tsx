@@ -2,11 +2,21 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, Mail, Menu } from "lucide-react";
+import type { UserRole } from "@/components/shared/SidebarNav";
 
-interface TopNavProps {
+export const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
+  student: "นักศึกษา",
+  advisor: "อาจารย์ที่ปรึกษา",
+  admin: "ผู้ดูแลระบบ",
+  executive: "ผู้บริหาร",
+  superadmin: "ผู้ดูแลระบบระดับสูง",
+};
+
+export interface TopNavProps {
   onOpenSidebar?: () => void;
   userName: string;
-  userId: string;
+  userId?: string;
+  role?: UserRole;
   userRole?: string;
   userEmail?: string;
   showSidebarButton?: boolean;
@@ -16,14 +26,16 @@ export default function TopNav({
   onOpenSidebar,
   userName,
   userId,
+  role,
   userRole,
   userEmail,
   showSidebarButton = true,
 }: TopNavProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const displayRole = userRole ?? userId;
-  const displayEmail = userEmail ?? `${userId.toLowerCase()}@cmu.ac.th`;
+  const displayRole = userRole ?? (role ? ROLE_DISPLAY_NAMES[role] : undefined) ?? "ผู้ใช้งาน";
+  const displayCode = userId ?? displayRole;
+  const displayEmail = userEmail ?? (userId ? `${userId.toLowerCase()}@cmu.ac.th` : "user@cmu.ac.th");
 
   useEffect(() => {
     const closeProfileOnOutsideClick = (event: MouseEvent) => {
@@ -75,7 +87,7 @@ export default function TopNav({
             </span>
             <span className="flex flex-col">
               <span className="text-[15px] font-bold leading-tight text-gray-900">{userName}</span>
-              <span className="text-sm text-gray-500">{displayRole}</span>
+              <span className="text-sm text-gray-500">{displayCode}</span>
             </span>
             <ChevronDown
               className={`h-4 w-4 text-gray-400 transition-transform ${isProfileOpen ? "rotate-180" : ""}`}

@@ -2,8 +2,6 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
-import SideNav from "@/components/shared/SidebarNav";
-import TopNav from "@/components/shared/TopNav";
 import WelcomeCard from "@/components/shared/WelcomeCard";
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
 import StudentListTable, { Student } from "@/components/shared/students/StudentListItem";
@@ -47,10 +45,8 @@ const getTranslateStatus = (status: string) => {
 
 export default function AdvisorDashboard({
   userName = "อาจารย์ที่ปรึกษา",
-  userId = "Advisor",
   initialRequests = [],
 }: AdvisorDashboardProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [requests, setRequests] = useState<ActionRequest[]>(initialRequests);
 
   useEffect(() => {
@@ -153,89 +149,79 @@ export default function AdvisorDashboard({
   );
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-800">
-      {/* เมนูด้านข้าง (Sidebar) */}
-      <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="advisor" />
+    <div className="space-y-8">
+      {/* การ์ดต้อนรับ */}
+      <WelcomeCard
+        name={userName}
+        description="อาจารย์ที่ปรึกษา คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่"
+      />
 
-      {/* เนื้อหาหลัก */}
-      <div className="flex-1 flex flex-col w-full min-h-screen lg:ml-64 transition-all duration-300">
-        <TopNav onOpenSidebar={() => setIsSidebarOpen(true)} userName={userName} userId={userId} />
+      {/* ส่วนที่ 1: รายการคำร้องรอพิจารณา (ล่าสุด) */}
+      <section className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+              คำร้องรอพิจารณา (ในฐานะอาจารย์ที่ปรึกษา)
+            </h2>
+            <p className="text-gray-500 mt-1 text-sm">
+              รายการคำขอขอกู้ยืมจากนักศึกษาที่อยู่ในความดูแลของท่าน
+              ซึ่งรอการพิจารณาและอนุมัติจากอาจารย์ที่ปรึกษา
+            </p>
+          </div>
 
-        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto space-y-8">
-          {/* การ์ดต้อนรับ */}
-          <WelcomeCard
-            name={userName}
-            description="อาจารย์ที่ปรึกษา คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่"
-          />
+          <Link
+            href="/advisor/pending"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+          >
+            <span>ดูคำร้องทั้งหมด</span>
+            <ChevronRight size={16} />
+          </Link>
+        </div>
 
-          {/* ส่วนที่ 1: รายการคำร้องรอพิจารณา (ล่าสุด) */}
-          <section className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-                  คำร้องรอพิจารณา (ในฐานะอาจารย์ที่ปรึกษา)
-                </h2>
-                <p className="text-gray-500 mt-1 text-sm">
-                  รายการคำขอขอกู้ยืมจากนักศึกษาที่อยู่ในความดูแลของท่าน
-                  ซึ่งรอการพิจารณาและอนุมัติจากอาจารย์ที่ปรึกษา
-                </p>
-              </div>
-
-              <Link
-                href="/advisor/pending"
-                className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
-              >
-                <span>ดูคำร้องทั้งหมด</span>
-                <ChevronRight size={16} />
-              </Link>
+        {pendingRequests.length > 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <RequestsCard
+              requests={pendingRequests}
+              userRole="advisor"
+              onRequestDecided={handleRequestDecided}
+            />
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+              <ShieldCheck size={24} />
             </div>
+            <h3 className="font-semibold text-gray-800 text-base mb-1">
+              ไม่มีคำร้องรอพิจารณาในขณะนี้
+            </h3>
+            <p className="text-sm text-gray-500 max-w-md mx-auto">
+              ท่านได้พิจารณาคำร้องของนักศึกษาในความดูแลครบถ้วนแล้ว
+              หากมีคำร้องใหม่จากนักศึกษาจะปรากฏในส่วนนี้ทันที
+            </p>
+          </div>
+        )}
+      </section>
 
-            {pendingRequests.length > 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                <RequestsCard
-                  requests={pendingRequests}
-                  userRole="advisor"
-                  onRequestDecided={handleRequestDecided}
-                />
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center">
-                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
-                  <ShieldCheck size={24} />
-                </div>
-                <h3 className="font-semibold text-gray-800 text-base mb-1">
-                  ไม่มีคำร้องรอพิจารณาในขณะนี้
-                </h3>
-                <p className="text-sm text-gray-500 max-w-md mx-auto">
-                  ท่านได้พิจารณาคำร้องของนักศึกษาในความดูแลครบถ้วนแล้ว
-                  หากมีคำร้องใหม่จากนักศึกษาจะปรากฏในส่วนนี้ทันที
-                </p>
-              </div>
-            )}
-          </section>
+      {/* ส่วนที่ 2: นักศึกษาในความดูแลล่าสุด */}
+      <section className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">นักศึกษาในความดูแล</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              รายชื่อและประวัติการกู้ยืมของนักศึกษาภายใต้การดูแล
+            </p>
+          </div>
+          <Link
+            href="/advisor/students"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+          >
+            <span>ดูรายชื่อทั้งหมด</span>
+            <ChevronRight size={16} />
+          </Link>
+        </div>
 
-          {/* ส่วนที่ 2: นักศึกษาในความดูแลล่าสุด */}
-          <section className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">นักศึกษาในความดูแล</h2>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  รายชื่อและประวัติการกู้ยืมของนักศึกษาภายใต้การดูแล
-                </p>
-              </div>
-              <Link
-                href="/advisor/students"
-                className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
-              >
-                <span>ดูรายชื่อทั้งหมด</span>
-                <ChevronRight size={16} />
-              </Link>
-            </div>
-
-            <StudentListTable students={studentsList.slice(0, 5)} />
-          </section>
-        </main>
-      </div>
+        <StudentListTable students={studentsList.slice(0, 5)} />
+      </section>
     </div>
   );
 }

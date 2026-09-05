@@ -36,7 +36,7 @@ export type StudentInfo = {
   major: string;
   program?: string;
   year: string;
-  phone: string;
+  phone?: string;
 };
 
 export type BankDetails = {
