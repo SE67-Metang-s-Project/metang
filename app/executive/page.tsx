@@ -15,12 +15,10 @@ export default async function ExecutivePage() {
   });
 
   const userName = context.user.fullNameTh || context.identity.displayName;
-  const userId = context.user.cmuAccount || context.identity.cmuAccount || "Executive";
 
   return (
     <ExecutiveDashboard
       userName={userName}
-      userId={userId}
       financialOverview={financialOverview}
     />
   );

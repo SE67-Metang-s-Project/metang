@@ -2,8 +2,6 @@
 
 import React, { useMemo, useState } from "react";
 
-import SideNav from "@/components/shared/SidebarNav";
-import TopNav from "@/components/shared/TopNav";
 import WelcomeCard from "@/components/shared/WelcomeCard";
 
 import SuperAdminRequestsList from "@/components/superadmin/pending/SuperAdminRequestsList";
@@ -12,7 +10,6 @@ import DisburseDebtCard, {
 } from "@/components/shared/disburse-debt/DisburseDebtCard";
 import VerifySlipCard, {
   ActionRequest as VerifySlipActionRequest,
-  PaymentEvidence,
 } from "@/components/shared/verify-slip/VerifySlipCard";
 import UserRolesTab from "@/components/superadmin/setting/UserRolesTab";
 import SystemBudgetTab from "@/components/superadmin/setting/SystemBudgetTab";
@@ -39,13 +36,11 @@ type SuperAdminDashboardProps = {
 
 export default function SuperAdminDashboard({
   userName = "Super Admin สูงสุด",
-  userId = "SA-001",
   currentUserId,
   financialOverview,
   initialRequests,
   initialUsers,
 }: SuperAdminDashboardProps = {}) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const requests = useMemo(() => {
     if (initialRequests && initialRequests.length > 0) {
@@ -90,30 +85,10 @@ export default function SuperAdminDashboard({
   }, [requests]);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-800">
+    <div className="space-y-10">
       {/* =====================================================
-          Sidebar
+          Welcome
       ===================================================== */}
-      <SideNav
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        role="superadmin"
-      />
-
-      {/* =====================================================
-          Main Content
-      ===================================================== */}
-      <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64">
-        <TopNav
-          onOpenSidebar={() => setIsSidebarOpen(true)}
-          userName={userName}
-          userId={userId}
-        />
-
-        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
-          {/* =====================================================
-              Welcome
-          ===================================================== */}
           <WelcomeCard
             name={userName}
             description="ผู้ดูแลระบบระดับสูง (Super Administrator)"
@@ -238,8 +213,6 @@ export default function SuperAdminDashboard({
               {settingsSubTab === "budget" && <SystemBudgetTab />}
             </div>
           </section>
-        </main>
-      </div>
     </div>
   );
 }

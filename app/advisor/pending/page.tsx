@@ -11,14 +11,5 @@ export default async function PendingRequestsPage() {
     return [];
   });
 
-  const userName = context.user.fullNameTh || context.identity.displayName;
-  const userId = context.user.cmuAccount || context.identity.cmuAccount || "Advisor";
-
-  return (
-    <PendingPage
-      userName={userName}
-      userId={userId}
-      initialRequests={requests}
-    />
-  );
+  return <PendingPage initialRequests={requests} />;
 }

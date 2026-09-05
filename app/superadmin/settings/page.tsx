@@ -12,16 +12,10 @@ export default async function Page() {
     return [];
   });
 
-  const userName = context.user.fullNameTh || context.identity.displayName || "SuperAdmin";
-  const userId = context.user.cmuAccount || context.identity.cmuAccount || "SA-001";
-  const userEmail = context.user.email || context.identity.email || undefined;
   const currentUserId = context.user.id;
 
   return (
     <Settings
-      userName={userName}
-      userId={userId}
-      userEmail={userEmail}
       currentUserId={currentUserId}
       initialUsers={serializeJson(rawUsers)}
     />
