@@ -9,11 +9,11 @@ import WelcomeCard from "@/components/shared/WelcomeCard";
 import SuperAdminRequestsList from "@/components/superadmin/pending/SuperAdminRequestsList";
 import DisburseDebtCard, {
   ActionRequest as DisburseActionRequest,
-} from "@/components/superadmin/disburse-debt/DisburseDebtCard";
+} from "@/components/shared/disburse-debt/DisburseDebtCard";
 import VerifySlipCard, {
   ActionRequest as VerifySlipActionRequest,
   PaymentEvidence,
-} from "@/components/superadmin/verify-slip/VerifySlipCard";
+} from "@/components/shared/verify-slip/VerifySlipCard";
 import UserRolesTab from "@/components/superadmin/setting/UserRolesTab";
 import SystemBudgetTab from "@/components/superadmin/setting/SystemBudgetTab";
 import FinancialOverview from "@/components/shared/financial/FinancialOverview";

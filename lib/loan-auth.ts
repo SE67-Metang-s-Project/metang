@@ -206,19 +206,33 @@ export async function getStudentSessionContext(): Promise<LoanSessionContext | n
   return { session, profile: session.profile, identity };
 }
 
-export async function getAdvisorContext(advisorName?: string): Promise<LoanUserContext | null> {
+export type AdvisorAccess =
+  | { status: "authorized"; context: LoanUserContext }
+  | { status: "unauthenticated" }
+  | { status: "forbidden" };
+
+export async function getAdvisorAccess(advisorName?: string): Promise<AdvisorAccess> {
   if (isDevelopmentApiBypass() || isDevelopmentRoleEnabled("advisor")) {
-    return getDevelopmentLoanContext("advisor");
+    const context = await getDevelopmentLoanContext("advisor");
+    return context ? { status: "authorized", context } : { status: "forbidden" };
   }
 
   const session = await getCmuSession();
-  if (!session) return null;
+  if (!session) return { status: "unauthenticated" };
 
   const identity = normalizeLoanIdentity(session.profile);
   const user = await resolveAdvisor(identity, advisorName);
-  if (!user) return null;
+  if (!user) return { status: "forbidden" };
 
-  return { session, profile: session.profile, identity, user };
+  return {
+    status: "authorized",
+    context: { session, profile: session.profile, identity, user },
+  };
+}
+
+export async function getAdvisorContext(advisorName?: string): Promise<LoanUserContext | null> {
+  const access = await getAdvisorAccess(advisorName);
+  return access.status === "authorized" ? access.context : null;
 }
 
 export type AdminAccess =
@@ -387,17 +401,17 @@ export async function requireAdvisorAccess(
   errorRedirectUrl = "/error?type=forbidden",
   loginRedirectUrl = "/error?type=unauthenticated",
 ): Promise<LoanUserContext> {
-  const session = await getCmuSession();
-  if (!session) {
+  const access = await getAdvisorAccess(advisorName);
+
+  if (access.status === "unauthenticated") {
     redirect(loginRedirectUrl);
   }
 
-  const context = await getAdvisorContext(advisorName);
-  if (!context) {
+  if (access.status === "forbidden") {
     redirect(errorRedirectUrl);
   }
 
-  return context;
+  return access.context;
 }
 
 export async function requireStudentAccess(
