@@ -83,41 +83,6 @@ export default function AdminDashboard() {
           />
 
           {/* =====================================================
-              Summary Cards
-          ===================================================== */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-6 mb-8">
-
-            <DashboardStatCard
-              title="คำร้องรอพิจารณา"
-              value={pendingRequests.length}
-              description="รายการที่ต้องตรวจสอบ"
-              icon="📋"
-            />
-
-            <DashboardStatCard
-              title="รอโอนเงิน"
-              value={disbursementRequests.length}
-              description="รายการที่พร้อมเบิกจ่าย"
-              icon="💸"
-            />
-
-            <DashboardStatCard
-              title="รอตรวจสอบสลิป"
-              value={verifySlipRequests.length}
-              description="หลักฐานที่รอตรวจสอบ"
-              icon="🧾"
-            />
-
-            <DashboardStatCard
-              title="คำร้องทั้งหมด"
-              value={requests.length}
-              description="รายการในระบบ"
-              icon="📊"
-            />
-
-          </section>
-
-          {/* =====================================================
               1. Pending Review
           ===================================================== */}
           <section className="mb-10">
