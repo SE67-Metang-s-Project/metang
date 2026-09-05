@@ -7,18 +7,11 @@ import {
   Wallet,
   FileText,
   CheckCircle2,
-  XCircle,
   Clock,
-  History,
-  CreditCard,
-  Phone,
   Landmark,
   CalendarDays,
   ShieldAlert,
-  MessageSquare,
-  Image as ImageIcon,
   Receipt,
-  ChevronRight,
   ShieldCheck,
   SearchX,
 } from "lucide-react";
@@ -128,7 +121,7 @@ const formatAmount = (amountStr: string | number) => {
   return num.toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
 
-const hasPendingSlip = (history?: PaymentEvidence[]) => {
+export const hasPendingSlip = (history?: PaymentEvidence[]) => {
   if (!history) return false;
   return history.some((ev) => ev.status === "pending");
 };
@@ -178,7 +171,7 @@ function calculateInstallments(
   const baseAmount = totalAmount / termsCount;
 
   // 1. สร้างโครงสร้าง
-  let schedule = Array.from({ length: termsCount }, (_, i) => ({
+  const schedule = Array.from({ length: termsCount }, (_, i) => ({
     installmentNumber: i + 1,
     expectedAmount: baseAmount,
     isPaid: false,
@@ -302,19 +295,9 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                 </div>
                 <button
                   onClick={() => setSelectedRequest(req)}
-                  className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 text-[13px] font-bold rounded-lg border transition-colors ${
-                    hasPendingSlip(req.paymentHistory)
-                      ? "bg-orange-50 hover:bg-orange-100 text-[#ea580c] border-orange-200"
-                      : "bg-white hover:bg-gray-50 text-gray-700 border-gray-300"
-                  }`}
+                  className="w-fit max-w-full px-4 py-2 text-[14px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200"
                 >
-                  {hasPendingSlip(req.paymentHistory) ? (
-                    <>
-                      <Receipt size={14} /> ตรวจสอบสลิป
-                    </>
-                  ) : (
-                    "ดูรายละเอียด"
-                  )}
+                  <span className="block truncate">ตรวจสอบ</span>
                 </button>
               </div>
             </div>
@@ -341,7 +324,7 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
               <th className="py-3.5 px-4 font-semibold border-r border-gray-300 text-center whitespace-nowrap">
                 ยอดกู้ยืมรวม
               </th>
-              <th className="py-3.5 px-4 font-semibold text-center whitespace-nowrap">จัดการ</th>
+              <th className="py-3.5 px-4 font-bold text-center whitespace-nowrap">จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -374,23 +357,15 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                   <td className="py-4 px-4 text-center text-gray-900 font-bold border-r border-gray-200 whitespace-nowrap">
                     ฿{formatAmount(req.amount)}
                   </td>
-                  <td className="py-4 px-4 text-center">
-                    <button
-                      onClick={() => setSelectedRequest(req)}
-                      className={`inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-[13px] font-bold rounded-lg border transition-colors ${
-                        hasPendingSlip(req.paymentHistory)
-                          ? "bg-orange-50 hover:bg-orange-100 text-[#ea580c] border-orange-200"
-                          : "bg-white hover:bg-gray-50 text-gray-700 border-gray-300 shadow-sm"
-                      }`}
-                    >
-                      {hasPendingSlip(req.paymentHistory) ? (
-                        <>
-                          <Receipt size={14} /> ตรวจสอบสลิป
-                        </>
-                      ) : (
-                        "ดูรายละเอียด"
-                      )}
-                    </button>
+                  <td className="py-4 px-4 align-middle">
+                    <div className="flex justify-center">
+                      <button
+                        onClick={() => setSelectedRequest(req)}
+                        className="w-fit max-w-full px-3 py-1.5 text-[14px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200"
+                      >
+                        <span className="block truncate">ตรวจสอบ</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

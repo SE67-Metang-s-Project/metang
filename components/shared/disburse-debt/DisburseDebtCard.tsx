@@ -172,10 +172,10 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   </td>
                   <td className="px-4 py-4 align-middle">
                     <div className="flex justify-center">
-                      {req.requestStatus !== "disbursed" ? (
+                      {req.requestStatus !== "disbursed" && req.requestStatus !== "closed" ? (
                         <button
                           onClick={() => setSelectedReq(req)}
-                          className="inline-flex w-fit max-w-full items-center justify-center rounded-md border border-orange-200 bg-white px-4 py-1.5 text-[14px] font-bold text-[#ea580c] transition-colors hover:bg-orange-50"
+                          className="w-fit max-w-full px-3 py-1.5 text-[14px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200"
                         >
                           <span className="block truncate">ตรวจสอบ</span>
                         </button>
@@ -269,7 +269,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     </span>
                   </div>
 
-                  {/* เปลี่ยนแปลง: เพิ่มลูกเล่นปุ่มคัดลอก */}
+                  {/* ปุ่มคัดลอก */}
                   <div className="bg-white p-3 rounded-lg border border-blue-100 sm:col-span-2 flex justify-between items-center transition-all">
                     <div>
                       <span className="block text-[11px] text-gray-500 mb-0.5">เลขที่บัญชี</span>

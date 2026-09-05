@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
-import DisburseDebtCard from "@/components/admin/disburse-debt/DisburseDebtCard";
+import DisburseDebtCard from "@/components/shared/disburse-debt/DisburseDebtCard";
 import StudentFilters from "@/components/shared/filter/StudentFilters";
 import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
 
