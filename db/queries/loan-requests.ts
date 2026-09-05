@@ -491,9 +491,11 @@ function formatThaiDateTime(date: Date): string {
   return `${dateStr} ${hours}:${minutes}`;
 }
 
-export async function getAdvisorActionRequests(advisorId: string): Promise<ActionRequest[]> {
+export async function getActionRequests(
+  where?: Prisma.LoanRequestWhereInput,
+): Promise<ActionRequest[]> {
   const loans = await prisma.loanRequest.findMany({
-    where: { advisorId },
+    where,
     include: {
       student: {
         select: {
@@ -693,5 +695,13 @@ export async function getAdvisorActionRequests(advisorId: string): Promise<Actio
       paymentHistory,
     };
   });
+}
+
+export async function getAdvisorActionRequests(advisorId: string): Promise<ActionRequest[]> {
+  return getActionRequests({ advisorId });
+}
+
+export async function getAdminActionRequests(): Promise<ActionRequest[]> {
+  return getActionRequests({});
 }
 
