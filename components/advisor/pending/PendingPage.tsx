@@ -5,7 +5,6 @@ import SideNav from "@/components/shared/SidebarNav";
 import TopNav from "@/components/shared/TopNav";
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
 import { ShieldCheck } from "lucide-react";
-import { mockAdvisorRequests } from "@/components/shared/mock-data/mockAdvisorRequests";
 
 type AdvisorPendingPageProps = {
   userName?: string;
@@ -14,14 +13,14 @@ type AdvisorPendingPageProps = {
 };
 
 export default function AdvisorPendingPage({
-  userName = "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
-  userId = "T1002",
-  initialRequests,
+  userName = "อาจารย์ที่ปรึกษา",
+  userId = "Advisor",
+  initialRequests = [],
 }: AdvisorPendingPageProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // กำหนด State ให้กับ requests โดยดึงข้อมูลมาจาก DB หรือ Mock Data ของ Advisor
-  const [requests] = useState<ActionRequest[]>(initialRequests ?? mockAdvisorRequests);
+  // กำหนด State ให้กับ requests จาก DB
+  const [requests] = useState<ActionRequest[]>(initialRequests);
 
   // กรองเฉพาะคำร้องที่รออาจารย์ที่ปรึกษาพิจารณา
   const pendingRequests = useMemo(

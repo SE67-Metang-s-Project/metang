@@ -12,7 +12,7 @@ export default async function PendingRequestsPage() {
   });
 
   const userName = context.user.fullNameTh || context.identity.displayName;
-  const userId = context.user.cmuAccount || context.identity.cmuAccount || "T1002";
+  const userId = context.user.cmuAccount || context.identity.cmuAccount || "Advisor";
 
   return (
     <PendingPage
