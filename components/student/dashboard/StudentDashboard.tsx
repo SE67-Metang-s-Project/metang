@@ -14,7 +14,7 @@ import LoanHistoryList from "./LoanHistoryList";
 import LoanSummaryCard from "./LoanSummaryCard";
 import PaymentBehaviorCard from "./PaymentBehaviorCard";
 import InstallmentList from "../payments/InstallmentList";
-import PaymentModal from "../payments/PaymentModal";
+import PaymentModal from "@/components/shared/PaymentModal";
 import type { InstallmentPayment } from "@/app/student/studentMockData";
 import { MedicalBagIcon } from "./StudentIllustrations";
 import ContactFooter from "../loan-details/ContactFooter";
