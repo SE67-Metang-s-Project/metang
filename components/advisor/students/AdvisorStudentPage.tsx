@@ -42,8 +42,8 @@ export default function AdvisorStudentPage({
 
           {/* เรียก Shared Component และส่งข้อมูลของฝั่ง Advisor เข้าไป */}
           <SharedStudentList rawRequests={initialRequests} />
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
