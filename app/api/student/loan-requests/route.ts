@@ -11,6 +11,17 @@ import {
 } from "@/lib/loan-auth";
 import { studentLoanSelect } from "@/db/queries/loan-requests";
 
+function isUniqueConstraintOnField(
+  error: Prisma.PrismaClientKnownRequestError,
+  field: string,
+) {
+  const adapterError = error.meta?.driverAdapterError as
+    | { cause?: { constraint?: { fields?: unknown } } }
+    | undefined;
+  const fields = adapterError?.cause?.constraint?.fields;
+
+  return Array.isArray(fields) && fields.includes(field);
+}
 
 
 /**
@@ -158,9 +169,13 @@ export async function POST(request: Request) {
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
-      (error.code === "P2002" || error.code === "P2034")
+      error.code === "P2002" &&
+      isUniqueConstraintOnField(error, "student_id")
     ) {
       return apiError("CONFLICT", "You already have an open loan request", 409);
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+      return apiError("CONFLICT", "Loan request changed concurrently; please retry", 409);
     }
     if (
       error instanceof Error &&

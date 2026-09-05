@@ -77,7 +77,7 @@ model AppUser {
 }
 
 model LoanRequest {
-  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id               String            @id @default(dbgenerated("next_loan_request_id()")) @db.Text
   studentId        String            @map("student_id") @db.Uuid
   advisorId        String            @map("advisor_id") @db.Uuid
   assignedAdminId  String?           @map("assigned_admin_id") @db.Uuid
@@ -117,7 +117,7 @@ model LoanRequest {
 
 model LoanApproval {
   id        BigInt       @id @default(autoincrement())
-  loanId    String       @map("loan_id") @db.Uuid
+  loanId    String       @map("loan_id") @db.Text
   step      ApprovalStep
   attempt   Int          @default(1) @db.SmallInt
   decision  Decision     @default(pending)
@@ -135,7 +135,7 @@ model LoanApproval {
 
 model Installment {
   id         BigInt      @id @default(autoincrement())
-  loanId     String      @map("loan_id") @db.Uuid
+  loanId     String      @map("loan_id") @db.Text
   seq        Int         @db.SmallInt
   dueDate    DateTime    @map("due_date") @db.Date
   amountDue  Int         @map("amount_due") @db.Integer
@@ -151,7 +151,7 @@ model Installment {
 
 model Payment {
   id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  loanId        String       @map("loan_id") @db.Uuid
+  loanId        String       @map("loan_id") @db.Text
   installmentId BigInt?      @map("installment_id")
   amount        Int          @db.Integer
   slipUrl       String?      @map("slip_url") @db.Text
@@ -174,7 +174,7 @@ model FundTransaction {
   kind        String       @db.Text
   amount      Int          @db.Integer
   direction   Int          @db.SmallInt
-  loanId      String?      @map("loan_id") @db.Uuid
+  loanId      String?      @map("loan_id") @db.Text
   performedBy String       @map("performed_by") @db.Uuid
   slipUrl     String?      @map("slip_url") @db.Text
   note        String?      @db.Text

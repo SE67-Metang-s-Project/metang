@@ -52,10 +52,12 @@ for (const [path, operations] of Object.entries(document.paths ?? {})) {
       (entry) => entry.in === "path" && entry.name === "id",
     );
     if (!parameter) throw new Error(`Missing id parameter for ${path}`);
-    parameter.schema = { ...parameter.schema, type: "string", format: "uuid" };
+    parameter.schema = isLoanRequestPath
+      ? { ...parameter.schema, type: "string", pattern: "^REQ\\d{8}\\d{4}$" }
+      : { ...parameter.schema, type: "string", format: "uuid" };
     parameter.example = isSuperAdminUserPath
       ? "4cf0a318-3344-4c95-a4b7-99d3a721b3bf"
-      : "1ea025de-e936-4a86-a0a2-accae663cb8e";
+      : "REQ202609060000";
   }
 }
 

@@ -22,7 +22,7 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
 // Keep these IDs below the regular fixtures so the development bypass selects this pair first.
 const advisorId = "00000000-0000-0000-0000-000000000000";
 const studentId = "00000000-0000-0000-0000-000000000010";
-const historyLoanId = "00000000-0000-0000-0000-000000000020";
+const historyLoanId = "REQ202609060000";
 
 async function main() {
   const now = new Date();

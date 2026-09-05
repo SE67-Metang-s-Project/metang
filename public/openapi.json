@@ -5145,9 +5145,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -5224,9 +5224,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -5370,9 +5370,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -5419,9 +5419,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -5674,9 +5674,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -5743,9 +5743,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -6183,9 +6183,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -6280,9 +6280,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
