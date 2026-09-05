@@ -1482,10 +1482,10 @@
 .behaviorStatus {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  padding: 7px 18px;
-  border: 2px solid #8debc8;
-  border-radius: 999px;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid #8debc8;
+  border-radius: 15px;
   background: #edfff7;
   color: #16a34a;
   font-size: 14px;
@@ -1494,8 +1494,8 @@
 }
 
 .behaviorStatus i {
-  width: 11px;
-  height: 11px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: currentColor;
 }
@@ -1585,8 +1585,8 @@
   }
 
   .behaviorStatus {
-    gap: 6px;
-    padding: 5px 10px;
+    gap: 4px;
+    padding: 3px 8px;
     font-size: 14px;
   }
 
@@ -1832,7 +1832,7 @@
 }
 
 .installmentAction:not(:disabled):hover {
-  background: #f99a68;
+  background: #f5823d;
   box-shadow: 0 3px 8px color-mix(in srgb, var(--color-warning) 35%, transparent);
 }
 
@@ -2693,7 +2693,7 @@
 
 .paymentModalBackdrop {
   position: fixed;
-  z-index: 20;
+  z-index: 40;
   inset: 0;
   display: grid;
   overflow-y: auto;
