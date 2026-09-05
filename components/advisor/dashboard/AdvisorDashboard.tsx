@@ -26,6 +26,26 @@ interface AdvisorDashboardProps {
   initialRequests?: ActionRequest[];
 }
 
+// ----------------------------------------------------
+// 1. เพิ่มฟังก์ชันแปลงสถานะให้ตรงกับที่ตารางต้องการ
+// ----------------------------------------------------
+const getTranslateStatus = (status: string) => {
+  const s = String(status).toLowerCase();
+  if (s.includes("pending") || s === "draft") {
+    return { label: "มีคำร้องรอดำเนินการ", colorTheme: "blue" as const };
+  }
+  if (s === "disbursed") {
+    return { label: "อยู่ระหว่างผ่อนชำระ", colorTheme: "orange" as const };
+  }
+  if (s === "closed") {
+    return { label: "ปิดยอดแล้ว", colorTheme: "green" as const };
+  }
+  if (s.includes("reject") || s.includes("cancel") || s.includes("return")) {
+    return { label: "คำร้องถูกยกเลิก/ส่งกลับ", colorTheme: "gray" as const };
+  }
+  return { label: "สถานะไม่ระบุ", colorTheme: "gray" as const };
+};
+
 export default function AdvisorDashboard({
   userName = "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
   userId = "T1002",
@@ -82,13 +102,20 @@ export default function AdvisorDashboard({
       const mockBalance =
         req.requestStatus === "disbursed" || req.requestStatus === "closed" ? formattedAmount : "0";
 
+      // 2. เรียกใช้ฟังก์ชันแปลสถานะ
+      const { label: requestLabel, colorTheme: requestColor } = getTranslateStatus(
+        req.requestStatus,
+      );
+
       return {
         initial: req.name.charAt(0),
         name: req.name,
         studentId: req.studentId,
         major: req.major,
         year: req.year,
-        requestStatus: req.requestStatus,
+        rawStatus: req.requestStatus, // <--- ส่งให้ครบตาม Type ใหม่
+        requestStatusLabel: requestLabel, // <--- ส่งข้อความไทย
+        requestStatusColor: requestColor, // <--- ส่งสี
         paymentStatus,
         paymentStatusType,
         totalBorrowed: formattedAmount,
@@ -124,11 +151,15 @@ export default function AdvisorDashboard({
           <section className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
               <div>
-                <h2 className="text-lg font-bold text-[#1e293b]">คำร้องรอพิจารณา</h2>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  รายการคำร้องที่ต้องการความเห็นชอบจากอาจารย์ที่ปรึกษา
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                  คำร้องรอพิจารณา (ในฐานะอาจารย์ที่ปรึกษา)
+                </h2>
+                <p className="text-gray-500 mt-1 text-sm">
+                  รายการคำขอขอกู้ยืมจากนักศึกษาที่อยู่ในความดูแลของท่าน
+                  ซึ่งรอการพิจารณาและอนุมัติจากอาจารย์ที่ปรึกษา
                 </p>
               </div>
+
               <Link
                 href="/advisor/pending"
                 className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
@@ -139,7 +170,9 @@ export default function AdvisorDashboard({
             </div>
 
             {pendingRequests.length > 0 ? (
-              <RequestsCard requests={pendingRequests} userRole="advisor" />
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <RequestsCard requests={pendingRequests} userRole="advisor" />
+              </div>
             ) : (
               <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center">
                 <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
@@ -160,7 +193,7 @@ export default function AdvisorDashboard({
           <section className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
               <div>
-                <h2 className="text-lg font-bold text-[#1e293b]">นักศึกษาในความดูแลล่าสุด</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">นักศึกษาในความดูแล</h2>
                 <p className="text-sm text-gray-500 mt-0.5">
                   รายชื่อและประวัติการกู้ยืมของนักศึกษาภายใต้การดูแล
                 </p>

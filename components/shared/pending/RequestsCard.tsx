@@ -16,7 +16,7 @@ import {
   CalendarDays,
   ShieldAlert,
   MessageSquare,
-  Pencil, // <--- เพิ่ม Import Icon สำหรับแก้ไข
+  Pencil,
   SearchX,
 } from "lucide-react";
 
@@ -80,9 +80,6 @@ export type LoanStatus =
   | "cancelled"
   | string;
 
-// ==========================================
-// โครงสร้างการอนุมัติ (รองรับหลาย Role)
-// ==========================================
 export type ApprovalStep = {
   step: "advisor" | "admin" | "executive";
   actorName: string;
@@ -98,6 +95,7 @@ export type ActionRequest = StudentInfo &
     requestStatus: LoanStatus;
     paymentBehavior?: PaymentBehaviorInfo;
     approvals?: ApprovalStep[];
+    paymentHistory?: any[]; // เพิ่มรองรับการเช็คประวัติชำระเงิน
   };
 
 export type UserRole = "advisor" | "executive" | "admin" | "super_admin";
@@ -126,41 +124,102 @@ const thaiMonths = [
   "ธ.ค.",
 ];
 
-function calculateInstallmentDates(startDateStr: string, term: string) {
-  const termsCount = parseInt(term, 10) || 0;
-  if (termsCount === 0 || !startDateStr) return [];
-
-  const parts = startDateStr.split(" ");
-  if (parts.length !== 3) return [];
-
-  const day = parseInt(parts[0], 10);
-  const monthIdx = thaiMonths.indexOf(parts[1]);
-  const year = parseInt(parts[2], 10) - 543;
-
-  if (isNaN(day) || monthIdx === -1 || isNaN(year)) return [];
-
-  const startDate = new Date(year, monthIdx, day);
-  const installments = [];
-
-  for (let i = 1; i <= termsCount; i++) {
-    const nextDate = new Date(startDate);
-    nextDate.setDate(startDate.getDate() + i * 30);
-    const nextDay = nextDate.getDate();
-    const nextMonth = thaiMonths[nextDate.getMonth()];
-    const nextYear = nextDate.getFullYear() + 543;
-    installments.push({
-      installmentNumber: i,
-      dateString: `${nextDay} ${nextMonth} ${nextYear}`,
-    });
-  }
-  return installments;
-}
-
-const formatAmount = (amountStr: string) => {
+const formatAmount = (amountStr: string | number) => {
   const num = Number(amountStr);
   if (isNaN(num)) return amountStr;
-  return num.toLocaleString();
+  return num.toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
+
+// ==========================================
+// ฟังก์ชันคำนวณงวดการชำระเงิน (คำนวณยอดที่ต้องจ่าย & หักลบกรณีจ่ายเกิน)
+// ==========================================
+function calculateInstallments(
+  startDateStr: string,
+  termStr: string,
+  amountStr: string,
+  paymentHistory?: any[],
+) {
+  const termsCount = parseInt(termStr, 10) || 0;
+  const totalAmount = parseFloat(amountStr) || 0;
+  if (termsCount === 0 || !startDateStr) return [];
+
+  const baseAmount = totalAmount / termsCount;
+
+  // 1. สร้างโครงสร้างงวดการชำระเงินเริ่มต้น
+  let schedule = Array.from({ length: termsCount }, (_, i) => ({
+    installmentNumber: i + 1,
+    expectedAmount: baseAmount,
+    isPaid: false,
+    paidAmount: 0,
+  }));
+
+  // 2. ตรวจสอบประวัติการชำระเงิน และคำนวณยอดที่จ่ายเกิน
+  if (paymentHistory && Array.isArray(paymentHistory)) {
+    // รวมยอดที่จ่ายมาในแต่ละงวด
+    paymentHistory.forEach((p) => {
+      if (p.status === "verified" || p.status === "success") {
+        const idx = p.installmentNumber - 1;
+        if (schedule[idx]) {
+          schedule[idx].isPaid = true;
+          schedule[idx].paidAmount += Number(p.amount);
+        }
+      }
+    });
+
+    let totalExcess = 0;
+    schedule.forEach((s) => {
+      if (s.isPaid) {
+        if (s.paidAmount > baseAmount) {
+          // หากจ่ายเกิน นำยอดที่เกินไปสะสมไว้หักงวดท้ายสุด
+          totalExcess += s.paidAmount - baseAmount;
+          s.expectedAmount = s.paidAmount; // อัปเดตยอดของงวดนี้ให้ตรงกับที่จ่ายจริง
+        } else if (s.paidAmount < baseAmount) {
+          s.expectedAmount = s.paidAmount; // กรณีจ่ายขาด (ถ้ามี)
+        }
+      }
+    });
+
+    // 3. นำยอดที่จ่ายเกิน ไปหักลบกับงวดท้ายสุดขึ้นมาเรื่อยๆ
+    for (let i = termsCount - 1; i >= 0 && totalExcess > 0; i--) {
+      if (!schedule[i].isPaid) {
+        if (schedule[i].expectedAmount >= totalExcess) {
+          schedule[i].expectedAmount -= totalExcess;
+          totalExcess = 0;
+        } else {
+          totalExcess -= schedule[i].expectedAmount;
+          schedule[i].expectedAmount = 0;
+        }
+      }
+    }
+  }
+
+  // 4. คำนวณวันที่ชำระเงิน
+  const parts = startDateStr.split(" ");
+  let startDate: Date | null = null;
+  if (parts.length === 3) {
+    const day = parseInt(parts[0], 10);
+    const monthIdx = thaiMonths.indexOf(parts[1]);
+    const year = parseInt(parts[2], 10) - 543;
+    if (!isNaN(day) && monthIdx !== -1 && !isNaN(year)) {
+      startDate = new Date(year, monthIdx, day);
+    }
+  }
+
+  return schedule.map((s, i) => {
+    let dateString = "-";
+    if (startDate) {
+      const nextDate = new Date(startDate);
+      nextDate.setDate(startDate.getDate() + (i + 1) * 30);
+      dateString = `${nextDate.getDate()} ${thaiMonths[nextDate.getMonth()]} ${
+        nextDate.getFullYear() + 543
+      }`;
+    }
+    return {
+      ...s,
+      dateString,
+    };
+  });
+}
 
 function EmptyRequestsState() {
   return (
@@ -224,7 +283,10 @@ const getRoleDisplay = (step: string) => {
 const checkCanTakeAction = (role: UserRole, status: LoanStatus) => {
   const s = String(status).toLowerCase();
   if (role === "advisor" && (s === "pending_advisor" || s.includes("รอพิจารณา"))) return true;
-  if ((role === "admin" || role === "super_admin") && (s === "pending_admin" || s.includes("รอเจ้าหน้าที่ตรวจสอบ")))
+  if (
+    (role === "admin" || role === "super_admin") &&
+    (s === "pending_admin" || s.includes("รอเจ้าหน้าที่ตรวจสอบ"))
+  )
     return true;
   if (role === "executive" && (s === "pending_executive" || s.includes("รอผู้บริหารอนุมัติ")))
     return true;
@@ -242,16 +304,13 @@ export default function RequestsCard({
   const selectedRequestHistory = selectedRequest?.history ?? [];
   const isExecutiveTable = tableLayout === "executive";
 
-  // ==========================================
   // State สำหรับการแก้ไขวงเงิน (Admin / Super Admin)
-  // ==========================================
   const [isEditingAmount, setIsEditingAmount] = useState(false);
   const [editAmountValue, setEditAmountValue] = useState("");
 
   const canViewSensitiveData = userRole === "admin" || userRole === "super_admin";
   const canEditAmount = userRole === "admin" || userRole === "super_admin";
 
-  // รีเซ็ตค่าวงเงินเมื่อเลือกคำร้องใหม่
   useEffect(() => {
     if (selectedRequest) {
       setEditAmountValue(selectedRequest.amount);
@@ -266,7 +325,6 @@ export default function RequestsCard({
     setIsEditingAmount(false);
   };
 
-  // ฟังก์ชันบันทึกวงเงินใหม่
   const handleSaveAmount = () => {
     if (selectedRequest && editAmountValue) {
       setSelectedRequest({ ...selectedRequest, amount: editAmountValue });
@@ -335,39 +393,43 @@ export default function RequestsCard({
       <div className="md:hidden space-y-4">
         {requests.length === 0 ? (
           <EmptyRequestsState />
-        ) : requests.map((req, idx) => (
-          <div
-            key={idx}
-            className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md"
-          >
-            <div className="flex justify-between items-start gap-2">
-              <div>
-                <div className="font-bold text-gray-900 text-[15px] leading-tight">{req.name}</div>
-                <div className="text-[13px] text-gray-500 mt-1">
-                  {req.studentId} • {req.major} • ปี {req.year}
-                </div>
-              </div>
-              <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded-md shrink-0 border border-gray-200">
-                {req.submitDate}
-              </span>
-            </div>
-
-            <div className="text-[13px] text-gray-700 bg-orange-50/50 p-3 rounded-lg border border-orange-100/50 line-clamp-2">
-              <span className="font-semibold text-gray-900">นำไปใช้: </span>
-              {req.objective}
-            </div>
-
-            <div className="flex justify-between items-end border-t border-gray-100 pt-3 mt-1">
-              <div className="flex gap-4">
+        ) : (
+          requests.map((req, idx) => (
+            <div
+              key={idx}
+              className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md"
+            >
+              <div className="flex justify-between items-start gap-2">
                 <div>
-                  <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่ขอ</div>
-                  <div className="font-bold text-[#ea580c]">{formatAmount(req.amount)}</div>
+                  <div className="font-bold text-gray-900 text-[15px] leading-tight">
+                    {req.name}
+                  </div>
+                  <div className="text-[13px] text-gray-500 mt-1">
+                    {req.studentId} • {req.major} • ปี {req.year}
+                  </div>
                 </div>
+                <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded-md shrink-0 border border-gray-200">
+                  {req.submitDate}
+                </span>
               </div>
-              {renderActionButton(req, true)}
+
+              <div className="text-[13px] text-gray-700 bg-orange-50/50 p-3 rounded-lg border border-orange-100/50 line-clamp-2">
+                <span className="font-semibold text-gray-900">นำไปใช้: </span>
+                {req.objective}
+              </div>
+
+              <div className="flex justify-between items-end border-t border-gray-100 pt-3 mt-1">
+                <div className="flex gap-4">
+                  <div>
+                    <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่ขอ</div>
+                    <div className="font-bold text-[#ea580c]">{formatAmount(req.amount)}</div>
+                  </div>
+                </div>
+                {renderActionButton(req, true)}
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* 2. มุมมองสำหรับ Desktop/Tablet (แสดงเป็นตาราง) */}
@@ -428,58 +490,49 @@ export default function RequestsCard({
                   <EmptyRequestsState />
                 </td>
               </tr>
-            ) : requests.map((req, idx) => (
-              <tr
-                key={idx}
-                className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
-              >
-                <td className="min-w-[130px] py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
-                  {req.id}
-                </td>
-                <td className="py-4 px-4 border-r border-gray-200">
-                  <div
-                    className={
-                      isExecutiveTable
-                        ? "truncate font-normal text-gray-900"
-                        : "font-bold text-gray-900 max-[1201px]:line-clamp-1"
-                    }
-                  >
-                    {isExecutiveTable ? `${req.name} • ${req.studentId}` : req.name}
-                  </div>
-                  <div
-                    className={`mt-0.5 ${
-                      isExecutiveTable ? "truncate text-[14px]" : "text-[13px] max-[1201px]:truncate"
-                    } text-gray-500`}
-                  >
-                    {isExecutiveTable
-                      ? `${req.program ?? "พยาบาลศาสตรบัณฑิต"} • ปริญญาตรี • ปี ${req.year}`
-                      : `${req.studentId} • ${req.major} • ปี ${req.year}`}
-                  </div>
-                </td>
-                <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
-                  {isExecutiveTable ? (
-                    <div className="flex flex-col items-center leading-relaxed">
-                      <span>{req.submitDate}</span>
-                      {getSubmittedTime(req) && <span>{getSubmittedTime(req)}</span>}
+            ) : (
+              requests.map((req, idx) => (
+                <tr
+                  key={idx}
+                  className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
+                >
+                  <td className="min-w-[130px] py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                    {req.id}
+                  </td>
+                  {/* เปลี่ยนแปลงการแสดงผลในส่วนของข้อมูลนักศึกษา */}
+                  <td className="py-4 px-4 border-r border-gray-200">
+                    <div className="font-bold text-gray-900 max-[1201px]:line-clamp-1">
+                      {req.name}
                     </div>
-                  ) : (
-                    req.submitDate
-                  )}
-                </td>
-                <td className="py-4 px-4 text-left font-normal text-gray-700 border-r border-gray-200">
-                  <div className="line-clamp-2">{req.objective}</div>
-                </td>
-                <td className="py-4 px-4 text-center font-normal text-gray-900 border-r border-gray-200 whitespace-nowrap">
-                  {formatAmount(req.amount)}
-                </td>
-                <td className="py-4 px-4 text-center font-normal text-gray-700 border-r border-gray-200 whitespace-nowrap">
-                  {req.term} งวด
-                </td>
-                <td className="py-4 px-4 align-middle">
-                  <div className="flex justify-center">{renderActionButton(req, false)}</div>
-                </td>
-              </tr>
-            ))}
+                    <div className="mt-0.5 text-[13px] text-gray-500 max-[1201px]:truncate">
+                      {req.studentId} • {req.major} • ปี {req.year}
+                    </div>
+                  </td>
+                  <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                    {isExecutiveTable ? (
+                      <div className="flex flex-col items-center leading-relaxed">
+                        <span>{req.submitDate}</span>
+                        {getSubmittedTime(req) && <span>{getSubmittedTime(req)}</span>}
+                      </div>
+                    ) : (
+                      req.submitDate
+                    )}
+                  </td>
+                  <td className="py-4 px-4 text-left font-normal text-gray-700 border-r border-gray-200">
+                    <div className="line-clamp-2">{req.objective}</div>
+                  </td>
+                  <td className="py-4 px-4 text-center font-normal text-gray-900 border-r border-gray-200 whitespace-nowrap">
+                    {formatAmount(req.amount)}
+                  </td>
+                  <td className="py-4 px-4 text-center font-normal text-gray-700 border-r border-gray-200 whitespace-nowrap">
+                    {req.term} งวด
+                  </td>
+                  <td className="py-4 px-4 align-middle">
+                    <div className="flex justify-center">{renderActionButton(req, false)}</div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -541,15 +594,11 @@ export default function RequestsCard({
 
               {/* Grid 2 ช่อง (จำนวนเงิน, กำหนดคืน) */}
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                {/* ---------------------------------------------------- */}
-                {/* แก้ไข: ส่วนที่ให้ Admin แก้ไขตัวเลขวงเงินได้ */}
-                {/* ---------------------------------------------------- */}
                 <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-4 shadow-sm relative">
                   <div className="text-[12px] text-gray-500 flex items-center justify-between mb-1">
                     <span className="flex items-center gap-1.5">
                       <Wallet size={14} /> จำนวนเงินที่ขอยืม
                     </span>
-                    {/* ปุ่มแก้ไข จะโชว์เฉพาะ Role ที่กำหนด และตอนที่ยังไม่ได้กดแก้ */}
                     {canEditAmount && !isEditingAmount && (
                       <button
                         onClick={() => setIsEditingAmount(true)}
@@ -603,26 +652,71 @@ export default function RequestsCard({
                 </div>
               </div>
 
-              {/* วันที่กำหนดชำระ */}
+              {/* วันที่กำหนดชำระ (แบบตาราง) */}
               <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-3 border-b border-gray-100 pb-2">
-                  <CalendarDays size={15} className="text-[#ea580c]" /> กำหนดการผ่อนชำระ (งวดละ 30
-                  วัน)
+                <div className="text-[13px] font-semibold text-gray-700 flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
+                  <div className="flex items-center gap-1.5">
+                    <CalendarDays size={15} className="text-[#ea580c]" /> กำหนดการผ่อนชำระ (งวดละ 30
+                    วัน)
+                  </div>
                 </div>
-                <div className="flex flex-col gap-2">
-                  {calculateInstallmentDates(selectedRequest.submitDate, selectedRequest.term).map(
-                    (installment) => (
-                      <div
-                        key={installment.installmentNumber}
-                        className="flex justify-between items-center bg-orange-50/50 px-3 py-2.5 rounded-lg border border-orange-100/50 text-[13px]"
-                      >
-                        <span className="text-gray-600 font-medium">
-                          งวดที่ {installment.installmentNumber}
-                        </span>
-                        <span className="text-gray-900 font-bold">{installment.dateString}</span>
-                      </div>
-                    ),
-                  )}
+
+                <div className="overflow-x-auto rounded-lg border border-gray-200">
+                  <table className="w-full text-left border-collapse text-[13px]">
+                    <thead>
+                      <tr className="bg-gray-50 text-gray-600 border-b border-gray-200">
+                        <th className="py-2.5 px-3 font-semibold text-center w-[25%]">งวดที่</th>
+                        <th className="py-2.5 px-3 font-semibold text-center w-[40%]">กำหนดชำระ</th>
+                        <th className="py-2.5 px-3 font-semibold text-right w-[35%]">ยอดชำระ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {calculateInstallments(
+                        selectedRequest.submitDate,
+                        selectedRequest.term,
+                        selectedRequest.amount,
+                        selectedRequest.paymentHistory,
+                      ).map((inst) => (
+                        <tr
+                          key={inst.installmentNumber}
+                          className={`border-b border-gray-100 last:border-0 ${
+                            inst.isPaid ? "bg-green-50/40" : ""
+                          }`}
+                        >
+                          <td className="py-2.5 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span
+                                className={`font-medium ${
+                                  inst.isPaid ? "text-green-700" : "text-gray-700"
+                                }`}
+                              >
+                                {inst.installmentNumber}
+                              </span>
+                              {inst.isPaid && <CheckCircle2 size={14} className="text-green-600" />}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-center text-gray-600">
+                            {inst.dateString}
+                          </td>
+                          <td className="py-2.5 px-3 text-right">
+                            {inst.isPaid ? (
+                              <span className="font-bold text-green-700">
+                                ฿{formatAmount(inst.paidAmount)}
+                              </span>
+                            ) : (
+                              <span
+                                className={`font-bold ${
+                                  inst.expectedAmount === 0 ? "text-gray-400" : "text-[#ea580c]"
+                                }`}
+                              >
+                                ฿{formatAmount(inst.expectedAmount)}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -672,7 +766,7 @@ export default function RequestsCard({
                 </div>
               )}
 
-              {/* ความเห็นประกอบการพิจารณา (แสดงทุก Role ก่อนหน้า) */}
+              {/* ความเห็นประกอบการพิจารณา */}
               {selectedRequest.approvals && selectedRequest.approvals.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                   <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-3 border-b border-gray-100 pb-2">
@@ -753,10 +847,18 @@ export default function RequestsCard({
                     {selectedRequestHistory.map((step, index) => (
                       <div key={index} className="relative pl-5">
                         <div
-                          className={`absolute w-3 h-3 rounded-full -left-[7px] top-1 ${index === selectedRequestHistory.length - 1 ? "bg-blue-500 ring-4 ring-blue-50" : "bg-gray-300"}`}
+                          className={`absolute w-3 h-3 rounded-full -left-[7px] top-1 ${
+                            index === selectedRequestHistory.length - 1
+                              ? "bg-blue-500 ring-4 ring-blue-50"
+                              : "bg-gray-300"
+                          }`}
                         ></div>
                         <div
-                          className={`font-bold text-[14px] ${index === selectedRequestHistory.length - 1 ? "text-gray-900" : "text-gray-600"}`}
+                          className={`font-bold text-[14px] ${
+                            index === selectedRequestHistory.length - 1
+                              ? "text-gray-900"
+                              : "text-gray-600"
+                          }`}
                         >
                           {step.action}
                         </div>
@@ -774,10 +876,9 @@ export default function RequestsCard({
               </div>
             </div>
 
-            {/* Footer Buttons - แสดงปุ่มอนุมัติ/ไม่อนุมัติเฉพาะเมื่อตรงเงื่อนไขของ Role */}
+            {/* Footer Buttons */}
             {checkCanTakeAction(userRole, selectedRequest.requestStatus) && (
               <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex flex-col shrink-0">
-                {/* ถ้ายังไม่ได้กดเลือก ให้โชว์ 3 ปุ่ม */}
                 {!confirmAction ? (
                   <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <button
@@ -786,14 +887,12 @@ export default function RequestsCard({
                     >
                       ไม่อนุมัติ
                     </button>
-
                     <button
                       onClick={() => setConfirmAction("return")}
                       className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-bold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
                     >
                       ส่งกลับแก้ไข
                     </button>
-
                     <button
                       onClick={() => setConfirmAction("approve")}
                       className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98]"
@@ -802,7 +901,6 @@ export default function RequestsCard({
                     </button>
                   </div>
                 ) : (
-                  // ถ้ากดเลือกแล้ว ให้โชว์กล่องข้อความขยายลงมา
                   <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2">
                     <h4
                       className={`font-bold text-[14px] mb-2 flex items-center gap-2 ${

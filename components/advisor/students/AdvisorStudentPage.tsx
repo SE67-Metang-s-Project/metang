@@ -25,10 +25,10 @@ export default function AdvisorStudentPage() {
 
         <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto space-y-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">
-              นักศึกษาในความดูแล
-            </h1>
-            <p className="text-[13px] text-gray-500">รายชื่อนักศึกษาที่อยู่ภายใต้การดูแลของท่าน</p>
+            <h1 className="text-lg font-bold text-[#1e293b]">นักศึกษาในความดูแล</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              รายชื่อและประวัติการกู้ยืมของนักศึกษาภายใต้การดูแล
+            </p>
           </div>
 
           {/* เรียก Shared Component และส่งข้อมูลของฝั่ง Advisor เข้าไป */}
