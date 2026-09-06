@@ -1,32 +1,98 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import {
-  activeLoan,
-  installmentPayments,
-  loanRequestHistory,
+  activeLoan as defaultActiveLoan,
+  installmentPayments as defaultInstallmentPayments,
+  loanRequestHistory as defaultLoanRequestHistory,
   paymentAccount,
-  studentProfile,
+  studentProfile as defaultStudentProfile,
 } from "@/app/student/studentMockData";
 import LoanHistoryList from "./LoanHistoryList";
-import LoanSummaryCard from "./LoanSummaryCard";
+import LoanSummaryCard, { type ActiveLoanDisplay, type StudentProfileDisplay } from "./LoanSummaryCard";
+import TempLoanSummaryCard from "./TempLoanSummaryCard";
 import PaymentBehaviorCard from "./PaymentBehaviorCard";
 import InstallmentList from "../payments/InstallmentList";
 import PaymentModal from "@/components/shared/PaymentModal";
-import type { InstallmentPayment } from "@/app/student/studentMockData";
+import type { InstallmentPayment, LoanRequestHistoryItem } from "@/app/student/studentMockData";
 import { MedicalBagIcon } from "./StudentIllustrations";
 import ContactFooter from "../loan-details/ContactFooter";
 import TopNav from "@/components/shared/TopNav";
+import {
+  mapToActiveLoanSummary,
+  mapToInstallmentPayments,
+  mapToLoanRequestHistoryItem,
+  type RawStudentLoan,
+} from "@/lib/student-view-model";
 import styles from "@/app/student/student.module.css";
 
-export default function StudentDashboard() {
+type StudentDashboardProps = {
+  profile?: StudentProfileDisplay;
+  initialActiveLoan?: ActiveLoanDisplay | null;
+  initialHistoryRequests?: LoanRequestHistoryItem[];
+  initialInstallments?: InstallmentPayment[];
+};
+
+export default function StudentDashboard({
+  profile: initialProfile,
+  initialActiveLoan,
+  initialHistoryRequests,
+  initialInstallments,
+}: StudentDashboardProps) {
   const [showAllRequests, setShowAllRequests] = useState(false);
   const [activePayment, setActivePayment] = useState<InstallmentPayment | null>(null);
   const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState(false);
   const preservedScrollPosition = useRef<number | null>(null);
   const router = useRouter();
+
+  const [profile] = useState<StudentProfileDisplay>(initialProfile ?? defaultStudentProfile);
+  const [activeLoanData, setActiveLoanData] = useState<ActiveLoanDisplay | null | undefined>(initialActiveLoan);
+  const [historyRequests, setHistoryRequests] = useState<LoanRequestHistoryItem[] | undefined>(initialHistoryRequests);
+  const [installments, setInstallments] = useState<InstallmentPayment[] | undefined>(initialInstallments);
+
+  useEffect(() => {
+    if (initialActiveLoan !== undefined && initialHistoryRequests !== undefined) {
+      return;
+    }
+
+    let isMounted = true;
+    async function loadData() {
+      try {
+        const [currentRes, listRes] = await Promise.all([
+          fetch("/api/student/loan-requests/current"),
+          fetch("/api/student/loan-requests"),
+        ]);
+
+        if (currentRes.ok) {
+          const currentJson = await currentRes.json();
+          if (isMounted) {
+            const rawLoan = currentJson.data as RawStudentLoan | null;
+            setActiveLoanData(mapToActiveLoanSummary(rawLoan));
+            if (rawLoan?.installments) {
+              setInstallments(mapToInstallmentPayments(rawLoan.installments));
+            }
+          }
+        }
+
+        if (listRes.ok) {
+          const listJson = await listRes.json();
+          if (isMounted) {
+            const rawList = (listJson.data || []) as RawStudentLoan[];
+            setHistoryRequests(rawList.map(mapToLoanRequestHistoryItem));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load student data from API", err);
+      }
+    }
+
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [initialActiveLoan, initialHistoryRequests]);
 
   useLayoutEffect(() => {
     if (preservedScrollPosition.current === null) {
@@ -51,31 +117,43 @@ export default function StudentDashboard() {
     setIsPaymentSuccessOpen(true);
   };
 
+  const displayedRequests = historyRequests ?? defaultLoanRequestHistory;
+  const currentActiveLoan = activeLoanData === undefined ? defaultActiveLoan : activeLoanData;
+  const currentInstallments = installments ?? defaultInstallmentPayments;
+
   return (
     <main className={styles.studentPage}>
       <TopNav
-        userName={studentProfile.displayName}
-        userId={studentProfile.studentId}
+        userName={profile.displayName}
+        userId={profile.studentId}
         userRole="นักศึกษา"
-        userEmail={`${studentProfile.studentId}@cmu.ac.th`}
+        userEmail={profile.contactEmail || `${profile.studentId}@cmu.ac.th`}
         showSidebarButton={false}
       />
 
       <div className={styles.studentPageContent}>
         <div className={styles.studentContent}>
-          <LoanSummaryCard
-            medicalBag={<MedicalBagIcon />}
-            onOpenDetails={() => openLoanDetails(activeLoan.requestNumber)}
-          />
+          {currentActiveLoan ? (
+            <LoanSummaryCard
+              activeLoan={currentActiveLoan}
+              medicalBag={<MedicalBagIcon />}
+              onOpenDetails={() => openLoanDetails(currentActiveLoan.requestNumber)}
+              profile={profile}
+            />
+          ) : (
+            <TempLoanSummaryCard profile={profile} />
+          )}
+
           <PaymentBehaviorCard />
-          <InstallmentList
-            installments={installmentPayments}
-            onPay={setActivePayment}
-          />
+
+          {currentActiveLoan && "isDisbursed" in currentActiveLoan && currentActiveLoan.isDisbursed && currentInstallments.length > 0 ? (
+            <InstallmentList installments={currentInstallments} onPay={setActivePayment} />
+          ) : null}
+
           <LoanHistoryList
-            onShowMore={toggleRequestHistory}
             onOpenRequest={openLoanDetails}
-            requests={loanRequestHistory}
+            onShowMore={toggleRequestHistory}
+            requests={displayedRequests}
             showAllRequests={showAllRequests}
           />
           <ContactFooter />

@@ -721,3 +721,77 @@ export async function getDisbursementActionRequests(): Promise<ActionRequest[]> 
   });
 }
 
+export const studentLoanDetailSelect = {
+  ...studentLoanSelect,
+  approvals: {
+    select: {
+      id: true,
+      loanId: true,
+      step: true,
+      attempt: true,
+      decision: true,
+      decidedBy: true,
+      decidedAt: true,
+      comment: true,
+      decider: { select: userSummarySelect },
+    },
+    orderBy: [{ step: "asc" }, { attempt: "asc" }],
+  },
+  installments: {
+    select: {
+      id: true,
+      seq: true,
+      dueDate: true,
+      amountDue: true,
+      amountPaid: true,
+      settledAt: true,
+    },
+    orderBy: { seq: "asc" },
+  },
+  payments: {
+    select: {
+      id: true,
+      installmentId: true,
+      amount: true,
+      slipUrl: true,
+      status: true,
+      paidAt: true,
+      confirmedAt: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  },
+} satisfies Prisma.LoanRequestSelect;
+
+export async function getStudentLoanList(studentId: string) {
+  const loans = await prisma.loanRequest.findMany({
+    where: { studentId },
+    select: studentLoanDetailSelect,
+    orderBy: { createdAt: "desc" },
+  });
+  return serializeJson(loans);
+}
+
+export async function getStudentCurrentLoan(studentId: string) {
+  const loan = await prisma.loanRequest.findFirst({
+    where: {
+      studentId,
+      status: { notIn: ["closed", "rejected", "cancelled"] },
+    },
+    select: studentLoanDetailSelect,
+    orderBy: { createdAt: "desc" },
+  });
+  return loan ? serializeJson(loan) : null;
+}
+
+export async function getStudentLoanDetail(loanId: string, studentId: string) {
+  const loan = await prisma.loanRequest.findFirst({
+    where: {
+      id: loanId,
+      studentId,
+    },
+    select: studentLoanDetailSelect,
+  });
+  return loan ? serializeJson(loan) : null;
+}
+

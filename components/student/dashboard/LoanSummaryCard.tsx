@@ -5,49 +5,79 @@ import { activeLoan, studentProfile } from "@/app/student/studentMockData";
 import { useStudentEducationLevel } from "@/lib/student-education";
 import styles from "@/app/student/student.module.css";
 
-type LoanSummaryCardProps = {
-  onOpenDetails: () => void;
-  medicalBag: ReactNode;
+export type ActiveLoanDisplay = {
+  requestNumber: string;
+  statusLabel: string;
+  paidAmount: string;
+  totalAmount: string;
+  nextInstallmentNumber?: number | string;
+  nextDueDate?: string;
+  isDisbursed?: boolean;
 };
 
-export default function LoanSummaryCard({ onOpenDetails, medicalBag }: LoanSummaryCardProps) {
+export type StudentProfileDisplay = {
+  displayName: string;
+  studentId: string;
+  educationLevel?: string;
+  programName?: string;
+  yearLabel?: string;
+  contactEmail?: string;
+};
+
+type LoanSummaryCardProps = {
+  onOpenDetails: () => void;
+  medicalBag?: ReactNode;
+  activeLoan?: ActiveLoanDisplay;
+  profile?: StudentProfileDisplay;
+};
+
+export default function LoanSummaryCard({
+  onOpenDetails,
+  medicalBag,
+  activeLoan: activeLoanProp,
+  profile: profileProp,
+}: LoanSummaryCardProps) {
+  const currentLoan = activeLoanProp ?? activeLoan;
+  const currentProfile = profileProp ?? studentProfile;
   const savedEducationLevel = useStudentEducationLevel();
-  const educationLevel = savedEducationLevel ?? studentProfile.educationLevel;
-  const paidAmount = Number(activeLoan.paidAmount.replace(/,/g, ""));
-  const totalAmount = Number(activeLoan.totalAmount.replace(/,/g, ""));
+  const educationLevel = savedEducationLevel ?? currentProfile.educationLevel;
+  const paidAmount = Number(String(currentLoan.paidAmount).replace(/,/g, "")) || 0;
+  const totalAmount = Number(String(currentLoan.totalAmount).replace(/,/g, "")) || 0;
   const transferPercent = totalAmount > 0 ? Math.min(100, (paidAmount / totalAmount) * 100) : 0;
 
   return (
     <section className={styles.loanSummary} aria-labelledby="loan-summary-title">
       <div className={styles.summaryIntro}>
         <div>
-          <h1 id="loan-summary-title">สวัสดี, {studentProfile.displayName}</h1>
+          <h1 id="loan-summary-title">สวัสดี, {currentProfile.displayName}</h1>
           <p>
-            {[studentProfile.programName, educationLevel, studentProfile.yearLabel, studentProfile.studentId]
+            {[currentProfile.programName, educationLevel, currentProfile.yearLabel, currentProfile.studentId]
               .filter(Boolean)
               .join(" · ")}
           </p>
         </div>
-        {/* {medicalBag} */}
+        {medicalBag}
       </div>
 
       <div className={styles.loanLabels}>
-        <span className={styles.loanRequestLabel}>{activeLoan.requestNumber}</span>
-        <span className={styles.loanStatusLabel}>● {activeLoan.statusLabel}</span>
+        <span className={styles.loanRequestLabel}>{currentLoan.requestNumber}</span>
+        <span className={styles.loanStatusLabel}>● {currentLoan.statusLabel}</span>
         <span aria-hidden="true" className={styles.loanBackLabel} />
       </div>
 
       <div className={styles.loanProgressCard}>
         <div className={styles.loanAmount}>
-          <strong>{activeLoan.paidAmount}</strong>
-          <span>/ {activeLoan.totalAmount}</span>
+          <strong>{currentLoan.paidAmount}</strong>
+          <span>/ {currentLoan.totalAmount}</span>
         </div>
         <div className={styles.progressTrack}>
           <span style={{ width: `${transferPercent}%` }} />
           <b style={{ left: `${transferPercent}%` }} />
         </div>
         <p>
-          ชำระงวดที่ {activeLoan.nextInstallmentNumber} ก่อนวันที่ {activeLoan.nextDueDate}
+          {"isDisbursed" in currentLoan && currentLoan.isDisbursed
+            ? `ชำระงวดที่ ${currentLoan.nextInstallmentNumber ?? 1} ก่อนวันที่ ${currentLoan.nextDueDate ?? "-"}`
+            : currentLoan.statusLabel}
         </p>
       </div>
 
