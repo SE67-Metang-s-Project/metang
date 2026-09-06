@@ -81,6 +81,8 @@ export type LoanContact = {
 };
 
 export type LoanDetails = {
+  id?: string;
+  statusCode?: string;
   requestNumber: string;
   statusLabel: string;
   submittedAt: string;

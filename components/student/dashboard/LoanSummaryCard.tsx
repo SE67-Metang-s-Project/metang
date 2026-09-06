@@ -1,11 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { activeLoan, studentProfile } from "@/app/student/studentMockData";
 import { useStudentEducationLevel } from "@/lib/student-education";
 import styles from "@/app/student/student.module.css";
 
 export type ActiveLoanDisplay = {
+  id?: string;
+  status?: string;
   requestNumber: string;
   statusLabel: string;
   paidAmount: string;
@@ -37,6 +40,7 @@ export default function LoanSummaryCard({
   activeLoan: activeLoanProp,
   profile: profileProp,
 }: LoanSummaryCardProps) {
+  const router = useRouter();
   const currentLoan = activeLoanProp ?? activeLoan;
   const currentProfile = profileProp ?? studentProfile;
   const savedEducationLevel = useStudentEducationLevel();
@@ -44,6 +48,9 @@ export default function LoanSummaryCard({
   const paidAmount = Number(String(currentLoan.paidAmount).replace(/,/g, "")) || 0;
   const totalAmount = Number(String(currentLoan.totalAmount).replace(/,/g, "")) || 0;
   const transferPercent = totalAmount > 0 ? Math.min(100, (paidAmount / totalAmount) * 100) : 0;
+  const isReturned =
+    currentLoan.statusLabel.includes("แก้ไข") ||
+    ("status" in currentLoan && currentLoan.status === "returned");
 
   return (
     <section className={styles.loanSummary} aria-labelledby="loan-summary-title">
@@ -85,7 +92,23 @@ export default function LoanSummaryCard({
         <button onClick={onOpenDetails} type="button">
           ดูรายละเอียดคำร้อง
         </button>
-        {/* <span>* ไม่สามารถยื่นคำร้องใหม่ได้ในขณะนี้</span> */}
+        {isReturned ? (
+          <button
+            onClick={() => router.push("/student/loan/apply")}
+            type="button"
+            style={{
+              backgroundColor: "#d97706",
+              color: "#ffffff",
+              borderRadius: "10px",
+              padding: "12px",
+              fontWeight: 600,
+              border: 0,
+              cursor: "pointer",
+            }}
+          >
+            แก้ไขคำร้อง
+          </button>
+        ) : null}
       </div>
     </section>
   );

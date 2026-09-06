@@ -116,11 +116,19 @@ test("builds timeline in mapToLoanDetails including comments on return", () => {
   };
 
   const details = mapToLoanDetails(loan);
+  assert.equal(details.id, "loan-detail-test");
+  assert.equal(details.statusCode, "returned");
+  assert.equal(details.statusLabel, "ส่งกลับแก้ไข");
   assert.equal(details.timeline.length, 2);
   assert.equal(details.timeline[0].title, "ยื่นคำร้องกู้ยืมเงิน");
   assert.equal(details.timeline[1].title, "อาจารย์ที่ปรึกษาส่งกลับแก้ไข");
   assert.equal(details.timeline[1].actor, "อ. สมศรี ใจดี");
   assert.equal(details.timeline[1].comment, "แนบเอกสารใบเสร็จเพิ่มเติม");
+
+  const summary = mapToActiveLoanSummary(loan);
+  assert.equal(summary?.id, "loan-detail-test");
+  assert.equal(summary?.status, "returned");
+  assert.equal(summary?.statusLabel, "ส่งกลับแก้ไข");
 });
 
 test("maps installments to InstallmentPayment display objects", () => {

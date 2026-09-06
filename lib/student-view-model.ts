@@ -369,6 +369,8 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
   }));
 
   return {
+    id: loan.id,
+    statusCode: loan.status,
     requestNumber: formatRequestNumber(loan.id),
     statusLabel: display.label,
     submittedAt: formatThaiDateTime(loan.submittedAt ?? loan.createdAt),

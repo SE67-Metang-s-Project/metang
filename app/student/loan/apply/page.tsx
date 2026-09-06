@@ -35,11 +35,35 @@ export default async function StudentLoanApplyPage() {
     .map((advisor) => advisor.fullNameTh)
     .filter((name): name is string => typeof name === "string" && Boolean(name));
 
+  let existingLoan = null;
+  if (currentLoan) {
+    const returnApproval = (currentLoan.approvals || [])
+      .slice()
+      .reverse()
+      .find((a: { decision?: string }) => a.decision === "returned");
+
+    existingLoan = {
+      id: currentLoan.id,
+      status: currentLoan.status,
+      amount: currentLoan.amount,
+      studentYear: currentLoan.studentYear,
+      purpose: currentLoan.purpose,
+      additionalNote: currentLoan.additionalNote,
+      bankName: currentLoan.bankName,
+      bankAccountNo: currentLoan.bankAccountNo,
+      bankAccountName: currentLoan.bankAccountName,
+      installmentCount: currentLoan.installmentCount,
+      advisorName: currentLoan.advisor?.fullNameTh ?? undefined,
+      returnComment: returnApproval?.comment ?? undefined,
+      returnStep: returnApproval?.step ?? undefined,
+    };
+  }
+
   return (
     <Suspense fallback={null}>
       <TempLoanApplicationPage
         advisorOptions={advisorOptions.length > 0 ? advisorOptions : undefined}
-        existingLoan={currentLoan ? { id: currentLoan.id, status: currentLoan.status } : null}
+        existingLoan={existingLoan}
         profile={profile}
       />
     </Suspense>

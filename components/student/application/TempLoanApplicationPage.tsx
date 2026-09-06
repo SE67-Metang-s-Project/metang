@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { House, UserRound } from "lucide-react";
+import { House, RotateCcw, UserRound } from "lucide-react";
 import {
   tempLoanAgreement,
   tempLoanFormDefaults,
@@ -63,10 +63,26 @@ const validateField = (field: RequiredFormField, value: string) => {
   return "";
 };
 
+export type ExistingLoanData = {
+  id: string;
+  status: string;
+  amount?: number;
+  studentYear?: number;
+  purpose?: string;
+  additionalNote?: string | null;
+  bankName?: string | null;
+  bankAccountNo?: string | null;
+  bankAccountName?: string | null;
+  installmentCount?: number;
+  advisorName?: string;
+  returnComment?: string;
+  returnStep?: string;
+};
+
 type TempLoanApplicationPageProps = {
   profile?: StudentProfileDisplay & { phoneNumber?: string };
   advisorOptions?: string[];
-  existingLoan?: { id: string; status: string } | null;
+  existingLoan?: ExistingLoanData | null;
 };
 
 export default function TempLoanApplicationPage({
@@ -76,12 +92,13 @@ export default function TempLoanApplicationPage({
 }: TempLoanApplicationPageProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isResubmit = existingLoan?.status === "returned";
   const fieldRefs = useRef<Partial<Record<RequiredFormField, HTMLLabelElement>>>({});
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(
-    searchParams.get("step") === "3" ? 3 : 1,
+    searchParams.get("step") === "3" ? 3 : isResubmit ? 2 : 1,
   );
-  const [hasReadAgreement, setHasReadAgreement] = useState(false);
-  const [hasAcceptedAgreement, setHasAcceptedAgreement] = useState(false);
+  const [hasReadAgreement, setHasReadAgreement] = useState(Boolean(isResubmit));
+  const [hasAcceptedAgreement, setHasAcceptedAgreement] = useState(Boolean(isResubmit));
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -115,11 +132,32 @@ export default function TempLoanApplicationPage({
   }, [advisorOptions]);
 
   const savedEducationLevel = useStudentEducationLevel();
-  const [formData, setFormData] = useState(() => ({
-    ...tempLoanFormDefaults,
-    phoneNumber: initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
-    educationLevel: savedEducationLevel ?? initialProfile?.educationLevel ?? tempLoanFormDefaults.educationLevel,
-  }));
+  const [formData, setFormData] = useState(() => {
+    if (isResubmit && existingLoan) {
+      return {
+        ...tempLoanFormDefaults,
+        phoneNumber: initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
+        educationLevel:
+          savedEducationLevel ?? initialProfile?.educationLevel ?? tempLoanFormDefaults.educationLevel,
+        academicYear: String(existingLoan.studentYear ?? tempLoanFormDefaults.academicYear),
+        advisorName: existingLoan.advisorName || tempLoanFormDefaults.advisorName,
+        bankName: existingLoan.bankName || tempLoanFormDefaults.bankName,
+        accountNumber: existingLoan.bankAccountNo || tempLoanFormDefaults.accountNumber,
+        accountName: existingLoan.bankAccountName || tempLoanFormDefaults.accountName,
+        purpose: existingLoan.purpose || tempLoanFormDefaults.purpose,
+        additionalNote: existingLoan.additionalNote || "",
+        loanAmount: existingLoan.amount ? String(existingLoan.amount) : tempLoanFormDefaults.loanAmount,
+        installmentCount: (existingLoan.installmentCount as 1 | 2 | 3 | 4) || 1,
+      };
+    }
+
+    return {
+      ...tempLoanFormDefaults,
+      phoneNumber: initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
+      educationLevel:
+        savedEducationLevel ?? initialProfile?.educationLevel ?? tempLoanFormDefaults.educationLevel,
+    };
+  });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [touchedFields, setTouchedFields] = useState<
     Partial<Record<RequiredFormField, boolean>>
@@ -268,7 +306,12 @@ export default function TempLoanApplicationPage({
         installmentCount: formData.installmentCount,
       };
 
-      const res = await fetch("/api/student/loan-requests", {
+      const endpoint =
+        isResubmit && existingLoan?.id
+          ? `/api/student/loan-requests/${existingLoan.id}/resubmit`
+          : "/api/student/loan-requests";
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -278,11 +321,17 @@ export default function TempLoanApplicationPage({
 
       if (!res.ok) {
         if (res.status === 409) {
-          setSubmitError("คุณมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว");
+          setSubmitError(
+            isResubmit
+              ? "คำร้องนี้ได้รับการเปลี่ยนแปลงแล้ว หรือไม่สามารถแก้ไขและยื่นใหม่ได้ในขณะนี้"
+              : "คุณมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว",
+          );
         } else if (res.status === 422 || res.status === 400) {
           setSubmitError(json.error?.message || "ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง");
         } else if (res.status === 401 || res.status === 403) {
           setSubmitError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+        } else if (res.status === 404) {
+          setSubmitError("ไม่พบคำร้องที่ต้องการแก้ไข");
         } else {
           setSubmitError(json.error?.message || "เกิดข้อผิดพลาดในการส่งคำร้อง กรุณาลองใหม่อีกครั้ง");
         }
@@ -310,7 +359,7 @@ export default function TempLoanApplicationPage({
       ? advisors.map((name) => ({ label: name, value: name }))
       : tempLoanFormOptions.advisors;
 
-  if (existingLoan) {
+  if (existingLoan && existingLoan.status !== "returned") {
     return (
       <main className={styles.studentPage}>
         <TopNav
@@ -358,7 +407,9 @@ export default function TempLoanApplicationPage({
       />
       <div className={styles.studentPageContent}>
         <div className={styles.loanApplicationPage}>
-        <h1 className={styles.loanApplicationTitle}>ยื่นคำร้องกู้ยืม</h1>
+        <h1 className={styles.loanApplicationTitle}>
+          {isResubmit ? "แก้ไขและยื่นคำร้องกู้ยืม" : "ยื่นคำร้องกู้ยืม"}
+        </h1>
 
         <ol className={styles.applicationStepper} aria-label="ขั้นตอนการยื่นคำร้องกู้ยืม">
           <li className={stepClassName(1)}>
@@ -410,6 +461,48 @@ export default function TempLoanApplicationPage({
         ) : currentStep === 2 ? (
           <section className={styles.loanFormCard} aria-labelledby="loan-form-title">
             <h2 id="loan-form-title">ขั้นตอนที่ 2: กรอกข้อมูลการกู้ยืม</h2>
+
+            {isResubmit && existingLoan ? (
+              <section
+                style={{
+                  backgroundColor: "#fffbeb",
+                  border: "1px solid #fde68a",
+                  borderRadius: "0.75rem",
+                  padding: "1rem 1.25rem",
+                  marginBottom: "1.25rem",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
+                  <RotateCcw style={{ color: "#d97706", flexShrink: 0, marginTop: "2px" }} size={20} />
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ margin: "0 0 0.25rem 0", color: "#92400e", fontSize: "1rem", fontWeight: 700 }}>
+                      คำร้องขอกู้ยืมถูกส่งกลับเพื่อแก้ไข
+                    </h3>
+                    {existingLoan.returnComment ? (
+                      <div
+                        style={{
+                          margin: "0.5rem 0",
+                          padding: "0.75rem",
+                          backgroundColor: "#fef3c7",
+                          borderRadius: "0.375rem",
+                          borderLeft: "4px solid #d97706",
+                          color: "#78350f",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        <strong>
+                          ข้อความจาก{existingLoan.returnStep === "admin" ? "เจ้าหน้าที่" : "อาจารย์ที่ปรึกษา"}:
+                        </strong>{" "}
+                        {existingLoan.returnComment}
+                      </div>
+                    ) : null}
+                    <p style={{ margin: 0, color: "#b45309", fontSize: "0.875rem" }}>
+                      กรุณาแก้ไขข้อมูลให้ถูกต้องตามคำแนะนำ แล้วกดยืนยันเพื่อยื่นคำร้องใหม่อีกครั้ง
+                    </p>
+                  </div>
+                </div>
+              </section>
+            ) : null}
 
             <section className={styles.loanFormStudentCard}>
               <CardHeader
@@ -765,6 +858,7 @@ export default function TempLoanApplicationPage({
         <TempLoanApprovalModal
           errorMessage={submitError}
           formData={savedFormData}
+          isResubmit={isResubmit}
           isSubmitting={isSubmitting}
           onClose={() => {
             setSubmitError(null);

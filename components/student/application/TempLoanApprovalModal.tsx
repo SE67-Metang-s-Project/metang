@@ -15,6 +15,7 @@ type TempLoanApprovalModalProps = {
   onConfirm: () => void;
   isSubmitting?: boolean;
   errorMessage?: string | null;
+  isResubmit?: boolean;
 };
 
 export default function TempLoanApprovalModal({
@@ -24,6 +25,7 @@ export default function TempLoanApprovalModal({
   onConfirm,
   isSubmitting = false,
   errorMessage = null,
+  isResubmit = false,
 }: TempLoanApprovalModalProps) {
   const currentProfile = profile ?? tempStudentProfile;
   const loanAmount = Number(formData.loanAmount) || 0;
@@ -74,7 +76,9 @@ export default function TempLoanApprovalModal({
           <X aria-hidden="true" size={20} />
         </button>
 
-        <h2 id="loan-approval-modal-title">ยืนยันข้อมูลการกู้ยืม</h2>
+        <h2 id="loan-approval-modal-title">
+          {isResubmit ? "ยืนยันการแก้ไขข้อมูลการกู้ยืม" : "ยืนยันข้อมูลการกู้ยืม"}
+        </h2>
         <p className={styles.loanApprovalWarning}>
           กรุณาตรวจสอบข้อมูลทางการเงินให้ถูกต้อง
           <br />
@@ -209,7 +213,11 @@ export default function TempLoanApprovalModal({
             onClick={onConfirm}
             type="button"
           >
-            {isSubmitting ? "กำลังส่งคำร้อง..." : "ยืนยัน"}
+            {isSubmitting
+              ? "กำลังส่งคำร้อง..."
+              : isResubmit
+                ? "ยืนยันการแก้ไขและยื่นคำร้อง"
+                : "ยืนยัน"}
           </button>
         </div>
       </section>
