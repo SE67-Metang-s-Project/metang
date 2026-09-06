@@ -1,19 +1,45 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
-import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
 
 interface SuperAdminRequestsListProps {
   hideFilters?: boolean;
   dashboardMode?: "pending" | "all";
+  initialRequests?: ActionRequest[];
 }
 
-export default function SuperAdminRequestsList({ hideFilters = false, dashboardMode = "all" }: SuperAdminRequestsListProps) {
+export default function SuperAdminRequestsList({
+  hideFilters = false,
+  dashboardMode = "all",
+  initialRequests = [],
+}: SuperAdminRequestsListProps) {
   const [filter, setFilter] = useState<FilterStatus>("pending");
   const [searchQuery, setSearchQuery] = useState("");
-  const [requests] = useState<ActionRequest[]>(mockAdminRequests);
+  const [requests, setRequests] = useState<ActionRequest[]>(initialRequests);
+
+  useEffect(() => {
+    setRequests(initialRequests);
+  }, [initialRequests]);
+
+  const handleRequestDecided = (requestId: string, decision: string) => {
+    setRequests((prev) =>
+      prev.map((req) =>
+        req.id === requestId
+          ? {
+              ...req,
+              requestStatus:
+                decision === "approved"
+                  ? "pending_executive"
+                  : decision === "returned"
+                    ? "returned"
+                    : "rejected",
+            }
+          : req,
+      ),
+    );
+  };
 
   const pendingCount = requests.filter((req) => req.requestStatus === "pending_admin").length;
 
@@ -48,7 +74,11 @@ export default function SuperAdminRequestsList({ hideFilters = false, dashboardM
       )}
 
       {/* ส่ง userRole="super_admin" เพื่อให้สิทธิ์ในการกดปุ่มแก้ไขวงเงิน */}
-      <RequestsCard requests={filteredRequests} userRole="super_admin" />
+      <RequestsCard
+        requests={filteredRequests}
+        userRole="super_admin"
+        onRequestDecided={handleRequestDecided}
+      />
     </div>
   );
 }

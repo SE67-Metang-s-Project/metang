@@ -10,16 +10,24 @@ interface SharedRequestsListProps {
   userRole: UserRole; // <--- รับ Role เข้ามาเพื่อตัดสินใจว่าจะ filter สถานะไหน
   hideFilters?: boolean;
   dashboardMode?: "pending" | "all";
+  initialRequests?: ActionRequest[];
 }
 
 export default function SharedRequestsList({
   userRole,
   hideFilters = false,
   dashboardMode = "all",
+  initialRequests,
 }: SharedRequestsListProps) {
   const [filter, setFilter] = useState<FilterStatus>("pending");
   const [searchQuery, setSearchQuery] = useState("");
-  const [requests] = useState<ActionRequest[]>(mockAdminRequests);
+  const baseRequests = React.useMemo(() => {
+    if (initialRequests && initialRequests.length > 0) {
+      return initialRequests;
+    }
+    return mockAdminRequests as unknown as ActionRequest[];
+  }, [initialRequests]);
+  const [requests] = useState<ActionRequest[]>(baseRequests);
 
   // ฟังก์ชันเช็คว่า Role นี้ต้องดูคำร้องสถานะไหน
   const getTargetPendingStatus = (role: UserRole) => {

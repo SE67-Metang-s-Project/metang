@@ -94,9 +94,12 @@ export type ApprovalStep = {
 };
 
 export type PaymentRecord = {
+  id?: string;
   status?: string;
   installmentNumber: number;
   amount: number | string;
+  paidAt?: string;
+  slipImageUrl?: string;
 };
 
 export type ActionRequest = StudentInfo &

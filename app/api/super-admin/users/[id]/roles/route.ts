@@ -69,6 +69,13 @@ export async function POST(request: Request, { params }: Params) {
       if (error.code === "FINAL_SUPER_ADMIN") {
         return apiError("FINAL_SUPER_ADMIN", "The final SuperAdmin role cannot be removed", 409);
       }
+      if (error.code === "EXECUTIVE_ALREADY_EXISTS") {
+        return apiError(
+          "EXECUTIVE_ALREADY_EXISTS",
+          "มีผู้บริหารในระบบอยู่แล้ว ไม่สามารถแต่งตั้งเพิ่มได้ (จำกัด 1 คน)",
+          409,
+        );
+      }
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return apiError("CONFLICT", "The role assignment changed; please retry", 409);

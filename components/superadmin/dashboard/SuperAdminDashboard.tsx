@@ -2,8 +2,6 @@
 
 import React, { useMemo, useState } from "react";
 
-import SideNav from "@/components/shared/SidebarNav";
-import TopNav from "@/components/shared/TopNav";
 import WelcomeCard from "@/components/shared/WelcomeCard";
 
 import SuperAdminRequestsList from "@/components/superadmin/pending/SuperAdminRequestsList";
@@ -12,7 +10,6 @@ import DisburseDebtCard, {
 } from "@/components/shared/disburse-debt/DisburseDebtCard";
 import VerifySlipCard, {
   ActionRequest as VerifySlipActionRequest,
-  PaymentEvidence,
 } from "@/components/shared/verify-slip/VerifySlipCard";
 import UserRolesTab from "@/components/superadmin/setting/UserRolesTab";
 import SystemBudgetTab from "@/components/superadmin/setting/SystemBudgetTab";
@@ -25,21 +22,32 @@ import type {
 } from "@/lib/financial-overview-types";
 import { getMockExecutiveFinancialOverview } from "@/lib/mock-data/executive-financial-overview";
 import { Users, Wallet } from "lucide-react";
+import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
+import type { SuperAdminUser } from "@/lib/loan-api-types";
 
 type SuperAdminDashboardProps = {
   userName?: string;
   userId?: string;
+  currentUserId?: string;
   financialOverview?: ExecutiveFinancialOverviewData;
+  initialRequests?: ActionRequest[];
+  initialUsers?: SuperAdminUser[];
 };
 
 export default function SuperAdminDashboard({
   userName = "Super Admin สูงสุด",
-  userId = "SA-001",
+  currentUserId,
   financialOverview,
+  initialRequests,
+  initialUsers,
 }: SuperAdminDashboardProps = {}) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const [requests] = useState(mockAdminRequests);
+  const requests = useMemo(() => {
+    if (initialRequests && initialRequests.length > 0) {
+      return initialRequests;
+    }
+    return mockAdminRequests as unknown as ActionRequest[];
+  }, [initialRequests]);
 
   // Fallback mock financial data if not passed from server
   const fallbackOverview = useMemo(() => {
@@ -70,37 +78,18 @@ export default function SuperAdminDashboard({
       return (
         Array.isArray(req.paymentHistory) &&
         req.paymentHistory.some(
-          (payment: PaymentEvidence) => payment.status === "pending"
+          (payment: { status?: string }) =>
+            payment.status === "pending" || payment.status === "pending_review"
         )
       );
     });
   }, [requests]);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-800">
+    <div className="space-y-10">
       {/* =====================================================
-          Sidebar
+          Welcome
       ===================================================== */}
-      <SideNav
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        role="superadmin"
-      />
-
-      {/* =====================================================
-          Main Content
-      ===================================================== */}
-      <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64">
-        <TopNav
-          onOpenSidebar={() => setIsSidebarOpen(true)}
-          userName={userName}
-          userId={userId}
-        />
-
-        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
-          {/* =====================================================
-              Welcome
-          ===================================================== */}
           <WelcomeCard
             name={userName}
             description="ผู้ดูแลระบบระดับสูง (Super Administrator)"
@@ -126,7 +115,7 @@ export default function SuperAdminDashboard({
             />
 
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <SuperAdminRequestsList hideFilters dashboardMode="pending" />
+              <SuperAdminRequestsList hideFilters dashboardMode="pending" initialRequests={requests} />
             </div>
           </section>
 
@@ -219,12 +208,12 @@ export default function SuperAdminDashboard({
                 </button>
               </div>
 
-              {settingsSubTab === "users" && <UserRolesTab />}
+              {settingsSubTab === "users" && (
+                <UserRolesTab initialUsers={initialUsers} currentUserId={currentUserId} />
+              )}
               {settingsSubTab === "budget" && <SystemBudgetTab />}
             </div>
           </section>
-        </main>
-      </div>
     </div>
   );
 }

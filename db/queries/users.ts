@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma, type UserRoleName } from "@/lib/generated/prisma/client";
+import { Prisma, UserRoleName } from "@/lib/generated/prisma/client";
+import { getCmuDisplayName, type CmuProfile } from "@/lib/cmu-auth";
 
 export const superAdminUserSelect = {
   id: true,
@@ -32,7 +33,8 @@ export type RoleMutationErrorCode =
   | "USER_NOT_FOUND"
   | "ROLE_ALREADY_GRANTED"
   | "ROLE_NOT_GRANTED"
-  | "FINAL_SUPER_ADMIN";
+  | "FINAL_SUPER_ADMIN"
+  | "EXECUTIVE_ALREADY_EXISTS";
 
 export class RoleMutationError extends Error {
   constructor(readonly code: RoleMutationErrorCode) {
@@ -63,6 +65,12 @@ export async function mutateUserRole({
 
     if (action === "grant") {
       if (hasRole) throw new RoleMutationError("ROLE_ALREADY_GRANTED");
+      if (role === "executive") {
+        const executiveCount = await tx.userRole.count({
+          where: { role: "executive", userId: { not: targetUserId } },
+        });
+        if (executiveCount > 0) throw new RoleMutationError("EXECUTIVE_ALREADY_EXISTS");
+      }
       await tx.userRole.create({ data: { userId: targetUserId, role, grantedBy: actorId } });
     } else {
       if (!hasRole) throw new RoleMutationError("ROLE_NOT_GRANTED");
@@ -140,4 +148,123 @@ export async function getAllStudents() {
 
 export async function getAllLoanRequest() {
   return prisma.loanRequest.findMany({ orderBy: { createdAt: "asc" } });
+}
+
+export async function syncUserFromCmuProfile(profile: CmuProfile) {
+  let cmuAccount = "";
+  if (typeof profile.cmuitaccount_name === "string" && profile.cmuitaccount_name.trim()) {
+    cmuAccount = profile.cmuitaccount_name.trim().toLowerCase();
+  } else if (typeof profile.cmuitaccount === "string" && profile.cmuitaccount.trim()) {
+    cmuAccount = profile.cmuitaccount.trim().split("@")[0].toLowerCase();
+  }
+
+  let email = "";
+  if (typeof profile.cmuitaccount === "string" && profile.cmuitaccount.includes("@")) {
+    email = profile.cmuitaccount.trim().toLowerCase();
+  } else if (typeof profile.email === "string" && profile.email.includes("@")) {
+    email = profile.email.trim().toLowerCase();
+  } else if (cmuAccount) {
+    email = `${cmuAccount}@cmu.ac.th`;
+  }
+
+  let studentCode: string | null = null;
+  const rawStudentId = profile.student_id ?? profile.studentCode ?? profile.studentId;
+  if (typeof rawStudentId === "string" || typeof rawStudentId === "number") {
+    const code = String(rawStudentId).trim();
+    if (code) studentCode = code;
+  }
+
+  const thaiFirst = typeof profile.firstname_TH === "string" ? profile.firstname_TH.trim() : "";
+  const thaiLast = typeof profile.lastname_TH === "string" ? profile.lastname_TH.trim() : "";
+  const thaiName = [thaiFirst, thaiLast].filter(Boolean).join(" ");
+  const fullNameTh =
+    (typeof profile.full_name_TH === "string" && profile.full_name_TH.trim()) ||
+    thaiName ||
+    getCmuDisplayName(profile).trim() ||
+    cmuAccount ||
+    "CMU User";
+
+  const engFirst = typeof profile.firstname_EN === "string" ? profile.firstname_EN.trim() : "";
+  const engLast = typeof profile.lastname_EN === "string" ? profile.lastname_EN.trim() : "";
+  const engName = [engFirst, engLast].filter(Boolean).join(" ");
+  const fullNameEn =
+    (typeof profile.full_name_EN === "string" && profile.full_name_EN.trim()) ||
+    engName ||
+    null;
+
+  if (!cmuAccount && !email && !studentCode) {
+    return null;
+  }
+
+  const existing = await prisma.appUser.findFirst({
+    where: {
+      OR: [
+        ...(cmuAccount ? [{ cmuAccount }] : []),
+        ...(email ? [{ email }] : []),
+        ...(studentCode ? [{ studentCode }] : []),
+      ],
+    },
+    include: {
+      roles: {
+        select: { role: true },
+      },
+    },
+  });
+
+  const isStudent = Boolean(
+    studentCode ||
+      profile.itaccounttype_id === "StdAcc" ||
+      (typeof profile.itaccounttype_TH === "string" && profile.itaccounttype_TH.includes("นักศึกษา")),
+  );
+
+  if (existing) {
+    const updated = await prisma.appUser.update({
+      where: { id: existing.id },
+      data: {
+        cmuAccount: existing.cmuAccount || cmuAccount,
+        email: existing.email || email,
+        studentCode: existing.studentCode || studentCode,
+        fullNameTh: fullNameTh || existing.fullNameTh,
+        fullNameEn: fullNameEn ?? existing.fullNameEn,
+      },
+      include: {
+        roles: {
+          select: { role: true },
+        },
+      },
+    });
+
+    if (isStudent && !existing.roles.some((r) => r.role === UserRoleName.student)) {
+      await prisma.userRole.upsert({
+        where: { userId_role: { userId: existing.id, role: UserRoleName.student } },
+        create: { userId: existing.id, role: UserRoleName.student },
+        update: {},
+      });
+    }
+
+    return updated;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const newUser = await tx.appUser.create({
+      data: {
+        cmuAccount: cmuAccount || email.split("@")[0],
+        email: email || `${cmuAccount}@cmu.ac.th`,
+        studentCode,
+        fullNameTh,
+        fullNameEn,
+      },
+    });
+
+    if (isStudent) {
+      await tx.userRole.create({
+        data: {
+          userId: newUser.id,
+          role: UserRoleName.student,
+        },
+      });
+    }
+
+    return newUser;
+  });
 }

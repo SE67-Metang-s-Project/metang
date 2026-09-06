@@ -10,11 +10,13 @@ import {
   tempStudentProfile,
 } from "@/app/student/temp/tempMockData";
 import LoanHistoryList from "./LoanHistoryList";
-import TempPaymentBehaviorCard from "./TempPaymentBehaviorCard";
+import PaymentBehaviorCard from "./PaymentBehaviorCard";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import LoanTimeline from "../loan-details/LoanTimeline";
 import LoanDetailOverview from "../loan-details/LoanDetailOverview";
 import TransferSlipModal from "../loan-details/TransferSlipModal";
+import TopNav from "@/components/shared/TopNav";
+import ContactFooter from "../loan-details/ContactFooter";
 import styles from "@/app/student/student.module.css";
 
 export default function TempSubmittedStudentDashboard() {
@@ -24,11 +26,15 @@ export default function TempSubmittedStudentDashboard() {
 
   return (
     <main className={styles.studentPage}>
-      <div className={styles.studentContent}>
-        <header className={styles.studentHeader}>
-          <div className={styles.brandMark}>Metang LOGO</div>
-          <div className={styles.profileMark}>{tempStudentProfile.initials}</div>
-        </header>
+      <TopNav
+        showSidebarButton={false}
+        userEmail={`${tempStudentProfile.studentId}@cmu.ac.th`}
+        userId={tempStudentProfile.studentId}
+        userName={tempStudentProfile.displayName}
+        userRole="นักศึกษา"
+      />
+      <div className={styles.studentPageContent}>
+        <div className={styles.studentContent}>
 
         <section className={styles.tempSubmittedSummary} aria-labelledby="submitted-summary-title">
           <div>
@@ -40,14 +46,14 @@ export default function TempSubmittedStudentDashboard() {
           </div>
           <button
             className={styles.tempSubmittedSummaryAction}
-            onClick={() => router.push("/student/temp/apply?step=3")}
+            onClick={() => router.push("/student/loan/apply?step=3")}
             type="button"
           >
             ดูรายละเอียดคำร้อง
           </button>
         </section>
 
-        <TempPaymentBehaviorCard />
+        <PaymentBehaviorCard />
 
         <section className={styles.tempCurrentApplication} aria-labelledby="current-application-title">
           <h2 id="current-application-title">คำร้องปัจจุบัน</h2>
@@ -71,12 +77,14 @@ export default function TempSubmittedStudentDashboard() {
           requests={tempLoanRequestHistory}
           showAllRequests={showAllRequests}
         />
+        <ContactFooter />
         {isSlipModalOpen ? (
           <TransferSlipModal
             imageSrc="/mock-transfer-slip.svg"
             onClose={() => setIsSlipModalOpen(false)}
           />
         ) : null}
+        </div>
       </div>
     </main>
   );
