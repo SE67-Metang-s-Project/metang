@@ -1,3 +1,5 @@
+import type { LoanInput } from "@/lib/loan-validation";
+
 export type InstallmentStatus = "paid" | "current" | "upcoming";
 
 export type InstallmentPayment = {
@@ -96,6 +98,17 @@ export type LoanDetails = {
   schedule: LoanScheduleItem[];
   paymentHistory: LoanPaymentHistoryItem[];
   contact: LoanContact;
+  correction?: ReturnedRequestCorrection;
+};
+
+export type ReturnedRequestCorrection = {
+  advisorComment: string;
+  advisorOptions: { label: string; value: string }[];
+  educationLevel: string;
+  id: string;
+  input: LoanInput;
+  phoneNumber: string;
+  requestNumber: string;
 };
 
 export const loanContact: LoanContact = {
@@ -379,6 +392,52 @@ loanRequestHistory.forEach((request) => {
     additionalReason: "ข้อมูลประกอบคำร้องตามรายละเอียดที่นักศึกษายื่นไว้",
   };
 });
+
+const returnedRequestNumber = "SL-2568-0004";
+const returnedRequestDetails = loanDetailsByRequestNumber[returnedRequestNumber];
+
+if (returnedRequestDetails) {
+  loanDetailsByRequestNumber[returnedRequestNumber] = {
+    ...returnedRequestDetails,
+    additionalReason: "กรุณาแนบรายละเอียดค่าใช้จ่ายและตรวจสอบข้อมูลบัญชีธนาคารให้ถูกต้อง",
+    correction: {
+      id: "00000000-0000-0000-0000-000000000202",
+      requestNumber: returnedRequestNumber,
+      educationLevel: "ปริญญาตรี",
+      phoneNumber: "0987654321",
+      advisorComment: "กรุณาแนบรายละเอียดค่าใช้จ่าย และตรวจสอบเลขที่บัญชีธนาคารก่อนยื่นคำร้องอีกครั้ง",
+      advisorOptions: [
+        { label: "พิมพา มีโชค", value: "พิมพา มีโชค" },
+        { label: "วรัญญู มีโชค", value: "วรัญญู มีโชค" },
+      ],
+      input: {
+        advisorName: "พิมพา มีโชค",
+        amount: 12000,
+        studentYear: 3,
+        purpose: "ค่าเทอมภาคเรียนที่ 2/2568",
+        additionalNote: "แนบรายละเอียดค่าใช้จ่ายเพิ่มเติม",
+        bankName: "ธนาคารกสิกรไทย",
+        bankAccountNo: "1234567890",
+        bankAccountName: "อนุชนก มีโชค",
+        installmentCount: 3,
+      },
+    },
+    timeline: [
+      {
+        title: "ส่งคำร้องกู้ยืม",
+        dateTime: "28 ต.ค. 2569 11:00 น.",
+        actor: "อนุชนก มีโชค",
+      },
+      {
+        title: "อาจารย์ที่ปรึกษาส่งกลับแก้ไข",
+        dateTime: "29 ต.ค. 2569 09:15 น.",
+        actor: "พิมพา มีโชค",
+        commentTitle: "ความคิดเห็นของอาจารย์ที่ปรึกษา",
+        comment: "กรุณาแนบรายละเอียดค่าใช้จ่าย และตรวจสอบเลขที่บัญชีธนาคารก่อนยื่นคำร้องอีกครั้ง",
+      },
+    ],
+  };
+}
 
 export function getLoanDetails(requestNumber: string) {
   return loanDetailsByRequestNumber[requestNumber] ?? null;

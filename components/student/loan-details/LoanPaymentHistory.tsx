@@ -5,6 +5,7 @@ import { ReceiptText, X } from "lucide-react";
 import type { LoanPaymentHistoryItem } from "@/app/student/studentMockData";
 import StatusPill from "@/components/shared/StatusPill";
 import styles from "@/app/student/student.module.css";
+import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 
 type LoanPaymentHistoryProps = {
   items: LoanPaymentHistoryItem[];
@@ -17,6 +18,7 @@ const paymentStatusClassNames = {
 } as const;
 
 export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
+  const { language, t } = useStudentLanguage();
   const [selectedReceipt, setSelectedReceipt] = useState<LoanPaymentHistoryItem | null>(null);
   const paymentRecords = items
     .map((item, index) => {
@@ -49,7 +51,7 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
       <header className={styles.sectionCardHeading}>
         <h2>
           <ReceiptText aria-hidden="true" size={23} strokeWidth={2.2} />
-          ประวัติหลักฐานการชำระ
+          {t("ประวัติหลักฐานการชำระ", "Payment evidence history")}
         </h2>
       </header>
       <div className={styles.paymentHistoryList}>
@@ -65,16 +67,16 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
             </span>
             <div className={styles.paymentHistoryContent}>
               <strong>
-                งวดที่ {item.installmentNumber}
-                {totalAttempts > 1 ? ` (ครั้งที่ ${attemptNumber})` : ""} · {item.amount}
+                {t("งวดที่", "Installment")} {item.installmentNumber}
+                {totalAttempts > 1 ? ` (${t("ครั้งที่", "attempt")} ${attemptNumber})` : ""} · {item.amount}
               </strong>
-              <p>{item.paidAt}</p>
-              <p>{item.checkedAt}</p>
+              <p>{localizeStudentContent(item.paidAt, language)}</p>
+              <p>{localizeStudentContent(item.checkedAt, language)}</p>
             </div>
             <span className={styles.paymentVerifiedPill}>
               <StatusPill
                 className={paymentStatusClassNames[item.status]}
-                label={item.statusLabel}
+                label={localizeStudentContent(item.statusLabel, language)}
                 tone="neutral"
               />
             </span>
@@ -83,14 +85,14 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
       </div>
       {selectedReceipt ? (
         <div
-          aria-label="หลักฐานการชำระเงิน"
+          aria-label={t("หลักฐานการชำระเงิน", "Payment evidence")}
           className={styles.transferSlipModalBackdrop}
           onMouseDown={handleBackdropClick}
           role="presentation"
         >
           <section aria-labelledby="payment-receipt-title" className={styles.transferSlipModal} role="dialog">
             <button
-              aria-label="ปิดหลักฐานการชำระเงิน"
+              aria-label={t("ปิดหลักฐานการชำระเงิน", "Close payment evidence")}
               className="absolute right-5 top-4 z-10 rounded-full bg-gray-50 p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
               onClick={() => setSelectedReceipt(null)}
               type="button"
@@ -98,11 +100,11 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
               <X aria-hidden="true" size={20} />
             </button>
             <h2 id="payment-receipt-title">
-              หลักฐานการชำระงวดที่ {selectedReceipt.installmentNumber}
-              {selectedReceiptAttempts.length > 1 ? ` (ครั้งที่ ${selectedReceiptAttemptNumber})` : ""}
+              {t("หลักฐานการชำระงวดที่", "Payment evidence for installment")} {selectedReceipt.installmentNumber}
+              {selectedReceiptAttempts.length > 1 ? ` (${t("ครั้งที่", "attempt")} ${selectedReceiptAttemptNumber})` : ""}
             </h2>
             <div className={styles.transferSlipImageFrame}>
-              <img alt="รูปหลักฐานการชำระเงิน" src={selectedReceipt.receiptImage} />
+              <img alt={t("รูปหลักฐานการชำระเงิน", "Payment evidence image")} src={selectedReceipt.receiptImage} />
             </div>
           </section>
         </div>

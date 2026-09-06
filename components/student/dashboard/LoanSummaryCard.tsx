@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { activeLoan, studentProfile } from "@/app/student/studentMockData";
 import { useStudentEducationLevel } from "@/lib/student-education";
+import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
 
 type LoanSummaryCardProps = {
@@ -11,6 +12,7 @@ type LoanSummaryCardProps = {
 };
 
 export default function LoanSummaryCard({ onOpenDetails, medicalBag }: LoanSummaryCardProps) {
+  const { language, t } = useStudentLanguage();
   const savedEducationLevel = useStudentEducationLevel();
   const educationLevel = savedEducationLevel ?? studentProfile.educationLevel;
   const paidAmount = Number(activeLoan.paidAmount.replace(/,/g, ""));
@@ -21,7 +23,7 @@ export default function LoanSummaryCard({ onOpenDetails, medicalBag }: LoanSumma
     <section className={styles.loanSummary} aria-labelledby="loan-summary-title">
       <div className={styles.summaryIntro}>
         <div>
-          <h1 id="loan-summary-title">สวัสดี, {studentProfile.displayName}</h1>
+          <h1 id="loan-summary-title">{t("สวัสดี", "Hello")}, {studentProfile.displayName}</h1>
           <p>
             {[studentProfile.programName, educationLevel, studentProfile.yearLabel, studentProfile.studentId]
               .filter(Boolean)
@@ -33,7 +35,7 @@ export default function LoanSummaryCard({ onOpenDetails, medicalBag }: LoanSumma
 
       <div className={styles.loanLabels}>
         <span className={styles.loanRequestLabel}>{activeLoan.requestNumber}</span>
-        <span className={styles.loanStatusLabel}>● {activeLoan.statusLabel}</span>
+        <span className={styles.loanStatusLabel}>● {localizeStudentContent(activeLoan.statusLabel, language)}</span>
         <span aria-hidden="true" className={styles.loanBackLabel} />
       </div>
 
@@ -47,13 +49,13 @@ export default function LoanSummaryCard({ onOpenDetails, medicalBag }: LoanSumma
           <b style={{ left: `${transferPercent}%` }} />
         </div>
         <p>
-          ชำระงวดที่ {activeLoan.nextInstallmentNumber} ก่อนวันที่ {activeLoan.nextDueDate}
+          {t("ชำระงวดที่", "Pay installment")} {activeLoan.nextInstallmentNumber} {t("ก่อนวันที่", "by")} {localizeStudentContent(activeLoan.nextDueDate, language)}
         </p>
       </div>
 
       <div className={styles.summaryFooter}>
         <button onClick={onOpenDetails} type="button">
-          ดูรายละเอียดคำร้อง
+          {t("ดูรายละเอียดคำร้อง", "View request details")}
         </button>
         {/* <span>* ไม่สามารถยื่นคำร้องใหม่ได้ในขณะนี้</span> */}
       </div>

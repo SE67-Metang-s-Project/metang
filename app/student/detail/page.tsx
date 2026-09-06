@@ -1,5 +1,6 @@
 import { activeLoan, getLoanDetails } from "@/app/student/studentMockData";
 import StudentRequestDetailPage from "@/components/student/loan-details/StudentRequestDetailPage";
+import { StudentLanguageProvider } from "../StudentLanguageProvider";
 
 type StudentDetailPageProps = {
   searchParams: Promise<{ request?: string | string[] }>;
@@ -12,5 +13,9 @@ export default async function StudentDetailPage({ searchParams }: StudentDetailP
 
   if (!details) return null;
 
-  return <StudentRequestDetailPage details={details} />;
+  return (
+    <StudentLanguageProvider>
+      <StudentRequestDetailPage details={details} />
+    </StudentLanguageProvider>
+  );
 }

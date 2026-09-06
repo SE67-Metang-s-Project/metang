@@ -2,6 +2,7 @@ import { Download } from "lucide-react";
 import type { LoanDetails } from "@/app/student/studentMockData";
 import StatusPill from "@/components/shared/StatusPill";
 import styles from "@/app/student/student.module.css";
+import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 
 type LoanDetailOverviewProps = {
   details: Pick<
@@ -33,48 +34,49 @@ const getHistoryStatusClassName = (statusLabel: string) => {
 };
 
 export default function LoanDetailOverview({ details }: LoanDetailOverviewProps) {
+  const { language, t } = useStudentLanguage();
   const isAdditionalReasonLong = details.additionalReason.length > 30;
   const isPurposeLong = details.purpose.length > 30;
 
   return (
     <section className={`${styles.loanDetailSection} ${styles.detailDashboardCard} ${styles.loanDetailOverview}`}>
       <header className={`${styles.sectionCardHeading} ${styles.loanDetailOverviewHeader}`}>
-        <h2>คำร้อง {details.requestNumber}</h2>
+        <h2>{t("คำร้อง", "Request")} {details.requestNumber}</h2>
         <StatusPill
           className={getHistoryStatusClassName(details.statusLabel)}
-          label={details.statusLabel}
+          label={localizeStudentContent(details.statusLabel, language)}
         />
       </header>
       <div className={styles.loanDetailSummary}>
         <div className={styles.loanDetailAmountSummary}>
-          <span>จำนวนเงินที่ขอกู้</span>
+          <span>{t("จำนวนเงินที่ขอกู้", "Requested amount")}</span>
           <strong>{details.amount}</strong>
         </div>
         {details.schedule ? (
           <div className={styles.loanDetailInstallmentSummary}>
-            <span>จำนวนงวด</span>
-            <strong>{details.schedule.length} งวด</strong>
+            <span>{t("จำนวนงวด", "Installments")}</span>
+            <strong>{details.schedule.length} {t("งวด", "installments")}</strong>
           </div>
         ) : null}
       </div>
       <dl className={styles.loanDetailInfoList}>
         <div className={isPurposeLong ? styles.loanDetailPurposeLong : undefined}>
-          <dt>ยื่นเมื่อ</dt>
-          <dd>{details.submittedAt.replace(/^ยื่นเมื่อ\s*/, "")}</dd>
+          <dt>{t("ยื่นเมื่อ", "Submitted")}</dt>
+          <dd>{localizeStudentContent(details.submittedAt.replace(/^ยื่นเมื่อ\s*/, ""), language)}</dd>
         </div>
         <div>
-          <dt>{details.purposeLabel}</dt>
-          <dd>{details.purpose}</dd>
+          <dt>{t(details.purposeLabel, "Loan purpose")}</dt>
+          <dd>{localizeStudentContent(details.purpose, language)}</dd>
         </div>
         <div className={isAdditionalReasonLong ? styles.loanDetailAdditionalNoteLong : undefined}>
-          <dt>{details.additionalReasonLabel}</dt>
-          <dd>{details.additionalReason}</dd>
+          <dt>{t(details.additionalReasonLabel, "Additional note")}</dt>
+          <dd>{localizeStudentContent(details.additionalReason, language)}</dd>
         </div>
       </dl>
       {details.downloadLabel ? (
         <button className={styles.loanDownloadButton} type="button">
           <Download aria-hidden="true" size={18} />
-          <strong>{details.downloadLabel}</strong>
+          <strong>{t(details.downloadLabel, "Download loan agreement")}</strong>
         </button>
       ) : null}
     </section>

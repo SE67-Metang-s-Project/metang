@@ -1,6 +1,7 @@
 import { History } from "lucide-react";
 import type { LoanRequestHistoryItem } from "@/app/student/studentMockData";
 import LoanHistoryCard from "./LoanHistoryCard";
+import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
 
 type LoanHistoryListProps = {
@@ -11,23 +12,28 @@ type LoanHistoryListProps = {
   sectionClassName?: string;
   showAllRequests: boolean;
   onShowMore: () => void;
+  onCorrectRequest?: (requestNumber: string) => void;
   onOpenRequest?: (requestNumber: string) => void;
 };
 
 export default function LoanHistoryList({
   initialVisibleCount = 3,
-  lessLabel = "ซ่อนรายละเอียด",
-  moreLabel = "ดูประวัติคำร้องทั้งหมด",
+  lessLabel,
+  moreLabel,
   requests,
   sectionClassName,
   showAllRequests,
   onShowMore,
+  onCorrectRequest,
   onOpenRequest,
 }: LoanHistoryListProps) {
+  const { t } = useStudentLanguage();
+  const resolvedLessLabel = lessLabel ?? t("ซ่อนรายละเอียด", "Show less");
+  const resolvedMoreLabel = moreLabel ?? t("ดูประวัติคำร้องทั้งหมด", "View all loan requests");
   const visibleRequests = showAllRequests
     ? requests
     : requests.slice(0, initialVisibleCount);
-  const buttonLabel = showAllRequests ? lessLabel : moreLabel;
+  const buttonLabel = showAllRequests ? resolvedLessLabel : resolvedMoreLabel;
   const iconClassName = [
     styles.showMoreIcon,
     showAllRequests ? styles.showMoreIconExpanded : "",
@@ -43,13 +49,14 @@ export default function LoanHistoryList({
       <header className={styles.sectionCardHeading}>
         <h2 id="history-title">
           <History aria-hidden="true" size={27} strokeWidth={2.2} />
-          ประวัติคำร้องกู้ยืม
+          {t("ประวัติคำร้องกู้ยืม", "Loan request history")}
         </h2>
       </header>
       <div className={styles.historyList}>
         {visibleRequests.map((request, index) => (
           <LoanHistoryCard
             key={`${request.requestNumber}-${index}`}
+            onCorrectRequest={onCorrectRequest}
             onOpenRequest={onOpenRequest}
             request={request}
           />
