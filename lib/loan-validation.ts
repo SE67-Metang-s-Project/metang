@@ -166,8 +166,9 @@ export function parseExecutiveDecisionInput(value: unknown): ExecutiveDecisionIn
 
 export function parsePhoneNumber(value: unknown) {
   if (typeof value !== "string") throw new Error("phoneNumber is invalid");
-  if (!/^0(?:6|8|9)\d{8}$/.test(value)) throw new Error("phoneNumber is invalid");
-  return value;
+  const cleaned = value.trim().replace(/[-\s]/g, "");
+  if (!/^0(?:[689]\d{8}|[23457]\d{7})$/.test(cleaned)) throw new Error("phoneNumber is invalid");
+  return cleaned;
 }
 
 export function isUuid(value: string) {

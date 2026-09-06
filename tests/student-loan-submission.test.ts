@@ -75,14 +75,18 @@ test("parseLoanInput requires essential text fields", () => {
   assert.throws(() => parseLoanInput({ ...base, bankAccountName: "" }), /bankAccountName is invalid/);
 });
 
-test("parsePhoneNumber validates Thai mobile phone formats", () => {
+test("parsePhoneNumber validates Thai mobile and landline phone formats", () => {
   assert.equal(parsePhoneNumber("0812345678"), "0812345678");
   assert.equal(parsePhoneNumber("0987654321"), "0987654321");
   assert.equal(parsePhoneNumber("0611223344"), "0611223344");
+  assert.equal(parsePhoneNumber("021234567"), "021234567");
+  assert.equal(parsePhoneNumber("053123456"), "053123456");
+  assert.equal(parsePhoneNumber("081-234-5678"), "0812345678");
+  assert.equal(parsePhoneNumber("053-123-456"), "053123456");
 
-  assert.throws(() => parsePhoneNumber("021234567"), /phoneNumber is invalid/);
+  assert.throws(() => parsePhoneNumber("0112345678"), /phoneNumber is invalid/);
   assert.throws(() => parsePhoneNumber("081234567"), /phoneNumber is invalid/);
-  assert.throws(() => parsePhoneNumber("08123456789"), /phoneNumber is invalid/);
+  assert.throws(() => parsePhoneNumber("0212345678"), /phoneNumber is invalid/);
   assert.throws(() => parsePhoneNumber("1812345678"), /phoneNumber is invalid/);
   assert.throws(() => parsePhoneNumber(""), /phoneNumber is invalid/);
 });

@@ -42,8 +42,11 @@ const requiredFormFields: RequiredFormField[] = [
 ];
 
 const validateField = (field: RequiredFormField, value: string) => {
-  if (field === "phoneNumber" && !/^0[689]\d{8}$/.test(value)) {
-    return "กรุณากรอกเบอร์โทรศัพท์มือถือ 10 หลัก (เช่น 0812345678)";
+  if (field === "phoneNumber") {
+    const cleaned = value.trim().replace(/[-\s]/g, "");
+    if (!/^0(?:[689]\d{8}|[23457]\d{7})$/.test(cleaned)) {
+      return "กรุณากรอกเบอร์โทรศัพท์ที่ถูกต้อง (เบอร์มือถือ 10 หลัก หรือเบอร์บ้าน 9 หลัก)";
+    }
   }
 
   if (field === "accountNumber" && !/^\d{10}$/.test(value)) {
@@ -281,12 +284,13 @@ export default function TempLoanApplicationPage({
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      if (formData.phoneNumber && /^\d{10}$/.test(formData.phoneNumber)) {
+      const cleanedPhone = formData.phoneNumber.trim().replace(/[-\s]/g, "");
+      if (cleanedPhone && /^0(?:[689]\d{8}|[23457]\d{7})$/.test(cleanedPhone)) {
         try {
           await fetch("/api/student/phone-number", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ phoneNumber: formData.phoneNumber }),
+            body: JSON.stringify({ phoneNumber: cleanedPhone }),
           });
         } catch (err) {
           console.warn("Could not sync phone number", err);
