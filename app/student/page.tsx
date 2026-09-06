@@ -5,6 +5,7 @@ import {
   computePaymentBehavior,
   mapToActiveLoanSummary,
   mapToInstallmentPayments,
+  mapToLoanDetails,
   mapToLoanRequestHistoryItem,
   type RawStudentLoan,
 } from "@/lib/student-view-model";
@@ -43,6 +44,9 @@ export default async function StudentPage() {
     ? mapToInstallmentPayments(currentLoan.installments)
     : undefined;
   const initialPaymentBehavior = computePaymentBehavior(loanList);
+  const currentDetails = currentLoan ? mapToLoanDetails(currentLoan) : null;
+  const initialTimeline = currentDetails?.timeline ?? [];
+  const initialSchedule = currentDetails?.schedule ?? [];
 
   return (
     <StudentDashboard
@@ -50,6 +54,8 @@ export default async function StudentPage() {
       initialHistoryRequests={initialHistoryRequests}
       initialInstallments={initialInstallments}
       initialPaymentBehavior={initialPaymentBehavior}
+      initialSchedule={initialSchedule}
+      initialTimeline={initialTimeline}
       profile={initialProfile}
     />
   );

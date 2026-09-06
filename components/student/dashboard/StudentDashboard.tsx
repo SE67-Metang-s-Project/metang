@@ -14,9 +14,11 @@ import LoanHistoryList from "./LoanHistoryList";
 import LoanSummaryCard, { type ActiveLoanDisplay, type StudentProfileDisplay } from "./LoanSummaryCard";
 import TempLoanSummaryCard from "./TempLoanSummaryCard";
 import PaymentBehaviorCard from "./PaymentBehaviorCard";
+import LoanTimeline from "../loan-details/LoanTimeline";
+import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import InstallmentList from "../payments/InstallmentList";
 import PaymentModal from "@/components/shared/PaymentModal";
-import type { InstallmentPayment, LoanRequestHistoryItem } from "@/app/student/studentMockData";
+import type { InstallmentPayment, LoanRequestHistoryItem, LoanScheduleItem, LoanTimelineItem } from "@/app/student/studentMockData";
 import { MedicalBagIcon } from "./StudentIllustrations";
 import ContactFooter from "../loan-details/ContactFooter";
 import TopNav from "@/components/shared/TopNav";
@@ -24,6 +26,7 @@ import {
   computePaymentBehavior,
   mapToActiveLoanSummary,
   mapToInstallmentPayments,
+  mapToLoanDetails,
   mapToLoanRequestHistoryItem,
   type PaymentBehaviorDisplay,
   type RawStudentLoan,
@@ -36,6 +39,8 @@ type StudentDashboardProps = {
   initialHistoryRequests?: LoanRequestHistoryItem[];
   initialInstallments?: InstallmentPayment[];
   initialPaymentBehavior?: PaymentBehaviorDisplay | null;
+  initialTimeline?: LoanTimelineItem[];
+  initialSchedule?: LoanScheduleItem[];
 };
 
 export default function StudentDashboard({
@@ -44,6 +49,8 @@ export default function StudentDashboard({
   initialHistoryRequests,
   initialInstallments,
   initialPaymentBehavior,
+  initialTimeline,
+  initialSchedule,
 }: StudentDashboardProps) {
   const [showAllRequests, setShowAllRequests] = useState(false);
   const [activePayment, setActivePayment] = useState<InstallmentPayment | null>(null);
@@ -58,6 +65,8 @@ export default function StudentDashboard({
   const [paymentBehaviorData, setPaymentBehaviorData] = useState<PaymentBehaviorDisplay | null | undefined>(
     initialPaymentBehavior,
   );
+  const [timeline, setTimeline] = useState<LoanTimelineItem[] | undefined>(initialTimeline);
+  const [schedule, setSchedule] = useState<LoanScheduleItem[] | undefined>(initialSchedule);
 
   useEffect(() => {
     if (initialActiveLoan !== undefined && initialHistoryRequests !== undefined) {
@@ -77,8 +86,16 @@ export default function StudentDashboard({
           if (isMounted) {
             const rawLoan = currentJson.data as RawStudentLoan | null;
             setActiveLoanData(mapToActiveLoanSummary(rawLoan));
-            if (rawLoan?.installments) {
-              setInstallments(mapToInstallmentPayments(rawLoan.installments));
+            if (rawLoan) {
+              const details = mapToLoanDetails(rawLoan);
+              setTimeline(details.timeline);
+              setSchedule(details.schedule);
+              if (rawLoan.installments) {
+                setInstallments(mapToInstallmentPayments(rawLoan.installments));
+              }
+            } else {
+              setTimeline([]);
+              setSchedule([]);
             }
           }
         }
@@ -153,6 +170,10 @@ export default function StudentDashboard({
           )}
 
           <PaymentBehaviorCard behavior={paymentBehaviorData} />
+
+          <LoanTimeline items={timeline ?? []} />
+
+          <LoanDetailSchedule items={schedule ?? []} />
 
           {currentActiveLoan && "isDisbursed" in currentActiveLoan && currentActiveLoan.isDisbursed && currentInstallments.length > 0 ? (
             <InstallmentList installments={currentInstallments} onPay={setActivePayment} />
