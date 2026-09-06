@@ -7,6 +7,7 @@ import CardHeader from "@/components/shared/CardHeader";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 
 import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
+import type { StudentUiError } from "@/lib/student-error-mapper";
 
 type TempLoanApprovalModalProps = {
   formData: TempLoanFormData;
@@ -15,6 +16,7 @@ type TempLoanApprovalModalProps = {
   onConfirm: () => void;
   isSubmitting?: boolean;
   errorMessage?: string | null;
+  errorDetails?: StudentUiError | null;
   isResubmit?: boolean;
 };
 
@@ -25,6 +27,7 @@ export default function TempLoanApprovalModal({
   onConfirm,
   isSubmitting = false,
   errorMessage = null,
+  errorDetails = null,
   isResubmit = false,
 }: TempLoanApprovalModalProps) {
   const currentProfile = profile ?? tempStudentProfile;
@@ -85,7 +88,7 @@ export default function TempLoanApprovalModal({
           หากข้อมูลผิดพลาดอาจทำให้คำร้องกู้ยืมเกิดความล่าช้า
         </p>
 
-        {errorMessage ? (
+        {errorDetails || errorMessage ? (
           <div
             role="alert"
             style={{
@@ -96,10 +99,49 @@ export default function TempLoanApprovalModal({
               padding: "0.75rem 1rem",
               margin: "0.5rem 0 1rem",
               fontSize: "0.875rem",
-              fontWeight: 500,
             }}
           >
-            {errorMessage}
+            {errorDetails?.title ? (
+              <strong style={{ display: "block", marginBottom: "0.25rem", fontWeight: 700 }}>
+                {errorDetails.title}
+              </strong>
+            ) : null}
+            <div>{errorDetails?.message || errorMessage}</div>
+            {errorDetails?.action === "login" ? (
+              <a
+                href="/login"
+                style={{
+                  display: "inline-block",
+                  marginTop: "0.5rem",
+                  color: "#ffffff",
+                  backgroundColor: "#b91c1c",
+                  padding: "0.35rem 0.75rem",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
+                เข้าสู่ระบบใหม่
+              </a>
+            ) : errorDetails?.action === "dashboard" ? (
+              <a
+                href="/student"
+                style={{
+                  display: "inline-block",
+                  marginTop: "0.5rem",
+                  color: "#ffffff",
+                  backgroundColor: "#b91c1c",
+                  padding: "0.35rem 0.75rem",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
+                ไปที่หน้าหลัก
+              </a>
+            ) : null}
           </div>
         ) : null}
 

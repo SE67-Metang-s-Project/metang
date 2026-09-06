@@ -19,6 +19,7 @@ import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import TopNav from "@/components/shared/TopNav";
 import CardHeader from "@/components/shared/CardHeader";
 import styles from "@/app/student/student.module.css";
+import { mapStudentApiError, mapNetworkError, type StudentUiError } from "@/lib/student-error-mapper";
 
 import type { StudentProfileDisplay } from "../dashboard/LoanSummaryCard";
 import type { RawStudentLoan } from "@/lib/student-view-model";
@@ -102,6 +103,7 @@ export default function TempLoanApplicationPage({
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitErrorDetails, setSubmitErrorDetails] = useState<StudentUiError | null>(null);
   const [createdLoanData, setCreatedLoanData] = useState<RawStudentLoan | null>(null);
 
   const [profile] = useState<StudentProfileDisplay & { phoneNumber?: string }>(
@@ -317,23 +319,15 @@ export default function TempLoanApplicationPage({
         body: JSON.stringify(payload),
       });
 
-      const json = await res.json();
+      const json = await res.json().catch(() => null);
 
       if (!res.ok) {
-        if (res.status === 409) {
-          setSubmitError(
-            isResubmit
-              ? "คำร้องนี้ได้รับการเปลี่ยนแปลงแล้ว หรือไม่สามารถแก้ไขและยื่นใหม่ได้ในขณะนี้"
-              : "คุณมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว",
-          );
-        } else if (res.status === 422 || res.status === 400) {
-          setSubmitError(json.error?.message || "ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง");
-        } else if (res.status === 401 || res.status === 403) {
-          setSubmitError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
-        } else if (res.status === 404) {
-          setSubmitError("ไม่พบคำร้องที่ต้องการแก้ไข");
-        } else {
-          setSubmitError(json.error?.message || "เกิดข้อผิดพลาดในการส่งคำร้อง กรุณาลองใหม่อีกครั้ง");
+        const mapped = mapStudentApiError(res.status, json, { isResubmit });
+        setSubmitError(mapped.message);
+        setSubmitErrorDetails(mapped);
+        if (mapped.field && mapped.field in requiredFormFields) {
+          const fieldKey = mapped.field as RequiredFormField;
+          setFormErrors((prev) => ({ ...prev, [fieldKey]: mapped.message }));
         }
         return;
       }
@@ -348,7 +342,9 @@ export default function TempLoanApplicationPage({
       setCurrentStep(3);
     } catch (err) {
       console.error("Submission failed", err);
-      setSubmitError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง");
+      const netErr = mapNetworkError(err);
+      setSubmitError(netErr.message);
+      setSubmitErrorDetails(netErr);
     } finally {
       setIsSubmitting(false);
     }
@@ -856,12 +852,14 @@ export default function TempLoanApplicationPage({
 
       {isApprovalModalOpen ? (
         <TempLoanApprovalModal
+          errorDetails={submitErrorDetails}
           errorMessage={submitError}
           formData={savedFormData}
           isResubmit={isResubmit}
           isSubmitting={isSubmitting}
           onClose={() => {
             setSubmitError(null);
+            setSubmitErrorDetails(null);
             setIsApprovalModalOpen(false);
           }}
           onConfirm={handleConfirmSubmission}

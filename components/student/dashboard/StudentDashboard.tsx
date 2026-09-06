@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, LogIn, RefreshCw } from "lucide-react";
 import {
   activeLoan as defaultActiveLoan,
   installmentPayments as defaultInstallmentPayments,
@@ -31,6 +31,7 @@ import {
   type PaymentBehaviorDisplay,
   type RawStudentLoan,
 } from "@/lib/student-view-model";
+import { mapNetworkError, mapStudentApiError, type StudentUiError } from "@/lib/student-error-mapper";
 import styles from "@/app/student/student.module.css";
 
 type StudentDashboardProps = {
@@ -67,49 +68,72 @@ export default function StudentDashboard({
   );
   const [timeline, setTimeline] = useState<LoanTimelineItem[] | undefined>(initialTimeline);
   const [schedule, setSchedule] = useState<LoanScheduleItem[] | undefined>(initialSchedule);
+  const [dashboardError, setDashboardError] = useState<StudentUiError | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    if (initialActiveLoan !== undefined && initialHistoryRequests !== undefined) {
+    if (initialActiveLoan !== undefined && initialHistoryRequests !== undefined && refreshKey === 0) {
       return;
     }
 
     let isMounted = true;
     async function loadData() {
+      setIsLoading(true);
+      setDashboardError(null);
       try {
         const [currentRes, listRes] = await Promise.all([
           fetch("/api/student/loan-requests/current"),
           fetch("/api/student/loan-requests"),
         ]);
 
-        if (currentRes.ok) {
-          const currentJson = await currentRes.json();
+        if (!currentRes.ok) {
+          const errJson = await currentRes.json().catch(() => null);
           if (isMounted) {
-            const rawLoan = currentJson.data as RawStudentLoan | null;
-            setActiveLoanData(mapToActiveLoanSummary(rawLoan));
-            if (rawLoan) {
-              const details = mapToLoanDetails(rawLoan);
-              setTimeline(details.timeline);
-              setSchedule(details.schedule);
-              if (rawLoan.installments) {
-                setInstallments(mapToInstallmentPayments(rawLoan.installments));
-              }
-            } else {
-              setTimeline([]);
-              setSchedule([]);
-            }
+            setDashboardError(mapStudentApiError(currentRes.status, errJson));
           }
+          return;
         }
 
-        if (listRes.ok) {
-          const listJson = await listRes.json();
+        if (!listRes.ok) {
+          const errJson = await listRes.json().catch(() => null);
           if (isMounted) {
-            const rawList = (listJson.data || []) as RawStudentLoan[];
-            setHistoryRequests(rawList.map(mapToLoanRequestHistoryItem));
-            setPaymentBehaviorData(computePaymentBehavior(rawList));
+            setDashboardError(mapStudentApiError(listRes.status, errJson));
           }
+          return;
+        }
+
+        const currentJson = await currentRes.json();
+        const listJson = await listRes.json();
+
+        if (isMounted) {
+          const rawLoan = currentJson.data as RawStudentLoan | null;
+          setActiveLoanData(mapToActiveLoanSummary(rawLoan));
+          if (rawLoan) {
+            const details = mapToLoanDetails(rawLoan);
+            setTimeline(details.timeline);
+            setSchedule(details.schedule);
+            if (rawLoan.installments) {
+              setInstallments(mapToInstallmentPayments(rawLoan.installments));
+            }
+          } else {
+            setTimeline([]);
+            setSchedule([]);
+          }
+
+          const rawList = (listJson.data || []) as RawStudentLoan[];
+          setHistoryRequests(rawList.map(mapToLoanRequestHistoryItem));
+          setPaymentBehaviorData(computePaymentBehavior(rawList));
         }
       } catch (err) {
         console.error("Failed to load student data from API", err);
+        if (isMounted) {
+          setDashboardError(mapNetworkError(err));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
@@ -117,7 +141,7 @@ export default function StudentDashboard({
     return () => {
       isMounted = false;
     };
-  }, [initialActiveLoan, initialHistoryRequests]);
+  }, [initialActiveLoan, initialHistoryRequests, refreshKey]);
 
   useLayoutEffect(() => {
     if (preservedScrollPosition.current === null) {
@@ -158,6 +182,42 @@ export default function StudentDashboard({
 
       <div className={styles.studentPageContent}>
         <div className={styles.studentContent}>
+          {dashboardError ? (
+            <div
+              className="flex items-start justify-between gap-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm"
+              role="alert"
+            >
+              <div className="flex items-start gap-3">
+                <AlertCircle aria-hidden="true" className="mt-0.5 shrink-0 text-red-600" size={20} />
+                <div>
+                  <h3 className="font-semibold text-red-900">{dashboardError.title}</h3>
+                  <p className="mt-0.5 text-sm text-red-700">{dashboardError.message}</p>
+                </div>
+              </div>
+              <div className="shrink-0">
+                {dashboardError.action === "login" ? (
+                  <a
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-red-700"
+                    href="/login"
+                  >
+                    <LogIn size={14} />
+                    เข้าสู่ระบบใหม่
+                  </a>
+                ) : (
+                  <button
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm hover:bg-red-50"
+                    disabled={isLoading}
+                    onClick={() => setRefreshKey((k) => k + 1)}
+                    type="button"
+                  >
+                    <RefreshCw className={isLoading ? "animate-spin" : ""} size={14} />
+                    ลองใหม่อีกครั้ง
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : null}
+
           {currentActiveLoan ? (
             <LoanSummaryCard
               activeLoan={currentActiveLoan}
