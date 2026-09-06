@@ -137,10 +137,16 @@ test("maps installments to InstallmentPayment display objects", () => {
   assert.equal(payments[2].status, "upcoming");
 });
 
-test("computePaymentBehavior returns null for empty loans or loans without installments", () => {
-  assert.equal(computePaymentBehavior([]), null);
-  assert.equal(computePaymentBehavior(null), null);
-  assert.equal(computePaymentBehavior(undefined), null);
+test("computePaymentBehavior returns never-borrowed status for empty loans or loans without installments", () => {
+  const emptyResult = computePaymentBehavior([]);
+  assert.equal(emptyResult.totalLoanRequests, 0);
+  assert.equal(emptyResult.onTimeInstallments, 0);
+  assert.equal(emptyResult.lateInstallments, 0);
+  assert.equal(emptyResult.onTimeStatusLabel, "ไม่เคยมีประวัติการกู้ยืม");
+  assert.equal(emptyResult.hasHistory, false);
+
+  const nullResult = computePaymentBehavior(null);
+  assert.equal(nullResult.hasHistory, false);
 
   const newLoanWithoutInstallments: RawStudentLoan = {
     id: "uuid-1",
@@ -150,7 +156,11 @@ test("computePaymentBehavior returns null for empty loans or loans without insta
     status: "pending_advisor",
     firstDueDate: "2026-10-01",
   };
-  assert.equal(computePaymentBehavior([newLoanWithoutInstallments]), null);
+  const pendingResult = computePaymentBehavior([newLoanWithoutInstallments]);
+  assert.equal(pendingResult.totalLoanRequests, 1);
+  assert.equal(pendingResult.totalInstallments, 0);
+  assert.equal(pendingResult.onTimeStatusLabel, "ยังไม่มีประวัติการชำระเงิน");
+  assert.equal(pendingResult.hasHistory, false);
 });
 
 test("computePaymentBehavior calculates correct metrics from disbursed loans", () => {

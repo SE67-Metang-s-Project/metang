@@ -152,9 +152,7 @@ export default function StudentDashboard({
             <TempLoanSummaryCard profile={profile} />
           )}
 
-          {paymentBehaviorData ? (
-            <PaymentBehaviorCard behavior={paymentBehaviorData} />
-          ) : null}
+          <PaymentBehaviorCard behavior={paymentBehaviorData} />
 
           {currentActiveLoan && "isDisbursed" in currentActiveLoan && currentActiveLoan.isDisbursed && currentInstallments.length > 0 ? (
             <InstallmentList installments={currentInstallments} onPay={setActivePayment} />

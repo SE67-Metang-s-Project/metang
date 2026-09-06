@@ -398,11 +398,19 @@ export type PaymentBehaviorDisplay = {
   onTimeInstallments: number;
   lateInstallments: number;
   onTimeStatusLabel: string;
+  hasHistory: boolean;
 };
 
-export function computePaymentBehavior(loans?: RawStudentLoan[] | null): PaymentBehaviorDisplay | null {
+export function computePaymentBehavior(loans?: RawStudentLoan[] | null): PaymentBehaviorDisplay {
   if (!loans || loans.length === 0) {
-    return null;
+    return {
+      totalLoanRequests: 0,
+      totalInstallments: 0,
+      onTimeInstallments: 0,
+      lateInstallments: 0,
+      onTimeStatusLabel: "ไม่เคยมีประวัติการกู้ยืม",
+      hasHistory: false,
+    };
   }
 
   let onTime = 0;
@@ -430,7 +438,14 @@ export function computePaymentBehavior(loans?: RawStudentLoan[] | null): Payment
   }
 
   if (totalInstallments === 0) {
-    return null;
+    return {
+      totalLoanRequests: loans.length,
+      totalInstallments: 0,
+      onTimeInstallments: 0,
+      lateInstallments: 0,
+      onTimeStatusLabel: "ยังไม่มีประวัติการชำระเงิน",
+      hasHistory: false,
+    };
   }
 
   return {
@@ -439,5 +454,7 @@ export function computePaymentBehavior(loans?: RawStudentLoan[] | null): Payment
     onTimeInstallments: onTime,
     lateInstallments: late,
     onTimeStatusLabel: late > 0 ? "ชำระล่าช้า" : "ชำระตรงเวลา",
+    hasHistory: true,
   };
 }
+

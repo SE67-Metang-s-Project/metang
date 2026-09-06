@@ -8,12 +8,27 @@ type PaymentBehaviorCardProps = {
 };
 
 export default function PaymentBehaviorCard({ behavior }: PaymentBehaviorCardProps = {}) {
-  // If explicitly null or 0 installments, do not render card
-  if (behavior === null || (behavior && behavior.totalLoanRequests === 0)) {
-    return null;
-  }
+  const currentBehavior = behavior ?? {
+    ...defaultPaymentBehavior,
+    hasHistory: true,
+  };
 
-  const currentBehavior = behavior ?? defaultPaymentBehavior;
+  const isNeutral = !currentBehavior.hasHistory;
+  const isLate = currentBehavior.hasHistory && currentBehavior.lateInstallments > 0;
+
+  const statusBadgeStyle = isNeutral
+    ? {
+        borderColor: "#cbd5e1",
+        backgroundColor: "#f1f5f9",
+        color: "#475569",
+      }
+    : isLate
+    ? {
+        borderColor: "#fecaca",
+        backgroundColor: "#fef2f2",
+        color: "#dc2626",
+      }
+    : undefined;
 
   return (
     <section className={styles.paymentBehavior} aria-label="พฤติกรรมการชำระเงิน">
@@ -22,7 +37,7 @@ export default function PaymentBehaviorCard({ behavior }: PaymentBehaviorCardPro
           <CreditCard aria-hidden="true" size={27} strokeWidth={2.2} />
           พฤติกรรมการชำระเงิน
         </h2>
-        <span className={styles.behaviorStatus}>
+        <span className={styles.behaviorStatus} style={statusBadgeStyle}>
           <i aria-hidden="true" />
           {currentBehavior.onTimeStatusLabel}
         </span>
@@ -33,7 +48,13 @@ export default function PaymentBehaviorCard({ behavior }: PaymentBehaviorCardPro
           <span>ประวัติกู้ยืม</span>
           <strong>{currentBehavior.totalLoanRequests} ครั้ง</strong>
         </div>
-        <div className={`${styles.behaviorStat} ${styles.behaviorStatOnTime}`}>
+        <div
+          className={`${styles.behaviorStat} ${
+            currentBehavior.hasHistory && currentBehavior.onTimeInstallments > 0
+              ? styles.behaviorStatOnTime
+              : ""
+          }`}
+        >
           <span>ตรงเวลา</span>
           <strong>{currentBehavior.onTimeInstallments} งวด</strong>
         </div>
@@ -45,4 +66,5 @@ export default function PaymentBehaviorCard({ behavior }: PaymentBehaviorCardPro
     </section>
   );
 }
+
 
