@@ -2,7 +2,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { apiError, apiOk } from "@/lib/api-response";
 import { bangkokDatePlusDays } from "@/lib/date";
 import { getStudentContext } from "@/lib/loan-auth";
-import { isUuid, parseLoanInput } from "@/lib/loan-validation";
+import { isLoanId, parseLoanInput } from "@/lib/loan-validation";
 import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/serialization";
 import { validateJsonRequest } from "@/lib/request-security";
@@ -45,7 +45,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const { id } = await params;
-  if (!isUuid(id)) return apiError("NOT_FOUND", "Loan request not found", 404);
+  if (!isLoanId(id)) return apiError("NOT_FOUND", "Loan request not found", 404);
   try {
     const loan = await prisma.$transaction(async (tx) => {
       const current = await tx.loanRequest.findFirst({

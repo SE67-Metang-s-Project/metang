@@ -1,7 +1,7 @@
 import { executiveLoanSelect } from "@/db/queries/loan-requests";
 import { apiError, apiOk } from "@/lib/api-response";
 import { getExecutiveAccess } from "@/lib/loan-auth";
-import { isUuid } from "@/lib/loan-validation";
+import { isLoanId } from "@/lib/loan-validation";
 import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/serialization";
 
@@ -23,7 +23,7 @@ export async function GET(_request: Request, { params }: Params) {
   if (access.status === "forbidden") return apiError("FORBIDDEN", "Executive access required", 403);
 
   const { id } = await params;
-  if (!isUuid(id)) return apiError("NOT_FOUND", "Loan request not found", 404);
+  if (!isLoanId(id)) return apiError("NOT_FOUND", "Loan request not found", 404);
   try {
     const loan = await prisma.loanRequest.findFirst({
       where: { id, status: "pending_executive" },

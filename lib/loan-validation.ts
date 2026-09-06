@@ -174,3 +174,9 @@ export function parsePhoneNumber(value: unknown) {
 export function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
+
+export function isLoanId(value: string) {
+  if (typeof value !== "string") return false;
+  const trimmed = value.trim();
+  return isUuid(trimmed) || /^REQ[A-Za-z0-9_-]+$/i.test(trimmed);
+}
