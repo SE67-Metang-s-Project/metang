@@ -8,6 +8,7 @@ import {
   mapToActiveLoanSummary,
   mapToInstallmentPayments,
   mapToLoanDetails,
+  computePaymentBehavior,
   type RawStudentLoan,
 } from "@/lib/student-view-model";
 
@@ -135,3 +136,43 @@ test("maps installments to InstallmentPayment display objects", () => {
   assert.equal(payments[1].status, "current");
   assert.equal(payments[2].status, "upcoming");
 });
+
+test("computePaymentBehavior returns null for empty loans or loans without installments", () => {
+  assert.equal(computePaymentBehavior([]), null);
+  assert.equal(computePaymentBehavior(null), null);
+  assert.equal(computePaymentBehavior(undefined), null);
+
+  const newLoanWithoutInstallments: RawStudentLoan = {
+    id: "uuid-1",
+    amount: 5000,
+    installmentCount: 1,
+    purpose: "ค่าเทอม",
+    status: "pending_advisor",
+    firstDueDate: "2026-10-01",
+  };
+  assert.equal(computePaymentBehavior([newLoanWithoutInstallments]), null);
+});
+
+test("computePaymentBehavior calculates correct metrics from disbursed loans", () => {
+  const loanWithPayments: RawStudentLoan = {
+    id: "uuid-2",
+    amount: 6000,
+    installmentCount: 2,
+    purpose: "ค่าเทอม",
+    status: "closed",
+    firstDueDate: "2026-08-01",
+    installments: [
+      { seq: 1, dueDate: "2026-08-01", amountDue: 3000, amountPaid: 3000, settledAt: "2026-07-28" },
+      { seq: 2, dueDate: "2026-09-01", amountDue: 3000, amountPaid: 3000, settledAt: "2026-09-05" },
+    ],
+  };
+
+  const behavior = computePaymentBehavior([loanWithPayments]);
+  assert.notEqual(behavior, null);
+  assert.equal(behavior?.totalLoanRequests, 1);
+  assert.equal(behavior?.totalInstallments, 2);
+  assert.equal(behavior?.onTimeInstallments, 1);
+  assert.equal(behavior?.lateInstallments, 1);
+  assert.equal(behavior?.onTimeStatusLabel, "ชำระล่าช้า");
+});
+

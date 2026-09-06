@@ -21,9 +21,11 @@ import { MedicalBagIcon } from "./StudentIllustrations";
 import ContactFooter from "../loan-details/ContactFooter";
 import TopNav from "@/components/shared/TopNav";
 import {
+  computePaymentBehavior,
   mapToActiveLoanSummary,
   mapToInstallmentPayments,
   mapToLoanRequestHistoryItem,
+  type PaymentBehaviorDisplay,
   type RawStudentLoan,
 } from "@/lib/student-view-model";
 import styles from "@/app/student/student.module.css";
@@ -33,6 +35,7 @@ type StudentDashboardProps = {
   initialActiveLoan?: ActiveLoanDisplay | null;
   initialHistoryRequests?: LoanRequestHistoryItem[];
   initialInstallments?: InstallmentPayment[];
+  initialPaymentBehavior?: PaymentBehaviorDisplay | null;
 };
 
 export default function StudentDashboard({
@@ -40,6 +43,7 @@ export default function StudentDashboard({
   initialActiveLoan,
   initialHistoryRequests,
   initialInstallments,
+  initialPaymentBehavior,
 }: StudentDashboardProps) {
   const [showAllRequests, setShowAllRequests] = useState(false);
   const [activePayment, setActivePayment] = useState<InstallmentPayment | null>(null);
@@ -51,6 +55,9 @@ export default function StudentDashboard({
   const [activeLoanData, setActiveLoanData] = useState<ActiveLoanDisplay | null | undefined>(initialActiveLoan);
   const [historyRequests, setHistoryRequests] = useState<LoanRequestHistoryItem[] | undefined>(initialHistoryRequests);
   const [installments, setInstallments] = useState<InstallmentPayment[] | undefined>(initialInstallments);
+  const [paymentBehaviorData, setPaymentBehaviorData] = useState<PaymentBehaviorDisplay | null | undefined>(
+    initialPaymentBehavior,
+  );
 
   useEffect(() => {
     if (initialActiveLoan !== undefined && initialHistoryRequests !== undefined) {
@@ -81,6 +88,7 @@ export default function StudentDashboard({
           if (isMounted) {
             const rawList = (listJson.data || []) as RawStudentLoan[];
             setHistoryRequests(rawList.map(mapToLoanRequestHistoryItem));
+            setPaymentBehaviorData(computePaymentBehavior(rawList));
           }
         }
       } catch (err) {
@@ -144,7 +152,9 @@ export default function StudentDashboard({
             <TempLoanSummaryCard profile={profile} />
           )}
 
-          <PaymentBehaviorCard />
+          {paymentBehaviorData ? (
+            <PaymentBehaviorCard behavior={paymentBehaviorData} />
+          ) : null}
 
           {currentActiveLoan && "isDisbursed" in currentActiveLoan && currentActiveLoan.isDisbursed && currentInstallments.length > 0 ? (
             <InstallmentList installments={currentInstallments} onPay={setActivePayment} />

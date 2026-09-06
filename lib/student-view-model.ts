@@ -391,3 +391,53 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     },
   };
 }
+
+export type PaymentBehaviorDisplay = {
+  totalLoanRequests: number;
+  totalInstallments: number;
+  onTimeInstallments: number;
+  lateInstallments: number;
+  onTimeStatusLabel: string;
+};
+
+export function computePaymentBehavior(loans?: RawStudentLoan[] | null): PaymentBehaviorDisplay | null {
+  if (!loans || loans.length === 0) {
+    return null;
+  }
+
+  let onTime = 0;
+  let late = 0;
+  let totalInstallments = 0;
+  const now = new Date();
+
+  for (const loan of loans) {
+    if (!loan.installments || !Array.isArray(loan.installments)) continue;
+    for (const inst of loan.installments) {
+      totalInstallments++;
+      const dueDate = new Date(inst.dueDate);
+      const paidDate = inst.settledAt ? new Date(inst.settledAt) : null;
+
+      if (paidDate) {
+        if (paidDate <= dueDate) {
+          onTime++;
+        } else {
+          late++;
+        }
+      } else if (inst.amountPaid < inst.amountDue && now > dueDate) {
+        late++;
+      }
+    }
+  }
+
+  if (totalInstallments === 0) {
+    return null;
+  }
+
+  return {
+    totalLoanRequests: loans.length,
+    totalInstallments,
+    onTimeInstallments: onTime,
+    lateInstallments: late,
+    onTimeStatusLabel: late > 0 ? "ชำระล่าช้า" : "ชำระตรงเวลา",
+  };
+}

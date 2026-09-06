@@ -2,6 +2,7 @@ import StudentDashboard from "@/components/student/dashboard/StudentDashboard";
 import { requireStudentAccess } from "@/lib/loan-auth";
 import { getStudentCurrentLoan, getStudentLoanList } from "@/db/queries/loan-requests";
 import {
+  computePaymentBehavior,
   mapToActiveLoanSummary,
   mapToInstallmentPayments,
   mapToLoanRequestHistoryItem,
@@ -41,13 +42,15 @@ export default async function StudentPage() {
   const initialInstallments = currentLoan?.installments
     ? mapToInstallmentPayments(currentLoan.installments)
     : undefined;
+  const initialPaymentBehavior = computePaymentBehavior(loanList);
 
   return (
     <StudentDashboard
-      profile={initialProfile}
       initialActiveLoan={initialActiveLoan}
       initialHistoryRequests={initialHistoryRequests}
       initialInstallments={initialInstallments}
+      initialPaymentBehavior={initialPaymentBehavior}
+      profile={initialProfile}
     />
   );
 }
