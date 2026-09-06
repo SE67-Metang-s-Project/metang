@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -15,7 +15,6 @@ import {
   FileSignature,
   FileSearch,
   Settings,
-  UserCog,
   Bug,
 } from "lucide-react";
 
@@ -98,18 +97,20 @@ const ALL_MENU_ITEMS: MenuItem[] = [
 
 export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
   const pathname = usePathname();
+  const [prevRole, setPrevRole] = useState<UserRole>(role);
   const [debugRole, setDebugRole] = useState<UserRole>(role);
 
-  // นำ isMounted กลับมาใช้งาน เพื่อป้องกัน Hydration Error
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
+  if (prevRole !== role) {
+    setPrevRole(role);
     setDebugRole(role);
-  }, [role]);
+  }
+
+  // useSyncExternalStore prevents hydration error without cascading renders
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const activeRole = process.env.NODE_ENV === "development" ? debugRole : role;
   const allowedMenus = ALL_MENU_ITEMS.filter((item) => item.roles.includes(activeRole));

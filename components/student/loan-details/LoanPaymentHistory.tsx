@@ -63,6 +63,7 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
             type="button"
           >
             <span aria-hidden="true" className={styles.paymentReceiptIcon}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img alt="" src={item.receiptImage} />
             </span>
             <div className={styles.paymentHistoryContent}>
@@ -104,6 +105,7 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
               {selectedReceiptAttempts.length > 1 ? ` (${t("ครั้งที่", "attempt")} ${selectedReceiptAttemptNumber})` : ""}
             </h2>
             <div className={styles.transferSlipImageFrame}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img alt={t("รูปหลักฐานการชำระเงิน", "Payment evidence image")} src={selectedReceipt.receiptImage} />
             </div>
           </section>

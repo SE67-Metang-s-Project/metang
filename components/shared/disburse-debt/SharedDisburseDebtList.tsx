@@ -1,7 +1,7 @@
 // components/shared/disburse-debt/SharedDisburseDebtList.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import DisburseDebtCard, { ActionRequest } from "./DisburseDebtCard";
 import StudentFilters from "@/components/shared/filter/StudentFilters";
 
