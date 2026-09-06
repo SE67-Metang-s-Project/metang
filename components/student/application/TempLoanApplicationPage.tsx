@@ -42,8 +42,8 @@ const requiredFormFields: RequiredFormField[] = [
 ];
 
 const validateField = (field: RequiredFormField, value: string) => {
-  if (field === "phoneNumber" && !/^\d{10}$/.test(value)) {
-    return "กรุณากรอกเบอร์โทรศัพท์ 10 หลัก";
+  if (field === "phoneNumber" && !/^0[689]\d{8}$/.test(value)) {
+    return "กรุณากรอกเบอร์โทรศัพท์มือถือ 10 หลัก (เช่น 0812345678)";
   }
 
   if (field === "accountNumber" && !/^\d{10}$/.test(value)) {
