@@ -6,17 +6,26 @@ import styles from "@/app/student/student.module.css";
 import CardHeader from "@/components/shared/CardHeader";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 
+import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
+
 type TempLoanApprovalModalProps = {
   formData: TempLoanFormData;
+  profile?: StudentProfileDisplay;
   onClose: () => void;
   onConfirm: () => void;
+  isSubmitting?: boolean;
+  errorMessage?: string | null;
 };
 
 export default function TempLoanApprovalModal({
   formData,
+  profile,
   onClose,
   onConfirm,
+  isSubmitting = false,
+  errorMessage = null,
 }: TempLoanApprovalModalProps) {
+  const currentProfile = profile ?? tempStudentProfile;
   const loanAmount = Number(formData.loanAmount) || 0;
   const installmentAmount = Math.floor(loanAmount / formData.installmentCount);
   const installmentRemainder = loanAmount % formData.installmentCount;
@@ -72,6 +81,24 @@ export default function TempLoanApprovalModal({
           หากข้อมูลผิดพลาดอาจทำให้คำร้องกู้ยืมเกิดความล่าช้า
         </p>
 
+        {errorMessage ? (
+          <div
+            role="alert"
+            style={{
+              color: "#b91c1c",
+              backgroundColor: "#fef2f2",
+              border: "1px solid #f87171",
+              borderRadius: "0.5rem",
+              padding: "0.75rem 1rem",
+              margin: "0.5rem 0 1rem",
+              fontSize: "0.875rem",
+              fontWeight: 500,
+            }}
+          >
+            {errorMessage}
+          </div>
+        ) : null}
+
         <section className={styles.loanApprovalInfoCard}>
           <CardHeader
             className={styles.sectionCardHeading}
@@ -81,15 +108,15 @@ export default function TempLoanApprovalModal({
           <dl>
             <div>
               <dt>ชื่อ-นามสกุล</dt>
-              <dd>{tempStudentProfile.displayName.replace("นางสาว", "").trim()}</dd>
+              <dd>{currentProfile.displayName.replace("นางสาว", "").trim()}</dd>
             </div>
             <div>
               <dt>รหัสนักศึกษา</dt>
-              <dd>{tempStudentProfile.studentId}</dd>
+              <dd>{currentProfile.studentId}</dd>
             </div>
             <div>
               <dt>หลักสูตร</dt>
-              <dd>{tempStudentProfile.programName}</dd>
+              <dd>{currentProfile.programName || "พยาบาลศาสตรบัณฑิต"}</dd>
             </div>
             <div>
               <dt>วุฒิการศึกษา</dt>
@@ -168,11 +195,21 @@ export default function TempLoanApprovalModal({
         <LoanDetailSchedule items={schedule} />
 
         <div className={styles.loanApprovalActions}>
-          <button className={styles.loanApprovalCancel} onClick={onClose} type="button">
+          <button
+            className={styles.loanApprovalCancel}
+            disabled={isSubmitting}
+            onClick={onClose}
+            type="button"
+          >
             ยกเลิก
           </button>
-          <button className={styles.loanApprovalConfirm} onClick={onConfirm} type="button">
-            ยืนยัน
+          <button
+            className={styles.loanApprovalConfirm}
+            disabled={isSubmitting}
+            onClick={onConfirm}
+            type="button"
+          >
+            {isSubmitting ? "กำลังส่งคำร้อง..." : "ยืนยัน"}
           </button>
         </div>
       </section>
