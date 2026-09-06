@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { isLoanId, isUuid, parseLoanDecisionInput } from "@/lib/loan-validation";
+import { isLoanId, parseLoanDecisionInput } from "@/lib/loan-validation";
 
 test("parseLoanDecisionInput parses approved decisions with optional comment", () => {
   assert.deepEqual(parseLoanDecisionInput({ decision: "approved" }), {

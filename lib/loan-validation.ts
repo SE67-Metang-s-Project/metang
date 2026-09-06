@@ -19,7 +19,7 @@ export type LoanDecisionInput = {
   comment: string | null;
 };
 
-export type ExecutiveDecision = "approved" | "returned";
+export type ExecutiveDecision = "approved" | "rejected";
 
 export type ExecutiveDecisionInput = {
   decision: ExecutiveDecision;
@@ -156,7 +156,7 @@ export function parseExecutiveDecisionInput(value: unknown): ExecutiveDecisionIn
   }
 
   const input = value as Record<string, unknown>;
-  if (input.decision !== "approved" && input.decision !== "returned") {
+  if (input.decision !== "approved" && input.decision !== "rejected") {
     throw new Error("decision is invalid");
   }
 

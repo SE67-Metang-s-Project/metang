@@ -383,84 +383,6 @@ export async function decideAdminLoanRequest({
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }
 
-export type ExecutiveDecisionErrorCode = "NOT_FOUND" | "STALE_DECISION" | "MISSING_ADMIN_ASSIGNMENT";
-
-export class ExecutiveDecisionError extends Error {
-  constructor(readonly code: ExecutiveDecisionErrorCode) {
-    super(code);
-  }
-}
-
-export async function decideExecutiveLoanRequest({
-  id,
-  executiveId,
-  decision,
-  comment,
-}: {
-  id: string;
-  executiveId: string;
-  decision: ExecutiveDecision;
-  comment: string | null;
-}) {
-  return prisma.$transaction(async (tx) => {
-    const effectiveRole = await tx.userRole.findFirst({
-      where: { userId: executiveId, role: "executive" },
-      select: { userId: true },
-    });
-    if (!effectiveRole) throw new ExecutiveDecisionError("NOT_FOUND");
-
-    const current = await tx.loanRequest.findUnique({ where: { id }, select: executiveDecisionSelect });
-    if (!current) throw new ExecutiveDecisionError("NOT_FOUND");
-    if (current.status !== "pending_executive") {
-      throw new ExecutiveDecisionError("STALE_DECISION");
-    }
-    if (!current.assignedAdminId) {
-      throw new ExecutiveDecisionError("MISSING_ADMIN_ASSIGNMENT");
-    }
-
-    const pending = await tx.loanApproval.findFirst({
-      where: { loanId: id, step: "executive", decision: "pending" },
-      orderBy: { attempt: "desc" },
-    });
-    if (!pending) throw new ExecutiveDecisionError("STALE_DECISION");
-
-    const nextStatus = decision === "approved" ? "pending_disbursement" : "pending_admin";
-    const changed = await tx.loanRequest.updateMany({
-      where: { id, status: "pending_executive" },
-      data: {
-        status: nextStatus,
-        assignedAdminId: decision === "approved" ? null : current.assignedAdminId,
-      },
-    });
-    if (changed.count !== 1) throw new ExecutiveDecisionError("STALE_DECISION");
-
-    await tx.loanApproval.update({
-      where: { id: pending.id },
-      data: { decision, decidedBy: executiveId, decidedAt: new Date(), comment },
-    });
-    if (decision === "returned") {
-      await tx.loanApproval.create({
-        data: { loanId: id, step: "admin", attempt: pending.attempt + 1 },
-      });
-    }
-
-    const final = await tx.loanRequest.findUniqueOrThrow({
-      where: { id },
-      select: executiveLoanSelect,
-    });
-    await tx.auditLog.create({
-      data: {
-        actorId: executiveId,
-        action: `loan_request.executive_${decision}`,
-        entityType: "loan_request",
-        entityId: id,
-        before: serializeJson(current),
-        after: serializeJson(final),
-      },
-    });
-    return final;
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-}
 
 const THAI_MONTH_ABBRS = [
   "ม.ค.",
@@ -493,6 +415,7 @@ function formatThaiDateTime(date: Date): string {
 
 export async function getActionRequests(
   where?: Prisma.LoanRequestWhereInput,
+  options?: { hideBankDetails?: boolean },
 ): Promise<ActionRequest[]> {
   const loans = await prisma.loanRequest.findMany({
     where,
@@ -658,11 +581,13 @@ export async function getActionRequests(
         date: formatThaiDate(a.decidedAt ?? a.createdAt),
       }));
 
-    const bankDetails: BankDetails = {
-      bankName: loan.bankName,
-      accountNumber: loan.bankAccountNo,
-      accountName: loan.bankAccountName,
-    };
+    const bankDetails: BankDetails | undefined = options?.hideBankDetails
+      ? undefined
+      : {
+          bankName: loan.bankName,
+          accountNumber: loan.bankAccountNo,
+          accountName: loan.bankAccountName,
+        };
 
     const paymentHistory = (loan.payments || []).map((p) => {
       const matchingInst = (loan.installments || []).find((i) => i.id === p.installmentId);
@@ -700,7 +625,7 @@ export async function getActionRequests(
       isOverdue: waitDays > 7,
       history,
       approvals,
-      bankDetails,
+      ...(bankDetails ? { bankDetails } : {}),
       paymentBehavior,
       paymentHistory,
     };
@@ -713,6 +638,13 @@ export async function getAdvisorActionRequests(advisorId: string): Promise<Actio
 
 export async function getAdminActionRequests(): Promise<ActionRequest[]> {
   return getActionRequests({});
+}
+
+export async function getExecutiveActionRequests(): Promise<ActionRequest[]> {
+  return getActionRequests(
+    { status: { not: "draft" } },
+    { hideBankDetails: true },
+  );
 }
 
 export async function getDisbursementActionRequests(): Promise<ActionRequest[]> {
@@ -793,5 +725,79 @@ export async function getStudentLoanDetail(loanId: string, studentId: string) {
     select: studentLoanDetailSelect,
   });
   return loan ? serializeJson(loan) : null;
+}
+
+export type ExecutiveDecisionErrorCode = "NOT_FOUND" | "STALE_DECISION" | "MISSING_ADMIN_ASSIGNMENT";
+
+export class ExecutiveDecisionError extends Error {
+  constructor(readonly code: ExecutiveDecisionErrorCode) {
+    super(code);
+  }
+}
+
+export async function decideExecutiveLoanRequest({
+  id,
+  executiveId,
+  decision,
+  comment,
+}: {
+  id: string;
+  executiveId: string;
+  decision: ExecutiveDecision;
+  comment: string | null;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const effectiveRole = await tx.userRole.findFirst({
+      where: { userId: executiveId, role: "executive" },
+      select: { userId: true },
+    });
+    if (!effectiveRole) throw new ExecutiveDecisionError("NOT_FOUND");
+
+    const current = await tx.loanRequest.findUnique({ where: { id }, select: executiveDecisionSelect });
+    if (!current) throw new ExecutiveDecisionError("NOT_FOUND");
+    if (current.status !== "pending_executive") {
+      throw new ExecutiveDecisionError("STALE_DECISION");
+    }
+    if (!current.assignedAdminId) {
+      throw new ExecutiveDecisionError("MISSING_ADMIN_ASSIGNMENT");
+    }
+
+    const pending = await tx.loanApproval.findFirst({
+      where: { loanId: id, step: "executive", decision: "pending" },
+      orderBy: { attempt: "desc" },
+    });
+    if (!pending) throw new ExecutiveDecisionError("STALE_DECISION");
+
+    const nextStatus = decision === "approved" ? "pending_disbursement" : "rejected";
+    const changed = await tx.loanRequest.updateMany({
+      where: { id, status: "pending_executive" },
+      data: {
+        status: nextStatus,
+        assignedAdminId: null,
+      },
+    });
+    if (changed.count !== 1) throw new ExecutiveDecisionError("STALE_DECISION");
+
+    await tx.loanApproval.update({
+      where: { id: pending.id },
+      data: { decision, decidedBy: executiveId, decidedAt: new Date(), comment },
+    });
+
+    const final = await tx.loanRequest.findUniqueOrThrow({
+      where: { id },
+      select: executiveLoanSelect,
+    });
+    await tx.auditLog.create({
+      data: {
+        actorId: executiveId,
+        action: `loan_request.executive_${decision}`,
+        entityType: "loan_request",
+        entityId: id,
+        before: serializeJson(current),
+        after: serializeJson(final),
+      },
+    });
+    return final;
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }
 

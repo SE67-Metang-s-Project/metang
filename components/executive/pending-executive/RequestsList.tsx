@@ -5,11 +5,43 @@ import PendingFilter, { FilterStatus } from "@/components/shared/pending/Pending
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
 import { mockExecutiveRequests } from "@/components/shared/mock-data/mockExecutiveRequests"; 
 
-export default function RequestsListExecutive() {
+interface RequestsListExecutiveProps {
+  initialRequests?: ActionRequest[];
+}
+
+export default function RequestsListExecutive({
+  initialRequests,
+}: RequestsListExecutiveProps = {}) {
   const [filter, setFilter] = useState<FilterStatus>("pending");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [requests, setRequests] = useState<ActionRequest[]>(mockExecutiveRequests);
+  const baseRequests = React.useMemo(() => {
+    if (initialRequests && initialRequests.length > 0) {
+      return initialRequests;
+    }
+    return initialRequests ?? mockExecutiveRequests;
+  }, [initialRequests]);
+
+  const [requests, setRequests] = useState<ActionRequest[]>(baseRequests);
+  const [prevInitialRequests, setPrevInitialRequests] = useState<ActionRequest[] | undefined>(initialRequests);
+
+  if (initialRequests !== prevInitialRequests) {
+    setPrevInitialRequests(initialRequests);
+    setRequests(baseRequests);
+  }
+
+  const handleRequestDecided = (requestId: string, decision: string) => {
+    setRequests((prev) =>
+      prev.map((req) => {
+        if (req.id !== requestId) return req;
+        const nextStatus = decision === "approved" ? "pending_disbursement" : "rejected";
+        return {
+          ...req,
+          requestStatus: nextStatus,
+        };
+      }),
+    );
+  };
 
   // นับจำนวนรายการที่รอ "ผู้บริหาร" พิจารณา
   const pendingCount = requests.filter((req) => req.requestStatus === "pending_executive").length;
@@ -71,7 +103,12 @@ export default function RequestsListExecutive() {
       {/* 
         ส่ง userRole="executive" เพื่อให้ระบบรู้ว่าตอนนี้กำลังดูในฐานะผู้บริหารขั้นสุดท้าย
       */}
-      <RequestsCard requests={filteredRequests} userRole="executive" tableLayout="executive" />
+      <RequestsCard
+        requests={filteredRequests}
+        userRole="executive"
+        tableLayout="executive"
+        onRequestDecided={handleRequestDecided}
+      />
     </div>
   );
 }
