@@ -18,10 +18,12 @@ export default function SuperAdminRequestsList({
   const [filter, setFilter] = useState<FilterStatus>("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [requests, setRequests] = useState<ActionRequest[]>(initialRequests);
+  const [prevInitialRequests, setPrevInitialRequests] = useState<ActionRequest[]>(initialRequests);
 
-  useEffect(() => {
+  if (initialRequests !== prevInitialRequests) {
+    setPrevInitialRequests(initialRequests);
     setRequests(initialRequests);
-  }, [initialRequests]);
+  }
 
   const handleRequestDecided = (requestId: string, decision: string) => {
     setRequests((prev) =>

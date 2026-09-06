@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
-import { mockAdvisorRequests } from "@/components/shared/mock-data/mockAdvisorRequests";
 
 interface RequestsListProps {
   initialRequests?: ActionRequest[];
@@ -14,10 +13,7 @@ export default function RequestsList({ initialRequests }: RequestsListProps = {}
   const [searchQuery, setSearchQuery] = useState("");
 
   const baseRequests = React.useMemo(() => {
-    if (initialRequests && initialRequests.length > 0) {
-      return initialRequests;
-    }
-    return initialRequests ?? mockAdvisorRequests;
+    return initialRequests ?? [];
   }, [initialRequests]);
 
   const [requests, setRequests] = useState<ActionRequest[]>(baseRequests);

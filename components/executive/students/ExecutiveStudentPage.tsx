@@ -5,7 +5,6 @@ import React from "react";
 import SharedStudentList from "@/components/shared/students/SharedStudentList"; // เรียกตัวกลาง
 
 import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
-import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
 
 type ExecutiveStudentPageProps = {
   initialRequests?: ActionRequest[];
@@ -14,10 +13,7 @@ type ExecutiveStudentPageProps = {
 export default function ExecutiveStudentPage({
   initialRequests,
 }: ExecutiveStudentPageProps) {
-  const requests =
-    initialRequests && initialRequests.length > 0
-      ? initialRequests
-      : (initialRequests ?? (mockAdminRequests as unknown as ActionRequest[]));
+  const requests = initialRequests ?? [];
 
   return (
     <div className="space-y-6">

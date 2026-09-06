@@ -2,12 +2,12 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import VerifySlipCard from "./VerifySlipCard";
-import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
+import VerifySlipCard, { ActionRequest } from "./VerifySlipCard";
+import type { ActionRequest as PendingActionRequest } from "@/components/shared/pending/RequestsCard";
 
 interface SharedVerifySlipListProps {
   userRole: "admin" | "super_admin";
-  initialRequests?: any[];
+  initialRequests?: PendingActionRequest[] | ActionRequest[];
 }
 
 export default function SharedVerifySlipList({
@@ -17,20 +17,14 @@ export default function SharedVerifySlipList({
   const [searchQuery, setSearchQuery] = useState("");
 
   const rawRequests = useMemo(() => {
-    if (initialRequests && initialRequests.length > 0) {
-      const withSlips = initialRequests.filter(
-        (r) => r.paymentHistory && r.paymentHistory.length > 0,
-      );
-      return withSlips.length > 0 ? withSlips : mockAdminRequests;
-    }
-    return mockAdminRequests;
+    return (initialRequests ?? []) as ActionRequest[];
   }, [initialRequests]);
 
   // กรองข้อมูล: เอาเฉพาะคำร้องที่มี paymentHistory (มีการแนบสลิป) มาแสดง
   const filteredRequests = useMemo(() => {
-    return rawRequests.filter((req: any) => {
+    return rawRequests.filter((req: ActionRequest) => {
       // 1. เช็คว่ามีประวัติสลิปหรือไม่ ถ้าไม่มีให้ข้ามไป
-      const hasSlip = req.paymentHistory && req.paymentHistory.length > 0;
+      const hasSlip = Boolean(req.paymentHistory && req.paymentHistory.length > 0);
       if (!hasSlip) return false;
 
       // 2. ค้นหาจากชื่อหรือรหัสนักศึกษา (ถ้ามีการพิมพ์ค้นหา)
@@ -63,7 +57,7 @@ export default function SharedVerifySlipList({
       </div>
 
       {/* เรียกใช้ Card และส่งข้อมูลที่กรองแล้วเข้าไป */}
-      <VerifySlipCard requests={filteredRequests as any} userRole={userRole} />
+      <VerifySlipCard requests={filteredRequests} userRole={userRole} />
     </div>
   );
 }
