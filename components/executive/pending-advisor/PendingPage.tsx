@@ -3,7 +3,13 @@
 import React from "react";
 import PendingRequestsList from "./RequestsList";
 
-export default function PendingPage() {
+import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
+
+type PendingAdvisorPageProps = {
+  initialRequests?: ActionRequest[];
+};
+
+export default function PendingPage({ initialRequests }: PendingAdvisorPageProps) {
   return (
     <div>
       <div className="mb-6">
@@ -16,7 +22,7 @@ export default function PendingPage() {
       </div>
 
       {/* แสดงรายการคำขอที่รอดำเนินการ */}
-      <PendingRequestsList />
+      <PendingRequestsList initialRequests={initialRequests} />
     </div>
   );
 }
