@@ -5,28 +5,30 @@ import { studentProfile } from "@/app/student/studentMockData";
 import type { LoanDetails } from "@/app/student/studentMockData";
 import TopNav from "@/components/shared/TopNav";
 import LoanDetailsPage from "./LoanDetailsPage";
-import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
+
+import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
 
 type StudentRequestDetailPageProps = {
   details: LoanDetails;
+  profile?: StudentProfileDisplay;
 };
 
-export default function StudentRequestDetailPage({ details }: StudentRequestDetailPageProps) {
+export default function StudentRequestDetailPage({ details, profile }: StudentRequestDetailPageProps) {
   const router = useRouter();
-  const { language, setLanguage, t } = useStudentLanguage();
+  const currentProfile = profile ?? studentProfile;
 
   return (
     <main className={styles.studentPage}>
       <TopNav
         showSidebarButton={false}
-        userEmail={`${studentProfile.studentId}@cmu.ac.th`}
-        userId={studentProfile.studentId}
-        userName={studentProfile.displayName}
-        userRole={t("นักศึกษา", "Student")}
-        language={language}
-        onLanguageChange={setLanguage}
-        logoutLabel={t("ออกจากระบบ", "Sign out")}
+        userEmail={
+          ("contactEmail" in currentProfile && currentProfile.contactEmail) ||
+          `${currentProfile.studentId}@cmu.ac.th`
+        }
+        userId={currentProfile.studentId}
+        userName={currentProfile.displayName}
+        userRole="นักศึกษา"
       />
       <div className={styles.studentPageContent}>
         <LoanDetailsPage details={details} onBack={() => router.push("/student")} />

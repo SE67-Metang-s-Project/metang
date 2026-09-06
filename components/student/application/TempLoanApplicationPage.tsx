@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { House, UserRound } from "lucide-react";
+import { House, RotateCcw, UserRound } from "lucide-react";
 import {
   tempLoanAgreement,
   tempLoanFormDefaults,
@@ -19,6 +19,10 @@ import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import TopNav from "@/components/shared/TopNav";
 import CardHeader from "@/components/shared/CardHeader";
 import styles from "@/app/student/student.module.css";
+import { mapStudentApiError, mapNetworkError, type StudentUiError } from "@/lib/student-error-mapper";
+
+import type { StudentProfileDisplay } from "../dashboard/LoanSummaryCard";
+import type { RawStudentLoan } from "@/lib/student-view-model";
 
 type FormField = Exclude<keyof TempLoanFormData, "installmentCount">;
 type RequiredFormField = Exclude<FormField, "additionalNote">;
@@ -38,12 +42,22 @@ const requiredFormFields: RequiredFormField[] = [
 ];
 
 const validateField = (field: RequiredFormField, value: string) => {
-  if (field === "phoneNumber" && !/^\d{10}$/.test(value)) {
-    return "กรุณากรอกเบอร์โทรศัพท์ 10 หลัก";
+  if (field === "phoneNumber") {
+    const cleaned = value.trim().replace(/[-\s]/g, "");
+    if (!/^0(?:[689]\d{8}|[23457]\d{7})$/.test(cleaned)) {
+      return "กรุณากรอกเบอร์โทรศัพท์ที่ถูกต้อง (เบอร์มือถือ 10 หลัก หรือเบอร์บ้าน 9 หลัก)";
+    }
   }
 
   if (field === "accountNumber" && !/^\d{10}$/.test(value)) {
     return "กรุณากรอกเลขที่บัญชีธนาคาร 10 หลัก";
+  }
+
+  if (field === "loanAmount") {
+    const amount = Number(value.replace(/,/g, ""));
+    if (!value.trim() || isNaN(amount) || amount <= 0) {
+      return "กรุณากรอกจำนวนเงินที่ถูกต้อง";
+    }
   }
 
   if (!value.trim()) {
@@ -53,18 +67,102 @@ const validateField = (field: RequiredFormField, value: string) => {
   return "";
 };
 
-export default function TempLoanApplicationPage() {
+export type ExistingLoanData = {
+  id: string;
+  status: string;
+  amount?: number;
+  studentYear?: number;
+  purpose?: string;
+  additionalNote?: string | null;
+  bankName?: string | null;
+  bankAccountNo?: string | null;
+  bankAccountName?: string | null;
+  installmentCount?: number;
+  advisorName?: string;
+  returnComment?: string;
+  returnStep?: string;
+};
+
+type TempLoanApplicationPageProps = {
+  profile?: StudentProfileDisplay & { phoneNumber?: string };
+  advisorOptions?: string[];
+  existingLoan?: ExistingLoanData | null;
+};
+
+export default function TempLoanApplicationPage({
+  profile: initialProfile,
+  advisorOptions,
+  existingLoan,
+}: TempLoanApplicationPageProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isResubmit = existingLoan?.status === "returned";
   const fieldRefs = useRef<Partial<Record<RequiredFormField, HTMLLabelElement>>>({});
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(
-    searchParams.get("step") === "3" ? 3 : 1,
+    searchParams.get("step") === "3" ? 3 : isResubmit ? 2 : 1,
   );
-  const [hasReadAgreement, setHasReadAgreement] = useState(false);
-  const [hasAcceptedAgreement, setHasAcceptedAgreement] = useState(false);
+  const [hasReadAgreement, setHasReadAgreement] = useState(Boolean(isResubmit));
+  const [hasAcceptedAgreement, setHasAcceptedAgreement] = useState(Boolean(isResubmit));
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
-  const [formData, setFormData] = useState(tempLoanFormDefaults);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitErrorDetails, setSubmitErrorDetails] = useState<StudentUiError | null>(null);
+  const [createdLoanData, setCreatedLoanData] = useState<RawStudentLoan | null>(null);
+
+  const [profile] = useState<StudentProfileDisplay & { phoneNumber?: string }>(
+    initialProfile ?? tempStudentProfile,
+  );
+
+  const [advisors, setAdvisors] = useState<string[]>(advisorOptions ?? []);
+
+  useEffect(() => {
+    if (advisorOptions && advisorOptions.length > 0) return;
+    let isMounted = true;
+    fetch("/api/student/advisors")
+      .then((res) => res.json())
+      .then((json) => {
+        if (isMounted && json.data && Array.isArray(json.data)) {
+          const names = json.data
+            .map((a: { fullNameTh?: string }) => a.fullNameTh)
+            .filter((name: unknown): name is string => typeof name === "string" && Boolean(name));
+          if (names.length > 0) {
+            setAdvisors(names);
+          }
+        }
+      })
+      .catch((err) => console.error("Could not fetch advisors", err));
+    return () => {
+      isMounted = false;
+    };
+  }, [advisorOptions]);
+
   const savedEducationLevel = useStudentEducationLevel();
+  const [formData, setFormData] = useState(() => {
+    if (isResubmit && existingLoan) {
+      return {
+        ...tempLoanFormDefaults,
+        phoneNumber: initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
+        educationLevel:
+          savedEducationLevel ?? initialProfile?.educationLevel ?? tempLoanFormDefaults.educationLevel,
+        academicYear: String(existingLoan.studentYear ?? tempLoanFormDefaults.academicYear),
+        advisorName: existingLoan.advisorName || tempLoanFormDefaults.advisorName,
+        bankName: existingLoan.bankName || tempLoanFormDefaults.bankName,
+        accountNumber: existingLoan.bankAccountNo || tempLoanFormDefaults.accountNumber,
+        accountName: existingLoan.bankAccountName || tempLoanFormDefaults.accountName,
+        purpose: existingLoan.purpose || tempLoanFormDefaults.purpose,
+        additionalNote: existingLoan.additionalNote || "",
+        loanAmount: existingLoan.amount ? String(existingLoan.amount) : tempLoanFormDefaults.loanAmount,
+        installmentCount: (existingLoan.installmentCount as 1 | 2 | 3 | 4) || 1,
+      };
+    }
+
+    return {
+      ...tempLoanFormDefaults,
+      phoneNumber: initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
+      educationLevel:
+        savedEducationLevel ?? initialProfile?.educationLevel ?? tempLoanFormDefaults.educationLevel,
+    };
+  });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [touchedFields, setTouchedFields] = useState<
     Partial<Record<RequiredFormField, boolean>>
@@ -182,18 +280,136 @@ export default function TempLoanApplicationPage() {
     return step === currentStep ? styles.applicationStepActive : "";
   };
 
+  const handleConfirmSubmission = async () => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const cleanedPhone = formData.phoneNumber.trim().replace(/[-\s]/g, "");
+      if (cleanedPhone && /^0(?:[689]\d{8}|[23457]\d{7})$/.test(cleanedPhone)) {
+        try {
+          await fetch("/api/student/phone-number", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phoneNumber: cleanedPhone }),
+          });
+        } catch (err) {
+          console.warn("Could not sync phone number", err);
+        }
+      }
+
+      const payload = {
+        advisorName: formData.advisorName,
+        amount: Number(formData.loanAmount.replace(/,/g, "")),
+        studentYear: Number(formData.academicYear),
+        purpose: formData.purpose,
+        additionalNote:
+          formData.additionalNote === "-" || !formData.additionalNote.trim()
+            ? null
+            : formData.additionalNote.trim(),
+        bankName: formData.bankName,
+        bankAccountNo: formData.accountNumber,
+        bankAccountName: formData.accountName,
+        installmentCount: formData.installmentCount,
+      };
+
+      const endpoint =
+        isResubmit && existingLoan?.id
+          ? `/api/student/loan-requests/${existingLoan.id}/resubmit`
+          : "/api/student/loan-requests";
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        const mapped = mapStudentApiError(res.status, json, { isResubmit });
+        setSubmitError(mapped.message);
+        setSubmitErrorDetails(mapped);
+        if (mapped.field && mapped.field in requiredFormFields) {
+          const fieldKey = mapped.field as RequiredFormField;
+          setFormErrors((prev) => ({ ...prev, [fieldKey]: mapped.message }));
+        }
+        return;
+      }
+
+      const loan = json.data as RawStudentLoan;
+      setCreatedLoanData(loan);
+
+      if (!savedEducationLevel) {
+        saveStudentEducationLevel(formData.educationLevel);
+      }
+      setIsApprovalModalOpen(false);
+      setCurrentStep(3);
+    } catch (err) {
+      console.error("Submission failed", err);
+      const netErr = mapNetworkError(err);
+      setSubmitError(netErr.message);
+      setSubmitErrorDetails(netErr);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const advisorSelectOptions =
+    advisors.length > 0
+      ? advisors.map((name) => ({ label: name, value: name }))
+      : tempLoanFormOptions.advisors;
+
+  if (existingLoan && existingLoan.status !== "returned") {
+    return (
+      <main className={styles.studentPage}>
+        <TopNav
+          showSidebarButton={false}
+          userEmail={profile.contactEmail || `${profile.studentId}@cmu.ac.th`}
+          userId={profile.studentId}
+          userName={profile.displayName}
+          userRole="นักศึกษา"
+        />
+        <div className={styles.studentPageContent}>
+          <div className={styles.loanApplicationPage}>
+            <section
+              className={styles.loanFormCard}
+              style={{ textAlign: "center", padding: "3rem 1.5rem" }}
+            >
+              <h2 style={{ color: "#d97706", marginBottom: "1rem" }}>
+                คุณมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว
+              </h2>
+              <p style={{ color: "#4b5563", marginBottom: "2rem" }}>
+                ระบบอนุญาตให้มีคำร้องขอกู้ยืมที่เปิดอยู่ได้ครั้งละ 1 คำร้องเท่านั้น ท่านสามารถตรวจสอบสถานะคำร้องปัจจุบันได้ที่หน้าหลัก
+              </p>
+              <button
+                className={styles.loanApplicationDashboardButton}
+                onClick={() => router.push("/student")}
+                type="button"
+              >
+                <House aria-hidden="true" size={19} strokeWidth={2.2} />
+                กลับหน้าหลักเพื่อดูสถานะคำร้อง
+              </button>
+            </section>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className={styles.studentPage}>
       <TopNav
         showSidebarButton={false}
-        userEmail={`${tempStudentProfile.studentId}@cmu.ac.th`}
-        userId={tempStudentProfile.studentId}
-        userName={tempStudentProfile.displayName}
+        userEmail={profile.contactEmail || `${profile.studentId}@cmu.ac.th`}
+        userId={profile.studentId}
+        userName={profile.displayName}
         userRole="นักศึกษา"
       />
       <div className={styles.studentPageContent}>
         <div className={styles.loanApplicationPage}>
-        <h1 className={styles.loanApplicationTitle}>ยื่นคำร้องกู้ยืม</h1>
+        <h1 className={styles.loanApplicationTitle}>
+          {isResubmit ? "แก้ไขและยื่นคำร้องกู้ยืม" : "ยื่นคำร้องกู้ยืม"}
+        </h1>
 
         <ol className={styles.applicationStepper} aria-label="ขั้นตอนการยื่นคำร้องกู้ยืม">
           <li className={stepClassName(1)}>
@@ -246,6 +462,48 @@ export default function TempLoanApplicationPage() {
           <section className={styles.loanFormCard} aria-labelledby="loan-form-title">
             <h2 id="loan-form-title">ขั้นตอนที่ 2: กรอกข้อมูลการกู้ยืม</h2>
 
+            {isResubmit && existingLoan ? (
+              <section
+                style={{
+                  backgroundColor: "#fffbeb",
+                  border: "1px solid #fde68a",
+                  borderRadius: "0.75rem",
+                  padding: "1rem 1.25rem",
+                  marginBottom: "1.25rem",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
+                  <RotateCcw style={{ color: "#d97706", flexShrink: 0, marginTop: "2px" }} size={20} />
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ margin: "0 0 0.25rem 0", color: "#92400e", fontSize: "1rem", fontWeight: 700 }}>
+                      คำร้องขอกู้ยืมถูกส่งกลับเพื่อแก้ไข
+                    </h3>
+                    {existingLoan.returnComment ? (
+                      <div
+                        style={{
+                          margin: "0.5rem 0",
+                          padding: "0.75rem",
+                          backgroundColor: "#fef3c7",
+                          borderRadius: "0.375rem",
+                          borderLeft: "4px solid #d97706",
+                          color: "#78350f",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        <strong>
+                          ข้อความจาก{existingLoan.returnStep === "admin" ? "เจ้าหน้าที่" : "อาจารย์ที่ปรึกษา"}:
+                        </strong>{" "}
+                        {existingLoan.returnComment}
+                      </div>
+                    ) : null}
+                    <p style={{ margin: 0, color: "#b45309", fontSize: "0.875rem" }}>
+                      กรุณาแก้ไขข้อมูลให้ถูกต้องตามคำแนะนำ แล้วกดยืนยันเพื่อยื่นคำร้องใหม่อีกครั้ง
+                    </p>
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
             <section className={styles.loanFormStudentCard}>
               <CardHeader
                 className={styles.sectionCardHeading}
@@ -255,15 +513,15 @@ export default function TempLoanApplicationPage() {
               <div className={styles.loanFormStudentDetails}>
                 <p>
                   <span>ชื่อ-นามสกุล</span>
-                  <strong>{tempStudentProfile.displayName.replace("นางสาว", "").trim()}</strong>
+                  <strong>{profile.displayName.replace("นางสาว", "").trim()}</strong>
                 </p>
                 <p>
                   <span>รหัสนักศึกษา</span>
-                  <strong>{tempStudentProfile.studentId}</strong>
+                  <strong>{profile.studentId}</strong>
                 </p>
                 <p>
                   <span>หลักสูตร</span>
-                  <strong>{tempStudentProfile.programName}</strong>
+                  <strong>{profile.programName || "พยาบาลศาสตรบัณฑิต"}</strong>
                 </p>
               </div>
             </section>
@@ -336,7 +594,7 @@ export default function TempLoanApplicationPage() {
                   error={formErrors.advisorName}
                   onBlur={() => handleFieldBlur("advisorName")}
                   onChange={(value) => updateFormField("advisorName", value)}
-                  options={tempLoanFormOptions.advisors}
+                  options={advisorSelectOptions}
                   placeholder="เลือกอาจารย์ที่ปรึกษา"
                   value={formData.advisorName}
                 />
@@ -529,14 +787,18 @@ export default function TempLoanApplicationPage() {
             </div>
           </section>
         ) : (
-          <TempLoanDetailsStep formData={savedFormData} />
+          <TempLoanDetailsStep
+            createdLoan={createdLoanData}
+            formData={savedFormData}
+            profile={profile}
+          />
         )}
 
         {currentStep === 1 ? (
           <div className={styles.loanFormActions}>
             <button
               className={styles.loanApplicationHomeButton}
-              onClick={() => router.push("/student/loan")}
+              onClick={() => router.push("/student")}
               type="button"
             >
               <House aria-hidden="true" size={19} strokeWidth={2.2} />
@@ -570,16 +832,18 @@ export default function TempLoanApplicationPage() {
           </div>
         ) : (
           <div className={styles.loanFormActions}>
-            <button
-              className={styles.loanFormBack}
-              onClick={() => setCurrentStep(2)}
-              type="button"
-            >
-              กลับไปแก้ไขข้อมูล
-            </button>
+            {!createdLoanData ? (
+              <button
+                className={styles.loanFormBack}
+                onClick={() => setCurrentStep(2)}
+                type="button"
+              >
+                กลับไปแก้ไขข้อมูล
+              </button>
+            ) : null}
             <button
               className={styles.loanApplicationDashboardButton}
-              onClick={() => router.push("/student/loan")}
+              onClick={() => router.push("/student")}
               type="button"
             >
               <House aria-hidden="true" size={19} strokeWidth={2.2} />
@@ -592,15 +856,18 @@ export default function TempLoanApplicationPage() {
 
       {isApprovalModalOpen ? (
         <TempLoanApprovalModal
+          errorDetails={submitErrorDetails}
+          errorMessage={submitError}
           formData={savedFormData}
-          onClose={() => setIsApprovalModalOpen(false)}
-          onConfirm={() => {
-            if (!savedEducationLevel) {
-              saveStudentEducationLevel(formData.educationLevel);
-            }
+          isResubmit={isResubmit}
+          isSubmitting={isSubmitting}
+          onClose={() => {
+            setSubmitError(null);
+            setSubmitErrorDetails(null);
             setIsApprovalModalOpen(false);
-            setCurrentStep(3);
           }}
+          onConfirm={handleConfirmSubmission}
+          profile={profile}
         />
       ) : null}
     </main>

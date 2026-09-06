@@ -15,12 +15,9 @@ import UserRolesTab from "@/components/superadmin/setting/UserRolesTab";
 import SystemBudgetTab from "@/components/superadmin/setting/SystemBudgetTab";
 import FinancialOverview from "@/components/shared/financial/FinancialOverview";
 
-import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
 import type {
   ExecutiveFinancialOverviewData,
-  FinancialOverviewPoint,
 } from "@/lib/financial-overview-types";
-import { getMockExecutiveFinancialOverview } from "@/lib/mock-data/executive-financial-overview";
 import { Users, Wallet } from "lucide-react";
 import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 import type { SuperAdminUser } from "@/lib/loan-api-types";
@@ -43,22 +40,8 @@ export default function SuperAdminDashboard({
 }: SuperAdminDashboardProps = {}) {
 
   const requests = useMemo(() => {
-    if (initialRequests && initialRequests.length > 0) {
-      return initialRequests;
-    }
-    return mockAdminRequests as unknown as ActionRequest[];
+    return initialRequests ?? [];
   }, [initialRequests]);
-
-  // Fallback mock financial data if not passed from server
-  const fallbackOverview = useMemo(() => {
-    const mock = getMockExecutiveFinancialOverview();
-    return {
-      ...mock,
-      quarterly: (mock as unknown as { quarterly?: FinancialOverviewPoint[] }).quarterly ?? [],
-    } as ExecutiveFinancialOverviewData;
-  }, []);
-
-  const resolvedFinancialOverview = financialOverview ?? fallbackOverview;
 
   // แท็บย่อยสำหรับการตั้งค่าระบบ
   const [settingsSubTab, setSettingsSubTab] = useState<"users" | "budget">("users");
@@ -100,7 +83,7 @@ export default function SuperAdminDashboard({
           ===================================================== */}
           <section className="mb-10">
             <div className="w-full font-[family-name:var(--font-kanit)]">
-              <FinancialOverview initialData={resolvedFinancialOverview} />
+              <FinancialOverview initialData={financialOverview} />
             </div>
           </section>
 

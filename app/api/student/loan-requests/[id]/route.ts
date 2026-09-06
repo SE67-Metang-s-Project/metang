@@ -1,9 +1,7 @@
 import { apiError, apiOk } from "@/lib/api-response";
 import { getStudentContext } from "@/lib/loan-auth";
-import { isUuid } from "@/lib/loan-validation";
-import { prisma } from "@/lib/prisma";
-import { serializeJson } from "@/lib/serialization";
-import { studentLoanSelect } from "@/db/queries/loan-requests";
+import { isLoanId } from "@/lib/loan-validation";
+import { getStudentLoanDetail } from "@/db/queries/loan-requests";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -21,12 +19,9 @@ export async function GET(_request: Request, { params }: Params) {
   if (!context) return apiError("UNAUTHORIZED", "Authentication required", 401);
 
   const { id } = await params;
-  if (!isUuid(id)) return apiError("NOT_FOUND", "Loan request not found", 404);
+  if (!isLoanId(id)) return apiError("NOT_FOUND", "Loan request not found", 404);
 
-  const loan = await prisma.loanRequest.findFirst({
-    where: { id, studentId: context.user.id },
-    select: studentLoanSelect,
-  });
+  const loan = await getStudentLoanDetail(id, context.user.id);
   if (!loan) return apiError("NOT_FOUND", "Loan request not found", 404);
-  return apiOk(serializeJson(loan));
+  return apiOk(loan);
 }

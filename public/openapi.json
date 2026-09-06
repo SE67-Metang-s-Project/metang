@@ -1964,7 +1964,7 @@
               "decision": {
                 "type": "string",
                 "enum": [
-                  "returned"
+                  "rejected"
                 ],
                 "nullable": false
               },

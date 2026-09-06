@@ -11,8 +11,6 @@ import DisburseDebtCard from "@/components/shared/disburse-debt/DisburseDebtCard
 import VerifySlipCard from "@/components/shared/verify-slip/VerifySlipCard";
 import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
-import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
-
 type AdminDashboardProps = {
   userName?: string;
   initialRequests?: ActionRequest[];
@@ -23,10 +21,7 @@ export default function AdminDashboard({
   initialRequests,
 }: AdminDashboardProps = {}) {
   const requests = useMemo(() => {
-    if (initialRequests && initialRequests.length > 0) {
-      return initialRequests;
-    }
-    return mockAdminRequests as unknown as ActionRequest[];
+    return initialRequests ?? [];
   }, [initialRequests]);
 
   // =====================================================

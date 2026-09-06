@@ -4,10 +4,17 @@
 import React from "react";
 import SharedStudentList from "@/components/shared/students/SharedStudentList"; // เรียกตัวกลาง
 
-// สมมติว่าฝั่ง Executive ดึงข้อมูลนักศึกษาทั้งหมดในคณะ (ใช้ mockAdminRequests หรือ mock แยกต่างหาก)
-import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
+import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
-export default function ExecutiveStudentPage() {
+type ExecutiveStudentPageProps = {
+  initialRequests?: ActionRequest[];
+};
+
+export default function ExecutiveStudentPage({
+  initialRequests,
+}: ExecutiveStudentPageProps) {
+  const requests = initialRequests ?? [];
+
   return (
     <div className="space-y-6">
       <div>
@@ -20,7 +27,7 @@ export default function ExecutiveStudentPage() {
       </div>
 
       {/* เรียก Shared Component และส่งข้อมูลทั้งหมดเข้าไป */}
-      <SharedStudentList rawRequests={mockAdminRequests} />
+      <SharedStudentList rawRequests={requests} />
     </div>
   );
 }

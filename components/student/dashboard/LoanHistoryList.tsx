@@ -1,7 +1,6 @@
 import { History } from "lucide-react";
 import type { LoanRequestHistoryItem } from "@/app/student/studentMockData";
 import LoanHistoryCard from "./LoanHistoryCard";
-import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
 
 type LoanHistoryListProps = {
@@ -12,28 +11,23 @@ type LoanHistoryListProps = {
   sectionClassName?: string;
   showAllRequests: boolean;
   onShowMore: () => void;
-  onCorrectRequest?: (requestNumber: string) => void;
   onOpenRequest?: (requestNumber: string) => void;
 };
 
 export default function LoanHistoryList({
   initialVisibleCount = 3,
-  lessLabel,
-  moreLabel,
+  lessLabel = "ซ่อนรายละเอียด",
+  moreLabel = "ดูประวัติคำร้องทั้งหมด",
   requests,
   sectionClassName,
   showAllRequests,
   onShowMore,
-  onCorrectRequest,
   onOpenRequest,
 }: LoanHistoryListProps) {
-  const { t } = useStudentLanguage();
-  const resolvedLessLabel = lessLabel ?? t("ซ่อนรายละเอียด", "Show less");
-  const resolvedMoreLabel = moreLabel ?? t("ดูประวัติคำร้องทั้งหมด", "View all loan requests");
   const visibleRequests = showAllRequests
     ? requests
     : requests.slice(0, initialVisibleCount);
-  const buttonLabel = showAllRequests ? resolvedLessLabel : resolvedMoreLabel;
+  const buttonLabel = showAllRequests ? lessLabel : moreLabel;
   const iconClassName = [
     styles.showMoreIcon,
     showAllRequests ? styles.showMoreIconExpanded : "",
@@ -49,18 +43,23 @@ export default function LoanHistoryList({
       <header className={styles.sectionCardHeading}>
         <h2 id="history-title">
           <History aria-hidden="true" size={27} strokeWidth={2.2} />
-          {t("ประวัติคำร้องกู้ยืม", "Loan request history")}
+          ประวัติคำร้องกู้ยืม
         </h2>
       </header>
       <div className={styles.historyList}>
-        {visibleRequests.map((request, index) => (
-          <LoanHistoryCard
-            key={`${request.requestNumber}-${index}`}
-            onCorrectRequest={onCorrectRequest}
-            onOpenRequest={onOpenRequest}
-            request={request}
-          />
-        ))}
+        {visibleRequests.length > 0 ? (
+          visibleRequests.map((request, index) => (
+            <LoanHistoryCard
+              key={`${request.requestNumber}-${index}`}
+              onOpenRequest={onOpenRequest}
+              request={request}
+            />
+          ))
+        ) : (
+          <p style={{ textAlign: "center", color: "#6b7280", padding: "1.5rem 0", fontSize: "0.95rem" }}>
+            ยังไม่มีประวัติคำร้องกู้ยืม
+          </p>
+        )}
       </div>
 
       {requests.length > 3 ? (

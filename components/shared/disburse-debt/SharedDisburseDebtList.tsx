@@ -4,27 +4,16 @@
 import React, { useState, useEffect } from "react";
 import DisburseDebtCard, { ActionRequest } from "./DisburseDebtCard";
 import StudentFilters from "@/components/shared/filter/StudentFilters";
-// import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
-import { mockDisburseRequests } from "@/components/shared/mock-data/mockDisburseRequests";
 
 interface SharedDisburseDebtListProps {
-  userRole: "admin" | "super_admin";
+  userRole?: "admin" | "super_admin";
   initialRequests?: ActionRequest[];
 }
 
 export default function SharedDisburseDebtList({
-  userRole,
-  initialRequests,
+  initialRequests = [],
 }: SharedDisburseDebtListProps) {
-  const [requests, setRequests] = useState<ActionRequest[]>(
-    initialRequests && initialRequests.length > 0 ? initialRequests : mockDisburseRequests,
-  );
-
-  React.useEffect(() => {
-    if (initialRequests && initialRequests.length > 0) {
-      setRequests(initialRequests);
-    }
-  }, [initialRequests]);
+  const requests = initialRequests;
 
   // State สำหรับตัวกรอง
   const [activeTab, setActiveTab] = useState("ทั้งหมด");
@@ -72,7 +61,7 @@ export default function SharedDisburseDebtList({
       </div>
 
       {/* เรียกใช้งาน Card พร้อมส่งข้อมูลที่ถูกกรองแล้ว */}
-      <DisburseDebtCard requests={filteredRequests as any} />
+      <DisburseDebtCard requests={filteredRequests as unknown as ActionRequest[]} />
     </div>
   );
 }

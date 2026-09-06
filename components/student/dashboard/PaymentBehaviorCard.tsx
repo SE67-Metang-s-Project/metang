@@ -1,35 +1,66 @@
 import { CreditCard } from "lucide-react";
-import { paymentBehavior } from "@/app/student/studentMockData";
-import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
+import { paymentBehavior as defaultPaymentBehavior } from "@/app/student/studentMockData";
+import type { PaymentBehaviorDisplay } from "@/lib/student-view-model";
 import styles from "@/app/student/student.module.css";
 
-export default function PaymentBehaviorCard() {
-  const { t } = useStudentLanguage();
+type PaymentBehaviorCardProps = {
+  behavior?: PaymentBehaviorDisplay | null;
+};
+
+export default function PaymentBehaviorCard({ behavior }: PaymentBehaviorCardProps = {}) {
+  const currentBehavior = behavior ?? {
+    ...defaultPaymentBehavior,
+    hasHistory: true,
+  };
+
+  const isNeutral = !currentBehavior.hasHistory;
+  const isLate = currentBehavior.hasHistory && currentBehavior.lateInstallments > 0;
+
+  const statusBadgeStyle = isNeutral
+    ? {
+        borderColor: "#cbd5e1",
+        backgroundColor: "#f1f5f9",
+        color: "#475569",
+      }
+    : isLate
+    ? {
+        borderColor: "#fecaca",
+        backgroundColor: "#fef2f2",
+        color: "#dc2626",
+      }
+    : undefined;
+
   return (
-    <section className={styles.paymentBehavior} aria-label={t("พฤติกรรมการชำระเงิน", "Payment behavior")}>
+    <section className={styles.paymentBehavior} aria-label="พฤติกรรมการชำระเงิน">
       <header className={styles.behaviorHeading}>
         <h2>
           <CreditCard aria-hidden="true" size={27} strokeWidth={2.2} />
-          {t("พฤติกรรมการชำระเงิน", "Payment behavior")}
+          พฤติกรรมการชำระเงิน
         </h2>
-        <span className={styles.behaviorStatus}>
+        <span className={styles.behaviorStatus} style={statusBadgeStyle}>
           <i aria-hidden="true" />
-          {t(paymentBehavior.onTimeStatusLabel, "Paid on time")}
+          {currentBehavior.onTimeStatusLabel}
         </span>
       </header>
 
       <div className={styles.behaviorStats}>
         <div className={styles.behaviorStat}>
-          <span>{t("ประวัติกู้ยืม", "Loan history")}</span>
-          <strong>{paymentBehavior.totalLoanRequests} {t("ครั้ง", "requests")}</strong>
+          <span>ประวัติกู้ยืม</span>
+          <strong>{currentBehavior.totalLoanRequests} ครั้ง</strong>
         </div>
-        <div className={`${styles.behaviorStat} ${styles.behaviorStatOnTime}`}>
-          <span>{t("ตรงเวลา", "On time")}</span>
-          <strong>{paymentBehavior.onTimeInstallments} {t("งวด", "installments")}</strong>
+        <div
+          className={`${styles.behaviorStat} ${
+            currentBehavior.hasHistory && currentBehavior.onTimeInstallments > 0
+              ? styles.behaviorStatOnTime
+              : ""
+          }`}
+        >
+          <span>ตรงเวลา</span>
+          <strong>{currentBehavior.onTimeInstallments} งวด</strong>
         </div>
         <div className={styles.behaviorStat}>
-          <span>{t("ล่าช้า", "Late")}</span>
-          <strong>{paymentBehavior.lateInstallments} {t("งวด", "installments")}</strong>
+          <span>ล่าช้า</span>
+          <strong>{currentBehavior.lateInstallments} งวด</strong>
         </div>
       </div>
     </section>

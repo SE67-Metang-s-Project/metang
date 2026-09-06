@@ -2,8 +2,13 @@
 
 import React from "react";
 import RequestsListExecutive from "./RequestsList";
+import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
-export default function PendingExecutivePage() {
+type PendingExecutivePageProps = {
+  initialRequests?: ActionRequest[];
+};
+
+export default function PendingExecutivePage({ initialRequests }: PendingExecutivePageProps) {
   return (
     <div>
       <div className="mb-6">
@@ -15,7 +20,7 @@ export default function PendingExecutivePage() {
         </p>
       </div>
 
-      <RequestsListExecutive />
+      <RequestsListExecutive initialRequests={initialRequests} />
     </div>
   );
 }

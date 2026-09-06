@@ -1,7 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { House } from "lucide-react";
+import { House, Pencil } from "lucide-react";
 import type { LoanDetails } from "@/app/student/studentMockData";
 import ContactFooter from "./ContactFooter";
 import LoanDetailSchedule from "./LoanDetailSchedule";
@@ -10,10 +11,7 @@ import LoanPaymentHistory from "./LoanPaymentHistory";
 import LoanTimeline from "./LoanTimeline";
 import TempDetailCard from "./TempDetailCard";
 import TransferSlipModal from "./TransferSlipModal";
-import ReturnedRequestCorrectionForm from "@/components/student/corrections/ReturnedRequestCorrectionForm";
-import type { LoanInput } from "@/lib/loan-validation";
 import styles from "@/app/student/student.module.css";
-import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 
 type LoanDetailsPageProps = {
   details: LoanDetails;
@@ -21,29 +19,70 @@ type LoanDetailsPageProps = {
 };
 
 export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProps) {
-  const { t } = useStudentLanguage();
+  const router = useRouter();
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
-  const [isCorrectionOpen, setIsCorrectionOpen] = useState(false);
-  const [preparedAmount, setPreparedAmount] = useState<number | null>(null);
   const isWaitingForTransferConfirmation = details.statusLabel === "รอยืนยันการรับเงิน";
   const [isTransferAccepted, setIsTransferAccepted] = useState(!isWaitingForTransferConfirmation);
   const displayedDetails =
     isWaitingForTransferConfirmation && isTransferAccepted
-      ? { ...details, statusLabel: t("อยู่ระหว่างการชำระเงิน", "Payment in progress") }
+      ? { ...details, statusLabel: "อยู่ระหว่างการชำระเงิน" }
       : details;
 
-  const handleResubmit = (requestId: string, payload: LoanInput) => {
-    setPreparedAmount(payload.amount);
-    setIsCorrectionOpen(false);
-    void requestId;
-  };
+  const isReturned = details.statusCode === "returned" || details.statusLabel.includes("แก้ไข");
 
   return (
     <div className={styles.loanDetailsPage}>
-      <button aria-label={t("กลับหน้าหลัก", "Back to dashboard")} className={styles.loanDetailsBack} onClick={onBack} type="button">
+      <button aria-label="กลับหน้าหลัก" className={styles.loanDetailsBack} onClick={onBack} type="button">
         <House aria-hidden="true" size={17} />
-        {t("กลับหน้าหลัก", "Back to dashboard")}
+        กลับหน้าหลัก
       </button>
+
+      {isReturned ? (
+        <section
+          aria-labelledby="returned-notice-title"
+          style={{
+            backgroundColor: "#fffbeb",
+            border: "1px solid #fde68a",
+            borderRadius: "0.75rem",
+            padding: "1rem 1.25rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "1rem",
+            boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+          }}
+        >
+          <div>
+            <h3 id="returned-notice-title" style={{ color: "#92400e", fontSize: "1rem", fontWeight: 700, margin: "0 0 0.25rem 0" }}>
+              คำร้องนี้ถูกส่งกลับเพื่อแก้ไข
+            </h3>
+            <p style={{ color: "#b45309", fontSize: "0.875rem", margin: 0 }}>
+              กรุณาตรวจสอบเหตุผลจากผู้พิจารณาในขั้นตอนติดตามสถานะ แล้วกดแก้ไขข้อมูลเพื่อยื่นใหม่อีกครั้ง
+            </p>
+          </div>
+          <button
+            onClick={() => router.push("/student/loan/apply")}
+            type="button"
+            style={{
+              backgroundColor: "#d97706",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "0.5rem",
+              padding: "0.6rem 1.2rem",
+              fontWeight: 600,
+              fontSize: "0.875rem",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem",
+            }}
+          >
+            <Pencil aria-hidden="true" size={16} />
+            แก้ไขและยื่นคำร้องใหม่
+          </button>
+        </section>
+      ) : null}
 
       <LoanDetailOverview details={displayedDetails} />
 
@@ -51,20 +90,8 @@ export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProp
         items={details.timeline}
         isTransferAccepted={isTransferAccepted}
         onConfirmTransfer={() => setIsTransferAccepted(true)}
-        onStartCorrection={details.correction ? () => setIsCorrectionOpen(true) : undefined}
         onShowTransferSlip={() => setIsSlipModalOpen(true)}
-        showCorrectionAction={Boolean(details.correction)}
       />
-      {preparedAmount !== null ? (
-        <div className={styles.preparedResubmitNotice} role="status">
-          <span>
-            {t("ข้อมูลที่แก้ไขพร้อมส่งจำนวน", "Corrected request is ready to submit for")} {preparedAmount.toLocaleString("th-TH")} {t("บาท เมื่อเชื่อมต่อระบบแล้ว", "THB once API wiring is connected")}
-          </span>
-          <button aria-label={t("ปิดข้อความ", "Dismiss message")} onClick={() => setPreparedAmount(null)} type="button">
-            ×
-          </button>
-        </div>
-      ) : null}
       <TempDetailCard />
       <LoanDetailSchedule items={details.schedule} />
       <LoanPaymentHistory items={details.paymentHistory} />
@@ -73,13 +100,6 @@ export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProp
         <TransferSlipModal
           imageSrc={details.transferSlipImage}
           onClose={() => setIsSlipModalOpen(false)}
-        />
-      ) : null}
-      {isCorrectionOpen && details.correction ? (
-        <ReturnedRequestCorrectionForm
-          correction={details.correction}
-          onClose={() => setIsCorrectionOpen(false)}
-          onResubmit={handleResubmit}
         />
       ) : null}
     </div>

@@ -19,7 +19,7 @@ export type LoanDecisionInput = {
   comment: string | null;
 };
 
-export type ExecutiveDecision = "approved" | "returned";
+export type ExecutiveDecision = "approved" | "rejected";
 
 export type ExecutiveDecisionInput = {
   decision: ExecutiveDecision;
@@ -156,7 +156,7 @@ export function parseExecutiveDecisionInput(value: unknown): ExecutiveDecisionIn
   }
 
   const input = value as Record<string, unknown>;
-  if (input.decision !== "approved" && input.decision !== "returned") {
+  if (input.decision !== "approved" && input.decision !== "rejected") {
     throw new Error("decision is invalid");
   }
 
@@ -166,10 +166,17 @@ export function parseExecutiveDecisionInput(value: unknown): ExecutiveDecisionIn
 
 export function parsePhoneNumber(value: unknown) {
   if (typeof value !== "string") throw new Error("phoneNumber is invalid");
-  if (!/^0(?:6|8|9)\d{8}$/.test(value)) throw new Error("phoneNumber is invalid");
-  return value;
+  const cleaned = value.trim().replace(/[-\s]/g, "");
+  if (!/^0(?:[689]\d{8}|[23457]\d{7})$/.test(cleaned)) throw new Error("phoneNumber is invalid");
+  return cleaned;
 }
 
 export function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+export function isLoanId(value: string) {
+  if (typeof value !== "string") return false;
+  const trimmed = value.trim();
+  return isUuid(trimmed) || /^REQ[A-Za-z0-9_-]+$/i.test(trimmed);
 }

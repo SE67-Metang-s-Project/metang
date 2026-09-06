@@ -268,3 +268,17 @@ export async function syncUserFromCmuProfile(profile: CmuProfile) {
     return newUser;
   });
 }
+
+export async function listAdvisors() {
+  return prisma.appUser.findMany({
+    where: {
+      roles: { some: { role: UserRoleName.advisor } },
+    },
+    select: {
+      id: true,
+      fullNameTh: true,
+      fullNameEn: true,
+    },
+    orderBy: { fullNameTh: "asc" },
+  });
+}

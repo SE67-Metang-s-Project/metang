@@ -5,7 +5,7 @@ import {
 import { apiError, apiOk } from "@/lib/api-response";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { getAdminAccess } from "@/lib/loan-auth";
-import { isUuid, parseAdminDecisionInput } from "@/lib/loan-validation";
+import { isLoanId, parseAdminDecisionInput } from "@/lib/loan-validation";
 import { serializeJson } from "@/lib/serialization";
 import { validateJsonRequest } from "@/lib/request-security";
 
@@ -49,7 +49,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const { id } = await params;
-  if (!isUuid(id)) return apiError("NOT_FOUND", "Loan request not found", 404);
+  if (!isLoanId(id)) return apiError("NOT_FOUND", "Loan request not found", 404);
 
   try {
     const loan = await decideAdminLoanRequest({

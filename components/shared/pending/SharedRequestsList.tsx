@@ -4,7 +4,6 @@
 import React, { useState } from "react";
 import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
 import RequestsCard, { ActionRequest, UserRole } from "@/components/shared/pending/RequestsCard";
-import { mockAdminRequests } from "@/components/shared/mock-data/mockAdminRequests";
 
 interface SharedRequestsListProps {
   userRole: UserRole; // <--- รับ Role เข้ามาเพื่อตัดสินใจว่าจะ filter สถานะไหน
@@ -21,13 +20,7 @@ export default function SharedRequestsList({
 }: SharedRequestsListProps) {
   const [filter, setFilter] = useState<FilterStatus>("pending");
   const [searchQuery, setSearchQuery] = useState("");
-  const baseRequests = React.useMemo(() => {
-    if (initialRequests && initialRequests.length > 0) {
-      return initialRequests;
-    }
-    return mockAdminRequests as unknown as ActionRequest[];
-  }, [initialRequests]);
-  const [requests] = useState<ActionRequest[]>(baseRequests);
+  const requests = initialRequests ?? [];
 
   // ฟังก์ชันเช็คว่า Role นี้ต้องดูคำร้องสถานะไหน
   const getTargetPendingStatus = (role: UserRole) => {

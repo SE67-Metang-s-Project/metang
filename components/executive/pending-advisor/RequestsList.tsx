@@ -3,13 +3,44 @@
 import React, { useState } from "react";
 import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
-import { mockAdvisorRequests } from "@/components/shared/mock-data/mockAdvisorRequests";
 
-export default function RequestsList() {
+interface RequestsListProps {
+  initialRequests?: ActionRequest[];
+}
+
+export default function RequestsList({ initialRequests }: RequestsListProps = {}) {
   const [filter, setFilter] = useState<FilterStatus>("pending");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [requests, setRequests] = useState<ActionRequest[]>(mockAdvisorRequests);
+  const baseRequests = React.useMemo(() => {
+    return initialRequests ?? [];
+  }, [initialRequests]);
+
+  const [requests, setRequests] = useState<ActionRequest[]>(baseRequests);
+  const [prevInitialRequests, setPrevInitialRequests] = useState<ActionRequest[] | undefined>(initialRequests);
+
+  if (initialRequests !== prevInitialRequests) {
+    setPrevInitialRequests(initialRequests);
+    setRequests(baseRequests);
+  }
+
+  const handleRequestDecided = (requestId: string, decision: string) => {
+    setRequests((prev) =>
+      prev.map((req) => {
+        if (req.id !== requestId) return req;
+        const nextStatus =
+          decision === "approved"
+            ? "pending_admin"
+            : decision === "returned"
+              ? "returned"
+              : "rejected";
+        return {
+          ...req,
+          requestStatus: nextStatus,
+        };
+      }),
+    );
+  };
 
   // นับจำนวนรายการที่รอ Advisor พิจารณา
   const pendingCount = requests.filter((req) => req.requestStatus === "pending_advisor").length;
@@ -59,7 +90,11 @@ export default function RequestsList() {
         pendingLabel="รอพิจารณา" // ตั้งชื่อแท็บให้เข้ากับ Advisor
       />
 
-      <RequestsCard requests={filteredRequests} userRole="advisor" />
+      <RequestsCard
+        requests={filteredRequests}
+        userRole="advisor"
+        onRequestDecided={handleRequestDecided}
+      />
     </div>
   );
 }

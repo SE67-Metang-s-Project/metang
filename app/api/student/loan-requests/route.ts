@@ -9,9 +9,7 @@ import {
   getStudentSessionContext,
   resolveStoredStudent,
 } from "@/lib/loan-auth";
-import { studentLoanSelect } from "@/db/queries/loan-requests";
-
-
+import { getStudentLoanList, studentLoanDetailSelect } from "@/db/queries/loan-requests";
 
 /**
  * List the current student's loan requests.
@@ -28,12 +26,8 @@ export async function GET() {
   const user = await resolveStoredStudent(context.identity);
   if (!user) return apiOk([]);
 
-  const loans = await prisma.loanRequest.findMany({
-    where: { studentId: user.id },
-    select: studentLoanSelect,
-    orderBy: { createdAt: "desc" },
-  });
-  return apiOk(serializeJson(loans));
+  const loans = await getStudentLoanList(user.id);
+  return apiOk(loans);
 }
 
 /**
@@ -151,7 +145,7 @@ export async function POST(request: Request) {
           after: serializeJson(created),
         },
       });
-      return tx.loanRequest.findUniqueOrThrow({ where: { id: created.id }, select: studentLoanSelect });
+      return tx.loanRequest.findUniqueOrThrow({ where: { id: created.id }, select: studentLoanDetailSelect });
     });
 
     return apiOk(serializeJson(loan), 201);

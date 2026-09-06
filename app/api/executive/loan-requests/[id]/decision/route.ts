@@ -5,7 +5,7 @@ import {
 import { Prisma } from "@/lib/generated/prisma/client";
 import { apiError, apiOk } from "@/lib/api-response";
 import { getExecutiveAccess } from "@/lib/loan-auth";
-import { isUuid, parseExecutiveDecisionInput } from "@/lib/loan-validation";
+import { isLoanId, parseExecutiveDecisionInput } from "@/lib/loan-validation";
 import { serializeJson } from "@/lib/serialization";
 import { validateJsonRequest } from "@/lib/request-security";
 
@@ -39,7 +39,7 @@ export async function POST(request: Request, { params }: Params) {
     return apiError("VALIDATION_ERROR", error instanceof Error ? error.message : "Invalid request", 422);
   }
   const { id } = await params;
-  if (!isUuid(id)) return apiError("NOT_FOUND", "Loan request not found", 404);
+  if (!isLoanId(id)) return apiError("NOT_FOUND", "Loan request not found", 404);
 
   try {
     const loan = await decideExecutiveLoanRequest({
