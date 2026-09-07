@@ -81,11 +81,6 @@ export default function LoanSummaryCard({
           <span style={{ width: `${transferPercent}%` }} />
           <b style={{ left: `${transferPercent}%` }} />
         </div>
-        <p>
-          {"isDisbursed" in currentLoan && currentLoan.isDisbursed
-            ? `ชำระงวดที่ ${currentLoan.nextInstallmentNumber ?? 1} ก่อนวันที่ ${currentLoan.nextDueDate ?? "-"}`
-            : currentLoan.statusLabel}
-        </p>
       </div>
 
       <div className={styles.summaryFooter}>

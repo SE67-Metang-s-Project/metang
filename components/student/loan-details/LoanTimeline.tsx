@@ -41,8 +41,8 @@ export default function LoanTimeline({
   const hasItems = items && items.length > 0;
   const hasActions = hasItems && Boolean(onShowTransferSlip || shouldShowConfirmation);
   const currentItemIndex = items.reduce(
-    (currentIndex, item, index) => (item.isPending ? index : currentIndex),
-    items.length - 1,
+    (currentIndex, item, index) => (item.isUpcoming ? currentIndex : index),
+    -1,
   );
 
   return (
@@ -62,7 +62,11 @@ export default function LoanTimeline({
             <li className={styles.loanTimelineItem} key={item.title}>
               <span
                 aria-hidden="true"
-                className={`${styles.timelineMarker} ${item.isPending ? styles.timelineMarkerPending : ""}`}
+                className={`${styles.timelineMarker} ${item.isPending ? styles.timelineMarkerPending : ""} ${
+                  item.isUpcoming ? styles.timelineMarkerUpcoming : ""
+                } ${
+                  item.isFailed ? styles.timelineMarkerFailed : ""
+                }`}
               />
               <div className={styles.timelineContent}>
                 <strong>{item.title}</strong>
@@ -105,8 +109,8 @@ export default function LoanTimeline({
           <p style={{ margin: "0 0 0.25rem 0", fontSize: "14px", fontWeight: 500 }}>
             ไม่มีคำร้องขอกู้ยืมที่อยู่ระหว่างดำเนินการ
           </p>
-          <span style={{ fontSize: "14px", color: "#9ca3af" }}>
-            เมื่อท่านยื่นคำร้องกู้ยืม จะสามารถติดตามสถานะขั้นตอนการพิจารณาได้ที่นี่
+          <span style={{ color: "#9ca3af", fontSize: "14px" }}>
+            การติดตามสถานะจะแสดงที่นี่เมื่อมีการยื่นคำร้อง
           </span>
         </div>
       )}

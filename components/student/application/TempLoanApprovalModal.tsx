@@ -1,6 +1,6 @@
 import type { TempLoanFormData } from "@/app/student/temp/tempMockData";
 import { tempStudentProfile } from "@/app/student/temp/tempMockData";
-import { formatThaiBahtText } from "@/app/student/studentFormatters";
+import { formatThaiBahtText, parseLoanAmount } from "@/app/student/studentFormatters";
 import { HandCoins, Landmark, UserRound, X } from "lucide-react";
 import styles from "@/app/student/student.module.css";
 import CardHeader from "@/components/shared/CardHeader";
@@ -31,7 +31,7 @@ export default function TempLoanApprovalModal({
   isResubmit = false,
 }: TempLoanApprovalModalProps) {
   const currentProfile = profile ?? tempStudentProfile;
-  const loanAmount = Number(formData.loanAmount) || 0;
+  const loanAmount = parseLoanAmount(formData.loanAmount);
   const installmentAmount = Math.floor(loanAmount / formData.installmentCount);
   const installmentRemainder = loanAmount % formData.installmentCount;
   const schedule = Array.from({ length: formData.installmentCount }, (_, index) => {

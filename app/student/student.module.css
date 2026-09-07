@@ -9,8 +9,16 @@
   font-size: 14px;
 }
 
+.studentPageNoLoan {
+  background-image: linear-gradient(180deg, #e0f2fe 0%, transparent 34%);
+}
+
 .studentPageContent {
-  padding: 24px 20px 48px;
+  padding: 24px 175px 48px;
+}
+
+.studentDetailPageContent {
+  padding: 12px 12px 28px;
 }
 
 @media (max-width: 639px) {
@@ -26,6 +34,10 @@
   .studentPageContent {
     padding: 16px;
   }
+
+  .studentDetailPageContent {
+    padding: 10px 12px 24px;
+  }
 }
 
 .studentPage button {
@@ -40,7 +52,7 @@
   display: grid;
   gap: 12px;
   width: 100%;
-  max-width: 1180px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
@@ -312,7 +324,9 @@
   cursor: pointer;
   font-size: 14px;
   line-height: 1.6;
-  transition: border-color 160ms ease, background-color 160ms ease;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
 }
 
 .loanAgreementAcceptance input {
@@ -517,7 +531,29 @@
 .loanFormFields {
   display: grid;
   gap: 14px;
+}
+
+.loanFormSections {
+  display: grid;
+  gap: 16px;
   margin-top: 17px;
+}
+
+.loanFormSection {
+  display: grid;
+  gap: 14px;
+  padding: 15px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 15px;
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 7%);
+}
+
+.loanFormSectionTitle {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: 17px;
+  font-weight: 600;
 }
 
 .loanFormField {
@@ -569,7 +605,10 @@
   cursor: pointer;
   font: inherit;
   text-align: left;
-  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
 }
 
 .loanFormSelectTrigger:hover:not(:disabled) {
@@ -588,6 +627,21 @@
 
 .loanFormSelectTriggerSelected {
   color: var(--color-heading);
+}
+
+.loanFormSelectValue {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+}
+
+.loanFormSelectLogo {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 5px;
+  object-fit: contain;
 }
 
 .loanFormSelectChevronOpen {
@@ -1454,13 +1508,6 @@
   background: var(--color-progress-marker-core);
 }
 
-.loanProgressCard p {
-  margin: 0;
-  color: var(--color-summary-amount-secondary);
-  font-size: 14px;
-  font-weight: 400;
-}
-
 .summaryFooter {
   justify-content: space-between;
   align-items: flex-start;
@@ -2076,7 +2123,10 @@
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .installmentAction:not(:disabled):hover {
@@ -2633,6 +2683,10 @@
   overflow-wrap: anywhere;
 }
 
+.contactFooterPrimaryItem {
+  white-space: nowrap;
+}
+
 .contactFooterNarrowBreak {
   display: none;
 }
@@ -2733,7 +2787,7 @@
   display: grid;
   gap: 14px;
   width: 100%;
-  max-width: 760px;
+  max-width: 900px;
   margin: 0 auto;
   padding-bottom: 8px;
   font-size: 14px;
@@ -3093,6 +3147,38 @@
 
 .timelineMarkerPending::after {
   display: none;
+}
+
+.timelineMarkerUpcoming {
+  border: 3px solid #cbd5e1;
+  background: #f8fafc;
+}
+
+.timelineMarkerUpcoming::after {
+  display: none;
+}
+
+.timelineMarkerFailed {
+  background: #dc2626;
+}
+
+.timelineMarkerFailed::before,
+.timelineMarkerFailed::after {
+  position: absolute;
+  width: 12px;
+  height: 2px;
+  border: 0;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+}
+
+.timelineMarkerFailed::before {
+  transform: rotate(45deg);
+}
+
+.timelineMarkerFailed::after {
+  transform: rotate(-45deg);
 }
 
 .loanTimelineItem:has(+ .loanTimelineItem > .timelineMarkerPending)::before {
@@ -3764,10 +3850,14 @@
   inset: 0;
   border-radius: inherit;
   background:
-    linear-gradient(to right, var(--color-detail-orange-border) 0 14px, transparent 14px 22px) top / 22px 2px repeat-x,
-    linear-gradient(to right, var(--color-detail-orange-border) 0 14px, transparent 14px 22px) bottom / 22px 2px repeat-x,
-    linear-gradient(to bottom, var(--color-detail-orange-border) 0 14px, transparent 14px 22px) left / 2px 22px repeat-y,
-    linear-gradient(to bottom, var(--color-detail-orange-border) 0 14px, transparent 14px 22px) right / 2px 22px repeat-y;
+    linear-gradient(to right, var(--color-detail-orange-border) 0 14px, transparent 14px 22px) top /
+      22px 2px repeat-x,
+    linear-gradient(to right, var(--color-detail-orange-border) 0 14px, transparent 14px 22px)
+      bottom / 22px 2px repeat-x,
+    linear-gradient(to bottom, var(--color-detail-orange-border) 0 14px, transparent 14px 22px)
+      left / 2px 22px repeat-y,
+    linear-gradient(to bottom, var(--color-detail-orange-border) 0 14px, transparent 14px 22px)
+      right / 2px 22px repeat-y;
   content: "";
   pointer-events: none;
 }
@@ -3896,7 +3986,7 @@
 
   .studentContent {
     gap: 18px;
-    max-width: none;
+    max-width: 900px;
   }
 
   .loanApplicationPage {
@@ -3945,6 +4035,14 @@
     gap: 24px;
   }
 
+  .contactFooterTwoLineItem .contactFooterNarrowBreak {
+    display: block;
+  }
+
+  .contactFooterTwoLineItem span {
+    white-space: nowrap;
+  }
+
   .studentPage {
     padding: 0;
   }
@@ -3957,7 +4055,7 @@
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
     gap: 24px;
-    max-width: 1600px;
+    max-width: 900px;
   }
 
   .studentHeader {
@@ -4004,7 +4102,6 @@
   .contactFooterNarrowBreak {
     display: none;
   }
-
 }
 
 @media (max-width: 713px) {

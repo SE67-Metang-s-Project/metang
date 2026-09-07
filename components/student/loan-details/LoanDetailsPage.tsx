@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { House, Pencil } from "lucide-react";
+import { House, Pencil, X } from "lucide-react";
 import type { LoanDetails } from "@/app/student/studentMockData";
 import ContactFooter from "./ContactFooter";
 import LoanDetailSchedule from "./LoanDetailSchedule";
@@ -26,8 +26,9 @@ export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProp
   const isWaitingForTransferConfirmation = details.statusLabel === "รอยืนยันการรับเงิน";
   const [isTransferAccepted, setIsTransferAccepted] = useState(!isWaitingForTransferConfirmation);
   const hasAdminTransferredFunds =
-    ["pending_disbursement", "disbursed", "closed"].includes(details.statusCode ?? "") ||
+    ["disbursed", "closed"].includes(details.statusCode ?? "") ||
     details.timeline.some((item) => Boolean(item.transferDetails));
+  const displayedTimeline = details.timeline.filter((item) => !item.isUpcoming);
   const isRepaymentInProgress =
     details.statusCode === "disbursed" || details.statusLabel.includes("อยู่ระหว่างการชำระ");
   const displayedDetails =
@@ -115,9 +116,11 @@ export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProp
       <LoanDetailOverview details={displayedDetails} showDownload={hasAdminTransferredFunds} />
 
       <LoanTimeline
-        items={details.timeline}
+        items={displayedTimeline}
         isTransferAccepted={isTransferAccepted}
-        onConfirmTransfer={() => setIsTransferAccepted(true)}
+        onConfirmTransfer={
+          hasAdminTransferredFunds ? () => setIsTransferAccepted(true) : undefined
+        }
         onShowTransferSlip={hasAdminTransferredFunds ? () => setIsSlipModalOpen(true) : undefined}
         onCancelRequest={() => setIsCancelDialogOpen(true)}
         showCancelRequest={canCancelRequest}
@@ -143,10 +146,13 @@ export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProp
             className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
             role="alertdialog"
           >
-            <h2 className="text-xl font-bold text-gray-900" id="cancel-request-title">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
+              <X aria-hidden="true" size={28} strokeWidth={2.5} />
+            </div>
+            <h2 className="mt-4 text-center text-xl font-bold text-gray-900" id="cancel-request-title">
               ยืนยันการยกเลิกคำร้อง
             </h2>
-            <p className="mt-2 text-sm leading-6 text-gray-600">
+            <p className="mt-2 text-center text-sm leading-6 text-gray-600">
               เมื่อยกเลิกแล้ว คำร้องนี้จะไม่สามารถดำเนินการต่อได้
             </p>
             <div className="mt-6 grid grid-cols-2 gap-3">

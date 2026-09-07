@@ -32,8 +32,8 @@ export default function LoanDetailSchedule({ items = [] }: LoanDetailSchedulePro
           <p style={{ margin: "0 0 0.25rem 0", fontSize: "14px", fontWeight: 500 }}>
             ยังไม่มีตารางการชำระเงิน
           </p>
-          <span style={{ fontSize: "14px", color: "#9ca3af" }}>
-            ตารางการชำระจะแสดงข้อมูลงวดและกำหนดชำระเมื่อมีคำร้องกู้ยืม
+          <span style={{ color: "#9ca3af", fontSize: "14px" }}>
+            สถานะการพิจารณาจะแสดงที่นี่เมื่อมีการยื่นคำร้อง
           </span>
         </div>
       )}

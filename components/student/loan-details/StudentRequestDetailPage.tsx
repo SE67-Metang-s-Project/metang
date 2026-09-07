@@ -30,7 +30,7 @@ export default function StudentRequestDetailPage({ details, profile }: StudentRe
         userName={currentProfile.displayName}
         userRole="นักศึกษา"
       />
-      <div className={styles.studentPageContent}>
+      <div className={`${styles.studentPageContent} ${styles.studentDetailPageContent}`}>
         <LoanDetailsPage details={details} onBack={() => router.push("/student")} />
       </div>
     </main>

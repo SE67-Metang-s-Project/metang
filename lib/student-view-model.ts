@@ -341,6 +341,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
         commentTitle: commentTitle || undefined,
         comment: app.comment || undefined,
         isCompleted: app.decision === "approved",
+        isFailed: app.decision === "rejected",
       });
     }
   }
@@ -350,36 +351,50 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
       title: "ยกเลิกคำร้อง",
       dateTime: formatThaiDateTime(loan.cancelledAt),
       actor: "นักศึกษา",
-      isCompleted: true,
+      isFailed: true,
     });
   }
 
-  const pendingSteps: Partial<Record<LoanStatus, { title: string; actor: string }>> = {
+  const pendingSteps: Partial<
+    Record<LoanStatus, { title: string; actor: string; next?: { title: string; actor: string } }>
+  > = {
     pending_advisor: {
       title: "อาจารย์ที่ปรึกษาพิจารณาคำร้อง",
       actor: loan.advisor?.fullNameTh ?? "อาจารย์ที่ปรึกษา",
+      next: { title: "เจ้าหน้าที่ตรวจสอบเอกสาร", actor: "เจ้าหน้าที่" },
     },
     pending_admin: {
       title: "เจ้าหน้าที่ตรวจสอบเอกสาร",
       actor: "เจ้าหน้าที่",
+      next: { title: "ผู้บริหารพิจารณาอนุมัติคำร้อง", actor: "ผู้บริหาร" },
     },
     pending_executive: {
       title: "ผู้บริหารพิจารณาอนุมัติคำร้อง",
       actor: "ผู้บริหาร",
+      next: { title: "เจ้าหน้าที่การเงินดำเนินการโอนเงิน", actor: "เจ้าหน้าที่การเงิน" },
     },
     pending_disbursement: {
       title: "เจ้าหน้าที่การเงินยืนยันการโอนเงิน",
       actor: "เจ้าหน้าที่การเงิน",
+      next: { title: "ได้รับเงินกู้และเริ่มชำระคืน", actor: "นักศึกษา" },
     },
   };
   const pendingStep = pendingSteps[loan.status];
 
   if (pendingStep) {
+    const { next, ...currentStep } = pendingStep;
     timeline.push({
-      ...pendingStep,
-      dateTime: "ขั้นตอนถัดไป",
+      ...currentStep,
+      dateTime: "กำลังดำเนินการ",
       isPending: true,
     });
+    if (next) {
+      timeline.push({
+        ...next,
+        dateTime: "ขั้นตอนถัดไป",
+        isUpcoming: true,
+      });
+    }
   }
 
   // Disbursed

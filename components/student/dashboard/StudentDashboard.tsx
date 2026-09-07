@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle2, LogIn, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle2, LogIn, RefreshCw, X } from "lucide-react";
 import {
   activeLoan as defaultActiveLoan,
   installmentPayments as defaultInstallmentPayments,
@@ -73,6 +73,8 @@ export default function StudentDashboard({
   const [dashboardError, setDashboardError] = useState<StudentUiError | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const activeTimeline = timeline ?? [];
+  const dashboardTimeline = activeTimeline.filter((item) => !item.isUpcoming);
 
   useEffect(() => {
     if (initialActiveLoan !== undefined && initialHistoryRequests !== undefined && refreshKey === 0) {
@@ -195,7 +197,7 @@ export default function StudentDashboard({
   const currentInstallments = installments ?? defaultInstallmentPayments;
 
   return (
-    <main className={styles.studentPage}>
+    <main className={`${styles.studentPage} ${!currentActiveLoan ? styles.studentPageNoLoan : ""}`}>
       <TopNav
         userName={profile.displayName}
         userId={profile.studentId}
@@ -256,7 +258,7 @@ export default function StudentDashboard({
           <PaymentBehaviorCard behavior={paymentBehaviorData} />
 
           <LoanTimeline
-            items={timeline ?? []}
+            items={dashboardTimeline}
             onCancelRequest={() => setIsCancelDialogOpen(true)}
             showCancelRequest={Boolean(currentActiveLoan)}
           />
@@ -324,10 +326,13 @@ export default function StudentDashboard({
             className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
             role="alertdialog"
           >
-            <h2 className="text-xl font-bold text-gray-900" id="dashboard-cancel-request-title">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
+              <X aria-hidden="true" size={28} strokeWidth={2.5} />
+            </div>
+            <h2 className="mt-4 text-center text-xl font-bold text-gray-900" id="dashboard-cancel-request-title">
               ยืนยันการยกเลิกคำร้อง
             </h2>
-            <p className="mt-2 text-sm leading-6 text-gray-600">
+            <p className="mt-2 text-center text-sm leading-6 text-gray-600">
               เมื่อยกเลิกแล้ว คำร้องนี้จะไม่สามารถดำเนินการต่อได้
             </p>
             <div className="mt-6 grid grid-cols-2 gap-3">

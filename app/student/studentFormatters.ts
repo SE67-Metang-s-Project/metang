@@ -50,3 +50,12 @@ export function formatThaiBahtText(amount: string): string {
   const baht = Math.floor(numericAmount);
   return `${formatThaiInteger(baht)}บาทไทยถ้วน`;
 }
+
+export function formatLoanAmountInput(amount: string): string {
+  const numericValue = amount.replace(/\D/g, "");
+  return numericValue ? Number(numericValue).toLocaleString("en-US") : "";
+}
+
+export function parseLoanAmount(amount: string): number {
+  return Number(amount.replace(/,/g, "")) || 0;
+}
