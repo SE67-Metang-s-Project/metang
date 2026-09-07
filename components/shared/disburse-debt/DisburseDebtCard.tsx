@@ -8,13 +8,11 @@ import {
   Wallet,
   FileText,
   CheckCircle2,
-  Clock,
   History,
   CreditCard,
   Phone,
   Landmark,
   CalendarDays,
-  ShieldAlert,
   MessageSquare,
   SearchX,
   Copy,
@@ -78,6 +76,16 @@ export type ApprovalStep = {
   date: string;
 };
 
+export type PaymentHistoryRecord = {
+  id?: string;
+  status?: string;
+  installmentNumber: number;
+  amount: number | string;
+  dueDate?: string;
+  paidDate?: string;
+  slipUrl?: string;
+};
+
 export type ActionRequest = StudentInfo &
   LoanDetails &
   RequestStatus & {
@@ -85,7 +93,7 @@ export type ActionRequest = StudentInfo &
     requestStatus: string;
     paymentBehavior?: PaymentBehaviorInfo;
     approvals?: ApprovalStep[];
-    paymentHistory?: any[];
+    paymentHistory?: PaymentHistoryRecord[];
     slipUrl?: string; // รองรับการแสดงรูปสลิป
   };
 
@@ -121,14 +129,14 @@ function calculateInstallments(
   startDateStr: string,
   termStr: string,
   amountStr: string,
-  paymentHistory?: any[],
+  paymentHistory?: PaymentHistoryRecord[],
 ) {
   const termsCount = parseInt(termStr, 10) || 0;
   const totalAmount = parseFloat(amountStr) || 0;
   if (termsCount === 0 || !startDateStr) return [];
 
   const baseAmount = totalAmount / termsCount;
-  let schedule = Array.from({ length: termsCount }, (_, i) => ({
+  const schedule = Array.from({ length: termsCount }, (_, i) => ({
     installmentNumber: i + 1,
     expectedAmount: baseAmount,
     isPaid: false,
@@ -604,6 +612,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   // โหมดดูข้อมูล
                   <div className="relative rounded-xl border border-gray-200 bg-gray-50 p-2 flex justify-center items-center min-h-[200px]">
                     {selectedRequest.slipUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={selectedRequest.slipUrl}
                         alt="slip proof"
@@ -621,6 +630,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   <>
                     {uploadedSlip ? (
                       <div className="relative rounded-xl border-2 border-dashed border-green-300 bg-green-50 p-2 flex justify-center items-center h-48 group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={uploadedSlip}
                           alt="slip preview"

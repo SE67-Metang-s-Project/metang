@@ -4,11 +4,12 @@
 import React, { useState } from "react";
 import StudentFilters from "@/components/shared/filter/StudentFilters";
 import StudentListTable, { Student } from "./StudentListItem";
+import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
 const filterTabs = ["ทั้งหมด", "มีคำร้องดำเนินการ", "มีหนี้คงเหลือ", "ชำระครบ", "เคยชำระล่าช้า"];
 
 interface SharedStudentListProps {
-  rawRequests: any[];
+  rawRequests: ActionRequest[];
 }
 
 // ----------------------------------------------------

@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 
-import SideNav from "@/components/shared/SidebarNav";
-import TopNav from "@/components/shared/TopNav";
 import WelcomeCard from "@/components/shared/WelcomeCard";
-
 import SharedRequestsList from "@/components/shared/pending/SharedRequestsList";
-import DisburseDebtCard from "@/components/shared/disburse-debt/DisburseDebtCard";
-import VerifySlipCard from "@/components/shared/verify-slip/VerifySlipCard";
+import DisburseDebtCard, {
+  type ActionRequest as DisburseActionRequest,
+} from "@/components/shared/disburse-debt/DisburseDebtCard";
+import VerifySlipCard, {
+  type ActionRequest as VerifySlipActionRequest,
+} from "@/components/shared/verify-slip/VerifySlipCard";
 import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
 type AdminDashboardProps = {
@@ -25,28 +26,21 @@ export default function AdminDashboard({
   }, [initialRequests]);
 
   // =====================================================
-  // 1. คำร้องที่รอ Admin พิจารณา
-  // =====================================================
-  const pendingRequests = useMemo(() => {
-    return requests.filter((req) => req.requestStatus === "pending_admin");
-  }, [requests]);
-
-  // =====================================================
-  // 2. รายการที่ผู้บริหารอนุมัติแล้ว และรอ Admin โอนเงิน
+  // 1. รายการที่ผู้บริหารอนุมัติแล้ว และรอ Admin โอนเงิน
   // =====================================================
   const disbursementRequests = useMemo(() => {
     return requests.filter((req) => req.requestStatus === "pending_disbursement");
   }, [requests]);
 
   // =====================================================
-  // 3. รายการที่มีสลิป และสลิปนั้นยังรอตรวจสอบ
+  // 2. รายการที่มีสลิป และสลิปนั้นยังรอตรวจสอบ
   // =====================================================
   const verifySlipRequests = useMemo(() => {
     return requests.filter((req) => {
       return (
         Array.isArray(req.paymentHistory) &&
         req.paymentHistory.some(
-          (payment: any) => payment.status === "pending" || payment.status === "pending_review"
+          (payment) => payment.status === "pending" || payment.status === "pending_review"
         )
       );
     });
@@ -90,7 +84,9 @@ export default function AdminDashboard({
         />
 
         {disbursementRequests.length > 0 ? (
-          <DisburseDebtCard requests={disbursementRequests as any} />
+          <DisburseDebtCard
+            requests={disbursementRequests as unknown as DisburseActionRequest[]}
+          />
         ) : (
           <EmptyState
             icon="💸"
@@ -111,7 +107,10 @@ export default function AdminDashboard({
         />
 
         {verifySlipRequests.length > 0 ? (
-          <VerifySlipCard requests={verifySlipRequests as any} userRole="admin" />
+          <VerifySlipCard
+            requests={verifySlipRequests as unknown as VerifySlipActionRequest[]}
+            userRole="admin"
+          />
         ) : (
           <EmptyState
             icon="🧾"
@@ -120,40 +119,6 @@ export default function AdminDashboard({
           />
         )}
       </section>
-    </div>
-  );
-}
-
-/* =====================================================
-   Dashboard Stat Card
-===================================================== */
-
-function DashboardStatCard({
-  title,
-  value,
-  description,
-  icon,
-}: {
-  title: string;
-  value: number;
-  description: string;
-  icon: string;
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-gray-500 mb-2">{title}</p>
-
-          <p className="text-3xl font-bold text-[#1e293b]">{value}</p>
-
-          <p className="text-xs text-gray-400 mt-2">{description}</p>
-        </div>
-
-        <div className="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center text-xl">
-          {icon}
-        </div>
-      </div>
     </div>
   );
 }

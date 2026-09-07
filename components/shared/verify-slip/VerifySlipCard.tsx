@@ -628,6 +628,7 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
             <div className="flex flex-col md:flex-row flex-1 overflow-hidden bg-gray-50/50">
               {/* ซ้าย: รูป */}
               <div className="w-full md:w-1/2 p-6 flex flex-col items-center justify-center bg-gray-100/50 min-h-[300px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={selectedEvidence.slipImageUrl}
                   alt="slip"

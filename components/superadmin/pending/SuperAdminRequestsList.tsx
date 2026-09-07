@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
