@@ -56,6 +56,7 @@ export type LoanTimelineItem = {
   commentTitle?: string;
   comment?: string;
   isCompleted?: boolean;
+  isPending?: boolean;
   transferDetails?: string[];
 };
 

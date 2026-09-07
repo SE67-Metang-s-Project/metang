@@ -85,7 +85,15 @@ export default function LoanFormSelect({
       </button>
 
       {isOpen ? (
-        <div className={styles.loanFormSelectMenu} role="listbox">
+        <div
+          className={styles.loanFormSelectMenu}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsOpen(false);
+            }
+          }}
+          role="listbox"
+        >
           {options.map((option) => (
             <button
               aria-selected={option.value === value}

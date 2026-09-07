@@ -56,6 +56,8 @@ export default function StudentDashboard({
   const [showAllRequests, setShowAllRequests] = useState(false);
   const [activePayment, setActivePayment] = useState<InstallmentPayment | null>(null);
   const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const preservedScrollPosition = useRef<number | null>(null);
   const router = useRouter();
 
@@ -166,6 +168,28 @@ export default function StudentDashboard({
     setIsPaymentSuccessOpen(true);
   };
 
+  const handleCancelRequest = async () => {
+    if (!currentActiveLoan?.id) return;
+
+    setIsCancelling(true);
+    try {
+      const response = await fetch(`/api/student/loan-requests/${currentActiveLoan.id}/cancel`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        window.alert("ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง");
+        return;
+      }
+
+      setIsCancelDialogOpen(false);
+      setRefreshKey((key) => key + 1);
+    } catch {
+      window.alert("ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   const displayedRequests = historyRequests ?? defaultLoanRequestHistory;
   const currentActiveLoan = activeLoanData === undefined ? defaultActiveLoan : activeLoanData;
   const currentInstallments = installments ?? defaultInstallmentPayments;
@@ -231,7 +255,11 @@ export default function StudentDashboard({
 
           <PaymentBehaviorCard behavior={paymentBehaviorData} />
 
-          <LoanTimeline items={timeline ?? []} />
+          <LoanTimeline
+            items={timeline ?? []}
+            onCancelRequest={() => setIsCancelDialogOpen(true)}
+            showCancelRequest={Boolean(currentActiveLoan)}
+          />
 
           <LoanDetailSchedule items={schedule ?? []} />
 
@@ -282,6 +310,44 @@ export default function StudentDashboard({
             >
               ตกลง
             </button>
+          </section>
+        </div>
+      ) : null}
+      {isCancelDialogOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
+          role="presentation"
+        >
+          <section
+            aria-labelledby="dashboard-cancel-request-title"
+            aria-modal="true"
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+            role="alertdialog"
+          >
+            <h2 className="text-xl font-bold text-gray-900" id="dashboard-cancel-request-title">
+              ยืนยันการยกเลิกคำร้อง
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              เมื่อยกเลิกแล้ว คำร้องนี้จะไม่สามารถดำเนินการต่อได้
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <button
+                className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
+                disabled={isCancelling}
+                onClick={() => setIsCancelDialogOpen(false)}
+                type="button"
+              >
+                กลับ
+              </button>
+              <button
+                className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+                disabled={isCancelling}
+                onClick={handleCancelRequest}
+                type="button"
+              >
+                {isCancelling ? "กำลังยกเลิก..." : "ยืนยันยกเลิก"}
+              </button>
+            </div>
           </section>
         </div>
       ) : null}

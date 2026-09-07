@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { House, RotateCcw, UserRound } from "lucide-react";
+import { FileClock, House, RotateCcw, UserRound } from "lucide-react";
 import {
   tempLoanAgreement,
   tempLoanFormDefaults,
@@ -375,7 +375,10 @@ export default function TempLoanApplicationPage({
               className={styles.loanFormCard}
               style={{ textAlign: "center", padding: "3rem 1.5rem" }}
             >
-              <h2 style={{ color: "#d97706", marginBottom: "1rem" }}>
+              <span className={styles.existingLoanIconCircle}>
+                <FileClock aria-hidden="true" className={styles.existingLoanIcon} size={70} strokeWidth={1.8} />
+              </span>
+              <h2 className={styles.existingLoanTitle}>
                 คุณมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว
               </h2>
               <p style={{ color: "#4b5563", marginBottom: "2rem" }}>

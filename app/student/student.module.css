@@ -434,6 +434,31 @@
   content: "";
 }
 
+.loanFormCard > .existingLoanTitle {
+  display: block;
+  margin-bottom: 1rem;
+  color: var(--color-heading);
+  font-size: 19px;
+}
+
+.loanFormCard > .existingLoanTitle::before {
+  display: none;
+}
+
+.existingLoanIconCircle {
+  display: grid;
+  width: 108px;
+  height: 108px;
+  margin: 0 auto 38px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-detail-orange-soft);
+}
+
+.existingLoanIcon {
+  color: var(--color-detail-orange-dark);
+}
+
 .loanFormStudentCard,
 .loanApprovalInfoCard {
   padding: 15px 14px;
@@ -2289,18 +2314,15 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-.returnedCorrectionHeading > svg {
-  color: var(--color-detail-orange);
-}
-
 .returnedCorrectionHeading p,
 .returnedCorrectionHeading h2 {
   margin: 0;
 }
 
 .returnedCorrectionHeading p {
-  color: var(--color-detail-muted);
-  font-size: 14px;
+  color: var(--color-heading);
+  font-size: 20px;
+  line-height: 1.35;
 }
 
 .returnedCorrectionHeading h2 {
@@ -2344,7 +2366,7 @@
 }
 
 .returnedAdvisorComment + .loanFormCard {
-  margin: 18px 22px 0;
+  margin: 18px 22px 18px;
 }
 
 .returnedCorrectionHint {
@@ -2611,10 +2633,14 @@
   overflow-wrap: anywhere;
 }
 
+.contactFooterNarrowBreak {
+  display: none;
+}
+
 .contactFooterCopyIcon {
-  width: 21px !important;
-  height: 21px !important;
-  flex: 0 0 21px !important;
+  width: 16px !important;
+  height: 16px !important;
+  flex: 0 0 16px !important;
   margin-left: 4px;
   color: var(--color-contact-footer-icon) !important;
 }
@@ -2634,8 +2660,8 @@
 }
 
 .contactFooterCopyButton svg {
-  width: 21px;
-  height: 21px;
+  width: 16px;
+  height: 16px;
 }
 
 .showMore,
@@ -2783,6 +2809,13 @@
   min-width: 0;
 }
 
+.loanDetailOverviewHeader .historyStatus {
+  position: static;
+  flex: 0 0 auto;
+  max-width: 100%;
+  text-align: center;
+}
+
 .loanDetailSummary {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -2862,6 +2895,29 @@
   line-height: 1.4;
   overflow-wrap: anywhere;
   text-align: right;
+}
+
+.loanDetailSubmittedAt {
+  justify-self: end;
+}
+
+.loanTimelineCancelButton {
+  display: flex;
+  width: fit-content;
+  margin: 10px 0 0 auto;
+  padding: 7px 11px;
+  border: 1px solid #dc2626;
+  border-radius: 8px;
+  background: #dc2626;
+  color: var(--color-surface);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.loanTimelineCancelButton:hover {
+  background: #b91c1c;
 }
 
 .loanDetailInfoList > .loanDetailAdditionalNoteLong {
@@ -3028,6 +3084,20 @@
   border-radius: 0 0 2px;
   content: "";
   transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.timelineMarkerPending {
+  border: 3px solid var(--color-detail-orange);
+  background: var(--color-detail-orange-soft);
+}
+
+.timelineMarkerPending::after {
+  display: none;
+}
+
+.loanTimelineItem:has(+ .loanTimelineItem > .timelineMarkerPending)::before {
+  width: 3px;
+  background: var(--color-detail-orange);
 }
 
 .timelineContent {
@@ -3291,6 +3361,26 @@
 .paymentHistoryList {
   display: grid;
   gap: 7px;
+}
+
+.paymentHistoryEmpty {
+  display: grid;
+  min-height: 156px;
+  place-items: center;
+  align-content: center;
+  gap: 9px;
+  color: var(--color-detail-muted);
+  text-align: center;
+}
+
+.paymentHistoryEmpty svg {
+  color: var(--color-detail-orange);
+}
+
+.paymentHistoryEmpty p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .paymentHistoryCard {
@@ -3843,11 +3933,18 @@
   }
 
   .contactFooterItem {
-    align-items: flex-start;
+    align-items: center;
   }
 }
 
 @media (min-width: 1024px) {
+  .contactFooterGrid {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 24px;
+  }
+
   .studentPage {
     padding: 0;
   }
@@ -3888,6 +3985,39 @@
     grid-column: 1;
     grid-row: auto;
     margin-top: 0;
+  }
+}
+
+@media (max-width: 1327px) {
+  .contactFooterNarrowBreak {
+    display: block;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1154px) {
+  .contactFooterGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .contactFooterNarrowBreak {
+    display: none;
+  }
+
+}
+
+@media (max-width: 713px) {
+  .contactFooterGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .contactFooterNarrowBreak {
+    display: none;
+  }
+
+  .contactFooterItem span {
+    white-space: nowrap;
   }
 }
 

@@ -81,7 +81,7 @@ export default function TopNav({
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 pr-4 sm:gap-3">
           {language && onLanguageChange ? (
             <div aria-label="Language selector" className="flex overflow-hidden rounded-lg border border-gray-200 text-sm font-semibold">
               <button

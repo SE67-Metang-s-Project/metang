@@ -21,14 +21,42 @@ type LoanDetailsPageProps = {
 export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProps) {
   const router = useRouter();
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const isWaitingForTransferConfirmation = details.statusLabel === "รอยืนยันการรับเงิน";
   const [isTransferAccepted, setIsTransferAccepted] = useState(!isWaitingForTransferConfirmation);
+  const hasAdminTransferredFunds =
+    ["pending_disbursement", "disbursed", "closed"].includes(details.statusCode ?? "") ||
+    details.timeline.some((item) => Boolean(item.transferDetails));
+  const isRepaymentInProgress =
+    details.statusCode === "disbursed" || details.statusLabel.includes("อยู่ระหว่างการชำระ");
   const displayedDetails =
     isWaitingForTransferConfirmation && isTransferAccepted
       ? { ...details, statusLabel: "อยู่ระหว่างการชำระเงิน" }
       : details;
 
   const isReturned = details.statusCode === "returned" || details.statusLabel.includes("แก้ไข");
+  const canCancelRequest = !["closed", "rejected", "cancelled"].includes(details.statusCode ?? "");
+
+  const handleCancelRequest = async () => {
+    if (!details.id) return;
+
+    setIsCancelling(true);
+    try {
+      const response = await fetch(`/api/student/loan-requests/${details.id}/cancel`, { method: "POST" });
+      if (!response.ok) {
+        window.alert("ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง");
+        return;
+      }
+
+      setIsCancelDialogOpen(false);
+      router.refresh();
+    } catch {
+      window.alert("ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   return (
     <div className={styles.loanDetailsPage}>
@@ -84,23 +112,63 @@ export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProp
         </section>
       ) : null}
 
-      <LoanDetailOverview details={displayedDetails} />
+      <LoanDetailOverview details={displayedDetails} showDownload={hasAdminTransferredFunds} />
 
       <LoanTimeline
         items={details.timeline}
         isTransferAccepted={isTransferAccepted}
         onConfirmTransfer={() => setIsTransferAccepted(true)}
-        onShowTransferSlip={() => setIsSlipModalOpen(true)}
+        onShowTransferSlip={hasAdminTransferredFunds ? () => setIsSlipModalOpen(true) : undefined}
+        onCancelRequest={() => setIsCancelDialogOpen(true)}
+        showCancelRequest={canCancelRequest}
       />
       <TempDetailCard />
       <LoanDetailSchedule items={details.schedule} />
-      <LoanPaymentHistory items={details.paymentHistory} />
+      {isRepaymentInProgress ? <LoanPaymentHistory items={details.paymentHistory} /> : null}
       <ContactFooter />
       {isSlipModalOpen ? (
         <TransferSlipModal
           imageSrc={details.transferSlipImage}
           onClose={() => setIsSlipModalOpen(false)}
         />
+      ) : null}
+      {isCancelDialogOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
+          role="presentation"
+        >
+          <section
+            aria-labelledby="cancel-request-title"
+            aria-modal="true"
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+            role="alertdialog"
+          >
+            <h2 className="text-xl font-bold text-gray-900" id="cancel-request-title">
+              ยืนยันการยกเลิกคำร้อง
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              เมื่อยกเลิกแล้ว คำร้องนี้จะไม่สามารถดำเนินการต่อได้
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <button
+                className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
+                disabled={isCancelling}
+                onClick={() => setIsCancelDialogOpen(false)}
+                type="button"
+              >
+                กลับ
+              </button>
+              <button
+                className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+                disabled={isCancelling}
+                onClick={handleCancelRequest}
+                type="button"
+              >
+                {isCancelling ? "กำลังยกเลิก..." : "ยืนยันยกเลิก"}
+              </button>
+            </div>
+          </section>
+        </div>
       ) : null}
     </div>
   );
