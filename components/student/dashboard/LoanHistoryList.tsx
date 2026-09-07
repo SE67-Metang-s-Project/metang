@@ -56,7 +56,7 @@ export default function LoanHistoryList({
             />
           ))
         ) : (
-          <p style={{ textAlign: "center", color: "#6b7280", padding: "1.5rem 0", fontSize: "0.95rem" }}>
+          <p style={{ textAlign: "center", color: "#6b7280", padding: "1.5rem 0", fontSize: "14px" }}>
             ยังไม่มีประวัติคำร้องกู้ยืม
           </p>
         )}

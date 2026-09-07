@@ -63,7 +63,7 @@ export default function LoanSummaryCard({
               .join(" · ")}
           </p>
         </div>
-        {medicalBag}
+        {/* {medicalBag} */}
       </div>
 
       <div className={styles.loanLabels}>

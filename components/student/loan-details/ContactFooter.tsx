@@ -43,11 +43,17 @@ export default function ContactFooter() {
         </a>
         <div className={styles.contactFooterItem}>
           <MapPin aria-hidden="true" />
-          <span>{loanContact.location}</span>
+          <span>
+            ชั้น 1 อาคารเทพรัตน์
+            <br className={styles.contactFooterNarrowBreak} /> คณะพยาบาลศาสตร์ มช.
+          </span>
         </div>
         <div className={styles.contactFooterItem}>
           <Clock3 aria-hidden="true" />
-          <span>{loanContact.openingHours}</span>
+          <span>
+            จันทร์-ศุกร์
+            <br className={styles.contactFooterNarrowBreak} /> 08:30 - 16:30 น.
+          </span>
         </div>
       </div>
     </footer>

@@ -37,7 +37,7 @@ export default function LoanHistoryCard({
     >
       <div>
         <div className={styles.historyCardTitle}>
-          <strong>{t("คำร้อง", "Request")} {request.requestNumber}</strong>
+          <strong>{request.requestNumber}</strong>
           <span className={`${styles.historyStatus} ${styles[request.statusType]}`}>
             ● {localizeStudentContent(request.statusLabel, language)}
           </span>

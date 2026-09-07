@@ -13,16 +13,9 @@ export default function PaymentBehaviorCard({ behavior }: PaymentBehaviorCardPro
     hasHistory: true,
   };
 
-  const isNeutral = !currentBehavior.hasHistory;
   const isLate = currentBehavior.hasHistory && currentBehavior.lateInstallments > 0;
 
-  const statusBadgeStyle = isNeutral
-    ? {
-        borderColor: "#cbd5e1",
-        backgroundColor: "#f1f5f9",
-        color: "#475569",
-      }
-    : isLate
+  const statusBadgeStyle = isLate
     ? {
         borderColor: "#fecaca",
         backgroundColor: "#fef2f2",
@@ -37,10 +30,12 @@ export default function PaymentBehaviorCard({ behavior }: PaymentBehaviorCardPro
           <CreditCard aria-hidden="true" size={27} strokeWidth={2.2} />
           พฤติกรรมการชำระเงิน
         </h2>
-        <span className={styles.behaviorStatus} style={statusBadgeStyle}>
-          <i aria-hidden="true" />
-          {currentBehavior.onTimeStatusLabel}
-        </span>
+        {currentBehavior.hasHistory ? (
+          <span className={styles.behaviorStatus} style={statusBadgeStyle}>
+            <i aria-hidden="true" />
+            {currentBehavior.onTimeStatusLabel}
+          </span>
+        ) : null}
       </header>
 
       <div className={styles.behaviorStats}>

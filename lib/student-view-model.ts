@@ -21,15 +21,15 @@ const statusDisplayMap: Record<LoanStatus, StatusDisplay> = {
     statusType: "pending",
   },
   returned: {
-    label: "ส่งกลับแก้ไข",
+    label: "รอแก้ไขเอกสาร",
     statusType: "revisionRequired",
   },
   pending_advisor: {
-    label: "รออาจารย์ที่ปรึกษาพิจารณา",
+    label: "รออาจารย์ที่ปรึกษาอนุมัติ",
     statusType: "waitingAdvisorApproval",
   },
   pending_admin: {
-    label: "รอเจ้าหน้าที่ตรวจสอบเอกสาร",
+    label: "รอเจ้าหน้าที่ตรวจสอบ",
     statusType: "waitingDocumentReview",
   },
   pending_executive: {
@@ -45,7 +45,7 @@ const statusDisplayMap: Record<LoanStatus, StatusDisplay> = {
     statusType: "pending",
   },
   closed: {
-    label: "เสร็จสิ้น (ชำระครบแล้ว)",
+    label: "ชำระเสร็จสิ้น",
     statusType: "completed",
   },
   rejected: {
@@ -140,6 +140,7 @@ export type RawStudentLoan = {
   firstDueDate: string | Date;
   status: LoanStatus;
   submittedAt?: string | Date | null;
+  cancelledAt?: string | Date | null;
   disbursedAt?: string | Date | null;
   closedAt?: string | Date | null;
   createdAt?: string | Date;
@@ -153,6 +154,28 @@ export type RawStudentLoan = {
   payments?: RawPayment[];
 };
 
+const rejectionRoleByStep: Record<RawLoanApproval["step"], string> = {
+  advisor: "อาจารย์ที่ปรึกษา",
+  admin: "เจ้าหน้าที่",
+  executive: "ผู้บริหาร",
+};
+
+function getRejectedStatusLabel(loan: RawStudentLoan, fallbackLabel: string) {
+  if (loan.status !== "rejected") return fallbackLabel;
+
+  const rejectedApproval = [...(loan.approvals ?? [])]
+    .sort((a, b) => {
+      const timeA = a.decidedAt ? new Date(a.decidedAt).getTime() : 0;
+      const timeB = b.decidedAt ? new Date(b.decidedAt).getTime() : 0;
+      return timeB - timeA;
+    })
+    .find((approval) => approval.decision === "rejected");
+
+  return rejectedApproval
+    ? `ไม่อนุมัติ · ${rejectionRoleByStep[rejectedApproval.step]}`
+    : fallbackLabel;
+}
+
 export function formatRequestNumber(id: string): string {
   return id;
 }
@@ -161,6 +184,7 @@ export function mapToLoanRequestHistoryItem(loan: RawStudentLoan): LoanRequestHi
   const display = mapLoanStatus(loan.status);
   const effectiveAmount = loan.approvedAmount ?? loan.amount;
   const isDisbursed = loan.status === "disbursed" || loan.status === "closed";
+  const statusLabel = getRejectedStatusLabel(loan, display.label);
 
   let amountString = `${effectiveAmount.toLocaleString("th-TH")} บาท`;
   if (isDisbursed && loan.installments && loan.installments.length > 0) {
@@ -170,7 +194,7 @@ export function mapToLoanRequestHistoryItem(loan: RawStudentLoan): LoanRequestHi
 
   return {
     requestNumber: formatRequestNumber(loan.id),
-    statusLabel: display.label,
+    statusLabel,
     statusType: display.statusType,
     submittedAt: formatThaiDateTime(loan.submittedAt ?? loan.createdAt),
     purpose: loan.purpose,
@@ -244,6 +268,7 @@ export function mapToInstallmentPayments(installments: RawInstallment[] = []): I
 
 export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
   const display = mapLoanStatus(loan.status);
+  const statusLabel = getRejectedStatusLabel(loan, display.label);
   const effectiveAmount = loan.approvedAmount ?? loan.amount;
 
   const timeline: LoanTimelineItem[] = [];
@@ -276,6 +301,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
       actorName = app.decider?.fullNameTh ?? loan.advisor?.fullNameTh ?? "อาจารย์ที่ปรึกษา";
       if (app.decision === "approved") {
         stepTitle = "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ";
+        commentTitle = "ความคิดเห็นของอาจารย์ที่ปรึกษา";
       } else if (app.decision === "returned") {
         stepTitle = "อาจารย์ที่ปรึกษาส่งกลับแก้ไข";
         commentTitle = "ข้อความจากอาจารย์ที่ปรึกษา";
@@ -319,6 +345,43 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     }
   }
 
+  if (loan.cancelledAt) {
+    timeline.push({
+      title: "ยกเลิกคำร้อง",
+      dateTime: formatThaiDateTime(loan.cancelledAt),
+      actor: "นักศึกษา",
+      isCompleted: true,
+    });
+  }
+
+  const pendingSteps: Partial<Record<LoanStatus, { title: string; actor: string }>> = {
+    pending_advisor: {
+      title: "อาจารย์ที่ปรึกษาพิจารณาคำร้อง",
+      actor: loan.advisor?.fullNameTh ?? "อาจารย์ที่ปรึกษา",
+    },
+    pending_admin: {
+      title: "เจ้าหน้าที่ตรวจสอบเอกสาร",
+      actor: "เจ้าหน้าที่",
+    },
+    pending_executive: {
+      title: "ผู้บริหารพิจารณาอนุมัติคำร้อง",
+      actor: "ผู้บริหาร",
+    },
+    pending_disbursement: {
+      title: "เจ้าหน้าที่การเงินยืนยันการโอนเงิน",
+      actor: "เจ้าหน้าที่การเงิน",
+    },
+  };
+  const pendingStep = pendingSteps[loan.status];
+
+  if (pendingStep) {
+    timeline.push({
+      ...pendingStep,
+      dateTime: "ขั้นตอนถัดไป",
+      isPending: true,
+    });
+  }
+
   // Disbursed
   if (loan.disbursedAt) {
     timeline.push({
@@ -335,7 +398,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     schedule = loan.installments.map((inst) => ({
       installmentNumber: inst.seq,
       dueDateLabel: `ครบกำหนด ${formatThaiDate(inst.dueDate)}`,
-      amount: `${inst.amountDue.toLocaleString("th-TH")} บาท`,
+      amount: inst.amountDue.toLocaleString("th-TH"),
     }));
   } else {
     // Estimated schedule
@@ -351,7 +414,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
       return {
         installmentNumber: idx + 1,
         dueDateLabel: `ครบกำหนด ${formatThaiDate(d)}`,
-        amount: `${amount.toLocaleString("th-TH")} บาท`,
+        amount: amount.toLocaleString("th-TH"),
       };
     });
   }
@@ -371,7 +434,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     id: loan.id,
     statusCode: loan.status,
     requestNumber: formatRequestNumber(loan.id),
-    statusLabel: display.label,
+    statusLabel,
     submittedAt: formatThaiDateTime(loan.submittedAt ?? loan.createdAt),
     purposeLabel: "วัตถุประสงค์การกู้ยืม",
     purpose: loan.purpose,

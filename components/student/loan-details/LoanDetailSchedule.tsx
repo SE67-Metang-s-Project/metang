@@ -29,10 +29,10 @@ export default function LoanDetailSchedule({ items = [] }: LoanDetailSchedulePro
         </div>
       ) : (
         <div style={{ textAlign: "center", padding: "1.5rem 1rem", color: "#6b7280" }}>
-          <p style={{ margin: "0 0 0.25rem 0", fontSize: "0.95rem", fontWeight: 500 }}>
+          <p style={{ margin: "0 0 0.25rem 0", fontSize: "14px", fontWeight: 500 }}>
             ยังไม่มีตารางการชำระเงิน
           </p>
-          <span style={{ fontSize: "0.85rem", color: "#9ca3af" }}>
+          <span style={{ fontSize: "14px", color: "#9ca3af" }}>
             ตารางการชำระจะแสดงข้อมูลงวดและกำหนดชำระเมื่อมีคำร้องกู้ยืม
           </span>
         </div>
