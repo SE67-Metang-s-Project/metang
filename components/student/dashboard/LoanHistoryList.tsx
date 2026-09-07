@@ -47,13 +47,19 @@ export default function LoanHistoryList({
         </h2>
       </header>
       <div className={styles.historyList}>
-        {visibleRequests.map((request, index) => (
-          <LoanHistoryCard
-            key={`${request.requestNumber}-${index}`}
-            onOpenRequest={onOpenRequest}
-            request={request}
-          />
-        ))}
+        {visibleRequests.length > 0 ? (
+          visibleRequests.map((request, index) => (
+            <LoanHistoryCard
+              key={`${request.requestNumber}-${index}`}
+              onOpenRequest={onOpenRequest}
+              request={request}
+            />
+          ))
+        ) : (
+          <p style={{ textAlign: "center", color: "#6b7280", padding: "1.5rem 0", fontSize: "0.95rem" }}>
+            ยังไม่มีประวัติคำร้องกู้ยืม
+          </p>
+        )}
       </div>
 
       {requests.length > 3 ? (

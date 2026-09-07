@@ -35,6 +35,7 @@ export default function TransferSlipModal({ imageSrc, onClose }: TransferSlipMod
           <X aria-hidden="true" size={20} />
         </button>
         <div className={styles.transferSlipImageFrame}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img alt="รูปสลิปการโอนเงินจากเจ้าหน้าที่" src={imageSrc} />
         </div>
       </section>

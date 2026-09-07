@@ -1,5 +1,8 @@
 import SuperAdminDashboard from "@/components/superadmin/dashboard/SuperAdminDashboard";
-import { getExecutiveFinancialOverviewData } from "@/db/queries/financial-overview";
+import {
+  getExecutiveFinancialOverviewData,
+  getZeroFinancialOverview,
+} from "@/db/queries/financial-overview";
 import { getAdminActionRequests } from "@/db/queries/loan-requests";
 import { listUsersWithRoles } from "@/db/queries/users";
 import { requireSuperAdminAccess } from "@/lib/loan-auth";
@@ -13,7 +16,7 @@ export default async function SuperAdminPage() {
   const [financialOverview, rawRequests, rawUsers] = await Promise.all([
     getExecutiveFinancialOverviewData().catch((error) => {
       console.error("Unable to load financial overview from DB for SuperAdmin", error);
-      return undefined;
+      return getZeroFinancialOverview();
     }),
     getAdminActionRequests().catch((error) => {
       console.error("Unable to load admin action requests for SuperAdmin dashboard", error);

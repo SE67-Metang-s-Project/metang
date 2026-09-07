@@ -1,18 +1,11 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import WelcomeCard from "@/components/shared/WelcomeCard";
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
 import StudentListTable, { Student } from "@/components/shared/students/StudentListItem";
 import {
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  Users,
-  ArrowRight,
-  GraduationCap,
-  FileText,
   ChevronRight,
   ShieldCheck,
 } from "lucide-react";
@@ -48,10 +41,12 @@ export default function AdvisorDashboard({
   initialRequests = [],
 }: AdvisorDashboardProps) {
   const [requests, setRequests] = useState<ActionRequest[]>(initialRequests);
+  const [prevInitialRequests, setPrevInitialRequests] = useState<ActionRequest[]>(initialRequests);
 
-  useEffect(() => {
+  if (initialRequests !== prevInitialRequests) {
+    setPrevInitialRequests(initialRequests);
     setRequests(initialRequests);
-  }, [initialRequests]);
+  }
 
   const handleRequestDecided = (requestId: string, decision: string) => {
     setRequests((prev) =>
@@ -74,28 +69,6 @@ export default function AdvisorDashboard({
   // คำร้องรออาจารย์ที่ปรึกษาพิจารณา
   const pendingRequests = useMemo(
     () => requests.filter((req) => req.requestStatus === "pending_advisor"),
-    [requests],
-  );
-
-  // คำร้องที่อาจารย์พิจารณาให้ความเห็นชอบแล้ว และส่งต่อไปยังขั้นตอนถัดไป
-  const approvedRequests = useMemo(
-    () =>
-      requests.filter((req) =>
-        [
-          "pending_admin",
-          "pending_executive",
-          "pending_disbursement",
-          "disbursed",
-          "closed",
-        ].includes(req.requestStatus),
-      ),
-    [requests],
-  );
-
-  // คำร้องที่ถูกส่งกลับให้แก้ไข หรือปฏิเสธ หรือยกเลิก
-  const returnedRequests = useMemo(
-    () =>
-      requests.filter((req) => ["returned", "rejected", "cancelled"].includes(req.requestStatus)),
     [requests],
   );
 
@@ -141,12 +114,6 @@ export default function AdvisorDashboard({
       };
     });
   }, [requests]);
-
-  // คำนวณยอดเงินรวมของคำร้องที่รอพิจารณา
-  const totalPendingAmount = useMemo(
-    () => pendingRequests.reduce((sum, req) => sum + (Number(req.amount) || 0), 0),
-    [pendingRequests],
-  );
 
   return (
     <div className="space-y-8">
@@ -226,46 +193,3 @@ export default function AdvisorDashboard({
   );
 }
 
-interface StatCardProps {
-  title: string;
-  value: number;
-  description: string;
-  icon: React.ReactNode;
-  highlight?: boolean;
-  badgeText?: string;
-}
-
-function StatCard({
-  title,
-  value,
-  description,
-  icon,
-  highlight = false,
-  badgeText,
-}: StatCardProps) {
-  return (
-    <div
-      className={`bg-white rounded-2xl border p-5 shadow-sm transition-all hover:shadow-md ${
-        highlight ? "border-orange-200 ring-1 ring-orange-100" : "border-gray-200"
-      }`}
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <p className="text-sm text-gray-500 font-medium">{title}</p>
-            {badgeText && value > 0 && (
-              <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                {badgeText}
-              </span>
-            )}
-          </div>
-          <p className="text-3xl font-bold text-[#1e293b]">{value}</p>
-          <p className="text-xs text-gray-400 mt-2">{description}</p>
-        </div>
-        <div className="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
-          {icon}
-        </div>
-      </div>
-    </div>
-  );
-}

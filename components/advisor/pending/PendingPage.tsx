@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
 import { ShieldCheck } from "lucide-react";
 
@@ -13,10 +13,12 @@ export default function AdvisorPendingPage({
 }: AdvisorPendingPageProps) {
   // กำหนด State ให้กับ requests จาก DB
   const [requests, setRequests] = useState<ActionRequest[]>(initialRequests);
+  const [prevInitial, setPrevInitial] = useState(initialRequests);
 
-  useEffect(() => {
+  if (prevInitial !== initialRequests) {
+    setPrevInitial(initialRequests);
     setRequests(initialRequests);
-  }, [initialRequests]);
+  }
 
   const handleRequestDecided = (requestId: string) => {
     setRequests((prev) => prev.filter((req) => req.id !== requestId));

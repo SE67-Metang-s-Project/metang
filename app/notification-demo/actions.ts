@@ -11,7 +11,7 @@ export type NotificationDemoState = {
   message: string;
 };
 
-const demoNotificationEmail = "nupong.pr@cmu.ac.th";
+// const demoNotificationEmail = "nupong.pr@cmu.ac.th";
 function readField(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value.trim() : "";

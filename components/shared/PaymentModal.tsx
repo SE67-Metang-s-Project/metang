@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronDown, ChevronLeft, ChevronRight, Download, Landmark, ReceiptText, UploadCloud, X } from "lucide-react";
 import type { InstallmentPayment, PaymentAccount } from "@/app/student/studentMockData";
+import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 
 type PaymentModalProps = {
   installment: InstallmentPayment;
@@ -16,7 +17,7 @@ type PaymentFormField = "receipt" | "transferDate" | "transferTime" | "transferA
 type PaymentFormErrors = Partial<Record<PaymentFormField, string>>;
 
 const thaiWeekdays = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
-const requiredFieldMessage = "โปรดระบุข้อมูลในช่องนี้";
+const englishWeekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const requiredPaymentFields: PaymentFormField[] = ["receipt", "transferDate", "transferTime", "transferAmount"];
 const maxReceiptFileSize = 500 * 1024;
 
@@ -34,6 +35,7 @@ function parseDateInputValue(value: string) {
 }
 
 export default function PaymentModal({ installment, account, onClose, onConfirm }: PaymentModalProps) {
+  const { language, t } = useStudentLanguage();
   const [isQrSaveNoticeOpen, setIsQrSaveNoticeOpen] = useState(false);
   const [fileName, setFileName] = useState("");
   const [receiptPreview, setReceiptPreview] = useState("");
@@ -83,18 +85,18 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
     scrollSelectedOptionIntoView(minuteListRef.current, selectedMinute);
   }, [isTimePickerOpen, selectedHour, selectedMinute]);
 
-  const formatThaiDate = (value: string) => {
-    if (!value) return "เลือกวันที่";
+  const formatPaymentDate = (value: string) => {
+    if (!value) return t("เลือกวันที่", "Select date");
 
-    return new Intl.DateTimeFormat("th-TH", {
+    return new Intl.DateTimeFormat(language === "th" ? "th-TH" : "en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
     }).format(parseDateInputValue(value));
   };
 
-  const formatThaiMonth = (date: Date) =>
-    new Intl.DateTimeFormat("th-TH", { month: "long", year: "numeric" }).format(date);
+  const formatPaymentMonth = (date: Date) =>
+    new Intl.DateTimeFormat(language === "th" ? "th-TH" : "en-US", { month: "long", year: "numeric" }).format(date);
 
   const calendarFirstDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).getDay();
   const calendarDayCount = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate();
@@ -126,6 +128,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
   const validatePaymentForm = () => {
     const errors: PaymentFormErrors = {};
 
+    const requiredFieldMessage = t("โปรดระบุข้อมูลในช่องนี้", "This field is required.");
     if (!fileName) errors.receipt = requiredFieldMessage;
     if (!transferDate) errors.transferDate = requiredFieldMessage;
     if (!hasSelectedTime) errors.transferTime = requiredFieldMessage;
@@ -167,7 +170,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
 
   return (
     <div
-      aria-label="หน้าต่างชำระเงิน"
+      aria-label={t("หน้าต่างชำระเงิน", "Payment dialog")}
       className="fixed inset-0 z-40 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
       onMouseDown={handleBackdropClick}
       role="presentation"
@@ -179,7 +182,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
         role="dialog"
       >
         <button
-          aria-label="ยกเลิกและปิดหน้าต่างชำระเงิน"
+          aria-label={t("ยกเลิกและปิดหน้าต่างชำระเงิน", "Cancel and close payment dialog")}
           className="absolute right-5 top-4 z-10 rounded-full bg-gray-50 p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 sm:right-6"
           onClick={onClose}
           type="button"
@@ -189,9 +192,9 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
 
         <header className="shrink-0 border-b border-gray-100 px-14 py-4 text-center sm:px-16">
           <h2 className="text-xl font-bold leading-tight text-gray-900" id="payment-modal-title">
-            ชำระงวดที่ {installment.installmentNumber}
+            {t("ชำระงวดที่", "Pay installment")} {installment.installmentNumber}
           </h2>
-          <p className="mt-1 text-sm font-bold text-gray-600">ครบกำหนด {installment.dueDateLabel}</p>
+          <p className="mt-1 text-sm font-bold text-gray-600">{t("ครบกำหนด", "Due")} {localizeStudentContent(installment.dueDateLabel, language)}</p>
         </header>
 
         <div
@@ -199,33 +202,33 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
           ref={modalBodyRef}
         >
           <section className="mb-6 flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <p className="text-sm font-medium text-black">ค้างชำระ</p>
-            <strong className="text-2xl font-bold text-black">{installment.outstandingAmount} บาท</strong>
+            <p className="text-sm font-medium text-black">{t("ค้างชำระ", "Outstanding")}</p>
+            <strong className="text-2xl font-bold text-black">{installment.outstandingAmount} {t("บาท", "THB")}</strong>
           </section>
 
           <section className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <h3 className="mb-0 flex items-center gap-2 border-b border-gray-200 pb-3 text-lg font-bold text-gray-900">
               <Landmark aria-hidden="true" className="text-gray-400" size={21} />
-              ข้อมูลบัญชีสำหรับชำระเงิน
+              {t("ข้อมูลบัญชีสำหรับชำระเงิน", "Payment account details")}
             </h3>
             <dl className="text-sm">
               <div className="flex items-start justify-between gap-5 border-b border-gray-200 py-2.5">
-                <dt className="shrink-0 text-gray-500">{account.bankLabel}</dt>
-                <dd className="text-right font-medium text-gray-900">{account.bankName}</dd>
+                <dt className="shrink-0 text-gray-500">{t(account.bankLabel, "Bank")}</dt>
+                <dd className="text-right font-medium text-gray-900">{localizeStudentContent(account.bankName, language)}</dd>
               </div>
               <div className="flex items-start justify-between gap-5 border-b border-gray-200 py-2.5">
-                <dt className="shrink-0 text-gray-500">{account.accountNameLabel}</dt>
-                <dd className="text-right font-medium text-gray-900">{account.accountName}</dd>
+                <dt className="shrink-0 text-gray-500">{t(account.accountNameLabel, "Account name")}</dt>
+                <dd className="text-right font-medium text-gray-900">{localizeStudentContent(account.accountName, language)}</dd>
               </div>
               <div className="flex items-start justify-between gap-5 py-2.5">
-                <dt className="shrink-0 text-gray-500">{account.accountNumberLabel}</dt>
+                <dt className="shrink-0 text-gray-500">{t(account.accountNumberLabel, "Account number")}</dt>
                 <dd className="break-all text-right font-medium text-gray-900">{account.accountNumber}</dd>
               </div>
             </dl>
 
             <div className="mt-4 text-center">
               <Image
-                alt="QR Code สำหรับชำระเงิน"
+                alt={t("QR Code สำหรับชำระเงิน", "Payment QR code")}
                 className="mx-auto h-auto w-full rounded-lg"
                 height={300}
                 src={account.qrImageSrc}
@@ -242,7 +245,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                   className="text-gray-400 transition-colors group-hover:text-orange-300 group-active:text-orange-400"
                   size={18}
                 />
-                บันทึกรูปภาพ
+                {t("บันทึกรูปภาพ", "Save image")}
               </a>
             </div>
           </section>
@@ -250,7 +253,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
           <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <h3 className="mb-3 flex items-center gap-2 text-lg font-bold text-gray-900">
               <ReceiptText aria-hidden="true" className="text-gray-400" size={21} />
-              หลักฐานการโอนเงิน
+              {t("หลักฐานการโอนเงิน", "Transfer evidence")}
             </h3>
             <div
               className={`group rounded-xl border-2 border-dashed text-center transition-colors ${
@@ -269,7 +272,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
               >
                 {receiptPreview ? (
                   <Image
-                    alt="ตัวอย่างหลักฐานการโอนเงิน"
+                    alt={t("ตัวอย่างหลักฐานการโอนเงิน", "Transfer evidence preview")}
                     className="h-auto w-full rounded-lg object-contain"
                     height={160}
                     src={receiptPreview}
@@ -283,10 +286,12 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                   />
                 )}
                 <strong className={`${receiptPreview ? "mt-3" : "mt-2"} text-sm text-gray-800`}>
-                  {receiptPreview ? "แตะเพื่ออัปโหลดรูปภาพใหม่" : "แตะเพื่ออัปโหลดหลักฐานการโอน"}
+                  {receiptPreview
+                    ? t("แตะเพื่ออัปโหลดรูปภาพใหม่", "Tap to upload a new image")
+                    : t("แตะเพื่ออัปโหลดหลักฐานการโอน", "Tap to upload transfer evidence")}
                 </strong>
                 <span className="mt-1 text-sm text-gray-500">
-                  {receiptPreview ? fileName : "รองรับ JPG, PNG (สูงสุด 500 KB)"}
+                  {receiptPreview ? fileName : t("รองรับ JPG, PNG (สูงสุด 500 KB)", "JPG or PNG, up to 500 KB")}
                 </span>
               </button>
               <input
@@ -297,7 +302,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                   const file = event.target.files?.[0];
 
                   if (file && !["image/jpeg", "image/png"].includes(file.type)) {
-                    setFormErrors((current) => ({ ...current, receipt: "กรุณาอัปโหลดไฟล์ JPG หรือ PNG" }));
+                    setFormErrors((current) => ({ ...current, receipt: t("กรุณาอัปโหลดไฟล์ JPG หรือ PNG", "Please upload a JPG or PNG file.") }));
                     event.target.value = "";
                     return;
                   }
@@ -305,7 +310,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                   if (file && file.size > maxReceiptFileSize) {
                     setFormErrors((current) => ({
                       ...current,
-                      receipt: "ไฟล์รูปภาพต้องมีขนาดไม่เกิน 500 KB",
+                      receipt: t("ไฟล์รูปภาพต้องมีขนาดไม่เกิน 500 KB", "The image file must be 500 KB or smaller."),
                     }));
                     event.target.value = "";
                     return;
@@ -332,7 +337,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
           <section className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm mt-5">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
               <ReceiptText aria-hidden="true" className="text-gray-400" size={21} />
-              รายละเอียดการโอนเงิน
+              {t("รายละเอียดการโอนเงิน", "Transfer details")}
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div
@@ -343,7 +348,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                 }}
               >
                 <span className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-600">
-                  วันที่โอน
+                  {t("วันที่โอน", "Transfer date")}
                 </span>
                 <button
                   aria-expanded={isCalendarOpen}
@@ -358,23 +363,23 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                   }}
                   type="button"
                 >
-                  {formatThaiDate(transferDate)}
+                  {formatPaymentDate(transferDate)}
                   <ChevronDown aria-hidden="true" className="text-gray-400" size={18} />
                 </button>
                 {isCalendarOpen ? (
                   <div className="absolute bottom-full left-0 z-30 mb-2 w-[300px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
                     <div className="mb-3 flex items-center justify-between">
                       <button
-                        aria-label="เดือนก่อนหน้า"
+                        aria-label={t("เดือนก่อนหน้า", "Previous month")}
                         className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100"
                         onClick={() => changeCalendarMonth(-1)}
                         type="button"
                       >
                         <ChevronLeft aria-hidden="true" size={18} />
                       </button>
-                      <strong className="text-sm text-gray-800">{formatThaiMonth(calendarMonth)}</strong>
+                      <strong className="text-sm text-gray-800">{formatPaymentMonth(calendarMonth)}</strong>
                       <button
-                        aria-label="เดือนถัดไป"
+                        aria-label={t("เดือนถัดไป", "Next month")}
                         className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-transparent"
                         disabled={
                           calendarMonth.getFullYear() === new Date().getFullYear() &&
@@ -387,7 +392,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                       </button>
                     </div>
                     <div className="grid grid-cols-7 gap-1 text-center text-xs">
-                      {thaiWeekdays.map((weekday) => (
+                      {(language === "th" ? thaiWeekdays : englishWeekdays).map((weekday) => (
                         <span className="py-1 font-medium text-gray-400" key={weekday}>
                           {weekday}
                         </span>
@@ -435,7 +440,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                 }}
               >
                 <span className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-600">
-                  เวลาที่โอน
+                  {t("เวลาที่โอน", "Transfer time")}
                 </span>
                 <button
                   aria-expanded={isTimePickerOpen}
@@ -450,14 +455,14 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                   }}
                   type="button"
                 >
-                  {hasSelectedTime ? `${selectedHour}:${selectedMinute} น.` : "เลือกเวลา"}
+                  {hasSelectedTime ? `${selectedHour}:${selectedMinute}${language === "th" ? " น." : ""}` : t("เลือกเวลา", "Select time")}
                   <ChevronDown aria-hidden="true" className="text-gray-400" size={18} />
                 </button>
                 {isTimePickerOpen ? (
                   <div className="absolute bottom-full left-0 z-30 mb-2 grid w-[200px] grid-cols-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
                     <div className="border-r border-gray-100">
                       <p className="border-b border-gray-100 bg-gray-50 px-2 py-2 text-center text-sm font-semibold text-gray-500">
-                        ชั่วโมง
+                        {t("ชั่วโมง", "Hour")}
                       </p>
                       <div
                         className="max-h-44 touch-pan-y overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] p-1.5"
@@ -491,7 +496,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                     </div>
                     <div>
                       <p className="border-b border-gray-100 bg-gray-50 px-2 py-2 text-center text-sm font-semibold text-gray-500">
-                        นาที
+                        {t("นาที", "Minute")}
                       </p>
                       <div
                         className="max-h-44 touch-pan-y overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] p-1.5"
@@ -537,7 +542,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                 }}
               >
                 <span className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-600">
-                  จำนวนเงินที่โอน
+                  {t("จำนวนเงินที่โอน", "Transfer amount")}
                 </span>
                 <span className="relative block">
                   <input
@@ -559,7 +564,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                     value={transferAmount}
                   />
                   <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-500">
-                    บาท
+                    {t("บาท", "THB")}
                   </span>
                 </span>
                 {formErrors.transferAmount ? (
@@ -576,14 +581,14 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
             onClick={onClose}
             type="button"
           >
-            ยกเลิก
+            {t("ยกเลิก", "Cancel")}
           </button>
           <button
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-green-700"
             onClick={handleConfirm}
             type="button"
           >
-            ยืนยัน
+            {t("ยืนยัน", "Confirm")}
           </button>
         </footer>
       </section>
@@ -596,15 +601,15 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
             role="alertdialog"
           >
             <h2 className="text-xl font-bold text-gray-900" id="qr-save-notice-title">
-              บันทึกรูปภาพแล้ว
+              {t("บันทึกรูปภาพแล้ว", "Image saved")}
             </h2>
-            <p className="mt-2 text-sm text-gray-600">ดาวน์โหลด QR Code สำหรับชำระงเงินสำเร็จ</p>
+            <p className="mt-2 text-sm text-gray-600">{t("ดาวน์โหลด QR Code สำหรับชำระงเงินสำเร็จ", "The payment QR code has been downloaded.")}</p>
             <button
               className="mt-5 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-green-700"
               onClick={() => setIsQrSaveNoticeOpen(false)}
               type="button"
             >
-              ตกลง
+              {t("ตกลง", "OK")}
             </button>
           </section>
         </div>

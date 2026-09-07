@@ -1,8 +1,6 @@
 import { apiError, apiOk } from "@/lib/api-response";
 import { getStudentSessionContext, resolveStoredStudent } from "@/lib/loan-auth";
-import { prisma } from "@/lib/prisma";
-import { serializeJson } from "@/lib/serialization";
-import { studentLoanSelect } from "@/db/queries/loan-requests";
+import { getStudentCurrentLoan } from "@/db/queries/loan-requests";
 
 /**
  * Get the current student's open loan request.
@@ -18,13 +16,6 @@ export async function GET() {
   const user = await resolveStoredStudent(context.identity);
   if (!user) return apiOk(null);
 
-  const loan = await prisma.loanRequest.findFirst({
-    where: {
-      studentId: user.id,
-      status: { notIn: ["closed", "rejected", "cancelled"] },
-    },
-    select: studentLoanSelect,
-    orderBy: { createdAt: "desc" },
-  });
-  return apiOk(serializeJson(loan));
+  const loan = await getStudentCurrentLoan(user.id);
+  return apiOk(loan);
 }

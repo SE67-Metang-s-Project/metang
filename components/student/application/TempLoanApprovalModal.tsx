@@ -6,17 +6,31 @@ import styles from "@/app/student/student.module.css";
 import CardHeader from "@/components/shared/CardHeader";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 
+import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
+import type { StudentUiError } from "@/lib/student-error-mapper";
+
 type TempLoanApprovalModalProps = {
   formData: TempLoanFormData;
+  profile?: StudentProfileDisplay;
   onClose: () => void;
   onConfirm: () => void;
+  isSubmitting?: boolean;
+  errorMessage?: string | null;
+  errorDetails?: StudentUiError | null;
+  isResubmit?: boolean;
 };
 
 export default function TempLoanApprovalModal({
   formData,
+  profile,
   onClose,
   onConfirm,
+  isSubmitting = false,
+  errorMessage = null,
+  errorDetails = null,
+  isResubmit = false,
 }: TempLoanApprovalModalProps) {
+  const currentProfile = profile ?? tempStudentProfile;
   const loanAmount = Number(formData.loanAmount) || 0;
   const installmentAmount = Math.floor(loanAmount / formData.installmentCount);
   const installmentRemainder = loanAmount % formData.installmentCount;
@@ -65,12 +79,71 @@ export default function TempLoanApprovalModal({
           <X aria-hidden="true" size={20} />
         </button>
 
-        <h2 id="loan-approval-modal-title">ยืนยันข้อมูลการกู้ยืม</h2>
+        <h2 id="loan-approval-modal-title">
+          {isResubmit ? "ยืนยันการแก้ไขข้อมูลการกู้ยืม" : "ยืนยันข้อมูลการกู้ยืม"}
+        </h2>
         <p className={styles.loanApprovalWarning}>
           กรุณาตรวจสอบข้อมูลทางการเงินให้ถูกต้อง
           <br />
           หากข้อมูลผิดพลาดอาจทำให้คำร้องกู้ยืมเกิดความล่าช้า
         </p>
+
+        {errorDetails || errorMessage ? (
+          <div
+            role="alert"
+            style={{
+              color: "#b91c1c",
+              backgroundColor: "#fef2f2",
+              border: "1px solid #f87171",
+              borderRadius: "0.5rem",
+              padding: "0.75rem 1rem",
+              margin: "0.5rem 0 1rem",
+              fontSize: "0.875rem",
+            }}
+          >
+            {errorDetails?.title ? (
+              <strong style={{ display: "block", marginBottom: "0.25rem", fontWeight: 700 }}>
+                {errorDetails.title}
+              </strong>
+            ) : null}
+            <div>{errorDetails?.message || errorMessage}</div>
+            {errorDetails?.action === "login" ? (
+              <a
+                href="/login"
+                style={{
+                  display: "inline-block",
+                  marginTop: "0.5rem",
+                  color: "#ffffff",
+                  backgroundColor: "#b91c1c",
+                  padding: "0.35rem 0.75rem",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
+                เข้าสู่ระบบใหม่
+              </a>
+            ) : errorDetails?.action === "dashboard" ? (
+              <a
+                href="/student"
+                style={{
+                  display: "inline-block",
+                  marginTop: "0.5rem",
+                  color: "#ffffff",
+                  backgroundColor: "#b91c1c",
+                  padding: "0.35rem 0.75rem",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
+                ไปที่หน้าหลัก
+              </a>
+            ) : null}
+          </div>
+        ) : null}
 
         <section className={styles.loanApprovalInfoCard}>
           <CardHeader
@@ -81,15 +154,15 @@ export default function TempLoanApprovalModal({
           <dl>
             <div>
               <dt>ชื่อ-นามสกุล</dt>
-              <dd>{tempStudentProfile.displayName.replace("นางสาว", "").trim()}</dd>
+              <dd>{currentProfile.displayName.replace("นางสาว", "").trim()}</dd>
             </div>
             <div>
               <dt>รหัสนักศึกษา</dt>
-              <dd>{tempStudentProfile.studentId}</dd>
+              <dd>{currentProfile.studentId}</dd>
             </div>
             <div>
               <dt>หลักสูตร</dt>
-              <dd>{tempStudentProfile.programName}</dd>
+              <dd>{currentProfile.programName || "พยาบาลศาสตรบัณฑิต"}</dd>
             </div>
             <div>
               <dt>วุฒิการศึกษา</dt>
@@ -168,11 +241,25 @@ export default function TempLoanApprovalModal({
         <LoanDetailSchedule items={schedule} />
 
         <div className={styles.loanApprovalActions}>
-          <button className={styles.loanApprovalCancel} onClick={onClose} type="button">
+          <button
+            className={styles.loanApprovalCancel}
+            disabled={isSubmitting}
+            onClick={onClose}
+            type="button"
+          >
             ยกเลิก
           </button>
-          <button className={styles.loanApprovalConfirm} onClick={onConfirm} type="button">
-            ยืนยัน
+          <button
+            className={styles.loanApprovalConfirm}
+            disabled={isSubmitting}
+            onClick={onConfirm}
+            type="button"
+          >
+            {isSubmitting
+              ? "กำลังส่งคำร้อง..."
+              : isResubmit
+                ? "ยืนยันการแก้ไขและยื่นคำร้อง"
+                : "ยืนยัน"}
           </button>
         </div>
       </section>

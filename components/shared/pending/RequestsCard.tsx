@@ -1,7 +1,7 @@
 // src/components/superadmin/setting/RequestsCard.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   X,
@@ -410,9 +410,12 @@ export default function RequestsCard({
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        throw new Error(
-          data?.error?.message || data?.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล",
-        );
+        let msg = data?.error?.message || data?.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล";
+        if (res.status === 401) msg = "กรุณาเข้าสู่ระบบใหม่ (Session หมดอายุ)";
+        else if (res.status === 403) msg = "ไม่มีสิทธิ์ดำเนินการสำหรับบทบาทนี้";
+        else if (res.status === 409) msg = data?.error?.message || "คำร้องนี้ได้รับการพิจารณาไปแล้ว หรือเกิดข้อขัดแย้ง";
+        else if (res.status === 404) msg = "ไม่พบข้อมูลคำร้องนี้ในระบบ";
+        throw new Error(msg);
       }
 
       const targetId = selectedRequest.id;
@@ -1025,15 +1028,17 @@ export default function RequestsCard({
                     >
                       ไม่อนุมัติ
                     </button>
-                    <button
-                      onClick={() => {
-                        setConfirmAction("return");
-                        setErrorMessage(null);
-                      }}
-                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-bold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
-                    >
-                      ส่งกลับแก้ไข
-                    </button>
+                    {userRole !== "executive" && (
+                      <button
+                        onClick={() => {
+                          setConfirmAction("return");
+                          setErrorMessage(null);
+                        }}
+                        className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-bold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
+                      >
+                        ส่งกลับแก้ไข
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setConfirmAction("approve");

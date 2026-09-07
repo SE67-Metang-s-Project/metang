@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, Mail, Menu } from "lucide-react";
 import type { UserRole } from "@/components/shared/SidebarNav";
+import type { StudentLanguage } from "@/app/student/StudentLanguageProvider";
 
 export const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   student: "นักศึกษา",
@@ -20,6 +21,9 @@ export interface TopNavProps {
   userRole?: string;
   userEmail?: string;
   showSidebarButton?: boolean;
+  language?: StudentLanguage;
+  onLanguageChange?: (language: StudentLanguage) => void;
+  logoutLabel?: string;
 }
 
 export default function TopNav({
@@ -30,6 +34,9 @@ export default function TopNav({
   userRole,
   userEmail,
   showSidebarButton = true,
+  language,
+  onLanguageChange,
+  logoutLabel = "ออกจากระบบ",
 }: TopNavProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -74,7 +81,28 @@ export default function TopNav({
 
         <div className="flex-1" />
 
-        <div className="relative" ref={profileRef}>
+        <div className="flex items-center gap-2 sm:gap-3">
+          {language && onLanguageChange ? (
+            <div aria-label="Language selector" className="flex overflow-hidden rounded-lg border border-gray-200 text-sm font-semibold">
+              <button
+                aria-pressed={language === "th"}
+                className={`px-2.5 py-1.5 transition-colors ${language === "th" ? "bg-orange-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+                onClick={() => onLanguageChange("th")}
+                type="button"
+              >
+                ไทย
+              </button>
+              <button
+                aria-pressed={language === "en"}
+                className={`border-l border-gray-200 px-2.5 py-1.5 transition-colors ${language === "en" ? "bg-orange-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+                onClick={() => onLanguageChange("en")}
+                type="button"
+              >
+                EN
+              </button>
+            </div>
+          ) : null}
+          <div className="relative" ref={profileRef}>
           <button
             type="button"
             onClick={() => setIsProfileOpen((isOpen) => !isOpen)}
@@ -118,11 +146,12 @@ export default function TopNav({
                   className="flex w-full items-center gap-3 px-4 py-3 text-[14px] font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-700"
                 >
                   <LogOut className="h-4 w-4" aria-hidden="true" />
-                  ออกจากระบบ
+                  {logoutLabel}
                 </button>
               </form>
             </div>
           ) : null}
+          </div>
         </div>
       </header>
       <div aria-hidden="true" className="h-16 shrink-0 sm:h-20" />

@@ -9,20 +9,7 @@ import {
   getStudentSessionContext,
   resolveStoredStudent,
 } from "@/lib/loan-auth";
-import { studentLoanSelect } from "@/db/queries/loan-requests";
-
-function isUniqueConstraintOnField(
-  error: Prisma.PrismaClientKnownRequestError,
-  field: string,
-) {
-  const adapterError = error.meta?.driverAdapterError as
-    | { cause?: { constraint?: { fields?: unknown } } }
-    | undefined;
-  const fields = adapterError?.cause?.constraint?.fields;
-
-  return Array.isArray(fields) && fields.includes(field);
-}
-
+import { getStudentLoanList, studentLoanDetailSelect } from "@/db/queries/loan-requests";
 
 /**
  * List the current student's loan requests.
@@ -39,12 +26,8 @@ export async function GET() {
   const user = await resolveStoredStudent(context.identity);
   if (!user) return apiOk([]);
 
-  const loans = await prisma.loanRequest.findMany({
-    where: { studentId: user.id },
-    select: studentLoanSelect,
-    orderBy: { createdAt: "desc" },
-  });
-  return apiOk(serializeJson(loans));
+  const loans = await getStudentLoanList(user.id);
+  return apiOk(loans);
 }
 
 /**
@@ -162,20 +145,16 @@ export async function POST(request: Request) {
           after: serializeJson(created),
         },
       });
-      return tx.loanRequest.findUniqueOrThrow({ where: { id: created.id }, select: studentLoanSelect });
+      return tx.loanRequest.findUniqueOrThrow({ where: { id: created.id }, select: studentLoanDetailSelect });
     });
 
     return apiOk(serializeJson(loan), 201);
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002" &&
-      isUniqueConstraintOnField(error, "student_id")
+      (error.code === "P2002" || error.code === "P2034")
     ) {
       return apiError("CONFLICT", "You already have an open loan request", 409);
-    }
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
-      return apiError("CONFLICT", "Loan request changed concurrently; please retry", 409);
     }
     if (
       error instanceof Error &&

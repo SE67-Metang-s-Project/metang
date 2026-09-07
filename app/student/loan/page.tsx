@@ -1,10 +1,5 @@
-import { Suspense } from "react";
-import TempStudentDashboard from "@/components/student/dashboard/TempStudentDashboard";
+import StudentPage from "@/app/student/page";
 
-export default function StudentLoanPage() {
-  return (
-    <Suspense fallback={null}>
-      <TempStudentDashboard />
-    </Suspense>
-  );
-}
+export const dynamic = "force-dynamic";
+
+export default StudentPage;

@@ -12,18 +12,29 @@ import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import LoanDetailOverview from "../loan-details/LoanDetailOverview";
 import LoanTimeline from "../loan-details/LoanTimeline";
 
+import type { StudentProfileDisplay } from "../dashboard/LoanSummaryCard";
+import { mapToLoanDetails, type RawStudentLoan } from "@/lib/student-view-model";
+
 type TempLoanDetailsStepProps = {
   formData: TempLoanFormData;
+  profile?: StudentProfileDisplay;
+  createdLoan?: RawStudentLoan | null;
 };
 
-const studentName =
-  tempStudentProfile.displayName.replace("นางสาว", "").trim();
+export default function TempLoanDetailsStep({
+  formData,
+  profile,
+  createdLoan,
+}: TempLoanDetailsStepProps) {
+  const currentProfile = profile ?? tempStudentProfile;
+  const studentName = currentProfile.displayName.replace("นางสาว", "").trim();
 
-export default function TempLoanDetailsStep({ formData }: TempLoanDetailsStepProps) {
+  const mappedLoanDetails = createdLoan ? mapToLoanDetails(createdLoan) : null;
+
   const loanAmount = Number(formData.loanAmount) || 0;
   const baseInstallmentAmount = Math.floor(loanAmount / formData.installmentCount);
   const installmentRemainder = loanAmount % formData.installmentCount;
-  const schedule = Array.from({ length: formData.installmentCount }, (_, index) => {
+  const fallbackSchedule = Array.from({ length: formData.installmentCount }, (_, index) => {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 30 * (index + 1));
 
@@ -40,8 +51,15 @@ export default function TempLoanDetailsStep({ formData }: TempLoanDetailsStepPro
       ).toLocaleString("th-TH")}`,
     };
   });
+
+  const schedule = mappedLoanDetails?.schedule?.length ? mappedLoanDetails.schedule : fallbackSchedule;
+  const timelineItems = mappedLoanDetails?.timeline?.length ? mappedLoanDetails.timeline : tempLoanTimeline;
+
   const details = {
     ...tempCurrentLoanDetails,
+    requestNumber: mappedLoanDetails?.requestNumber ?? tempCurrentLoanDetails.requestNumber,
+    statusLabel: mappedLoanDetails?.statusLabel ?? "รออาจารย์ที่ปรึกษาพิจารณา",
+    submittedAt: mappedLoanDetails?.submittedAt ?? tempCurrentLoanDetails.submittedAt,
     amount: formData.loanAmount ? `${Number(formData.loanAmount).toLocaleString("th-TH")}` : "0",
     purpose: formData.purpose || tempCurrentLoanDetails.purpose,
     additionalReason: formData.additionalNote === "-" ? "-" : formData.additionalNote,
@@ -54,7 +72,7 @@ export default function TempLoanDetailsStep({ formData }: TempLoanDetailsStepPro
 
       <LoanDetailOverview details={details} />
       <LoanTimeline
-        items={tempLoanTimeline}
+        items={timelineItems}
         confirmTransferLabel="ยืนยันการรับเงิน"
         onShowTransferSlip={() => undefined}
       />
@@ -72,11 +90,11 @@ export default function TempLoanDetailsStep({ formData }: TempLoanDetailsStepPro
           </div>
           <div>
             <dt>รหัสนักศึกษา</dt>
-            <dd>{tempStudentProfile.studentId}</dd>
+            <dd>{currentProfile.studentId}</dd>
           </div>
           <div>
             <dt>หลักสูตร</dt>
-            <dd>{tempStudentProfile.programName}</dd>
+            <dd>{currentProfile.programName || "พยาบาลศาสตรบัณฑิต"}</dd>
           </div>
           <div>
             <dt>วุฒิการศึกษา</dt>

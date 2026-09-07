@@ -74,7 +74,14 @@ export default function UserRolesTab({
   const [roleFilter, setRoleFilter] = useState("ทุกบทบาท");
   const [usersList, setUsersList] = useState<SuperAdminUser[]>(initialUsers);
   const [isLoading, setIsLoading] = useState(initialUsers.length === 0);
+  const [prevInitial, setPrevInitial] = useState(initialUsers);
   const [mutatingUserId, setMutatingUserId] = useState<string | null>(null);
+
+  if (prevInitial !== initialUsers) {
+    setPrevInitial(initialUsers);
+    setUsersList(initialUsers);
+    setIsLoading(initialUsers.length === 0);
+  }
 
   const [toast, setToast] = useState<{
     type: "success" | "error";
@@ -91,8 +98,6 @@ export default function UserRolesTab({
   // If initialUsers was empty, fetch client-side
   useEffect(() => {
     if (initialUsers && initialUsers.length > 0) {
-      setUsersList(initialUsers);
-      setIsLoading(false);
       return;
     }
 
