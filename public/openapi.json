@@ -1041,6 +1041,7 @@
           "decision"
         ]
       },
+      "AdvisorListResponse": {},
       "AdvisorLoanRequestDetail": {
         "type": "object",
         "properties": {
@@ -6012,6 +6013,54 @@
           },
           "422": {
             "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/student/advisors": {
+      "get": {
+        "operationId": "get-student-advisors",
+        "summary": "List available advisors for student loan application.",
+        "description": "",
+        "tags": [
+          "Student loans"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvisorListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "application/json": {
                 "schema": {

@@ -2,6 +2,7 @@ import { Prisma, UserRoleName } from "@/lib/generated/prisma/client";
 import { apiError, apiOk } from "@/lib/api-response";
 import { bangkokDatePlusDays } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
+import { isUniqueConstraintOnField } from "@/lib/prisma-errors";
 import { parseLoanInput } from "@/lib/loan-validation";
 import { validateJsonRequest } from "@/lib/request-security";
 import { serializeJson } from "@/lib/serialization";
@@ -150,11 +151,11 @@ export async function POST(request: Request) {
 
     return apiOk(serializeJson(loan), 201);
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      (error.code === "P2002" || error.code === "P2034")
-    ) {
+    if (isUniqueConstraintOnField(error, "student_id")) {
       return apiError("CONFLICT", "You already have an open loan request", 409);
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+      return apiError("CONFLICT", "The request changed; please try again", 409);
     }
     if (
       error instanceof Error &&
