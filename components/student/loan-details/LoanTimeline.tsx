@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { Check, CheckCircle2, Clock3, FileText } from "lucide-react";
+import { Check, CheckCircle2, CircleX, Clock3, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { LoanTimelineItem } from "@/app/student/studentMockData";
 import styles from "@/app/student/student.module.css";
@@ -97,6 +97,7 @@ export default function LoanTimeline({
                     onClick={onCancelRequest}
                     type="button"
                   >
+                    <CircleX aria-hidden="true" size={17} strokeWidth={2.4} />
                     ยกเลิกคำร้อง
                   </button>
                 ) : null}

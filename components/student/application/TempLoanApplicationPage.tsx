@@ -26,6 +26,7 @@ import TempLoanDetailsStep from "./TempLoanDetailsStep";
 import LoanFormSelect from "./LoanFormSelect";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import TopNav from "@/components/shared/TopNav";
+import CardHeader from "@/components/shared/CardHeader";
 import styles from "@/app/student/student.module.css";
 import {
   mapStudentApiError,
@@ -583,7 +584,7 @@ export default function TempLoanApplicationPage({
 
               <div className={styles.loanFormSections}>
                 <section className={styles.loanFormSection}>
-                  <h3 className={styles.loanFormSectionTitle}>ข้อมูลนักศึกษา</h3>
+                  <CardHeader className={styles.loanFormSectionHeading} title="ข้อมูลนักศึกษา" />
                   <div className={styles.loanFormStudentDetails}>
                     <p>
                       <span>ชื่อ-นามสกุล</span>
@@ -722,7 +723,7 @@ export default function TempLoanApplicationPage({
                 </section>
 
                 <section className={styles.loanFormSection}>
-                  <h3 className={styles.loanFormSectionTitle}>ข้อมูลธนาคาร</h3>
+                  <CardHeader className={styles.loanFormSectionHeading} title="ข้อมูลธนาคาร" />
                   <div className={styles.loanFormFields}>
                     <label
                       className={[
@@ -813,7 +814,10 @@ export default function TempLoanApplicationPage({
                 </section>
 
                 <section className={styles.loanFormSection}>
-                  <h3 className={styles.loanFormSectionTitle}>วัตถุประสงค์การกู้ยืม</h3>
+                  <CardHeader
+                    className={styles.loanFormSectionHeading}
+                    title="วัตถุประสงค์การกู้ยืม"
+                  />
                   <div className={styles.loanFormFields}>
                     <label
                       className={[
@@ -836,6 +840,9 @@ export default function TempLoanApplicationPage({
                         type="text"
                         value={formData.purpose}
                       />
+                      <small className={styles.loanFormCharacterCount}>
+                        {formData.purpose.length}/40 ตัวอักษร
+                      </small>
                       {formErrors.purpose ? (
                         <small className={styles.loanFormFieldError}>{formErrors.purpose}</small>
                       ) : null}
@@ -844,16 +851,20 @@ export default function TempLoanApplicationPage({
                     <label className={styles.loanFormField}>
                       <span>หมายเหตุเพิ่มเติม</span>
                       <textarea
+                        maxLength={200}
                         onChange={(event) => updateFormField("additionalNote", event.target.value)}
                         placeholder="กรอกหมายเหตุเพิ่มเติม"
                         value={formData.additionalNote === "-" ? "" : formData.additionalNote}
                       />
+                      <small className={styles.loanFormCharacterCount}>
+                        {(formData.additionalNote === "-" ? "" : formData.additionalNote).length}/200 ตัวอักษร
+                      </small>
                     </label>
                   </div>
                 </section>
 
                 <section className={styles.loanFormSection}>
-                  <h3 className={styles.loanFormSectionTitle}>จำนวนเงินที่ขอกู้ยืม</h3>
+                  <CardHeader className={styles.loanFormSectionHeading} title="จำนวนเงินที่ขอกู้ยืม" />
                   <div className={styles.loanFormFields}>
                     <label
                       className={[

@@ -16,6 +16,7 @@ export default function LoanHistoryCard({
   const { language, t } = useStudentLanguage();
   const [paidAmount, totalAmount] = request.amount.split("/");
   const canCorrect = request.statusType === "revisionRequired" && Boolean(onCorrectRequest);
+  const submittedAt = request.submittedAt.replace(/^ยื่นเมื่อ\s*/, "");
 
   return (
     <article
@@ -42,9 +43,11 @@ export default function LoanHistoryCard({
             ● {localizeStudentContent(request.statusLabel, language)}
           </span>
         </div>
-        <p>{localizeStudentContent(request.submittedAt, language)}</p>
+        <p>
+          {t("ยื่นเมื่อ", "Submitted")} {localizeStudentContent(submittedAt, language)}
+        </p>
         <small>{t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}</small>
-        <strong>{localizeStudentContent(request.purpose, language)}</strong>
+        <strong className={styles.historyPurpose}>{localizeStudentContent(request.purpose, language)}</strong>
         {canCorrect ? (
           <button
             className={styles.historyCorrectionButton}
