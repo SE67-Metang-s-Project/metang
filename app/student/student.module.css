@@ -42,6 +42,7 @@
 
 .studentPage button {
   font: inherit;
+  font-weight: 700;
 }
 
 .studentPage strong {
@@ -279,8 +280,8 @@
   line-height: 1.7;
 }
 
-.loanAgreementScroll h3 {
-  margin: 0;
+.loanAgreementHeading {
+  margin: 0 0 19px;
   color: var(--color-heading);
   font-size: clamp(17px, 4vw, 19px);
   font-weight: 600;
@@ -291,12 +292,19 @@
   word-break: keep-all;
 }
 
-.loanAgreementScroll > h3 + h3 {
-  margin: 2px 0 19px;
-  color: var(--color-heading);
-  font-size: clamp(17px, 4vw, 19px);
-  font-weight: 600;
-  text-align: center;
+.loanAgreementHeading span + span::before {
+  content: " ";
+  white-space: pre;
+}
+
+@media (max-width: 1269px) {
+  .loanAgreementHeading span {
+    display: block;
+  }
+
+  .loanAgreementHeading span + span::before {
+    content: none;
+  }
 }
 
 .loanAgreementScroll p {
@@ -959,8 +967,8 @@
   margin-top: 14px;
 }
 
-.loanApprovalModal .loanScheduleSection h2 {
-  font-size: 17px;
+.loanApprovalModal .loanDetailSection.loanScheduleSection > .sectionCardHeading h2 {
+  font-size: 18px;
 }
 
 .loanApprovalActions {

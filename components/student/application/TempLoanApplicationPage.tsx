@@ -494,8 +494,10 @@ export default function TempLoanApplicationPage({
               </header>
 
               <div className={styles.loanAgreementScroll}>
-                <h3>{tempLoanAgreement.title}</h3>
-                <h3>{tempLoanAgreement.organization}</h3>
+                <h3 className={styles.loanAgreementHeading}>
+                  <span>ข้อกำหนดและเงื่อนไขการกู้ยืมเงิน</span>
+                  <span>คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่</span>
+                </h3>
                 <p>{tempLoanAgreement.introduction}</p>
                 {tempLoanAgreement.sections.map((section) => (
                   <section key={section.title}>
