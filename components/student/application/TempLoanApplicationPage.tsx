@@ -2,16 +2,25 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { House, RotateCcw, UserRound } from "lucide-react";
+import { FileClock, House, RotateCcw } from "lucide-react";
 import {
   tempLoanAgreement,
+  tempLoanApplicationLimit,
   tempLoanFormDefaults,
   tempLoanFormOptions,
   tempStudentProfile,
   type TempLoanFormData,
 } from "@/app/student/temp/tempMockData";
 import { saveStudentEducationLevel, useStudentEducationLevel } from "@/lib/student-education";
-import { formatThaiBahtText } from "@/app/student/studentFormatters";
+import {
+  getSavedStudentApplicationProfile,
+  saveStudentApplicationProfile,
+} from "@/lib/student-application-profile";
+import {
+  formatLoanAmountInput,
+  formatThaiBahtText,
+  parseLoanAmount,
+} from "@/app/student/studentFormatters";
 import TempLoanApprovalModal from "./TempLoanApprovalModal";
 import TempLoanDetailsStep from "./TempLoanDetailsStep";
 import LoanFormSelect from "./LoanFormSelect";
@@ -19,7 +28,11 @@ import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import TopNav from "@/components/shared/TopNav";
 import CardHeader from "@/components/shared/CardHeader";
 import styles from "@/app/student/student.module.css";
-import { mapStudentApiError, mapNetworkError, type StudentUiError } from "@/lib/student-error-mapper";
+import {
+  mapStudentApiError,
+  mapNetworkError,
+  type StudentUiError,
+} from "@/lib/student-error-mapper";
 
 import type { StudentProfileDisplay } from "../dashboard/LoanSummaryCard";
 import type { RawStudentLoan } from "@/lib/student-view-model";
@@ -57,6 +70,9 @@ const validateField = (field: RequiredFormField, value: string) => {
     const amount = Number(value.replace(/,/g, ""));
     if (!value.trim() || isNaN(amount) || amount <= 0) {
       return "กรุณากรอกจำนวนเงินที่ถูกต้อง";
+    }
+    if (amount > tempLoanApplicationLimit) {
+      return "จำนวนเงินเกินวงเงินที่กำหนด กรุณากรอกจำนวนเงินใหม่";
     }
   }
 
@@ -138,12 +154,15 @@ export default function TempLoanApplicationPage({
 
   const savedEducationLevel = useStudentEducationLevel();
   const [formData, setFormData] = useState(() => {
+    const savedProfile = getSavedStudentApplicationProfile();
     if (isResubmit && existingLoan) {
       return {
         ...tempLoanFormDefaults,
         phoneNumber: initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
         educationLevel:
-          savedEducationLevel ?? initialProfile?.educationLevel ?? tempLoanFormDefaults.educationLevel,
+          savedEducationLevel ??
+          initialProfile?.educationLevel ??
+          tempLoanFormDefaults.educationLevel,
         academicYear: String(existingLoan.studentYear ?? tempLoanFormDefaults.academicYear),
         advisorName: existingLoan.advisorName || tempLoanFormDefaults.advisorName,
         bankName: existingLoan.bankName || tempLoanFormDefaults.bankName,
@@ -151,26 +170,51 @@ export default function TempLoanApplicationPage({
         accountName: existingLoan.bankAccountName || tempLoanFormDefaults.accountName,
         purpose: existingLoan.purpose || tempLoanFormDefaults.purpose,
         additionalNote: existingLoan.additionalNote || "",
-        loanAmount: existingLoan.amount ? String(existingLoan.amount) : tempLoanFormDefaults.loanAmount,
+        loanAmount: existingLoan.amount
+          ? String(existingLoan.amount)
+          : tempLoanFormDefaults.loanAmount,
         installmentCount: (existingLoan.installmentCount as 1 | 2 | 3 | 4) || 1,
       };
     }
 
     return {
       ...tempLoanFormDefaults,
-      phoneNumber: initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
+      phoneNumber:
+        savedProfile.phoneNumber || initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
       educationLevel:
-        savedEducationLevel ?? initialProfile?.educationLevel ?? tempLoanFormDefaults.educationLevel,
+        savedEducationLevel ??
+        savedProfile.educationLevel ??
+        initialProfile?.educationLevel ??
+        tempLoanFormDefaults.educationLevel,
+      academicYear: savedProfile.academicYear || tempLoanFormDefaults.academicYear,
+      advisorName: savedProfile.advisorName || tempLoanFormDefaults.advisorName,
     };
   });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [touchedFields, setTouchedFields] = useState<
-    Partial<Record<RequiredFormField, boolean>>
-  >({});
+  const [touchedFields, setTouchedFields] = useState<Partial<Record<RequiredFormField, boolean>>>(
+    {},
+  );
   const savedFormData = {
     ...formData,
     educationLevel: savedEducationLevel ?? formData.educationLevel,
   };
+
+  useEffect(() => {
+    if (isResubmit) return;
+
+    saveStudentApplicationProfile({
+      academicYear: formData.academicYear,
+      advisorName: formData.advisorName,
+      educationLevel: formData.educationLevel,
+      phoneNumber: formData.phoneNumber,
+    });
+  }, [
+    formData.academicYear,
+    formData.advisorName,
+    formData.educationLevel,
+    formData.phoneNumber,
+    isResubmit,
+  ]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -201,9 +245,20 @@ export default function TempLoanApplicationPage({
     if (field === "educationLevel") {
       saveStudentEducationLevel(value);
     }
-    if (field !== "additionalNote" && touchedFields[field]) {
+    if (field === "loanAmount" || (field !== "additionalNote" && touchedFields[field])) {
       setFormErrors((current) => ({ ...current, [field]: validateField(field, value) }));
     }
+  };
+
+  const handleLoanAmountChange = (value: string) => {
+    const formattedAmount = formatLoanAmountInput(value);
+
+    if (parseLoanAmount(formattedAmount) > tempLoanApplicationLimit) {
+      setFormErrors((current) => ({ ...current, loanAmount: "" }));
+      return;
+    }
+
+    updateFormField("loanAmount", formattedAmount);
   };
 
   const validateLoanForm = () => {
@@ -254,7 +309,7 @@ export default function TempLoanApplicationPage({
     }
   };
 
-  const loanAmount = Number(formData.loanAmount) || 0;
+  const loanAmount = parseLoanAmount(formData.loanAmount);
   const installmentAmount = Math.floor(loanAmount / formData.installmentCount);
   const installmentRemainder = loanAmount % formData.installmentCount;
   const repaymentSchedule = Array.from({ length: formData.installmentCount }, (_, index) => {
@@ -375,11 +430,20 @@ export default function TempLoanApplicationPage({
               className={styles.loanFormCard}
               style={{ textAlign: "center", padding: "3rem 1.5rem" }}
             >
-              <h2 style={{ color: "#d97706", marginBottom: "1rem" }}>
+              <span className={styles.existingLoanIconCircle}>
+                <FileClock
+                  aria-hidden="true"
+                  className={styles.existingLoanIcon}
+                  size={70}
+                  strokeWidth={1.8}
+                />
+              </span>
+              <h2 className={styles.existingLoanTitle}>
                 คุณมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว
               </h2>
               <p style={{ color: "#4b5563", marginBottom: "2rem" }}>
-                ระบบอนุญาตให้มีคำร้องขอกู้ยืมที่เปิดอยู่ได้ครั้งละ 1 คำร้องเท่านั้น ท่านสามารถตรวจสอบสถานะคำร้องปัจจุบันได้ที่หน้าหลัก
+                ระบบอนุญาตให้มีคำร้องขอกู้ยืมที่เปิดอยู่ได้ครั้งละ 1 คำร้องเท่านั้น
+                ท่านสามารถตรวจสอบสถานะคำร้องปัจจุบันได้ที่หน้าหลัก
               </p>
               <button
                 className={styles.loanApplicationDashboardButton}
@@ -407,450 +471,528 @@ export default function TempLoanApplicationPage({
       />
       <div className={styles.studentPageContent}>
         <div className={styles.loanApplicationPage}>
-        <h1 className={styles.loanApplicationTitle}>
-          {isResubmit ? "แก้ไขและยื่นคำร้องกู้ยืม" : "ยื่นคำร้องกู้ยืม"}
-        </h1>
+          <h1 className={styles.loanApplicationTitle}>
+            {isResubmit ? "แก้ไขและยื่นคำร้องกู้ยืม" : "ยื่นคำร้องกู้ยืม"}
+          </h1>
 
-        <ol className={styles.applicationStepper} aria-label="ขั้นตอนการยื่นคำร้องกู้ยืม">
-          <li className={stepClassName(1)}>
-            <span>1</span>
-          </li>
-          <li className={stepClassName(2)}>
-            <span>2</span>
-          </li>
-          <li className={stepClassName(3)}>
-            <span>3</span>
-          </li>
-        </ol>
+          <ol className={styles.applicationStepper} aria-label="ขั้นตอนการยื่นคำร้องกู้ยืม">
+            <li className={stepClassName(1)}>
+              <span>1</span>
+            </li>
+            <li className={stepClassName(2)}>
+              <span>2</span>
+            </li>
+            <li className={stepClassName(3)}>
+              <span>3</span>
+            </li>
+          </ol>
 
-        {currentStep === 1 ? (
-          <section className={styles.loanAgreementCard} aria-labelledby="agreement-title">
-            <header className={styles.sectionCardHeading}>
-              <h2 id="agreement-title">ขั้นตอนที่ 1: ยืนยันข้อตกลงการกู้ยืม</h2>
-            </header>
+          {currentStep === 1 ? (
+            <section className={styles.loanAgreementCard} aria-labelledby="agreement-title">
+              <header className={styles.sectionCardHeading}>
+                <h2 id="agreement-title">ขั้นตอนที่ 1: ยืนยันข้อตกลงการกู้ยืม</h2>
+              </header>
 
-            <div className={styles.loanAgreementScroll}>
-              <h3>{tempLoanAgreement.title}</h3>
-              <h3>{tempLoanAgreement.organization}</h3>
-              <p>{tempLoanAgreement.introduction}</p>
-              {tempLoanAgreement.sections.map((section) => (
-                <section key={section.title}>
-                  <h4>{section.title}</h4>
-                  <p>{section.body}</p>
-                </section>
-              ))}
-            </div>
-
-            <label
-              className={[
-                styles.loanAgreementAcceptance,
-                !hasReadAgreement ? styles.loanAgreementAcceptanceDisabled : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <input
-                checked={hasAcceptedAgreement}
-                disabled={!hasReadAgreement}
-                onChange={(event) => setHasAcceptedAgreement(event.target.checked)}
-                type="checkbox"
-              />
-              <span>{tempLoanAgreement.acceptanceLabel}</span>
-            </label>
-          </section>
-        ) : currentStep === 2 ? (
-          <section className={styles.loanFormCard} aria-labelledby="loan-form-title">
-            <h2 id="loan-form-title">ขั้นตอนที่ 2: กรอกข้อมูลการกู้ยืม</h2>
-
-            {isResubmit && existingLoan ? (
-              <section
-                style={{
-                  backgroundColor: "#fffbeb",
-                  border: "1px solid #fde68a",
-                  borderRadius: "0.75rem",
-                  padding: "1rem 1.25rem",
-                  marginBottom: "1.25rem",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
-                  <RotateCcw style={{ color: "#d97706", flexShrink: 0, marginTop: "2px" }} size={20} />
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ margin: "0 0 0.25rem 0", color: "#92400e", fontSize: "1rem", fontWeight: 700 }}>
-                      คำร้องขอกู้ยืมถูกส่งกลับเพื่อแก้ไข
-                    </h3>
-                    {existingLoan.returnComment ? (
-                      <div
-                        style={{
-                          margin: "0.5rem 0",
-                          padding: "0.75rem",
-                          backgroundColor: "#fef3c7",
-                          borderRadius: "0.375rem",
-                          borderLeft: "4px solid #d97706",
-                          color: "#78350f",
-                          fontSize: "0.875rem",
-                        }}
-                      >
-                        <strong>
-                          ข้อความจาก{existingLoan.returnStep === "admin" ? "เจ้าหน้าที่" : "อาจารย์ที่ปรึกษา"}:
-                        </strong>{" "}
-                        {existingLoan.returnComment}
-                      </div>
-                    ) : null}
-                    <p style={{ margin: 0, color: "#b45309", fontSize: "0.875rem" }}>
-                      กรุณาแก้ไขข้อมูลให้ถูกต้องตามคำแนะนำ แล้วกดยืนยันเพื่อยื่นคำร้องใหม่อีกครั้ง
-                    </p>
-                  </div>
-                </div>
-              </section>
-            ) : null}
-
-            <section className={styles.loanFormStudentCard}>
-              <CardHeader
-                className={styles.sectionCardHeading}
-                icon={<UserRound aria-hidden="true" size={20} strokeWidth={2.2} />}
-                title="ข้อมูลนักศึกษา"
-              />
-              <div className={styles.loanFormStudentDetails}>
-                <p>
-                  <span>ชื่อ-นามสกุล</span>
-                  <strong>{profile.displayName.replace("นางสาว", "").trim()}</strong>
-                </p>
-                <p>
-                  <span>รหัสนักศึกษา</span>
-                  <strong>{profile.studentId}</strong>
-                </p>
-                <p>
-                  <span>หลักสูตร</span>
-                  <strong>{profile.programName || "พยาบาลศาสตรบัณฑิต"}</strong>
-                </p>
+              <div className={styles.loanAgreementScroll}>
+                <h3 className={styles.loanAgreementHeading}>
+                  <span>ข้อกำหนดและเงื่อนไขการกู้ยืมเงิน</span>
+                  <span>คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่</span>
+                </h3>
+                <p>{tempLoanAgreement.introduction}</p>
+                {tempLoanAgreement.sections.map((section) => (
+                  <section key={section.title}>
+                    <h4>{section.title}</h4>
+                    <p>{section.body}</p>
+                  </section>
+                ))}
               </div>
-            </section>
 
-            <div className={styles.loanFormFields}>
               <label
                 className={[
-                  styles.loanFormField,
-                  formErrors.educationLevel ? styles.loanFormFieldInvalid : "",
+                  styles.loanAgreementAcceptance,
+                  !hasReadAgreement ? styles.loanAgreementAcceptanceDisabled : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
-                ref={(element) => {
-                  fieldRefs.current.educationLevel = element ?? undefined;
-                }}
               >
-                <span>วุฒิการศึกษา</span>
-                <LoanFormSelect
-                  error={formErrors.educationLevel}
-                  onBlur={() => handleFieldBlur("educationLevel")}
-                  onChange={(value) => updateFormField("educationLevel", value)}
-                  options={tempLoanFormOptions.educationLevels}
-                  placeholder="เลือกวุฒิการศึกษา"
-                  value={savedEducationLevel ?? formData.educationLevel}
+                <input
+                  checked={hasAcceptedAgreement}
+                  disabled={!hasReadAgreement}
+                  onChange={(event) => setHasAcceptedAgreement(event.target.checked)}
+                  type="checkbox"
                 />
-                {/* <small>
+                <span>{tempLoanAgreement.acceptanceLabel}</span>
+              </label>
+            </section>
+          ) : currentStep === 2 ? (
+            <section className={styles.loanFormCard} aria-labelledby="loan-form-title">
+              <h2 id="loan-form-title">ขั้นตอนที่ 2: กรอกข้อมูลการกู้ยืม</h2>
+
+              {isResubmit && existingLoan ? (
+                <section
+                  style={{
+                    backgroundColor: "#fffbeb",
+                    border: "1px solid #fde68a",
+                    borderRadius: "0.75rem",
+                    padding: "1rem 1.25rem",
+                    marginBottom: "1.25rem",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
+                    <RotateCcw
+                      style={{ color: "#d97706", flexShrink: 0, marginTop: "2px" }}
+                      size={20}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <h3
+                        style={{
+                          margin: "0 0 0.25rem 0",
+                          color: "#92400e",
+                          fontSize: "1rem",
+                          fontWeight: 700,
+                        }}
+                      >
+                        คำร้องขอกู้ยืมถูกส่งกลับเพื่อแก้ไข
+                      </h3>
+                      {existingLoan.returnComment ? (
+                        <div
+                          style={{
+                            margin: "0.5rem 0",
+                            padding: "0.75rem",
+                            backgroundColor: "#fef3c7",
+                            borderRadius: "0.375rem",
+                            borderLeft: "4px solid #d97706",
+                            color: "#78350f",
+                            fontSize: "0.875rem",
+                          }}
+                        >
+                          <strong>
+                            ข้อความจาก
+                            {existingLoan.returnStep === "admin"
+                              ? "เจ้าหน้าที่"
+                              : "อาจารย์ที่ปรึกษา"}
+                            :
+                          </strong>{" "}
+                          {existingLoan.returnComment}
+                        </div>
+                      ) : null}
+                      <p style={{ margin: 0, color: "#b45309", fontSize: "0.875rem" }}>
+                        กรุณาแก้ไขข้อมูลให้ถูกต้องตามคำแนะนำ แล้วกดยืนยันเพื่อยื่นคำร้องใหม่อีกครั้ง
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              ) : null}
+
+              <div className={styles.loanFormSections}>
+                <section className={styles.loanFormSection}>
+                  <CardHeader className={styles.loanFormSectionHeading} title="ข้อมูลนักศึกษา" />
+                  <div className={styles.loanFormStudentDetails}>
+                    <p>
+                      <span>ชื่อ-นามสกุล</span>
+                      <strong>{profile.displayName.replace("นางสาว", "").trim()}</strong>
+                    </p>
+                    <p>
+                      <span>รหัสนักศึกษา</span>
+                      <strong>{profile.studentId}</strong>
+                    </p>
+                    <p>
+                      <span>หลักสูตร</span>
+                      <strong>{profile.programName || "พยาบาลศาสตรบัณฑิต"}</strong>
+                    </p>
+                  </div>
+                  <div className={styles.loanFormFields}>
+                    <label
+                      className={[
+                        styles.loanFormField,
+                        formErrors.educationLevel ? styles.loanFormFieldInvalid : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      ref={(element) => {
+                        fieldRefs.current.educationLevel = element ?? undefined;
+                      }}
+                    >
+                      <span>วุฒิการศึกษา</span>
+                      <LoanFormSelect
+                        error={formErrors.educationLevel}
+                        onBlur={() => handleFieldBlur("educationLevel")}
+                        onChange={(value) => updateFormField("educationLevel", value)}
+                        options={tempLoanFormOptions.educationLevels}
+                        placeholder="เลือกวุฒิการศึกษา"
+                        value={savedEducationLevel ?? formData.educationLevel}
+                      />
+                      {/* <small>
                   {savedEducationLevel
                     ? "วุฒิการศึกษาถูกบันทึกแล้วและไม่สามารถแก้ไขได้"
                     : "เลือกครั้งเดียวตอนกู้ยืมครั้งแรกเท่านั้น การกู้ยืมครั้งถัดไปจะแสดงข้อมูลเดิม"}
                 </small> */}
-                {formErrors.educationLevel ? (
-                  <small className={styles.loanFormFieldError}>
-                    {formErrors.educationLevel}
-                  </small>
-                ) : null}
-              </label>
+                      {formErrors.educationLevel ? (
+                        <small className={styles.loanFormFieldError}>
+                          {formErrors.educationLevel}
+                        </small>
+                      ) : null}
+                    </label>
 
-              <label
-                className={[styles.loanFormField, formErrors.academicYear ? styles.loanFormFieldInvalid : ""]
-                  .filter(Boolean)
-                  .join(" ")}
-                ref={(element) => {
-                  fieldRefs.current.academicYear = element ?? undefined;
-                }}
-              >
-                <span>ชั้นปีการศึกษา</span>
-                <LoanFormSelect
-                  error={formErrors.academicYear}
-                  onBlur={() => handleFieldBlur("academicYear")}
-                  onChange={(value) => updateFormField("academicYear", value)}
-                  options={tempLoanFormOptions.academicYears}
-                  placeholder="เลือกชั้นปีการศึกษา"
-                  value={formData.academicYear}
-                />
-                {formErrors.academicYear ? (
-                  <small className={styles.loanFormFieldError}>{formErrors.academicYear}</small>
-                ) : null}
-              </label>
-
-              <label
-                className={[styles.loanFormField, formErrors.advisorName ? styles.loanFormFieldInvalid : ""]
-                  .filter(Boolean)
-                  .join(" ")}
-                ref={(element) => {
-                  fieldRefs.current.advisorName = element ?? undefined;
-                }}
-              >
-                <span>อาจารย์ที่ปรึกษา</span>
-                <LoanFormSelect
-                  error={formErrors.advisorName}
-                  onBlur={() => handleFieldBlur("advisorName")}
-                  onChange={(value) => updateFormField("advisorName", value)}
-                  options={advisorSelectOptions}
-                  placeholder="เลือกอาจารย์ที่ปรึกษา"
-                  value={formData.advisorName}
-                />
-                {formErrors.advisorName ? (
-                  <small className={styles.loanFormFieldError}>{formErrors.advisorName}</small>
-                ) : null}
-              </label>
-
-              <label
-                className={[styles.loanFormField, formErrors.phoneNumber ? styles.loanFormFieldInvalid : ""]
-                  .filter(Boolean)
-                  .join(" ")}
-                ref={(element) => {
-                  fieldRefs.current.phoneNumber = element ?? undefined;
-                }}
-              >
-                <span>เบอร์โทรศัพท์</span>
-                <input
-                  aria-invalid={Boolean(formErrors.phoneNumber)}
-                  inputMode="numeric"
-                  maxLength={10}
-                  onBlur={() => handleFieldBlur("phoneNumber")}
-                  onChange={(event) =>
-                    updateFormField("phoneNumber", event.target.value.replace(/\D/g, "").slice(0, 10))
-                  }
-                  placeholder="กรอกเบอร์โทรศัพท์"
-                  type="text"
-                  value={formData.phoneNumber}
-                />
-                {formErrors.phoneNumber ? (
-                  <small className={styles.loanFormFieldError}>{formErrors.phoneNumber}</small>
-                ) : null}
-              </label>
-
-              <label
-                className={[styles.loanFormField, formErrors.bankName ? styles.loanFormFieldInvalid : ""]
-                  .filter(Boolean)
-                  .join(" ")}
-                ref={(element) => {
-                  fieldRefs.current.bankName = element ?? undefined;
-                }}
-              >
-                <span>ธนาคาร</span>
-                <LoanFormSelect
-                  error={formErrors.bankName}
-                  onBlur={() => handleFieldBlur("bankName")}
-                  onChange={(value) => updateFormField("bankName", value)}
-                  options={tempLoanFormOptions.banks}
-                  placeholder="เลือกธนาคาร"
-                  value={formData.bankName}
-                />
-                {formErrors.bankName ? (
-                  <small className={styles.loanFormFieldError}>{formErrors.bankName}</small>
-                ) : null}
-              </label>
-
-              <label
-                className={[styles.loanFormField, formErrors.accountNumber ? styles.loanFormFieldInvalid : ""]
-                  .filter(Boolean)
-                  .join(" ")}
-                ref={(element) => {
-                  fieldRefs.current.accountNumber = element ?? undefined;
-                }}
-              >
-                <span>เลขที่บัญชีธนาคาร</span>
-                <input
-                  aria-invalid={Boolean(formErrors.accountNumber)}
-                  inputMode="numeric"
-                  maxLength={10}
-                  onBlur={() => handleFieldBlur("accountNumber")}
-                  onChange={(event) =>
-                    updateFormField("accountNumber", event.target.value.replace(/\D/g, "").slice(0, 10))
-                  }
-                  placeholder="กรอกเลขที่บัญชี"
-                  type="text"
-                  value={formData.accountNumber}
-                />
-                {formErrors.accountNumber ? (
-                  <small className={styles.loanFormFieldError}>{formErrors.accountNumber}</small>
-                ) : null}
-              </label>
-
-              <label
-                className={[styles.loanFormField, formErrors.accountName ? styles.loanFormFieldInvalid : ""]
-                  .filter(Boolean)
-                  .join(" ")}
-                ref={(element) => {
-                  fieldRefs.current.accountName = element ?? undefined;
-                }}
-              >
-                <span>ชื่อบัญชีธนาคาร</span>
-                <input
-                  aria-invalid={Boolean(formErrors.accountName)}
-                  onBlur={() => handleFieldBlur("accountName")}
-                  onChange={(event) => updateFormField("accountName", event.target.value)}
-                  placeholder="กรอกชื่อบัญชี"
-                  type="text"
-                  value={formData.accountName}
-                />
-                {formErrors.accountName ? (
-                  <small className={styles.loanFormFieldError}>{formErrors.accountName}</small>
-                ) : null}
-              </label>
-
-              <label
-                className={[styles.loanFormField, formErrors.purpose ? styles.loanFormFieldInvalid : ""]
-                  .filter(Boolean)
-                  .join(" ")}
-                ref={(element) => {
-                  fieldRefs.current.purpose = element ?? undefined;
-                }}
-              >
-                <span>วัตถุประสงค์การกู้ยืม</span>
-                <input
-                  aria-invalid={Boolean(formErrors.purpose)}
-                  maxLength={40}
-                  onBlur={() => handleFieldBlur("purpose")}
-                  onChange={(event) => updateFormField("purpose", event.target.value)}
-                  placeholder="กรอกวัตถุประสงค์"
-                  type="text"
-                  value={formData.purpose}
-                />
-                {formErrors.purpose ? (
-                  <small className={styles.loanFormFieldError}>{formErrors.purpose}</small>
-                ) : null}
-              </label>
-
-              <label className={styles.loanFormField}>
-                <span>หมายเหตุเพิ่มเติม</span>
-                <textarea
-                  onChange={(event) => updateFormField("additionalNote", event.target.value)}
-                  placeholder="กรอกหมายเหตุเพิ่มเติม"
-                  value={formData.additionalNote === "-" ? "" : formData.additionalNote}
-                />
-              </label>
-
-              <label
-                className={[styles.loanFormField, formErrors.loanAmount ? styles.loanFormFieldInvalid : ""]
-                  .filter(Boolean)
-                  .join(" ")}
-                ref={(element) => {
-                  fieldRefs.current.loanAmount = element ?? undefined;
-                }}
-              >
-                <span>จำนวนเงินที่ขอกู้ยืม (บาท)</span>
-                <input
-                  aria-invalid={Boolean(formErrors.loanAmount)}
-                  inputMode="numeric"
-                  onBlur={() => handleFieldBlur("loanAmount")}
-                  onChange={(event) =>
-                    updateFormField("loanAmount", event.target.value.replace(/\D/g, ""))
-                  }
-                  pattern="[0-9]*"
-                  type="text"
-                  value={formData.loanAmount}
-                />
-                {formData.loanAmount ? (
-                  <p className={styles.loanAmountText}>{formatThaiBahtText(formData.loanAmount)}</p>
-                ) : null}
-                {formErrors.loanAmount ? (
-                  <small className={styles.loanFormFieldError}>{formErrors.loanAmount}</small>
-                ) : null}
-              </label>
-
-              <fieldset className={styles.loanInstallmentField}>
-                <legend>จำนวนงวดการชำระ</legend>
-                <div className={styles.loanInstallmentOptions}>
-                  {[1, 2, 3].map((count) => (
-                    <button
-                      className={
-                        formData.installmentCount === count
-                          ? styles.loanInstallmentSelected
-                          : ""
-                      }
-                      key={count}
-                      onClick={() =>
-                        setFormData((current) => ({
-                          ...current,
-                          installmentCount: count,
-                        }))
-                      }
-                      type="button"
+                    <label
+                      className={[
+                        styles.loanFormField,
+                        formErrors.academicYear ? styles.loanFormFieldInvalid : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      ref={(element) => {
+                        fieldRefs.current.academicYear = element ?? undefined;
+                      }}
                     >
-                      {count} งวด
-                    </button>
-                  ))}
-                </div>
-                <LoanDetailSchedule items={repaymentSchedule} />
-              </fieldset>
-            </div>
-          </section>
-        ) : (
-          <TempLoanDetailsStep
-            createdLoan={createdLoanData}
-            formData={savedFormData}
-            profile={profile}
-          />
-        )}
+                      <span>ชั้นปีการศึกษา</span>
+                      <LoanFormSelect
+                        error={formErrors.academicYear}
+                        onBlur={() => handleFieldBlur("academicYear")}
+                        onChange={(value) => updateFormField("academicYear", value)}
+                        options={tempLoanFormOptions.academicYears}
+                        placeholder="เลือกชั้นปีการศึกษา"
+                        value={formData.academicYear}
+                      />
+                      {formErrors.academicYear ? (
+                        <small className={styles.loanFormFieldError}>
+                          {formErrors.academicYear}
+                        </small>
+                      ) : null}
+                    </label>
 
-        {currentStep === 1 ? (
-          <div className={styles.loanFormActions}>
-            <button
-              className={styles.loanApplicationHomeButton}
-              onClick={() => router.push("/student")}
-              type="button"
-            >
-              <House aria-hidden="true" size={19} strokeWidth={2.2} />
-              กลับหน้าหลัก
-            </button>
-            <button
-              className={styles.loanApplicationNext}
-              disabled={!hasReadAgreement || !hasAcceptedAgreement}
-              onClick={() => setCurrentStep(2)}
-              type="button"
-            >
-              ถัดไป
-            </button>
-          </div>
-        ) : currentStep === 2 ? (
-          <div className={styles.loanFormActions}>
-            <button
-              className={styles.loanFormBack}
-              onClick={() => setCurrentStep(1)}
-              type="button"
-            >
-              ย้อนกลับ
-            </button>
-            <button
-              className={styles.loanApplicationNext}
-              onClick={handleLoanFormNext}
-              type="button"
-            >
-              ถัดไป
-            </button>
-          </div>
-        ) : (
-          <div className={styles.loanFormActions}>
-            {!createdLoanData ? (
+                    <label
+                      className={[
+                        styles.loanFormField,
+                        formErrors.advisorName ? styles.loanFormFieldInvalid : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      ref={(element) => {
+                        fieldRefs.current.advisorName = element ?? undefined;
+                      }}
+                    >
+                      <span>อาจารย์ที่ปรึกษา</span>
+                      <LoanFormSelect
+                        error={formErrors.advisorName}
+                        onBlur={() => handleFieldBlur("advisorName")}
+                        onChange={(value) => updateFormField("advisorName", value)}
+                        options={advisorSelectOptions}
+                        placeholder="เลือกอาจารย์ที่ปรึกษา"
+                        value={formData.advisorName}
+                      />
+                      {formErrors.advisorName ? (
+                        <small className={styles.loanFormFieldError}>
+                          {formErrors.advisorName}
+                        </small>
+                      ) : null}
+                    </label>
+
+                    <label
+                      className={[
+                        styles.loanFormField,
+                        formErrors.phoneNumber ? styles.loanFormFieldInvalid : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      ref={(element) => {
+                        fieldRefs.current.phoneNumber = element ?? undefined;
+                      }}
+                    >
+                      <span>เบอร์โทรศัพท์</span>
+                      <input
+                        aria-invalid={Boolean(formErrors.phoneNumber)}
+                        inputMode="numeric"
+                        maxLength={10}
+                        onBlur={() => handleFieldBlur("phoneNumber")}
+                        onChange={(event) =>
+                          updateFormField(
+                            "phoneNumber",
+                            event.target.value.replace(/\D/g, "").slice(0, 10),
+                          )
+                        }
+                        placeholder="กรอกเบอร์โทรศัพท์"
+                        type="text"
+                        value={formData.phoneNumber}
+                      />
+                      {formErrors.phoneNumber ? (
+                        <small className={styles.loanFormFieldError}>
+                          {formErrors.phoneNumber}
+                        </small>
+                      ) : null}
+                    </label>
+                  </div>
+                </section>
+
+                <section className={styles.loanFormSection}>
+                  <CardHeader className={styles.loanFormSectionHeading} title="ข้อมูลธนาคาร" />
+                  <div className={styles.loanFormFields}>
+                    <label
+                      className={[
+                        styles.loanFormField,
+                        formErrors.bankName ? styles.loanFormFieldInvalid : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      ref={(element) => {
+                        fieldRefs.current.bankName = element ?? undefined;
+                      }}
+                    >
+                      <span>ธนาคาร</span>
+                      <LoanFormSelect
+                        error={formErrors.bankName}
+                        onBlur={() => handleFieldBlur("bankName")}
+                        onChange={(value) => updateFormField("bankName", value)}
+                        options={tempLoanFormOptions.banks}
+                        placeholder="เลือกธนาคาร"
+                        value={formData.bankName}
+                      />
+                      {formErrors.bankName ? (
+                        <small className={styles.loanFormFieldError}>{formErrors.bankName}</small>
+                      ) : null}
+                    </label>
+
+                    <label
+                      className={[
+                        styles.loanFormField,
+                        formErrors.accountNumber ? styles.loanFormFieldInvalid : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      ref={(element) => {
+                        fieldRefs.current.accountNumber = element ?? undefined;
+                      }}
+                    >
+                      <span>เลขที่บัญชีธนาคาร</span>
+                      <input
+                        aria-invalid={Boolean(formErrors.accountNumber)}
+                        inputMode="numeric"
+                        maxLength={10}
+                        onBlur={() => handleFieldBlur("accountNumber")}
+                        onChange={(event) =>
+                          updateFormField(
+                            "accountNumber",
+                            event.target.value.replace(/\D/g, "").slice(0, 10),
+                          )
+                        }
+                        placeholder="กรอกเลขที่บัญชี"
+                        type="text"
+                        value={formData.accountNumber}
+                      />
+                      {formErrors.accountNumber ? (
+                        <small className={styles.loanFormFieldError}>
+                          {formErrors.accountNumber}
+                        </small>
+                      ) : null}
+                    </label>
+
+                    <label
+                      className={[
+                        styles.loanFormField,
+                        formErrors.accountName ? styles.loanFormFieldInvalid : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      ref={(element) => {
+                        fieldRefs.current.accountName = element ?? undefined;
+                      }}
+                    >
+                      <span>ชื่อบัญชีธนาคาร</span>
+                      <input
+                        aria-invalid={Boolean(formErrors.accountName)}
+                        onBlur={() => handleFieldBlur("accountName")}
+                        onChange={(event) => updateFormField("accountName", event.target.value)}
+                        placeholder="กรอกชื่อบัญชี"
+                        type="text"
+                        value={formData.accountName}
+                      />
+                      {formErrors.accountName ? (
+                        <small className={styles.loanFormFieldError}>
+                          {formErrors.accountName}
+                        </small>
+                      ) : null}
+                    </label>
+                  </div>
+                </section>
+
+                <section className={styles.loanFormSection}>
+                  <CardHeader
+                    className={styles.loanFormSectionHeading}
+                    title="วัตถุประสงค์การกู้ยืม"
+                  />
+                  <div className={styles.loanFormFields}>
+                    <label
+                      className={[
+                        styles.loanFormField,
+                        formErrors.purpose ? styles.loanFormFieldInvalid : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      ref={(element) => {
+                        fieldRefs.current.purpose = element ?? undefined;
+                      }}
+                    >
+                      <span>วัตถุประสงค์การกู้ยืม</span>
+                      <input
+                        aria-invalid={Boolean(formErrors.purpose)}
+                        maxLength={40}
+                        onBlur={() => handleFieldBlur("purpose")}
+                        onChange={(event) => updateFormField("purpose", event.target.value)}
+                        placeholder="กรอกวัตถุประสงค์"
+                        type="text"
+                        value={formData.purpose}
+                      />
+                      <small className={styles.loanFormCharacterCount}>
+                        {formData.purpose.length}/40 ตัวอักษร
+                      </small>
+                      {formErrors.purpose ? (
+                        <small className={styles.loanFormFieldError}>{formErrors.purpose}</small>
+                      ) : null}
+                    </label>
+
+                    <label className={styles.loanFormField}>
+                      <span>หมายเหตุเพิ่มเติม</span>
+                      <textarea
+                        maxLength={200}
+                        onChange={(event) => updateFormField("additionalNote", event.target.value)}
+                        placeholder="กรอกหมายเหตุเพิ่มเติม"
+                        value={formData.additionalNote === "-" ? "" : formData.additionalNote}
+                      />
+                      <small className={styles.loanFormCharacterCount}>
+                        {(formData.additionalNote === "-" ? "" : formData.additionalNote).length}/200 ตัวอักษร
+                      </small>
+                    </label>
+                  </div>
+                </section>
+
+                <section className={styles.loanFormSection}>
+                  <CardHeader className={styles.loanFormSectionHeading} title="จำนวนเงินที่ขอกู้ยืม" />
+                  <div className={styles.loanFormFields}>
+                    <label
+                      className={[
+                        styles.loanFormField,
+                        formErrors.loanAmount ? styles.loanFormFieldInvalid : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      ref={(element) => {
+                        fieldRefs.current.loanAmount = element ?? undefined;
+                      }}
+                    >
+                      <span>จำนวนเงินที่ขอกู้ยืม (บาท)</span>
+                      <input
+                        aria-invalid={Boolean(formErrors.loanAmount)}
+                        inputMode="numeric"
+                        onBlur={() => handleFieldBlur("loanAmount")}
+                        onChange={(event) => handleLoanAmountChange(event.target.value)}
+                        pattern="[0-9]*"
+                        type="text"
+                        value={formData.loanAmount}
+                      />
+                      {formData.loanAmount ? (
+                        <p className={styles.loanAmountText}>
+                          {formatThaiBahtText(formData.loanAmount)}
+                        </p>
+                      ) : null}
+                      {formErrors.loanAmount ? (
+                        <small className={styles.loanFormFieldError}>{formErrors.loanAmount}</small>
+                      ) : null}
+                    </label>
+
+                    <fieldset className={styles.loanInstallmentField}>
+                      <legend>จำนวนงวดการชำระ</legend>
+                      <div className={styles.loanInstallmentOptions}>
+                        {[1, 2, 3].map((count) => (
+                          <button
+                            className={
+                              formData.installmentCount === count
+                                ? styles.loanInstallmentSelected
+                                : ""
+                            }
+                            key={count}
+                            onClick={() =>
+                              setFormData((current) => ({
+                                ...current,
+                                installmentCount: count,
+                              }))
+                            }
+                            type="button"
+                          >
+                            {count} งวด
+                          </button>
+                        ))}
+                      </div>
+                      <LoanDetailSchedule items={repaymentSchedule} />
+                    </fieldset>
+                  </div>
+                </section>
+              </div>
+            </section>
+          ) : (
+            <TempLoanDetailsStep
+              createdLoan={createdLoanData}
+              formData={savedFormData}
+              profile={profile}
+            />
+          )}
+
+          {currentStep === 1 ? (
+            <div className={styles.loanFormActions}>
               <button
-                className={styles.loanFormBack}
+                className={styles.loanApplicationHomeButton}
+                onClick={() => router.push("/student")}
+                type="button"
+              >
+                <House aria-hidden="true" size={19} strokeWidth={2.2} />
+                กลับหน้าหลัก
+              </button>
+              <button
+                className={styles.loanApplicationNext}
+                disabled={!hasReadAgreement || !hasAcceptedAgreement}
                 onClick={() => setCurrentStep(2)}
                 type="button"
               >
-                กลับไปแก้ไขข้อมูล
+                ถัดไป
               </button>
-            ) : null}
-            <button
-              className={styles.loanApplicationDashboardButton}
-              onClick={() => router.push("/student")}
-              type="button"
-            >
-              <House aria-hidden="true" size={19} strokeWidth={2.2} />
-              กลับหน้าหลัก
-            </button>
-          </div>
-        )}
+            </div>
+          ) : currentStep === 2 ? (
+            <div className={styles.loanFormActions}>
+              <button
+                className={styles.loanFormBack}
+                onClick={() => setCurrentStep(1)}
+                type="button"
+              >
+                ย้อนกลับ
+              </button>
+              <button
+                className={styles.loanApplicationNext}
+                onClick={handleLoanFormNext}
+                type="button"
+              >
+                ถัดไป
+              </button>
+            </div>
+          ) : (
+            <div className={styles.loanFormActions}>
+              {!createdLoanData ? (
+                <button
+                  className={styles.loanFormBack}
+                  onClick={() => setCurrentStep(2)}
+                  type="button"
+                >
+                  กลับไปแก้ไขข้อมูล
+                </button>
+              ) : null}
+              <button
+                className={styles.loanApplicationDashboardButton}
+                onClick={() => router.push("/student")}
+                type="button"
+              >
+                <House aria-hidden="true" size={19} strokeWidth={2.2} />
+                กลับหน้าหลัก
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

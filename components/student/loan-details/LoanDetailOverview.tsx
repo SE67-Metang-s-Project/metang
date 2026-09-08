@@ -1,6 +1,5 @@
 import { Download } from "lucide-react";
-import type { LoanDetails } from "@/app/student/studentMockData";
-import StatusPill from "@/components/shared/StatusPill";
+import type { LoanDetails, LoanRequestStatus } from "@/app/student/studentMockData";
 import styles from "@/app/student/student.module.css";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 
@@ -8,6 +7,7 @@ type LoanDetailOverviewProps = {
   details: Pick<
     LoanDetails,
     | "requestNumber"
+    | "statusCode"
     | "statusLabel"
     | "submittedAt"
     | "purposeLabel"
@@ -19,10 +19,25 @@ type LoanDetailOverviewProps = {
   > & {
     schedule?: LoanDetails["schedule"];
   };
+  showDownload?: boolean;
 };
 
-const getHistoryStatusClassName = (statusLabel: string) => {
+const statusTypeByCode: Record<string, LoanRequestStatus> = {
+  returned: "revisionRequired",
+  pending_advisor: "waitingAdvisorApproval",
+  pending_admin: "waitingDocumentReview",
+  pending_executive: "waitingExecutiveApproval",
+  pending_disbursement: "waitingPaymentConfirmation",
+  disbursed: "pending",
+  closed: "completed",
+  rejected: "rejectedExecutive",
+  cancelled: "rejectedExecutive",
+};
+
+const getHistoryStatusClassName = (statusCode: string | undefined, statusLabel: string) => {
+  if (statusCode && statusTypeByCode[statusCode]) return styles[statusTypeByCode[statusCode]];
   if (statusLabel.includes("ปฏิเสธ")) return styles.rejectedExecutive;
+  if (statusLabel.includes("ไม่อนุมัติ")) return styles.rejectedExecutive;
   if (statusLabel.includes("ยืนยันการรับเงิน")) return styles.waitingPaymentConfirmation;
   if (statusLabel.includes("แก้ไข")) return styles.revisionRequired;
   if (statusLabel.includes("อาจารย์")) return styles.waitingAdvisorApproval;
@@ -33,7 +48,7 @@ const getHistoryStatusClassName = (statusLabel: string) => {
   return styles.pending;
 };
 
-export default function LoanDetailOverview({ details }: LoanDetailOverviewProps) {
+export default function LoanDetailOverview({ details, showDownload = false }: LoanDetailOverviewProps) {
   const { language, t } = useStudentLanguage();
   const isAdditionalReasonLong = details.additionalReason.length > 30;
   const isPurposeLong = details.purpose.length > 30;
@@ -41,11 +56,10 @@ export default function LoanDetailOverview({ details }: LoanDetailOverviewProps)
   return (
     <section className={`${styles.loanDetailSection} ${styles.detailDashboardCard} ${styles.loanDetailOverview}`}>
       <header className={`${styles.sectionCardHeading} ${styles.loanDetailOverviewHeader}`}>
-        <h2>{t("คำร้อง", "Request")} {details.requestNumber}</h2>
-        <StatusPill
-          className={getHistoryStatusClassName(details.statusLabel)}
-          label={localizeStudentContent(details.statusLabel, language)}
-        />
+        <h2>{details.requestNumber}</h2>
+        <span className={`${styles.historyStatus} ${getHistoryStatusClassName(details.statusCode, details.statusLabel)}`}>
+          ● {localizeStudentContent(details.statusLabel, language)}
+        </span>
       </header>
       <div className={styles.loanDetailSummary}>
         <div className={styles.loanDetailAmountSummary}>
@@ -60,11 +74,13 @@ export default function LoanDetailOverview({ details }: LoanDetailOverviewProps)
         ) : null}
       </div>
       <dl className={styles.loanDetailInfoList}>
-        <div className={isPurposeLong ? styles.loanDetailPurposeLong : undefined}>
-          <dt>{t("ยื่นเมื่อ", "Submitted")}</dt>
-          <dd>{localizeStudentContent(details.submittedAt.replace(/^ยื่นเมื่อ\s*/, ""), language)}</dd>
-        </div>
         <div>
+          <dt>{t("ยื่นเมื่อ", "Submitted")}</dt>
+          <dd className={styles.loanDetailSubmittedAt}>
+            {localizeStudentContent(details.submittedAt.replace(/^ยื่นเมื่อ\s*/, ""), language)}
+          </dd>
+        </div>
+        <div className={isPurposeLong ? styles.loanDetailPurposeLong : undefined}>
           <dt>{t(details.purposeLabel, "Loan purpose")}</dt>
           <dd>{localizeStudentContent(details.purpose, language)}</dd>
         </div>
@@ -73,7 +89,7 @@ export default function LoanDetailOverview({ details }: LoanDetailOverviewProps)
           <dd>{localizeStudentContent(details.additionalReason, language)}</dd>
         </div>
       </dl>
-      {details.downloadLabel ? (
+      {showDownload && details.downloadLabel ? (
         <button className={styles.loanDownloadButton} type="button">
           <Download aria-hidden="true" size={18} />
           <strong>{t(details.downloadLabel, "Download loan agreement")}</strong>

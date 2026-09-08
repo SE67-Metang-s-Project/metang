@@ -38,9 +38,25 @@ export const tempLoanFormOptions = {
     label: advisor,
     value: advisor,
   })),
-  banks: ["ธนาคารกสิกรไทย", "ธนาคารกรุงไทย"].map((bank) => ({
-    label: bank,
-    value: bank,
+  banks: [
+    ["KBANK", "ธนาคารกสิกรไทย", "Kasikornbank"],
+    ["SCB", "ธนาคารไทยพาณิชย์", "Siam Commercial Bank"],
+    ["KTB", "ธนาคารกรุงไทย", "Krungthai Bank"],
+    ["BBL", "ธนาคารกรุงเทพ", "Bangkok Bank"],
+    ["BAY", "ธนาคารกรุงศรีอยุธยา", "Krungsri Bank"],
+    ["TTB", "ธนาคารทหารไทยธนชาต", "TMBThanachart Bank"],
+    ["GSB", "ธนาคารออมสิน", "Government Savings Bank"],
+    ["BAAC", "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (ธ.ก.ส.)", "BAAC"],
+    ["GHB", "ธนาคารอาคารสงเคราะห์ (ธอส.)", "Government Housing Bank"],
+    ["UOB", "ธนาคารยูโอบี", "United Overseas Bank"],
+    ["KKP", "ธนาคารเกียรตินาคินภัทร", "Kiatnakin Phatra Bank"],
+    ["CIMB", "ธนาคารซีไอเอ็มบี ไทย", "CIMB Thai Bank"],
+    ["TISCO", "ธนาคารทิสโก้", "TISCO Bank"],
+  ].map(([code, label, labelEn]) => ({
+    label,
+    labelEn,
+    logoSrc: `/bank-logos/${code}.png`,
+    value: label,
   })),
 };
 
@@ -98,6 +114,8 @@ export const tempLoanFormDefaults: TempLoanFormData = {
   loanAmount: "",
   installmentCount: 3,
 };
+
+export const tempLoanApplicationLimit = 500_000;
 
 export const tempRepaymentSchedule = [
   {

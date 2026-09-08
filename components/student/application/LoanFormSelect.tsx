@@ -1,11 +1,15 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
 
 type LoanFormSelectOption = {
   label: string;
+  labelEn?: string;
+  logoSrc?: string;
   value: string;
 };
 
@@ -28,9 +32,12 @@ export default function LoanFormSelect({
   placeholder,
   value,
 }: LoanFormSelectProps) {
+  const { language } = useStudentLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
   const selectedOption = options.find((option) => option.value === value);
+  const getOptionLabel = (option: LoanFormSelectOption) =>
+    language === "en" ? option.labelEn ?? option.label : option.label;
 
   useEffect(() => {
     const closeOnOutsideClick = (event: MouseEvent) => {
@@ -76,7 +83,18 @@ export default function LoanFormSelect({
         onClick={() => setIsOpen((current) => !current)}
         type="button"
       >
-        <span>{selectedOption?.label ?? placeholder}</span>
+        <span className={styles.loanFormSelectValue}>
+          {selectedOption?.logoSrc ? (
+            <Image
+              alt=""
+              className={styles.loanFormSelectLogo}
+              height={24}
+              src={selectedOption.logoSrc}
+              width={24}
+            />
+          ) : null}
+          {selectedOption ? getOptionLabel(selectedOption) : placeholder}
+        </span>
         <ChevronDown
           aria-hidden="true"
           className={isOpen ? styles.loanFormSelectChevronOpen : undefined}
@@ -85,7 +103,15 @@ export default function LoanFormSelect({
       </button>
 
       {isOpen ? (
-        <div className={styles.loanFormSelectMenu} role="listbox">
+        <div
+          className={styles.loanFormSelectMenu}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsOpen(false);
+            }
+          }}
+          role="listbox"
+        >
           {options.map((option) => (
             <button
               aria-selected={option.value === value}
@@ -95,7 +121,18 @@ export default function LoanFormSelect({
               role="option"
               type="button"
             >
-              {option.label}
+              <span className={styles.loanFormSelectValue}>
+                {option.logoSrc ? (
+                  <Image
+                    alt=""
+                    className={styles.loanFormSelectLogo}
+                    height={24}
+                    src={option.logoSrc}
+                    width={24}
+                  />
+                ) : null}
+                {getOptionLabel(option)}
+              </span>
             </button>
           ))}
         </div>

@@ -27,7 +27,7 @@ export default function TempStudentDashboard() {
   );
 
   return (
-    <main className={styles.studentPage}>
+    <main className={`${styles.studentPage} ${styles.studentPageNoLoan}`}>
       <TopNav
         showSidebarButton={false}
         userEmail={`${tempStudentProfile.studentId}@cmu.ac.th`}

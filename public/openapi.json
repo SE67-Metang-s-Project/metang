@@ -1041,6 +1041,7 @@
           "decision"
         ]
       },
+      "AdvisorListResponse": {},
       "AdvisorLoanRequestDetail": {
         "type": "object",
         "properties": {
@@ -5145,9 +5146,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -5224,9 +5225,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -5370,9 +5371,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -5419,9 +5420,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -5674,9 +5675,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -5743,9 +5744,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -6033,6 +6034,54 @@
         }
       }
     },
+    "/student/advisors": {
+      "get": {
+        "operationId": "get-student-advisors",
+        "summary": "List available advisors for student loan application.",
+        "description": "",
+        "tags": [
+          "Student loans"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvisorListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/student/loan-requests": {
       "get": {
         "operationId": "get-student-loan-requests",
@@ -6183,9 +6232,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [
@@ -6280,9 +6329,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "1ea025de-e936-4a86-a0a2-accae663cb8e"
+            "example": "REQ202609060000"
           }
         ],
         "security": [

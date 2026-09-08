@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, FilePenLine, UserRound, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, UserRound, X } from "lucide-react";
 import type { LoanInput } from "@/lib/loan-validation";
 import LoanFormSelect from "@/components/student/application/LoanFormSelect";
 import { formatThaiBahtText } from "@/app/student/studentFormatters";
@@ -228,7 +228,6 @@ export default function ReturnedRequestCorrectionForm({
         </button>
 
         <header className={styles.returnedCorrectionHeading}>
-          <FilePenLine aria-hidden="true" size={26} />
           <div>
             <p>{t("คำร้อง", "Request")} {correction.requestNumber}</p>
             <h2 id="returned-request-correction-title">

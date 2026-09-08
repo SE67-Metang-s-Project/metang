@@ -20,6 +20,7 @@ const now = new Date();
 const day = 86_400_000;
 const dateFromNow = (days: number) => new Date(now.getTime() + days * day);
 const id = (value: number) => `00000000-0000-0000-0000-${String(value).padStart(12, "0")}`;
+const loanId = (value: number) => `REQ20260906${String(value - 200).padStart(4, "0")}`;
 const educationLevels = ["0", "1", "3", "5"] as const;
 
 const users: Prisma.AppUserCreateManyInput[] = [
@@ -112,7 +113,7 @@ const loanScenarios = [
 
 const loans: Prisma.LoanRequestCreateManyInput[] = loanScenarios.map(
   ([number, status, amount, approvedAmount, installmentCount, dueOffset]) => ({
-    id: id(number),
+    id: loanId(number),
     studentId: id(number - 100),
     advisorId: [208, 209].includes(number) ? id(5) : id(4),
     studentYear: 3,
@@ -159,7 +160,7 @@ const approvalRows = [
 
 const approvals: Prisma.LoanApprovalCreateManyInput[] = approvalRows.map(
   ([loanNumber, step, decision, actorNumber, comment]) => ({
-    loanId: id(loanNumber),
+    loanId: loanId(loanNumber),
     step,
     decision,
     decidedBy: actorNumber ? id(actorNumber) : null,
@@ -169,11 +170,11 @@ const approvals: Prisma.LoanApprovalCreateManyInput[] = approvalRows.map(
 );
 
 const installments: Prisma.InstallmentCreateManyInput[] = [
-  { loanId: id(207), seq: 1, dueDate: dateFromNow(-30), amountDue: 1500, amountPaid: 0 },
-  { loanId: id(207), seq: 2, dueDate: dateFromNow(10), amountDue: 1500, amountPaid: 500 },
-  { loanId: id(207), seq: 3, dueDate: dateFromNow(40), amountDue: 1500, amountPaid: 0 },
+  { loanId: loanId(207), seq: 1, dueDate: dateFromNow(-30), amountDue: 1500, amountPaid: 0 },
+  { loanId: loanId(207), seq: 2, dueDate: dateFromNow(10), amountDue: 1500, amountPaid: 500 },
+  { loanId: loanId(207), seq: 3, dueDate: dateFromNow(40), amountDue: 1500, amountPaid: 0 },
   {
-    loanId: id(208),
+    loanId: loanId(208),
     seq: 1,
     dueDate: dateFromNow(-90),
     amountDue: 1000,
@@ -181,7 +182,7 @@ const installments: Prisma.InstallmentCreateManyInput[] = [
     settledAt: dateFromNow(-92),
   },
   {
-    loanId: id(208),
+    loanId: loanId(208),
     seq: 2,
     dueDate: dateFromNow(-60),
     amountDue: 1000,
@@ -189,7 +190,7 @@ const installments: Prisma.InstallmentCreateManyInput[] = [
     settledAt: dateFromNow(-55),
   },
   {
-    loanId: id(208),
+    loanId: loanId(208),
     seq: 3,
     dueDate: dateFromNow(-30),
     amountDue: 1000,
@@ -215,16 +216,26 @@ async function main() {
       await tx.appUser.createMany({ data: users, skipDuplicates: true });
       await tx.userRole.createMany({ data: roles, skipDuplicates: true });
       await tx.loanRequest.createMany({ data: loans, skipDuplicates: true });
+      await tx.$queryRaw`
+        SELECT setval(
+          'public.loan_request_number_seq',
+          GREATEST(
+            (SELECT last_value FROM public.loan_request_number_seq),
+            (SELECT COALESCE(MAX(right(id, 4)::integer), 0) FROM public.loan_request)
+          ),
+          true
+        )
+      `;
       await tx.loanApproval.createMany({ data: approvals, skipDuplicates: true });
       await tx.installment.createMany({ data: installments, skipDuplicates: true });
 
       const createdInstallments = await tx.installment.findMany({
-        where: { loanId: { in: [id(207), id(208)] } },
+        where: { loanId: { in: [loanId(207), loanId(208)] } },
         select: { id: true, loanId: true, seq: true },
       });
       const installmentId = (loanNumber: number, seq: number) => {
         const installment = createdInstallments.find(
-          (row) => row.loanId === id(loanNumber) && row.seq === seq,
+          (row) => row.loanId === loanId(loanNumber) && row.seq === seq,
         );
         if (!installment) throw new Error(`Missing installment ${loanNumber}/${seq}`);
         return installment.id;
@@ -240,7 +251,7 @@ async function main() {
       const payments: Prisma.PaymentCreateManyInput[] = paymentRows.map(
         ([number, loanNumber, seq, amount, status]) => ({
           id: id(number),
-          loanId: id(loanNumber),
+          loanId: loanId(loanNumber),
           installmentId: installmentId(loanNumber, seq),
           amount,
           slipUrl: `/mock/slips/${number}.jpg`,
@@ -277,7 +288,7 @@ async function main() {
             kind: "disburse",
             amount: 4500,
             direction: -1,
-            loanId: id(207),
+            loanId: loanId(207),
             performedBy: id(3),
             slipUrl: "/mock/slips/disbursement-207.jpg",
             note: fundNotes[1],
@@ -286,7 +297,7 @@ async function main() {
             kind: "disburse",
             amount: 3000,
             direction: -1,
-            loanId: id(208),
+            loanId: loanId(208),
             performedBy: id(3),
             slipUrl: "/mock/slips/disbursement-208.jpg",
             note: fundNotes[2],
@@ -295,7 +306,7 @@ async function main() {
             kind: "repayment",
             amount: 1000,
             direction: 1,
-            loanId: id(208),
+            loanId: loanId(208),
             performedBy: id(3),
             note: fundNotes[index + 3],
           })),
@@ -309,7 +320,7 @@ async function main() {
         ],
       });
 
-      const auditEntityIds = [id(205), id(206), id(207), id(301), "main"];
+      const auditEntityIds = [loanId(205), loanId(206), loanId(207), id(301), "main"];
       await tx.auditLog.deleteMany({ where: { entityId: { in: auditEntityIds } } });
       await tx.auditLog.createMany({
         data: [
@@ -317,7 +328,7 @@ async function main() {
             actorId: id(3),
             action: "approve_amount",
             entityType: "loan_request",
-            entityId: id(205),
+            entityId: loanId(205),
             before: { approved_amount: null },
             after: { approved_amount: 3200 },
           },
@@ -325,7 +336,7 @@ async function main() {
             actorId: id(1),
             action: "approve",
             entityType: "loan_request",
-            entityId: id(206),
+            entityId: loanId(206),
             before: { status: "pending_executive" },
             after: { status: "pending_disbursement" },
           },
@@ -333,7 +344,7 @@ async function main() {
             actorId: id(3),
             action: "disburse",
             entityType: "loan_request",
-            entityId: id(207),
+            entityId: loanId(207),
             before: { status: "pending_disbursement" },
             after: { status: "disbursed" },
           },

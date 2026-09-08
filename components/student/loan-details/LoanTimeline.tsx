@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { Check, CheckCircle2, Clock3, FileText } from "lucide-react";
+import { Check, CheckCircle2, CircleX, Clock3, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { LoanTimelineItem } from "@/app/student/studentMockData";
 import styles from "@/app/student/student.module.css";
@@ -12,6 +12,8 @@ type LoanTimelineProps = {
   confirmTransferLabel?: string;
   isTransferAccepted?: boolean;
   onConfirmTransfer?: () => void;
+  onCancelRequest?: () => void;
+  showCancelRequest?: boolean;
 };
 
 export default function LoanTimeline({
@@ -20,6 +22,8 @@ export default function LoanTimeline({
   confirmTransferLabel,
   isTransferAccepted = false,
   onConfirmTransfer,
+  onCancelRequest,
+  showCancelRequest = false,
 }: LoanTimelineProps) {
   const router = useRouter();
   const [isTransferConfirmed, setIsTransferConfirmed] = useState(false);
@@ -36,6 +40,10 @@ export default function LoanTimeline({
 
   const hasItems = items && items.length > 0;
   const hasActions = hasItems && Boolean(onShowTransferSlip || shouldShowConfirmation);
+  const currentItemIndex = items.reduce(
+    (currentIndex, item, index) => (item.isUpcoming ? currentIndex : index),
+    -1,
+  );
 
   return (
     <section
@@ -50,9 +58,16 @@ export default function LoanTimeline({
       </header>
       {hasItems ? (
         <ol className={styles.loanTimeline}>
-          {items.map((item) => (
+          {items.map((item, index) => (
             <li className={styles.loanTimelineItem} key={item.title}>
-              <span aria-hidden="true" className={styles.timelineMarker} />
+              <span
+                aria-hidden="true"
+                className={`${styles.timelineMarker} ${item.isPending ? styles.timelineMarkerPending : ""} ${
+                  item.isUpcoming ? styles.timelineMarkerUpcoming : ""
+                } ${
+                  item.isFailed ? styles.timelineMarkerFailed : ""
+                }`}
+              />
               <div className={styles.timelineContent}>
                 <strong>{item.title}</strong>
                 <p>
@@ -76,17 +91,27 @@ export default function LoanTimeline({
                     ))}
                   </dl>
                 ) : null}
+                {showCancelRequest && index === currentItemIndex ? (
+                  <button
+                    className={styles.loanTimelineCancelButton}
+                    onClick={onCancelRequest}
+                    type="button"
+                  >
+                    <CircleX aria-hidden="true" size={17} strokeWidth={2.4} />
+                    ยกเลิกคำร้อง
+                  </button>
+                ) : null}
               </div>
             </li>
           ))}
         </ol>
       ) : (
         <div style={{ textAlign: "center", padding: "1.5rem 1rem", color: "#6b7280" }}>
-          <p style={{ margin: "0 0 0.25rem 0", fontSize: "0.95rem", fontWeight: 500 }}>
+          <p style={{ margin: "0 0 0.25rem 0", fontSize: "14px", fontWeight: 500 }}>
             ไม่มีคำร้องขอกู้ยืมที่อยู่ระหว่างดำเนินการ
           </p>
-          <span style={{ fontSize: "0.85rem", color: "#9ca3af" }}>
-            เมื่อท่านยื่นคำร้องกู้ยืม จะสามารถติดตามสถานะขั้นตอนการพิจารณาได้ที่นี่
+          <span style={{ color: "#9ca3af", fontSize: "14px" }}>
+            การติดตามสถานะจะแสดงที่นี่เมื่อมีการยื่นคำร้อง
           </span>
         </div>
       )}

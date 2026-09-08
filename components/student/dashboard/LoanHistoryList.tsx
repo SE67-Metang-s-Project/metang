@@ -56,9 +56,14 @@ export default function LoanHistoryList({
             />
           ))
         ) : (
-          <p style={{ textAlign: "center", color: "#6b7280", padding: "1.5rem 0", fontSize: "0.95rem" }}>
-            ยังไม่มีประวัติคำร้องกู้ยืม
-          </p>
+          <div style={{ color: "#6b7280", padding: "1.5rem 0", textAlign: "center" }}>
+            <p style={{ fontSize: "14px", fontWeight: 500, margin: "0 0 0.25rem" }}>
+              ยังไม่มีประวัติคำร้องกู้ยืม
+            </p>
+            <span style={{ color: "#9ca3af", fontSize: "14px" }}>
+              ประวัติคำร้องจะแสดงที่นี่เมื่อมีการยื่นคำร้อง
+            </span>
+          </div>
         )}
       </div>
 

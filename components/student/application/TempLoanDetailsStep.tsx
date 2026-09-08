@@ -1,17 +1,17 @@
 import {
-  tempLoanTimeline,
   tempStudentProfile,
   tempCurrentLoanDetails,
   type TempLoanFormData,
 } from "@/app/student/temp/tempMockData";
 import { HandCoins, Landmark, UserRound } from "lucide-react";
 import styles from "@/app/student/student.module.css";
-import { formatThaiBahtText } from "@/app/student/studentFormatters";
+import { formatThaiBahtText, parseLoanAmount } from "@/app/student/studentFormatters";
 import CardHeader from "@/components/shared/CardHeader";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import LoanDetailOverview from "../loan-details/LoanDetailOverview";
 import LoanTimeline from "../loan-details/LoanTimeline";
 
+import type { LoanTimelineItem } from "@/app/student/studentMockData";
 import type { StudentProfileDisplay } from "../dashboard/LoanSummaryCard";
 import { mapToLoanDetails, type RawStudentLoan } from "@/lib/student-view-model";
 
@@ -20,6 +20,21 @@ type TempLoanDetailsStepProps = {
   profile?: StudentProfileDisplay;
   createdLoan?: RawStudentLoan | null;
 };
+
+const initialTimeline: LoanTimelineItem[] = [
+  {
+    title: "ยื่นคำร้องกู้ยืมเงิน",
+    dateTime: "ยื่นแล้ว",
+    actor: "นักศึกษา",
+    isCompleted: true,
+  },
+  {
+    title: "อาจารย์ที่ปรึกษาพิจารณาคำร้อง",
+    dateTime: "กำลังดำเนินการ",
+    actor: "อาจารย์ที่ปรึกษา",
+    isPending: true,
+  },
+];
 
 export default function TempLoanDetailsStep({
   formData,
@@ -31,7 +46,7 @@ export default function TempLoanDetailsStep({
 
   const mappedLoanDetails = createdLoan ? mapToLoanDetails(createdLoan) : null;
 
-  const loanAmount = Number(formData.loanAmount) || 0;
+  const loanAmount = parseLoanAmount(formData.loanAmount);
   const baseInstallmentAmount = Math.floor(loanAmount / formData.installmentCount);
   const installmentRemainder = loanAmount % formData.installmentCount;
   const fallbackSchedule = Array.from({ length: formData.installmentCount }, (_, index) => {
@@ -53,14 +68,16 @@ export default function TempLoanDetailsStep({
   });
 
   const schedule = mappedLoanDetails?.schedule?.length ? mappedLoanDetails.schedule : fallbackSchedule;
-  const timelineItems = mappedLoanDetails?.timeline?.length ? mappedLoanDetails.timeline : tempLoanTimeline;
+  const fullTimeline = mappedLoanDetails?.timeline?.length ? mappedLoanDetails.timeline : initialTimeline;
+  const hasAdminFinishedTransfer = createdLoan?.status === "disbursed" || Boolean(createdLoan?.disbursedAt);
+  const timelineItems = fullTimeline.filter((item) => !item.isUpcoming);
 
   const details = {
     ...tempCurrentLoanDetails,
     requestNumber: mappedLoanDetails?.requestNumber ?? tempCurrentLoanDetails.requestNumber,
     statusLabel: mappedLoanDetails?.statusLabel ?? "รออาจารย์ที่ปรึกษาพิจารณา",
     submittedAt: mappedLoanDetails?.submittedAt ?? tempCurrentLoanDetails.submittedAt,
-    amount: formData.loanAmount ? `${Number(formData.loanAmount).toLocaleString("th-TH")}` : "0",
+    amount: formData.loanAmount ? `${parseLoanAmount(formData.loanAmount).toLocaleString("th-TH")}` : "0",
     purpose: formData.purpose || tempCurrentLoanDetails.purpose,
     additionalReason: formData.additionalNote === "-" ? "-" : formData.additionalNote,
     schedule,
@@ -73,8 +90,8 @@ export default function TempLoanDetailsStep({
       <LoanDetailOverview details={details} />
       <LoanTimeline
         items={timelineItems}
-        confirmTransferLabel="ยืนยันการรับเงิน"
-        onShowTransferSlip={() => undefined}
+        confirmTransferLabel={hasAdminFinishedTransfer ? "ยืนยันการรับเงิน" : undefined}
+        onShowTransferSlip={hasAdminFinishedTransfer ? () => undefined : undefined}
       />
 
       <section className={styles.tempDetailCard}>
