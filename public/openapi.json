@@ -1965,6 +1965,26 @@
               "decision": {
                 "type": "string",
                 "enum": [
+                  "returned"
+                ],
+                "nullable": false
+              },
+              "comment": {
+                "type": "string",
+                "nullable": false
+              }
+            },
+            "required": [
+              "decision",
+              "comment"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "decision": {
+                "type": "string",
+                "enum": [
                   "rejected"
                 ],
                 "nullable": false
@@ -6303,6 +6323,75 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/student/loan-requests/{id}/cancel": {
+      "post": {
+        "operationId": "post-student-loan-requests-{id}-cancel",
+        "summary": "Cancel the current student's active loan request.",
+        "description": "",
+        "tags": [
+          "Student loans"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^REQ\\d{8}\\d{4}$"
+            },
+            "example": "REQ202609060000"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanRequestDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
             "content": {
               "application/json": {
                 "schema": {

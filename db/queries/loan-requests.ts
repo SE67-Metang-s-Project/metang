@@ -380,7 +380,7 @@ export async function decideAdminLoanRequest({
       },
     });
     return final;
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
 }
 
 
@@ -768,12 +768,14 @@ export async function decideExecutiveLoanRequest({
     });
     if (!pending) throw new ExecutiveDecisionError("STALE_DECISION");
 
-    const nextStatus = decision === "approved" ? "pending_disbursement" : "rejected";
+    const nextStatus =
+      decision === "approved" ? "pending_disbursement" : decision === "returned" ? "pending_admin" : "rejected";
     const changed = await tx.loanRequest.updateMany({
       where: { id, status: "pending_executive" },
       data: {
         status: nextStatus,
-        assignedAdminId: null,
+        assignedAdminId: decision === "returned" ? current.assignedAdminId : null,
+        approvedAmount: decision === "returned" ? null : undefined,
       },
     });
     if (changed.count !== 1) throw new ExecutiveDecisionError("STALE_DECISION");
@@ -782,6 +784,12 @@ export async function decideExecutiveLoanRequest({
       where: { id: pending.id },
       data: { decision, decidedBy: executiveId, decidedAt: new Date(), comment },
     });
+
+    if (decision === "returned") {
+      await tx.loanApproval.create({
+        data: { loanId: id, step: "admin", attempt: pending.attempt + 1 },
+      });
+    }
 
     const final = await tx.loanRequest.findUniqueOrThrow({
       where: { id },
@@ -798,6 +806,6 @@ export async function decideExecutiveLoanRequest({
       },
     });
     return final;
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
 }
 

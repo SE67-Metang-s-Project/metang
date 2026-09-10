@@ -19,12 +19,9 @@ export type LoanDecisionInput = {
   comment: string | null;
 };
 
-export type ExecutiveDecision = "approved" | "rejected";
+export type ExecutiveDecision = LoanDecision;
 
-export type ExecutiveDecisionInput = {
-  decision: ExecutiveDecision;
-  comment: string | null;
-};
+export type ExecutiveDecisionInput = LoanDecisionInput;
 
 export type AdminDecisionInput = LoanDecisionInput & {
   approvedAmount: number | null;
@@ -150,19 +147,7 @@ export function parseAdminDecisionInput(value: unknown): AdminDecisionInput {
   return { decision, approvedAmount, comment };
 }
 
-export function parseExecutiveDecisionInput(value: unknown): ExecutiveDecisionInput {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error("request body is invalid");
-  }
-
-  const input = value as Record<string, unknown>;
-  if (input.decision !== "approved" && input.decision !== "rejected") {
-    throw new Error("decision is invalid");
-  }
-
-  const decision = input.decision as ExecutiveDecision;
-  return { decision, comment: parseDecisionComment(input.comment, decision) };
-}
+export const parseExecutiveDecisionInput = parseLoanDecisionInput;
 
 export function parsePhoneNumber(value: unknown) {
   if (typeof value !== "string") throw new Error("phoneNumber is invalid");

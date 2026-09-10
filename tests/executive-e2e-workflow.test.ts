@@ -43,7 +43,7 @@ test("Executive loan selection and queue query strictly prohibit bank details (N
   }
 });
 
-test("ExecutiveDecision parser allows only approved and rejected with required comments (NAT-120)", () => {
+test("ExecutiveDecision parser allows approved, returned, and rejected with required comments (NAT-120)", () => {
   // Approved decision
   assert.deepEqual(parseExecutiveDecisionInput({ decision: "approved" }), {
     decision: "approved",
@@ -78,10 +78,17 @@ test("ExecutiveDecision parser allows only approved and rejected with required c
     /A comment is required for this decision/,
   );
 
-  // Returning is strictly prohibited for Executive (only Advisor/Admin can return)
+  // Returned decision sends the loan back to Admin; also requires comment
+  assert.deepEqual(
+    parseExecutiveDecisionInput({ decision: "returned", comment: "  แก้ไขวงเงิน  " }),
+    {
+      decision: "returned",
+      comment: "แก้ไขวงเงิน",
+    },
+  );
   assert.throws(
-    () => parseExecutiveDecisionInput({ decision: "returned", comment: "แก้ไข" }),
-    /decision is invalid/,
+    () => parseExecutiveDecisionInput({ decision: "returned" }),
+    /A comment is required for this decision/,
   );
 });
 
@@ -149,5 +156,5 @@ test("OpenAPI documents all Executive endpoints and matches NAT-85 contract", ()
   // Schema checks
   const bodySchema = document.components?.schemas?.ExecutiveDecisionBody;
   assert.ok(bodySchema);
-  assert.doesNotMatch(JSON.stringify(bodySchema), /returned/);
+  assert.match(JSON.stringify(bodySchema), /returned/);
 });
