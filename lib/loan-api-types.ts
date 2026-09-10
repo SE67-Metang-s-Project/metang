@@ -263,6 +263,7 @@ export type PhoneNumberResponse = {
 
 export type ExecutiveDecisionBody =
   | { decision: "approved"; comment?: string | null }
+  | { decision: "returned"; comment: string }
   | { decision: "rejected"; comment: string };
 
 export type ExecutiveQueueItem = {

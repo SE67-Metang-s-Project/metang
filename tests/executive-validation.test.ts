@@ -20,8 +20,16 @@ test("parses and trims rejected comments", () => {
   });
 });
 
+test("parses and trims returned comments", () => {
+  assert.deepEqual(parseExecutiveDecisionInput({ decision: "returned", comment: "  fix it  " }), {
+    decision: "returned",
+    comment: "fix it",
+  });
+  assert.throws(() => parseExecutiveDecisionInput({ decision: "returned" }), /comment/i);
+});
+
 test("rejects invalid Executive decision bodies", () => {
-  for (const value of [null, [], "approved", { decision: "returned", comment: "fix it" }]) {
+  for (const value of [null, [], "approved"]) {
     assert.throws(() => parseExecutiveDecisionInput(value), /body|decision/i);
   }
   assert.throws(() => parseExecutiveDecisionInput({ decision: "rejected", comment: " " }), /comment/i);

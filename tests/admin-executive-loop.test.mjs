@@ -21,13 +21,20 @@ test("review history and attempts preserve chronological rounds", () => {
   assert.match(query, /assignedAdminId/);
 });
 
-test("Executive rejection is terminal and does not create another Admin attempt", () => {
+test("Executive return reopens Admin ownership for another attempt; rejection stays terminal", () => {
   const query = read("db/queries/loan-requests.ts");
   const service = query.slice(query.indexOf("export type ExecutiveDecisionErrorCode"));
-  assert.match(service, /nextStatus = decision === "approved" \? "pending_disbursement" : "rejected"/);
+  assert.match(
+    service,
+    /nextStatus =\s*decision === "approved" \? "pending_disbursement" : decision === "returned" \? "pending_admin" : "rejected"/,
+  );
   assert.match(service, /status: nextStatus/);
-  assert.doesNotMatch(service, /tx\.loanApproval\.create/);
-  assert.match(read("lib/loan-validation.ts"), /ExecutiveDecision = "approved" \| "rejected"/);
+  assert.match(service, /assignedAdminId: decision === "returned" \? current\.assignedAdminId : null/);
+  assert.match(
+    service,
+    /tx\.loanApproval\.create\(\{\s*data: \{ loanId: id, step: "admin", attempt: pending\.attempt \+ 1 \}/,
+  );
+  assert.match(read("lib/loan-validation.ts"), /ExecutiveDecision = LoanDecision/);
 });
 
 test("Admin routes use non-leaking ownership visibility", () => {

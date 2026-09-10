@@ -28,16 +28,17 @@ test("Executive routes use role-safe pending queue and bank-free selection", () 
   assert.equal(existsSync(resolve(root, "app/api/executive/route.ts")), false);
 });
 
-test("Executive decision is atomic, final-only, and has no out-of-scope effects", () => {
+test("Executive decision is atomic, allows a return-to-Admin, and has no out-of-scope effects", () => {
   const query = read("db/queries/loan-requests.ts");
   const service = query.slice(query.indexOf("export type ExecutiveDecisionErrorCode"));
   assert.match(service, /prisma\.\$transaction\(async \(tx\) => \{/);
   assert.match(service, /where: \{ id, status: "pending_executive" \}/);
   assert.match(service, /updateMany/);
   assert.match(service, /pending_disbursement/);
+  assert.match(service, /pending_admin/);
   assert.match(service, /tx\.loanApproval\.update/);
   assert.match(service, /tx\.auditLog\.create/);
-  assert.doesNotMatch(service, /returned|notification|outbox|transfer|fundTransaction|installment|payment/);
+  assert.doesNotMatch(service, /notification|outbox|transfer|fundTransaction|installment|payment/);
   const route = read("app/api/executive/loan-requests/[id]/decision/route.ts");
   assert.match(route, /parseExecutiveDecisionInput/);
   assert.match(route, /STALE_DECISION/);
@@ -53,7 +54,7 @@ test("OpenAPI publishes the NAT-85 Executive contract", () => {
   ]) assert.equal(responseRef(document, path, method), `#/components/schemas/${schema}`);
   const decision = document.components.schemas.ExecutiveDecisionBody;
   assert.ok(decision);
-  assert.doesNotMatch(JSON.stringify(decision), /returned/);
+  assert.match(JSON.stringify(decision), /returned/);
   for (const name of ["ExecutiveQueueItem", "ExecutiveLoanRequestDetail"]) {
     const schema = document.components.schemas[name];
     assert.ok(schema, `missing ${name}`);
