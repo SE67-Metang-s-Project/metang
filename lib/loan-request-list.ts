@@ -50,7 +50,7 @@ export type LoanRequestListPayment = {
   loanId: string;
   installmentId: string | null;
   amount: number;
-  slipUrl: string | null;
+  slipPath: string | null;
   slipRef: string | null;
   status: string;
   confirmedBy: string | null;

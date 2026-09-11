@@ -206,6 +206,7 @@ async function main() {
         await tx.payment.deleteMany();
         await tx.installment.deleteMany();
         await tx.loanApproval.deleteMany();
+        await tx.$executeRaw`SET LOCAL methang.allow_fund_mutation = 'on'`;
         await tx.fundTransaction.deleteMany();
         await tx.auditLog.deleteMany();
         await tx.userRole.deleteMany();
@@ -254,7 +255,7 @@ async function main() {
           loanId: loanId(loanNumber),
           installmentId: installmentId(loanNumber, seq),
           amount,
-          slipUrl: `/mock/slips/${number}.jpg`,
+          slipPath: `/mock/slips/${number}.jpg`,
           slipRef: `MOCK-SLIP-${number}`,
           status,
           confirmedBy: status === "pending_review" ? null : id(3),
@@ -274,6 +275,7 @@ async function main() {
         "confirmed MOCK-SLIP-303",
         "mock reconciliation adjustment",
       ];
+      await tx.$executeRaw`SET LOCAL methang.allow_fund_mutation = 'on'`;
       await tx.fundTransaction.deleteMany({ where: { note: { in: fundNotes } } });
       await tx.fundTransaction.createMany({
         data: [
@@ -285,25 +287,25 @@ async function main() {
             note: fundNotes[0],
           },
           {
-            kind: "disburse",
+            kind: "disbursement",
             amount: 4500,
             direction: -1,
             loanId: loanId(207),
             performedBy: id(3),
-            slipUrl: "/mock/slips/disbursement-207.jpg",
+            slipPath: "/mock/slips/disbursement-207.jpg",
             note: fundNotes[1],
           },
           {
-            kind: "disburse",
+            kind: "disbursement",
             amount: 3000,
             direction: -1,
             loanId: loanId(208),
             performedBy: id(3),
-            slipUrl: "/mock/slips/disbursement-208.jpg",
+            slipPath: "/mock/slips/disbursement-208.jpg",
             note: fundNotes[2],
           },
           ...[301, 302, 303].map((number, index) => ({
-            kind: "repayment",
+            kind: "repayment" as const,
             amount: 1000,
             direction: 1,
             loanId: loanId(208),
@@ -311,7 +313,7 @@ async function main() {
             note: fundNotes[index + 3],
           })),
           {
-            kind: "adjustment",
+            kind: "credit_adjustment",
             amount: 250,
             direction: 1,
             performedBy: id(2),
