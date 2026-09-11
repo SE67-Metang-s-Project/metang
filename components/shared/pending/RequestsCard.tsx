@@ -110,6 +110,7 @@ export type ActionRequest = StudentInfo &
     paymentBehavior?: PaymentBehaviorInfo;
     approvals?: ApprovalStep[];
     paymentHistory?: PaymentRecord[]; // เพิ่มรองรับการเช็คประวัติชำระเงิน
+    slipUrl?: string; // GET /api/fund-transactions/{id}/slip - redirects to a signed URL
   };
 
 export type UserRole = "advisor" | "executive" | "admin" | "super_admin";

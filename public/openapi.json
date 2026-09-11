@@ -273,6 +273,20 @@
                 "decider"
               ]
             }
+          },
+          "fundTransactions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id"
+              ]
+            }
           }
         },
         "required": [
@@ -299,7 +313,8 @@
           "updatedAt",
           "student",
           "advisor",
-          "approvals"
+          "approvals",
+          "fundTransactions"
         ]
       },
       "AdminLoanRequestDetailResponse": {
@@ -521,6 +536,20 @@
                     "decider"
                   ]
                 }
+              },
+              "fundTransactions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
               }
             },
             "required": [
@@ -547,7 +576,8 @@
               "updatedAt",
               "student",
               "advisor",
-              "approvals"
+              "approvals",
+              "fundTransactions"
             ]
           }
         },
@@ -1950,6 +1980,18 @@
           "error"
         ]
       },
+      "DisburseLoanRequestBody": {
+        "type": "object",
+        "properties": {
+          "slip": {
+            "type": "string",
+            "nullable": false
+          }
+        },
+        "required": [
+          "slip"
+        ]
+      },
       "ExecutiveDecisionBody": {
         "oneOf": [
           {
@@ -2964,6 +3006,258 @@
           "data"
         ]
       },
+      "FundLedgerKind": {
+        "type": "string",
+        "enum": [
+          "top_up",
+          "withdrawal",
+          "credit_adjustment",
+          "debit_adjustment",
+          "disbursement",
+          "repayment"
+        ]
+      },
+      "FundTransactionBody": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "top_up",
+              "withdrawal",
+              "credit_adjustment",
+              "debit_adjustment"
+            ],
+            "nullable": false
+          },
+          "amount": {
+            "type": "number",
+            "nullable": false
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "kind",
+          "amount"
+        ]
+      },
+      "FundTransactionIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "FundTransactionItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "top_up",
+              "withdrawal",
+              "credit_adjustment",
+              "debit_adjustment",
+              "disbursement",
+              "repayment"
+            ]
+          },
+          "amount": {
+            "type": "number"
+          },
+          "direction": {
+            "type": "integer",
+            "enum": [
+              1,
+              -1
+            ]
+          },
+          "loanId": {
+            "type": "string",
+            "nullable": true
+          },
+          "performedBy": {
+            "type": "string"
+          },
+          "slipPath": {
+            "type": "string",
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "amount",
+          "direction",
+          "loanId",
+          "performedBy",
+          "slipPath",
+          "note",
+          "createdAt"
+        ]
+      },
+      "FundTransactionListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "balance": {
+                "type": "number"
+              },
+              "transactions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "top_up",
+                        "withdrawal",
+                        "credit_adjustment",
+                        "debit_adjustment",
+                        "disbursement",
+                        "repayment"
+                      ]
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "direction": {
+                      "type": "number",
+                      "enum": [
+                        1
+                      ]
+                    },
+                    "loanId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "performedBy": {
+                      "type": "string"
+                    },
+                    "slipPath": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "note": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "amount",
+                    "direction",
+                    "loanId",
+                    "performedBy",
+                    "slipPath",
+                    "note",
+                    "createdAt"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "balance",
+              "transactions"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "FundTransactionResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "top_up",
+                  "withdrawal",
+                  "credit_adjustment",
+                  "debit_adjustment",
+                  "disbursement",
+                  "repayment"
+                ]
+              },
+              "amount": {
+                "type": "number"
+              },
+              "direction": {
+                "type": "number",
+                "enum": [
+                  1
+                ]
+              },
+              "loanId": {
+                "type": "string",
+                "nullable": true
+              },
+              "performedBy": {
+                "type": "string"
+              },
+              "slipPath": {
+                "type": "string",
+                "nullable": true
+              },
+              "note": {
+                "type": "string",
+                "nullable": true
+              },
+              "createdAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "amount",
+              "direction",
+              "loanId",
+              "performedBy",
+              "slipPath",
+              "note",
+              "createdAt"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "LoanDecision": {
         "type": "string",
         "enum": [
@@ -3186,6 +3480,20 @@
                     "comment"
                   ]
                 }
+              },
+              "fundTransactions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
               }
             },
             "required": [
@@ -3211,7 +3519,8 @@
               "createdAt",
               "updatedAt",
               "advisor",
-              "approvals"
+              "approvals",
+              "fundTransactions"
             ],
             "nullable": true
           }
@@ -3380,6 +3689,20 @@
                 "comment"
               ]
             }
+          },
+          "fundTransactions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id"
+              ]
+            }
           }
         },
         "required": [
@@ -3405,7 +3728,8 @@
           "createdAt",
           "updatedAt",
           "advisor",
-          "approvals"
+          "approvals",
+          "fundTransactions"
         ]
       },
       "LoanRequestDetailListResponse": {
@@ -3573,6 +3897,20 @@
                       "comment"
                     ]
                   }
+                },
+                "fundTransactions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ]
+                  }
                 }
               },
               "required": [
@@ -3598,7 +3936,8 @@
                 "createdAt",
                 "updatedAt",
                 "advisor",
-                "approvals"
+                "approvals",
+                "fundTransactions"
               ]
             }
           }
@@ -3770,6 +4109,20 @@
                     "comment"
                   ]
                 }
+              },
+              "fundTransactions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
               }
             },
             "required": [
@@ -3795,7 +4148,8 @@
               "createdAt",
               "updatedAt",
               "advisor",
-              "approvals"
+              "approvals",
+              "fundTransactions"
             ]
           }
         },
@@ -4207,7 +4561,7 @@
                 "amount": {
                   "type": "number"
                 },
-                "slipUrl": {
+                "slipPath": {
                   "type": "string",
                   "nullable": true
                 },
@@ -4239,7 +4593,7 @@
                 "loanId",
                 "installmentId",
                 "amount",
-                "slipUrl",
+                "slipPath",
                 "slipRef",
                 "status",
                 "confirmedBy",
@@ -4293,7 +4647,7 @@
           "amount": {
             "type": "number"
           },
-          "slipUrl": {
+          "slipPath": {
             "type": "string",
             "nullable": true
           },
@@ -4325,7 +4679,7 @@
           "loanId",
           "installmentId",
           "amount",
-          "slipUrl",
+          "slipPath",
           "slipRef",
           "status",
           "confirmedBy",
@@ -4621,7 +4975,7 @@
                       "amount": {
                         "type": "number"
                       },
-                      "slipUrl": {
+                      "slipPath": {
                         "type": "string",
                         "nullable": true
                       },
@@ -4653,7 +5007,7 @@
                       "loanId",
                       "installmentId",
                       "amount",
-                      "slipUrl",
+                      "slipPath",
                       "slipRef",
                       "status",
                       "confirmedBy",
@@ -4745,6 +5099,15 @@
           "id",
           "fullNameTh",
           "fullNameEn"
+        ]
+      },
+      "MutableFundTransactionKind": {
+        "type": "string",
+        "enum": [
+          "top_up",
+          "withdrawal",
+          "credit_adjustment",
+          "debit_adjustment"
         ]
       },
       "PhoneNumberBody": {
@@ -5374,6 +5737,114 @@
         }
       }
     },
+    "/admin/loan-requests/{id}/disburse": {
+      "post": {
+        "operationId": "post-admin-loan-requests-{id}-disburse",
+        "summary": "Disburse a loan request awaiting manual disbursement (multipart/form-data, a single \"slip\"",
+        "description": "",
+        "tags": [
+          "Admin loans"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^REQ\\d{8}\\d{4}$"
+            },
+            "example": "REQ202609060000"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisburseLoanRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminLoanRequestDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/advisor/loan-requests": {
       "get": {
         "operationId": "get-advisor-loan-requests",
@@ -5872,6 +6343,86 @@
           },
           "422": {
             "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fund-transactions/{id}/slip": {
+      "get": {
+        "operationId": "get-fund-transactions-{id}-slip",
+        "summary": "Redirect to a short-lived signed URL for a fund transaction's slip evidence.",
+        "description": "Use it as an image source - `<img src=\"/api/fund-transactions/{id}/slip\">`. Testing it from this page fails with \"Failed to fetch\": the 302 target is cross-origin and Supabase answers `Access-Control-Allow-Origin: `, which a credentialed fetch rejects. An `<img>` load is not a credentialed CORS request, so it is unaffected.",
+        "tags": [
+          "Fund slips"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Successful response",
+            "headers": {
+              "Location": {
+                "description": "Redirect target URL",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -6559,6 +7110,149 @@
         }
       }
     },
+    "/super-admin/fund-transactions": {
+      "get": {
+        "operationId": "get-super-admin-fund-transactions",
+        "summary": "List fund ledger transactions and the current fund balance.",
+        "description": "",
+        "tags": [
+          "SuperAdmin fund"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundTransactionListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-super-admin-fund-transactions",
+        "summary": "Record a manual fund transaction (top-up, withdrawal, or adjustment).",
+        "description": "",
+        "tags": [
+          "SuperAdmin fund"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FundTransactionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundTransactionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/super-admin/users": {
       "get": {
         "operationId": "get-super-admin-users",
@@ -6744,6 +7438,9 @@
       "name": "Executive loans"
     },
     {
+      "name": "Fund slips"
+    },
+    {
       "name": "Loan requests"
     },
     {
@@ -6754,6 +7451,9 @@
     },
     {
       "name": "Student loans"
+    },
+    {
+      "name": "SuperAdmin fund"
     },
     {
       "name": "SuperAdmin roles"

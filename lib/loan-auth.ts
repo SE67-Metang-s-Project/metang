@@ -333,6 +333,35 @@ export async function getExecutiveContext(): Promise<LoanUserContext | null> {
   return access.status === "authorized" ? access.context : null;
 }
 
+// Dev fixtures are one user per role, so a role-agnostic caller has to pick one; staff first
+// because the routes that need this read banking evidence.
+const DEVELOPMENT_CONTEXT_PRECEDENCE = ["admin", "super_admin", "executive", "advisor"] as const;
+
+/**
+ * Resolves the caller whatever role they hold, for routes that are not scoped to a single role
+ * (slip reads, which admin, executive, and the owning student may all perform). One session
+ * decrypt and one user lookup, where chaining the per-role getters costs one of each per role.
+ * The caller is responsible for authorizing the roles on the returned context.
+ */
+export async function getSignedInContext(): Promise<LoanUserContext | null> {
+  if (isDevelopmentApiBypass() || DEVELOPMENT_API_ROLES.some((role) => isDevelopmentRoleEnabled(role))) {
+    for (const role of DEVELOPMENT_CONTEXT_PRECEDENCE) {
+      const context = await getDevelopmentLoanContext(role);
+      if (context) return context;
+    }
+    return getDevelopmentStudentContext();
+  }
+
+  const session = await getCmuSession();
+  if (!session) return null;
+
+  const identity = normalizeLoanIdentity(session.profile);
+  const user = await resolveStudentIdentity(identity);
+  if (!user) return null;
+
+  return { session, profile: session.profile, identity, user };
+}
+
 export async function getStudentAccess(): Promise<RoleAccess> {
   const session = await getCmuSession();
   if (!session) return { status: "unauthenticated" };

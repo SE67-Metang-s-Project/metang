@@ -118,6 +118,12 @@ export const adminLoanDetailSelect = {
   bankName: true,
   bankAccountNo: true,
   bankAccountName: true,
+  // At most one row, per fund_transaction_one_disbursement_per_loan. Only the id is exposed:
+  // the slip is read through GET /api/fund-transactions/{id}/slip, never by storage path.
+  fundTransactions: {
+    where: { kind: "disbursement" as const },
+    select: { id: true },
+  },
 } satisfies Prisma.LoanRequestSelect;
 
 export const executiveLoanSelect = {
@@ -161,7 +167,7 @@ const globalLoanSelect = {
       loanId: true,
       installmentId: true,
       amount: true,
-      slipUrl: true,
+      slipPath: true,
       slipRef: true,
       status: true,
       confirmedBy: true,
@@ -570,6 +576,12 @@ export async function getActionRequests(
           fullNameEn: true,
         },
       },
+      // At most one row, per fund_transaction_one_disbursement_per_loan. Only the id is needed:
+      // the slip is read through GET /api/fund-transactions/{id}/slip, never by storage path.
+      fundTransactions: {
+        where: { kind: "disbursement" },
+        select: { id: true },
+      },
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
   });
@@ -705,9 +717,11 @@ export async function getActionRequests(
         amount: String(p.amount),
         paidAt: p.paidAt ? formatThaiDate(p.paidAt) : formatThaiDate(p.createdAt),
         status: mappedStatus,
-        slipImageUrl: p.slipUrl ?? "",
+        slipImageUrl: p.slipPath ?? "",
       };
     });
+
+    const disbursement = loan.fundTransactions[0];
 
     return {
       id: loan.id,
@@ -729,6 +743,7 @@ export async function getActionRequests(
       ...(bankDetails ? { bankDetails } : {}),
       paymentBehavior,
       paymentHistory,
+      ...(disbursement ? { slipUrl: `/api/fund-transactions/${disbursement.id}/slip` } : {}),
     };
   });
 }
@@ -756,6 +771,12 @@ export async function getDisbursementActionRequests(): Promise<ActionRequest[]> 
 
 export const studentLoanDetailSelect = {
   ...studentLoanSelect,
+  // At most one row, per fund_transaction_one_disbursement_per_loan. Only the id is exposed:
+  // the slip is read through GET /api/fund-transactions/{id}/slip, never by storage path.
+  fundTransactions: {
+    where: { kind: "disbursement" as const },
+    select: { id: true },
+  },
   approvals: {
     select: {
       id: true,
@@ -786,7 +807,7 @@ export const studentLoanDetailSelect = {
       id: true,
       installmentId: true,
       amount: true,
-      slipUrl: true,
+      slipPath: true,
       status: true,
       paidAt: true,
       confirmedAt: true,

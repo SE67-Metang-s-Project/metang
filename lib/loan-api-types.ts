@@ -4,6 +4,10 @@ export type LoanRequestIdParams = {
   id: string;
 };
 
+export type FundTransactionIdParams = {
+  id: string;
+};
+
 export type AdvisorDecisionBody = {
   decision: LoanDecision;
   comment?: string | null;
@@ -62,6 +66,7 @@ export type LoanRequestDetail = {
     decidedAt: string | null;
     comment: string | null;
   }[];
+  fundTransactions: { id: string }[];
 };
 
 export type LoanRequestDetailResponse = {
@@ -243,6 +248,7 @@ export type AdminLoanRequestDetail = {
   student: AdminQueueItem["student"];
   advisor: AdminQueueItem["advisor"];
   approvals: AdminQueueItem["approvals"];
+  fundTransactions: { id: string }[];
 };
 
 export type AdminLoanQueueQuery = {
@@ -372,12 +378,7 @@ export type UserIdParams = {
   id: string;
 };
 
-export type PredefinedRoleName =
-  | "student"
-  | "advisor"
-  | "admin"
-  | "super_admin"
-  | "executive";
+export type PredefinedRoleName = "student" | "advisor" | "admin" | "super_admin" | "executive";
 
 export type RoleMutationBody = {
   action: "grant" | "remove";
