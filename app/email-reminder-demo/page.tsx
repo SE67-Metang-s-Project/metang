@@ -1,20 +1,6 @@
 import Link from "next/link";
 import { LoanReminderDemoForm } from "@/app/email-reminder-demo/LoanReminderDemoForm";
-import { getCmuSession } from "@/lib/cmu-auth";
-
-function getProfileEmail(profile: Record<string, unknown>) {
-  const emailKeys = ["cmuitaccount", "email", "mail", "userPrincipalName"];
-
-  for (const key of emailKeys) {
-    const value = profile[key];
-
-    if (typeof value === "string" && value.includes("@")) {
-      return value.trim();
-    }
-  }
-
-  return null;
-}
+import { getCmuSession, getProfileEmail } from "@/lib/cmu-auth";
 
 export default async function EmailReminderDemoPage() {
   const session = await getCmuSession();
