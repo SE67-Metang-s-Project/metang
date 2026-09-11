@@ -249,6 +249,13 @@ export type AdminLoanQueueQuery = {
   status?: "pending_admin" | "pending_disbursement";
 };
 
+// Best-effort only: this route is multipart/form-data (a file field), not JSON, and
+// next-openapi-gen has no multipart request-body model - the generated spec will still show
+// this as a JSON schema. See app/api/admin/loan-requests/[id]/disburse/route.ts.
+export type DisburseLoanRequestBody = {
+  slip: string;
+};
+
 export type AdminQueueResponse = {
   data: AdminQueueItem[];
 };

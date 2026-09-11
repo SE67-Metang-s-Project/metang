@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
-import type { ExecutiveDecision, LoanDecision } from "@/lib/loan-validation";
+import { computeInstallmentSchedule, type ExecutiveDecision, type LoanDecision } from "@/lib/loan-validation";
 import type {
   ActionRequest,
   ActionHistory,
@@ -373,6 +373,107 @@ export async function decideAdminLoanRequest({
       data: {
         actorId: adminId,
         action: `loan_request.admin_${decision}`,
+        entityType: "loan_request",
+        entityId: id,
+        before: serializeJson(current),
+        after: serializeJson(final),
+      },
+    });
+    return final;
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
+}
+
+export type DisbursementErrorCode =
+  | "NOT_FOUND"
+  | "STALE_DECISION"
+  | "ACCESS_REVOKED"
+  | "DUPLICATE_DISBURSEMENT"
+  | "INSUFFICIENT_FUNDS";
+
+export class DisbursementError extends Error {
+  constructor(readonly code: DisbursementErrorCode) {
+    super(code);
+  }
+}
+
+/**
+ * Manual disbursement of a loan already approved and awaiting disbursement. slipPath must already
+ * point at an uploaded object (see app/api/admin/loan-requests/[id]/disburse/route.ts) - the ledger
+ * row is append-only and can never be updated with a slip path after insert.
+ */
+export async function disburseLoanRequest({
+  id,
+  adminId,
+  slipPath,
+}: {
+  id: string;
+  adminId: string;
+  slipPath: string;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const effectiveRole = await tx.userRole.findFirst({
+      where: { userId: adminId, role: { in: ["admin", "super_admin"] } },
+      select: { userId: true },
+    });
+    if (!effectiveRole) throw new DisbursementError("ACCESS_REVOKED");
+
+    const current = await tx.loanRequest.findFirst({
+      where: { id, status: "pending_disbursement" },
+      select: adminLoanDetailSelect,
+    });
+    if (!current) throw new DisbursementError("NOT_FOUND");
+    if (current.approvedAmount === null) {
+      // ponytail: state-machine invariant - executive approval always sets approvedAmount before
+      // a loan reaches pending_disbursement. Guard exists only so TS narrows the type below.
+      throw new Error(`Loan ${id} reached pending_disbursement without an approvedAmount`);
+    }
+    const approvedAmount = current.approvedAmount;
+
+    try {
+      await tx.fundTransaction.create({
+        data: {
+          kind: "disbursement",
+          amount: approvedAmount,
+          direction: -1,
+          loanId: id,
+          performedBy: adminId,
+          slipPath,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new DisbursementError("DUPLICATE_DISBURSEMENT");
+      }
+      // The AFTER INSERT balance-guard trigger raises this exact message on check_violation.
+      const insufficientFunds =
+        error instanceof Error && error.message.includes("fund_transaction: insufficient balance");
+      if (insufficientFunds) throw new DisbursementError("INSUFFICIENT_FUNDS");
+      throw error;
+    }
+
+    const changed = await tx.loanRequest.updateMany({
+      where: { id, status: "pending_disbursement" },
+      data: { status: "disbursed", disbursedAt: new Date() },
+    });
+    if (changed.count !== 1) throw new DisbursementError("STALE_DECISION");
+
+    const schedule = computeInstallmentSchedule(
+      approvedAmount,
+      current.installmentCount,
+      current.firstDueDate,
+    );
+    await tx.installment.createMany({
+      data: schedule.map((installment) => ({ loanId: id, ...installment })),
+    });
+
+    const final = await tx.loanRequest.findUniqueOrThrow({
+      where: { id },
+      select: adminLoanDetailSelect,
+    });
+    await tx.auditLog.create({
+      data: {
+        actorId: adminId,
+        action: "loan_request.disbursed",
         entityType: "loan_request",
         entityId: id,
         before: serializeJson(current),
