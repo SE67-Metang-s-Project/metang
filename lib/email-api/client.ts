@@ -94,6 +94,8 @@ async function fetchFreshToken(): Promise<string> {
   return tokenCache.token;
 }
 
+let refreshInFlight: Promise<string> | null = null;
+
 async function getAccessToken(forceRefresh = false): Promise<string> {
   if (!forceRefresh && tokenCache !== null) {
     const remainingTime = tokenCache.expiresAt - Date.now();
@@ -102,7 +104,13 @@ async function getAccessToken(forceRefresh = false): Promise<string> {
     }
   }
 
-  return fetchFreshToken();
+  if (!refreshInFlight) {
+    refreshInFlight = fetchFreshToken().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+
+  return refreshInFlight;
 }
 
 function validatePayload(payload: SendEmailPayload) {
