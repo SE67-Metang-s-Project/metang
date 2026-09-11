@@ -8,9 +8,7 @@ import { serializeJson } from "@/lib/serialization";
 type Params = { params: Promise<{ id: string }> };
 
 /**
- * Get a loan request awaiting Admin/SuperAdmin action — either an Admin
- * decision (`pending_admin`) or disbursement processing
- * (`pending_disbursement`, open to any Admin or SuperAdmin).
+ * Get a loan request awaiting Admin/SuperAdmin action.
  * @tag Admin loans
  * @pathParams LoanRequestIdParams
  * @auth cookieAuth

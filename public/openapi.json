@@ -5108,7 +5108,7 @@
     "/admin/loan-requests": {
       "get": {
         "operationId": "get-admin-loan-requests",
-        "summary": "List loan requests awaiting Admin/SuperAdmin action. Defaults to loans",
+        "summary": "List loan requests awaiting Admin/SuperAdmin action.",
         "description": "",
         "tags": [
           "Admin loans"
@@ -5190,7 +5190,7 @@
     "/admin/loan-requests/{id}": {
       "get": {
         "operationId": "get-admin-loan-requests-{id}",
-        "summary": "Get a loan request awaiting Admin/SuperAdmin action — either an Admin",
+        "summary": "Get a loan request awaiting Admin/SuperAdmin action.",
         "description": "",
         "tags": [
           "Admin loans"

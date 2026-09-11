@@ -6,9 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/serialization";
 
 /**
- * List loan requests awaiting Admin/SuperAdmin action. Defaults to loans
- * awaiting an Admin decision; pass `?status=pending_disbursement` for loans
- * awaiting disbursement, which are open to any Admin or SuperAdmin.
+ * List loan requests awaiting Admin/SuperAdmin action.
  * @tag Admin loans
  * @auth cookieAuth
  * @query AdminLoanQueueQuery
