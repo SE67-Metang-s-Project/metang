@@ -245,6 +245,10 @@ export type AdminLoanRequestDetail = {
   approvals: AdminQueueItem["approvals"];
 };
 
+export type AdminLoanQueueQuery = {
+  status?: "pending_admin" | "pending_disbursement";
+};
+
 export type AdminQueueResponse = {
   data: AdminQueueItem[];
 };

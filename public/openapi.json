@@ -45,6 +45,18 @@
           "decision"
         ]
       },
+      "AdminLoanQueueQuery": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending_admin",
+              "pending_disbursement"
+            ]
+          }
+        }
+      },
       "AdminLoanRequestDetail": {
         "type": "object",
         "properties": {
@@ -5096,12 +5108,26 @@
     "/admin/loan-requests": {
       "get": {
         "operationId": "get-admin-loan-requests",
-        "summary": "List loan requests awaiting an Admin decision.",
+        "summary": "List loan requests awaiting Admin/SuperAdmin action. Defaults to loans",
         "description": "",
         "tags": [
           "Admin loans"
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending_admin",
+                "pending_disbursement"
+              ]
+            },
+            "example": "pending_admin"
+          }
+        ],
         "security": [
           {
             "cookieAuth": []
@@ -5138,6 +5164,16 @@
               }
             }
           },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -5154,7 +5190,7 @@
     "/admin/loan-requests/{id}": {
       "get": {
         "operationId": "get-admin-loan-requests-{id}",
-        "summary": "Get a loan request awaiting an Admin decision.",
+        "summary": "Get a loan request awaiting Admin/SuperAdmin action — either an Admin",
         "description": "",
         "tags": [
           "Admin loans"

@@ -160,6 +160,14 @@ export function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
+export type AdminLoanQueueStatus = "pending_admin" | "pending_disbursement";
+
+export function parseAdminLoanQueueStatus(value: string | null): AdminLoanQueueStatus {
+  if (value === null || value === "pending_admin") return "pending_admin";
+  if (value === "pending_disbursement") return "pending_disbursement";
+  throw new Error("status is invalid");
+}
+
 export function isLoanId(value: string) {
   if (typeof value !== "string") return false;
   const trimmed = value.trim();
