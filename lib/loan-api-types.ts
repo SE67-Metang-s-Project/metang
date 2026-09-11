@@ -404,3 +404,43 @@ export type SuperAdminUserListResponse = {
 export type SuperAdminUserResponse = {
   data: SuperAdminUser;
 };
+
+export type FundLedgerKind =
+  | "top_up"
+  | "withdrawal"
+  | "credit_adjustment"
+  | "debit_adjustment"
+  | "disbursement"
+  | "repayment";
+
+export type MutableFundTransactionKind =
+  "top_up" | "withdrawal" | "credit_adjustment" | "debit_adjustment";
+
+export type FundTransactionItem = {
+  id: string;
+  kind: FundLedgerKind;
+  amount: number;
+  direction: 1 | -1;
+  loanId: string | null;
+  performedBy: string;
+  slipPath: string | null;
+  note: string | null;
+  createdAt: string;
+};
+
+export type FundTransactionListResponse = {
+  data: {
+    balance: number;
+    transactions: FundTransactionItem[];
+  };
+};
+
+export type FundTransactionBody = {
+  kind: MutableFundTransactionKind;
+  amount: number;
+  note?: string | null;
+};
+
+export type FundTransactionResponse = {
+  data: FundTransactionItem;
+};

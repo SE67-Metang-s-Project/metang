@@ -29,6 +29,14 @@ const loanInputExample = {
   installmentCount: 1,
 };
 
+// next-openapi-gen drops negative numeric literals from a union, so `direction: 1 | -1` in
+// lib/loan-api-types.ts generates as `enum: [1]` - which would tell a consumer that every
+// disbursement row is invalid. Restore both members here.
+const direction = document.components?.schemas?.FundTransactionItem?.properties?.direction;
+if (!direction) throw new Error("Missing FundTransactionItem.direction schema");
+direction.type = "integer";
+direction.enum = [1, -1];
+
 for (const [path, operations] of Object.entries(document.paths ?? {})) {
   for (const operation of Object.values(operations)) {
     if (!operation || typeof operation !== "object") continue;
