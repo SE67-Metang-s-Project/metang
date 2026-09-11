@@ -119,6 +119,7 @@ interface RequestsCardProps {
   userRole?: UserRole;
   tableLayout?: "default" | "executive";
   onRequestDecided?: (requestId: string, decision: string) => void;
+  initialSelectedRequestId?: string;
 }
 
 // ==========================================
@@ -313,6 +314,7 @@ export default function RequestsCard({
   userRole = "advisor",
   tableLayout = "executive",
   onRequestDecided,
+  initialSelectedRequestId,
 }: RequestsCardProps) {
   const router = useRouter();
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
@@ -320,6 +322,7 @@ export default function RequestsCard({
   const [remark, setRemark] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [autoOpenedRequestId, setAutoOpenedRequestId] = useState<string | undefined>(undefined);
   const selectedRequestHistory = selectedRequest?.history ?? [];
   const isExecutiveTable = tableLayout === "executive";
 
@@ -338,6 +341,16 @@ export default function RequestsCard({
     setRemark("");
     setErrorMessage(null);
   };
+
+  // เปิด popup อัตโนมัติเมื่อมาจาก deep link พร้อมรหัสคำร้องที่ตรงกัน (render-phase sync, ไม่ใช้ useEffect)
+  // หมายเหตุ: มาร์คว่าเปิดแล้วเฉพาะตอนที่เจอคำร้องจริง เพื่อให้ลองใหม่ได้หาก requests ยังโหลดไม่ครบในตอนแรก
+  if (initialSelectedRequestId && autoOpenedRequestId !== initialSelectedRequestId) {
+    const match = requests.find((req) => req.id === initialSelectedRequestId);
+    if (match) {
+      setAutoOpenedRequestId(initialSelectedRequestId);
+      openRequestModal(match);
+    }
+  }
 
   const closeAllModals = () => {
     setSelectedRequest(null);

@@ -6,12 +6,14 @@ import RequestsCard, { ActionRequest } from "@/components/shared/pending/Request
 
 interface RequestsListExecutiveProps {
   initialRequests?: ActionRequest[];
+  highlightRequestId?: string;
 }
 
 export default function RequestsListExecutive({
   initialRequests,
+  highlightRequestId,
 }: RequestsListExecutiveProps = {}) {
-  const [filter, setFilter] = useState<FilterStatus>("pending");
+  const [filter, setFilter] = useState<FilterStatus>(highlightRequestId ? "all" : "pending");
   const [searchQuery, setSearchQuery] = useState("");
 
   const baseRequests = React.useMemo(() => {
@@ -104,6 +106,7 @@ export default function RequestsListExecutive({
         userRole="executive"
         tableLayout="executive"
         onRequestDecided={handleRequestDecided}
+        initialSelectedRequestId={highlightRequestId}
       />
     </div>
   );

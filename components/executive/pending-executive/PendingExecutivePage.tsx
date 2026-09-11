@@ -6,9 +6,13 @@ import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
 type PendingExecutivePageProps = {
   initialRequests?: ActionRequest[];
+  highlightRequestId?: string;
 };
 
-export default function PendingExecutivePage({ initialRequests }: PendingExecutivePageProps) {
+export default function PendingExecutivePage({
+  initialRequests,
+  highlightRequestId,
+}: PendingExecutivePageProps) {
   return (
     <div>
       <div className="mb-6">
@@ -20,7 +24,10 @@ export default function PendingExecutivePage({ initialRequests }: PendingExecuti
         </p>
       </div>
 
-      <RequestsListExecutive initialRequests={initialRequests} />
+      <RequestsListExecutive
+        initialRequests={initialRequests}
+        highlightRequestId={highlightRequestId}
+      />
     </div>
   );
 }

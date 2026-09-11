@@ -8,10 +8,12 @@ import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
 type SuperAdminPendingPageProps = {
   initialRequests?: ActionRequest[];
+  highlightRequestId?: string;
 };
 
 export default function SuperAdminPendingPage({
   initialRequests = [],
+  highlightRequestId,
 }: SuperAdminPendingPageProps) {
   return (
     <div>
@@ -24,7 +26,10 @@ export default function SuperAdminPendingPage({
         </p>
       </div>
 
-      <SuperAdminRequestsList initialRequests={initialRequests} />
+      <SuperAdminRequestsList
+        initialRequests={initialRequests}
+        highlightRequestId={highlightRequestId}
+      />
     </div>
   );
 }

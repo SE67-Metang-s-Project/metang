@@ -6,10 +6,12 @@ import { ShieldCheck } from "lucide-react";
 
 type AdvisorPendingPageProps = {
   initialRequests?: ActionRequest[];
+  highlightRequestId?: string;
 };
 
 export default function AdvisorPendingPage({
   initialRequests = [],
+  highlightRequestId,
 }: AdvisorPendingPageProps) {
   // กำหนด State ให้กับ requests จาก DB
   const [requests, setRequests] = useState<ActionRequest[]>(initialRequests);
@@ -24,10 +26,13 @@ export default function AdvisorPendingPage({
     setRequests((prev) => prev.filter((req) => req.id !== requestId));
   };
 
-  // กรองเฉพาะคำร้องที่รออาจารย์ที่ปรึกษาพิจารณา
+  // กรองเฉพาะคำร้องที่รออาจารย์ที่ปรึกษาพิจารณา (รวมคำร้องที่มาจาก deep link แม้สถานะจะเปลี่ยนไปแล้ว)
   const pendingRequests = useMemo(
-    () => requests.filter((req) => req.requestStatus === "pending_advisor"),
-    [requests],
+    () =>
+      requests.filter(
+        (req) => req.requestStatus === "pending_advisor" || req.id === highlightRequestId,
+      ),
+    [requests, highlightRequestId],
   );
 
   return (
@@ -49,6 +54,7 @@ export default function AdvisorPendingPage({
             requests={pendingRequests}
             userRole="advisor"
             onRequestDecided={handleRequestDecided}
+            initialSelectedRequestId={highlightRequestId}
           />
         </div>
       ) : (

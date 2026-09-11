@@ -8,14 +8,16 @@ interface SuperAdminRequestsListProps {
   hideFilters?: boolean;
   dashboardMode?: "pending" | "all";
   initialRequests?: ActionRequest[];
+  highlightRequestId?: string;
 }
 
 export default function SuperAdminRequestsList({
   hideFilters = false,
   dashboardMode = "all",
   initialRequests = [],
+  highlightRequestId,
 }: SuperAdminRequestsListProps) {
-  const [filter, setFilter] = useState<FilterStatus>("pending");
+  const [filter, setFilter] = useState<FilterStatus>(highlightRequestId ? "all" : "pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [requests, setRequests] = useState<ActionRequest[]>(initialRequests);
   const [prevInitialRequests, setPrevInitialRequests] = useState<ActionRequest[]>(initialRequests);
@@ -80,6 +82,7 @@ export default function SuperAdminRequestsList({
         requests={filteredRequests}
         userRole="super_admin"
         onRequestDecided={handleRequestDecided}
+        initialSelectedRequestId={highlightRequestId}
       />
     </div>
   );
