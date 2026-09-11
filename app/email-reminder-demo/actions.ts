@@ -1,6 +1,6 @@
 "use server";
 
-import { getCmuSession } from "@/lib/cmu-auth";
+import { getCmuSession, getProfileEmail } from "@/lib/cmu-auth";
 import { sendEmail, EmailApiError } from "@/lib/email-api";
 import {
   buildLoanDueReminderEmail,
@@ -16,20 +16,6 @@ export type LoanReminderDemoState = {
 function readField(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value.trim() : "";
-}
-
-function getProfileEmail(profile: Record<string, unknown>) {
-  const emailKeys = ["cmuitaccount", "email", "mail", "userPrincipalName"];
-
-  for (const key of emailKeys) {
-    const value = profile[key];
-
-    if (typeof value === "string" && value.includes("@")) {
-      return value.trim();
-    }
-  }
-
-  return null;
 }
 
 export async function sendDemoLoanReminder(
@@ -51,12 +37,12 @@ export async function sendDemoLoanReminder(
   const studentName = readField(formData, "studentName");
 
   const installmentSeq = Number(readField(formData, "installmentSeq"));
-  if (!Number.isFinite(installmentSeq)) {
+  if (!Number.isInteger(installmentSeq) || installmentSeq <= 0) {
     return { status: "error", message: "จำนวนงวดไม่ถูกต้อง" };
   }
 
   const amountDue = Number(readField(formData, "amountDue"));
-  if (!Number.isFinite(amountDue)) {
+  if (!Number.isFinite(amountDue) || amountDue <= 0) {
     return { status: "error", message: "จำนวนเงินไม่ถูกต้อง" };
   }
 
