@@ -88,3 +88,17 @@ test("OpenAPI exposes student paths, advisor paths, and bank privacy", () => {
   for (const field of bankFields) assert.ok(student.properties?.[field], `LoanRequestDetail.${field}`);
   assert.deepEqual(student.properties?.status?.enum, loanStatuses);
 });
+
+test("OpenAPI describes the disburse upload as multipart, matching the handler", () => {
+  const document = JSON.parse(read("public/openapi.json"));
+  const body = document.paths["/admin/loan-requests/{id}/disburse"].post.requestBody;
+  assert.equal(body.required, true);
+  assert.equal(body.content["application/json"], undefined, "disburse must not advertise JSON");
+  const schema = body.content["multipart/form-data"].schema;
+  assert.deepEqual(schema.required, ["slip"]);
+  assert.deepEqual(schema.properties.slip, { type: "string", format: "binary" });
+
+  const route = read("app/api/admin/loan-requests/[id]/disburse/route.ts");
+  assert.match(route, /await request\.formData\(\)/);
+  assert.match(route, /formData\.get\("slip"\)/);
+});

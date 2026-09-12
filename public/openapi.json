@@ -5764,12 +5764,22 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/DisburseLoanRequestBody"
+                "type": "object",
+                "properties": {
+                  "slip": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "slip"
+                ]
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
