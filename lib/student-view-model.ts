@@ -152,6 +152,7 @@ export type RawStudentLoan = {
   approvals?: RawLoanApproval[];
   installments?: RawInstallment[];
   payments?: RawPayment[];
+  fundTransactions?: { id: string }[];
 };
 
 const rejectionRoleByStep: Record<RawLoanApproval["step"], string> = {
@@ -434,6 +435,8 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     });
   }
 
+  const disbursementTransactionId = loan.fundTransactions?.[0]?.id;
+
   // Payment history
   const paymentHistory: LoanPaymentHistoryItem[] = (loan.payments ?? []).map((pay, idx) => ({
     installmentNumber: idx + 1,
@@ -458,7 +461,9 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     additionalReasonLabel: "เหตุผลความจำเป็นเพิ่มเติม",
     additionalReason: loan.additionalNote ?? "-",
     downloadLabel: "ดาวน์โหลดแบบคำร้อง (PDF)",
-    transferSlipImage: "",
+    transferSlipImage: disbursementTransactionId
+      ? `/api/fund-transactions/${disbursementTransactionId}/slip`
+      : "",
     timeline,
     schedule,
     paymentHistory,

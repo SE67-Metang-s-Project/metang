@@ -19,12 +19,9 @@ export type LoanDecisionInput = {
   comment: string | null;
 };
 
-export type ExecutiveDecision = "approved" | "rejected";
+export type ExecutiveDecision = LoanDecision;
 
-export type ExecutiveDecisionInput = {
-  decision: ExecutiveDecision;
-  comment: string | null;
-};
+export type ExecutiveDecisionInput = LoanDecisionInput;
 
 export type AdminDecisionInput = LoanDecisionInput & {
   approvedAmount: number | null;
@@ -150,19 +147,7 @@ export function parseAdminDecisionInput(value: unknown): AdminDecisionInput {
   return { decision, approvedAmount, comment };
 }
 
-export function parseExecutiveDecisionInput(value: unknown): ExecutiveDecisionInput {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error("request body is invalid");
-  }
-
-  const input = value as Record<string, unknown>;
-  if (input.decision !== "approved" && input.decision !== "rejected") {
-    throw new Error("decision is invalid");
-  }
-
-  const decision = input.decision as ExecutiveDecision;
-  return { decision, comment: parseDecisionComment(input.comment, decision) };
-}
+export const parseExecutiveDecisionInput = parseLoanDecisionInput;
 
 export function parsePhoneNumber(value: unknown) {
   if (typeof value !== "string") throw new Error("phoneNumber is invalid");
@@ -171,8 +156,90 @@ export function parsePhoneNumber(value: unknown) {
   return cleaned;
 }
 
+export type InstallmentScheduleEntry = {
+  seq: number;
+  dueDate: Date;
+  amountDue: number;
+};
+
+function addDays(date: Date, days: number): Date {
+  // ponytail: UTC-based arithmetic - firstDueDate is a DATE column (midnight UTC); using
+  // local-time Date methods here would drift a day depending on the server's timezone.
+  const result = new Date(date.getTime());
+  result.setUTCDate(result.getUTCDate() + days);
+  return result;
+}
+
+/**
+ * Whole-baht even split of approvedAmount across installmentCount installments, with the last
+ * installment absorbing whatever remainder floor() dropped so the sum always equals
+ * approvedAmount exactly. Pure function - no DB access - so it is unit-testable on its own.
+ */
+export function computeInstallmentSchedule(
+  approvedAmount: number,
+  installmentCount: number,
+  firstDueDate: Date,
+): InstallmentScheduleEntry[] {
+  const base = Math.floor(approvedAmount / installmentCount);
+  return Array.from({ length: installmentCount }, (_, index) => {
+    const seq = index + 1;
+    const isLast = seq === installmentCount;
+    return {
+      seq,
+      dueDate: addDays(firstDueDate, 30 * (seq - 1)),
+      amountDue: isLast ? approvedAmount - base * (installmentCount - 1) : base,
+    };
+  });
+}
+
+export type FundTransactionKindInput =
+  "top_up" | "withdrawal" | "credit_adjustment" | "debit_adjustment";
+
+export type FundTransactionInput = {
+  kind: FundTransactionKindInput;
+  amount: number;
+  note: string | null;
+};
+
+const FUND_TRANSACTION_KINDS: FundTransactionKindInput[] = [
+  "top_up",
+  "withdrawal",
+  "credit_adjustment",
+  "debit_adjustment",
+];
+
+export function parseFundTransactionInput(value: unknown): FundTransactionInput {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("request body is invalid");
+  }
+
+  const input = value as Record<string, unknown>;
+  if (
+    typeof input.kind !== "string" ||
+    !FUND_TRANSACTION_KINDS.includes(input.kind as FundTransactionKindInput)
+  ) {
+    throw new Error("kind is invalid");
+  }
+  const kind = input.kind as FundTransactionKindInput;
+  const amount = parseAmount(input.amount);
+  const note = optionalText(input.note, "note", 2000);
+  if (kind !== "top_up" && !note) {
+    throw new Error("note is required for this transaction kind");
+  }
+
+  return { kind, amount, note };
+}
+
 export function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+export type AdminLoanQueueStatus = "pending_admin" | "pending_disbursement";
+
+export function parseAdminLoanQueueStatus(value: string | null): AdminLoanQueueStatus {
+  if (value === null || value === "pending_admin") return "pending_admin";
+  if (value === "pending_disbursement") return "pending_disbursement";
+  throw new Error("status is invalid");
 }
 
 export function isLoanId(value: string) {

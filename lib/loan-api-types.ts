@@ -4,6 +4,10 @@ export type LoanRequestIdParams = {
   id: string;
 };
 
+export type FundTransactionIdParams = {
+  id: string;
+};
+
 export type AdvisorDecisionBody = {
   decision: LoanDecision;
   comment?: string | null;
@@ -62,6 +66,7 @@ export type LoanRequestDetail = {
     decidedAt: string | null;
     comment: string | null;
   }[];
+  fundTransactions: { id: string }[];
 };
 
 export type LoanRequestDetailResponse = {
@@ -243,6 +248,18 @@ export type AdminLoanRequestDetail = {
   student: AdminQueueItem["student"];
   advisor: AdminQueueItem["advisor"];
   approvals: AdminQueueItem["approvals"];
+  fundTransactions: { id: string }[];
+};
+
+export type AdminLoanQueueQuery = {
+  status?: "pending_admin" | "pending_disbursement";
+};
+
+// Best-effort only: this route is multipart/form-data (a file field), not JSON, and
+// next-openapi-gen has no multipart request-body model - the generated spec will still show
+// this as a JSON schema. See app/api/admin/loan-requests/[id]/disburse/route.ts.
+export type DisburseLoanRequestBody = {
+  slip: string;
 };
 
 export type AdminQueueResponse = {
@@ -263,6 +280,7 @@ export type PhoneNumberResponse = {
 
 export type ExecutiveDecisionBody =
   | { decision: "approved"; comment?: string | null }
+  | { decision: "returned"; comment: string }
   | { decision: "rejected"; comment: string };
 
 export type ExecutiveQueueItem = {
@@ -360,12 +378,7 @@ export type UserIdParams = {
   id: string;
 };
 
-export type PredefinedRoleName =
-  | "student"
-  | "advisor"
-  | "admin"
-  | "super_admin"
-  | "executive";
+export type PredefinedRoleName = "student" | "advisor" | "admin" | "super_admin" | "executive";
 
 export type RoleMutationBody = {
   action: "grant" | "remove";
@@ -398,4 +411,44 @@ export type SuperAdminUserListResponse = {
 
 export type SuperAdminUserResponse = {
   data: SuperAdminUser;
+};
+
+export type FundLedgerKind =
+  | "top_up"
+  | "withdrawal"
+  | "credit_adjustment"
+  | "debit_adjustment"
+  | "disbursement"
+  | "repayment";
+
+export type MutableFundTransactionKind =
+  "top_up" | "withdrawal" | "credit_adjustment" | "debit_adjustment";
+
+export type FundTransactionItem = {
+  id: string;
+  kind: FundLedgerKind;
+  amount: number;
+  direction: 1 | -1;
+  loanId: string | null;
+  performedBy: string;
+  slipPath: string | null;
+  note: string | null;
+  createdAt: string;
+};
+
+export type FundTransactionListResponse = {
+  data: {
+    balance: number;
+    transactions: FundTransactionItem[];
+  };
+};
+
+export type FundTransactionBody = {
+  kind: MutableFundTransactionKind;
+  amount: number;
+  note?: string | null;
+};
+
+export type FundTransactionResponse = {
+  data: FundTransactionItem;
 };

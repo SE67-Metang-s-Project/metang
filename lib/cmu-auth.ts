@@ -25,6 +25,20 @@ export type JsonValue =
 
 export type CmuProfile = Record<string, JsonValue>;
 
+const PROFILE_EMAIL_KEYS = ["cmuitaccount", "email", "mail", "userPrincipalName"] as const;
+
+export function getProfileEmail(profile: CmuProfile): string | null {
+  for (const key of PROFILE_EMAIL_KEYS) {
+    const value = profile[key];
+
+    if (typeof value === "string" && value.includes("@")) {
+      return value.trim();
+    }
+  }
+
+  return null;
+}
+
 export type CmuSession = {
   profile: CmuProfile;
   loggedInAt: number;

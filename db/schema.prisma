@@ -50,27 +50,46 @@ enum UserRoleName {
   @@map("user_role_name")
 }
 
+enum FundTransactionKind {
+  top_up
+  withdrawal
+  credit_adjustment
+  debit_adjustment
+  disbursement
+  repayment
+
+  @@map("fund_transaction_kind")
+}
+
+enum PaymentStatus {
+  pending_review
+  confirmed
+  rejected
+
+  @@map("payment_status")
+}
+
 model AppUser {
-  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email             String            @unique(map: "app_user_email_key") @db.Text
-  cmuAccount        String            @unique(map: "app_user_cmu_account_key") @map("cmu_account") @db.Text
-  studentCode       String?           @unique(map: "app_user_student_code_key") @map("student_code") @db.Text
-  fullNameTh        String            @map("full_name_th") @db.Text
-  fullNameEn        String?           @map("full_name_en") @db.Text
-  phone             String?           @db.Text
-  educationLevel    String?           @map("education_level") @db.Text
-  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  studentLoans      LoanRequest[]     @relation("StudentLoans")
-  advisorLoans      LoanRequest[]     @relation("AdvisorLoans")
-  cancelledLoans    LoanRequest[]     @relation("CancelledLoans")
-  assignedAdminLoans LoanRequest[]    @relation("AssignedAdminLoans")
-  approvalDecisions LoanApproval[]
-  confirmedPayments Payment[]
-  fundTransactions  FundTransaction[]
-  auditLogs         AuditLog[]
-  roles             UserRole[]        @relation("UserRoles")
-  grantedRoles      UserRole[]        @relation("GrantedRoles")
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email              String            @unique(map: "app_user_email_key") @db.Text
+  cmuAccount         String            @unique(map: "app_user_cmu_account_key") @map("cmu_account") @db.Text
+  studentCode        String?           @unique(map: "app_user_student_code_key") @map("student_code") @db.Text
+  fullNameTh         String            @map("full_name_th") @db.Text
+  fullNameEn         String?           @map("full_name_en") @db.Text
+  phone              String?           @db.Text
+  educationLevel     String?           @map("education_level") @db.Text
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  studentLoans       LoanRequest[]     @relation("StudentLoans")
+  advisorLoans       LoanRequest[]     @relation("AdvisorLoans")
+  cancelledLoans     LoanRequest[]     @relation("CancelledLoans")
+  assignedAdminLoans LoanRequest[]     @relation("AssignedAdminLoans")
+  approvalDecisions  LoanApproval[]
+  confirmedPayments  Payment[]
+  fundTransactions   FundTransaction[]
+  auditLogs          AuditLog[]
+  roles              UserRole[]        @relation("UserRoles")
+  grantedRoles       UserRole[]        @relation("GrantedRoles")
 
   @@index([fullNameTh], map: "app_user_full_name_th_idx")
   @@map("app_user")
@@ -150,38 +169,39 @@ model Installment {
 }
 
 model Payment {
-  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  loanId        String       @map("loan_id") @db.Text
-  installmentId BigInt?      @map("installment_id")
-  amount        Int          @db.Integer
-  slipUrl       String?      @map("slip_url") @db.Text
-  slipRef       String?      @unique(map: "payment_slip_ref_key") @map("slip_ref") @db.Text
-  status        String       @default("pending_review") @db.Text
-  confirmedBy   String?      @map("confirmed_by") @db.Uuid
-  confirmedAt   DateTime?    @map("confirmed_at") @db.Timestamptz(6)
-  paidAt        DateTime?    @map("paid_at") @db.Timestamptz(6)
-  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  loan          LoanRequest  @relation(fields: [loanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  installment   Installment? @relation(fields: [installmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  confirmer     AppUser?     @relation(fields: [confirmedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  loanId        String        @map("loan_id") @db.Text
+  installmentId BigInt?       @map("installment_id")
+  amount        Int           @db.Integer
+  slipPath      String?       @map("slip_path") @db.Text
+  slipRef       String?       @unique(map: "payment_slip_ref_key") @map("slip_ref") @db.Text
+  status        PaymentStatus @default(pending_review)
+  confirmedBy   String?       @map("confirmed_by") @db.Uuid
+  confirmedAt   DateTime?     @map("confirmed_at") @db.Timestamptz(6)
+  paidAt        DateTime?     @map("paid_at") @db.Timestamptz(6)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  loan          LoanRequest   @relation(fields: [loanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  installment   Installment?  @relation(fields: [installmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  confirmer     AppUser?      @relation(fields: [confirmedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([loanId], map: "payment_loan_idx")
   @@map("payment")
 }
 
 model FundTransaction {
-  id          BigInt       @id @default(autoincrement())
-  kind        String       @db.Text
-  amount      Int          @db.Integer
-  direction   Int          @db.SmallInt
-  loanId      String?      @map("loan_id") @db.Text
-  performedBy String       @map("performed_by") @db.Uuid
-  slipUrl     String?      @map("slip_url") @db.Text
-  note        String?      @db.Text
-  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  loan        LoanRequest? @relation(fields: [loanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  performer   AppUser      @relation(fields: [performedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id          BigInt              @id @default(autoincrement())
+  kind        FundTransactionKind
+  amount      Int                 @db.Integer
+  direction   Int                 @db.SmallInt
+  loanId      String?             @map("loan_id") @db.Text
+  performedBy String              @map("performed_by") @db.Uuid
+  slipPath    String?             @map("slip_path") @db.Text
+  note        String?             @db.Text
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  loan        LoanRequest?        @relation(fields: [loanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  performer   AppUser             @relation(fields: [performedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+  @@unique([loanId], map: "fund_transaction_one_disbursement_per_loan", where: { kind: "disbursement" })
   @@index([loanId], map: "fund_transaction_loan_idx")
   @@map("fund_transaction")
 }

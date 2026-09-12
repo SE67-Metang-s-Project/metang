@@ -66,3 +66,6 @@ next-env.d.ts
 .VSCodeCounter
 .planning
 .hermes
+
+# Contains real API credentials, marked "ห้ามเผยแพร่" (do not distribute)
+docs/Email_API_Manual.pdf

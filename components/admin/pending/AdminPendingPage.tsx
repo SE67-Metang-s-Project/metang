@@ -6,9 +6,10 @@ import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
 type AdminPendingPageProps = {
   initialRequests?: ActionRequest[];
+  highlightRequestId?: string;
 };
 
-export default function PendingPage({ initialRequests }: AdminPendingPageProps) {
+export default function PendingPage({ initialRequests, highlightRequestId }: AdminPendingPageProps) {
   return (
     <div>
       <div className="mb-6">
@@ -18,7 +19,11 @@ export default function PendingPage({ initialRequests }: AdminPendingPageProps) 
         </p>
       </div>
 
-      <SharedRequestsList userRole="admin" initialRequests={initialRequests} />
+      <SharedRequestsList
+        userRole="admin"
+        initialRequests={initialRequests}
+        highlightRequestId={highlightRequestId}
+      />
     </div>
   );
 }

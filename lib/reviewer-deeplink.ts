@@ -5,10 +5,10 @@ export type ReviewerRole = "advisor" | "admin" | "super_admin" | "executive";
  * Frontend routes can be added later without changing the worker or FON payload shape.
  */
 export const REVIEWER_REQUEST_PATHS: Readonly<Record<ReviewerRole, string>> = {
-  advisor: "/advisor/pending/requests",
-  admin: "/admin/requests",
-  super_admin: "/admin/requests",
-  executive: "/executive/requests",
+  advisor: "/advisor/pending",
+  admin: "/admin/pending",
+  super_admin: "/superadmin/pending",
+  executive: "/executive/pending-executive",
 };
 
 function validateRequestId(requestId: string) {
@@ -34,7 +34,7 @@ function validateBaseUrl(baseUrl: string) {
 export function buildReviewerRequestPath(role: ReviewerRole, requestId: string) {
   validateRequestId(requestId);
 
-  return `${REVIEWER_REQUEST_PATHS[role]}/${encodeURIComponent(requestId)}`;
+  return `${REVIEWER_REQUEST_PATHS[role]}?requestId=${encodeURIComponent(requestId)}`;
 }
 
 export function buildReviewerRequestUrl(

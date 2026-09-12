@@ -2,7 +2,14 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { FileClock, House, RotateCcw } from "lucide-react";
+import {
+  ClipboardList,
+  FileClock,
+  House,
+  Landmark,
+  RotateCcw,
+  UserRound,
+} from "lucide-react";
 import {
   tempLoanAgreement,
   tempLoanApplicationLimit,
@@ -11,7 +18,7 @@ import {
   tempStudentProfile,
   type TempLoanFormData,
 } from "@/app/student/temp/tempMockData";
-import { saveStudentEducationLevel, useStudentEducationLevel } from "@/lib/student-education";
+import { saveStudentEducationLevel } from "@/lib/student-education";
 import {
   getSavedStudentApplicationProfile,
   saveStudentApplicationProfile,
@@ -27,6 +34,7 @@ import LoanFormSelect from "./LoanFormSelect";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import TopNav from "@/components/shared/TopNav";
 import CardHeader from "@/components/shared/CardHeader";
+import BahtCoinIcon from "@/components/shared/BahtCoinIcon";
 import styles from "@/app/student/student.module.css";
 import {
   mapStudentApiError,
@@ -42,6 +50,16 @@ type RequiredFormField = Exclude<FormField, "additionalNote">;
 type FormErrors = Partial<Record<RequiredFormField, string>>;
 
 const requiredFieldMessage = "โปรดระบุข้อมูลในช่องนี้";
+const educationLevelsByStudentIdDigit: Record<string, string> = {
+  "0": "ประกาศนียบัตรผู้ช่วยพยาบาล",
+  "1": "ปริญญาตรี",
+  "3": "ปริญญาโท",
+  "5": "ปริญญาเอก",
+};
+
+const getEducationLevelFromStudentId = (studentId: string) =>
+  educationLevelsByStudentIdDigit[studentId.charAt(4)] ?? "";
+
 const requiredFormFields: RequiredFormField[] = [
   "educationLevel",
   "academicYear",
@@ -128,6 +146,7 @@ export default function TempLoanApplicationPage({
   const [profile] = useState<StudentProfileDisplay & { phoneNumber?: string }>(
     initialProfile ?? tempStudentProfile,
   );
+  const educationLevel = getEducationLevelFromStudentId(profile.studentId);
 
   const [advisors, setAdvisors] = useState<string[]>(advisorOptions ?? []);
 
@@ -152,17 +171,13 @@ export default function TempLoanApplicationPage({
     };
   }, [advisorOptions]);
 
-  const savedEducationLevel = useStudentEducationLevel();
   const [formData, setFormData] = useState(() => {
     const savedProfile = getSavedStudentApplicationProfile();
     if (isResubmit && existingLoan) {
       return {
         ...tempLoanFormDefaults,
         phoneNumber: initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
-        educationLevel:
-          savedEducationLevel ??
-          initialProfile?.educationLevel ??
-          tempLoanFormDefaults.educationLevel,
+        educationLevel: educationLevel || tempLoanFormDefaults.educationLevel,
         academicYear: String(existingLoan.studentYear ?? tempLoanFormDefaults.academicYear),
         advisorName: existingLoan.advisorName || tempLoanFormDefaults.advisorName,
         bankName: existingLoan.bankName || tempLoanFormDefaults.bankName,
@@ -181,11 +196,7 @@ export default function TempLoanApplicationPage({
       ...tempLoanFormDefaults,
       phoneNumber:
         savedProfile.phoneNumber || initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
-      educationLevel:
-        savedEducationLevel ??
-        savedProfile.educationLevel ??
-        initialProfile?.educationLevel ??
-        tempLoanFormDefaults.educationLevel,
+      educationLevel: educationLevel || tempLoanFormDefaults.educationLevel,
       academicYear: savedProfile.academicYear || tempLoanFormDefaults.academicYear,
       advisorName: savedProfile.advisorName || tempLoanFormDefaults.advisorName,
     };
@@ -196,8 +207,14 @@ export default function TempLoanApplicationPage({
   );
   const savedFormData = {
     ...formData,
-    educationLevel: savedEducationLevel ?? formData.educationLevel,
+    educationLevel,
   };
+
+  useEffect(() => {
+    if (educationLevel) {
+      saveStudentEducationLevel(educationLevel);
+    }
+  }, [educationLevel]);
 
   useEffect(() => {
     if (isResubmit) return;
@@ -242,9 +259,6 @@ export default function TempLoanApplicationPage({
 
   const updateFormField = (field: FormField, value: string) => {
     setFormData((current) => ({ ...current, [field]: value }));
-    if (field === "educationLevel") {
-      saveStudentEducationLevel(value);
-    }
     if (field === "loanAmount" || (field !== "additionalNote" && touchedFields[field])) {
       setFormErrors((current) => ({ ...current, [field]: validateField(field, value) }));
     }
@@ -394,9 +408,6 @@ export default function TempLoanApplicationPage({
       const loan = json.data as RawStudentLoan;
       setCreatedLoanData(loan);
 
-      if (!savedEducationLevel) {
-        saveStudentEducationLevel(formData.educationLevel);
-      }
       setIsApprovalModalOpen(false);
       setCurrentStep(3);
     } catch (err) {
@@ -586,7 +597,11 @@ export default function TempLoanApplicationPage({
 
               <div className={styles.loanFormSections}>
                 <section className={styles.loanFormSection}>
-                  <CardHeader className={styles.loanFormSectionHeading} title="ข้อมูลนักศึกษา" />
+                  <CardHeader
+                    className={styles.loanFormSectionHeading}
+                    icon={<UserRound aria-hidden="true" size={20} />}
+                    title="ข้อมูลนักศึกษา"
+                  />
                   <div className={styles.loanFormStudentDetails}>
                     <p>
                       <span>ชื่อ-นามสกุล</span>
@@ -600,40 +615,12 @@ export default function TempLoanApplicationPage({
                       <span>หลักสูตร</span>
                       <strong>{profile.programName || "พยาบาลศาสตรบัณฑิต"}</strong>
                     </p>
+                    <p>
+                      <span>วุฒิการศึกษา</span>
+                      <strong>{educationLevel || "ไม่พบข้อมูลวุฒิการศึกษา"}</strong>
+                    </p>
                   </div>
                   <div className={styles.loanFormFields}>
-                    <label
-                      className={[
-                        styles.loanFormField,
-                        formErrors.educationLevel ? styles.loanFormFieldInvalid : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                      ref={(element) => {
-                        fieldRefs.current.educationLevel = element ?? undefined;
-                      }}
-                    >
-                      <span>วุฒิการศึกษา</span>
-                      <LoanFormSelect
-                        error={formErrors.educationLevel}
-                        onBlur={() => handleFieldBlur("educationLevel")}
-                        onChange={(value) => updateFormField("educationLevel", value)}
-                        options={tempLoanFormOptions.educationLevels}
-                        placeholder="เลือกวุฒิการศึกษา"
-                        value={savedEducationLevel ?? formData.educationLevel}
-                      />
-                      {/* <small>
-                  {savedEducationLevel
-                    ? "วุฒิการศึกษาถูกบันทึกแล้วและไม่สามารถแก้ไขได้"
-                    : "เลือกครั้งเดียวตอนกู้ยืมครั้งแรกเท่านั้น การกู้ยืมครั้งถัดไปจะแสดงข้อมูลเดิม"}
-                </small> */}
-                      {formErrors.educationLevel ? (
-                        <small className={styles.loanFormFieldError}>
-                          {formErrors.educationLevel}
-                        </small>
-                      ) : null}
-                    </label>
-
                     <label
                       className={[
                         styles.loanFormField,
@@ -725,7 +712,11 @@ export default function TempLoanApplicationPage({
                 </section>
 
                 <section className={styles.loanFormSection}>
-                  <CardHeader className={styles.loanFormSectionHeading} title="ข้อมูลธนาคาร" />
+                  <CardHeader
+                    className={styles.loanFormSectionHeading}
+                    icon={<Landmark aria-hidden="true" size={20} />}
+                    title="ข้อมูลธนาคาร"
+                  />
                   <div className={styles.loanFormFields}>
                     <label
                       className={[
@@ -818,6 +809,7 @@ export default function TempLoanApplicationPage({
                 <section className={styles.loanFormSection}>
                   <CardHeader
                     className={styles.loanFormSectionHeading}
+                    icon={<ClipboardList aria-hidden="true" size={20} />}
                     title="วัตถุประสงค์การกู้ยืม"
                   />
                   <div className={styles.loanFormFields}>
@@ -866,7 +858,11 @@ export default function TempLoanApplicationPage({
                 </section>
 
                 <section className={styles.loanFormSection}>
-                  <CardHeader className={styles.loanFormSectionHeading} title="จำนวนเงินที่ขอกู้ยืม" />
+                  <CardHeader
+                    className={styles.loanFormSectionHeading}
+                    icon={<BahtCoinIcon aria-hidden="true" size={20} />}
+                    title="จำนวนเงินที่ขอกู้ยืม"
+                  />
                   <div className={styles.loanFormFields}>
                     <label
                       className={[
@@ -937,7 +933,7 @@ export default function TempLoanApplicationPage({
           )}
 
           {currentStep === 1 ? (
-            <div className={styles.loanFormActions}>
+            <div className={`${styles.loanFormActions} ${styles.loanStepActions}`}>
               <button
                 className={styles.loanApplicationHomeButton}
                 onClick={() => router.push("/student")}
@@ -956,7 +952,7 @@ export default function TempLoanApplicationPage({
               </button>
             </div>
           ) : currentStep === 2 ? (
-            <div className={styles.loanFormActions}>
+            <div className={`${styles.loanFormActions} ${styles.loanStepActions}`}>
               <button
                 className={styles.loanFormBack}
                 onClick={() => setCurrentStep(1)}

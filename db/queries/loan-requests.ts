@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
-import type { ExecutiveDecision, LoanDecision } from "@/lib/loan-validation";
+import { computeInstallmentSchedule, type ExecutiveDecision, type LoanDecision } from "@/lib/loan-validation";
 import type {
   ActionRequest,
   ActionHistory,
@@ -118,6 +118,12 @@ export const adminLoanDetailSelect = {
   bankName: true,
   bankAccountNo: true,
   bankAccountName: true,
+  // At most one row, per fund_transaction_one_disbursement_per_loan. Only the id is exposed:
+  // the slip is read through GET /api/fund-transactions/{id}/slip, never by storage path.
+  fundTransactions: {
+    where: { kind: "disbursement" as const },
+    select: { id: true },
+  },
 } satisfies Prisma.LoanRequestSelect;
 
 export const executiveLoanSelect = {
@@ -161,7 +167,7 @@ const globalLoanSelect = {
       loanId: true,
       installmentId: true,
       amount: true,
-      slipUrl: true,
+      slipPath: true,
       slipRef: true,
       status: true,
       confirmedBy: true,
@@ -380,7 +386,108 @@ export async function decideAdminLoanRequest({
       },
     });
     return final;
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
+}
+
+export type DisbursementErrorCode =
+  | "NOT_FOUND"
+  | "STALE_DECISION"
+  | "ACCESS_REVOKED"
+  | "DUPLICATE_DISBURSEMENT"
+  | "INSUFFICIENT_FUNDS";
+
+export class DisbursementError extends Error {
+  constructor(readonly code: DisbursementErrorCode) {
+    super(code);
+  }
+}
+
+/**
+ * Manual disbursement of a loan already approved and awaiting disbursement. slipPath must already
+ * point at an uploaded object (see app/api/admin/loan-requests/[id]/disburse/route.ts) - the ledger
+ * row is append-only and can never be updated with a slip path after insert.
+ */
+export async function disburseLoanRequest({
+  id,
+  adminId,
+  slipPath,
+}: {
+  id: string;
+  adminId: string;
+  slipPath: string;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const effectiveRole = await tx.userRole.findFirst({
+      where: { userId: adminId, role: { in: ["admin", "super_admin"] } },
+      select: { userId: true },
+    });
+    if (!effectiveRole) throw new DisbursementError("ACCESS_REVOKED");
+
+    const current = await tx.loanRequest.findFirst({
+      where: { id, status: "pending_disbursement" },
+      select: adminLoanDetailSelect,
+    });
+    if (!current) throw new DisbursementError("NOT_FOUND");
+    if (current.approvedAmount === null) {
+      // ponytail: state-machine invariant - executive approval always sets approvedAmount before
+      // a loan reaches pending_disbursement. Guard exists only so TS narrows the type below.
+      throw new Error(`Loan ${id} reached pending_disbursement without an approvedAmount`);
+    }
+    const approvedAmount = current.approvedAmount;
+
+    try {
+      await tx.fundTransaction.create({
+        data: {
+          kind: "disbursement",
+          amount: approvedAmount,
+          direction: -1,
+          loanId: id,
+          performedBy: adminId,
+          slipPath,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new DisbursementError("DUPLICATE_DISBURSEMENT");
+      }
+      // The AFTER INSERT balance-guard trigger raises this exact message on check_violation.
+      const insufficientFunds =
+        error instanceof Error && error.message.includes("fund_transaction: insufficient balance");
+      if (insufficientFunds) throw new DisbursementError("INSUFFICIENT_FUNDS");
+      throw error;
+    }
+
+    const changed = await tx.loanRequest.updateMany({
+      where: { id, status: "pending_disbursement" },
+      data: { status: "disbursed", disbursedAt: new Date() },
+    });
+    if (changed.count !== 1) throw new DisbursementError("STALE_DECISION");
+
+    const schedule = computeInstallmentSchedule(
+      approvedAmount,
+      current.installmentCount,
+      current.firstDueDate,
+    );
+    await tx.installment.createMany({
+      data: schedule.map((installment) => ({ loanId: id, ...installment })),
+    });
+
+    const final = await tx.loanRequest.findUniqueOrThrow({
+      where: { id },
+      select: adminLoanDetailSelect,
+    });
+    await tx.auditLog.create({
+      data: {
+        actorId: adminId,
+        action: "loan_request.disbursed",
+        entityType: "loan_request",
+        entityId: id,
+        before: serializeJson(current),
+        after: serializeJson(final),
+      },
+    });
+    return final;
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
 }
 
 
@@ -469,10 +576,11 @@ export async function getActionRequests(
           fullNameEn: true,
         },
       },
-      advisor: {
-        select: {
-          fullNameTh: true,
-        },
+      // At most one row, per fund_transaction_one_disbursement_per_loan. Only the id is needed:
+      // the slip is read through GET /api/fund-transactions/{id}/slip, never by storage path.
+      fundTransactions: {
+        where: { kind: "disbursement" },
+        select: { id: true },
       },
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -609,9 +717,11 @@ export async function getActionRequests(
         amount: String(p.amount),
         paidAt: p.paidAt ? formatThaiDate(p.paidAt) : formatThaiDate(p.createdAt),
         status: mappedStatus,
-        slipImageUrl: p.slipUrl ?? "",
+        slipImageUrl: p.slipPath ?? "",
       };
     });
+
+    const disbursement = loan.fundTransactions[0];
 
     return {
       id: loan.id,
@@ -637,6 +747,7 @@ export async function getActionRequests(
       ...(bankDetails ? { bankDetails } : {}),
       paymentBehavior,
       paymentHistory,
+      ...(disbursement ? { slipUrl: `/api/fund-transactions/${disbursement.id}/slip` } : {}),
     };
   });
 }
@@ -664,6 +775,12 @@ export async function getDisbursementActionRequests(): Promise<ActionRequest[]> 
 
 export const studentLoanDetailSelect = {
   ...studentLoanSelect,
+  // At most one row, per fund_transaction_one_disbursement_per_loan. Only the id is exposed:
+  // the slip is read through GET /api/fund-transactions/{id}/slip, never by storage path.
+  fundTransactions: {
+    where: { kind: "disbursement" as const },
+    select: { id: true },
+  },
   approvals: {
     select: {
       id: true,
@@ -694,7 +811,7 @@ export const studentLoanDetailSelect = {
       id: true,
       installmentId: true,
       amount: true,
-      slipUrl: true,
+      slipPath: true,
       status: true,
       paidAt: true,
       confirmedAt: true,
@@ -777,12 +894,14 @@ export async function decideExecutiveLoanRequest({
     });
     if (!pending) throw new ExecutiveDecisionError("STALE_DECISION");
 
-    const nextStatus = decision === "approved" ? "pending_disbursement" : "rejected";
+    const nextStatus =
+      decision === "approved" ? "pending_disbursement" : decision === "returned" ? "pending_admin" : "rejected";
     const changed = await tx.loanRequest.updateMany({
       where: { id, status: "pending_executive" },
       data: {
         status: nextStatus,
-        assignedAdminId: null,
+        assignedAdminId: decision === "returned" ? current.assignedAdminId : null,
+        approvedAmount: decision === "returned" ? null : undefined,
       },
     });
     if (changed.count !== 1) throw new ExecutiveDecisionError("STALE_DECISION");
@@ -791,6 +910,12 @@ export async function decideExecutiveLoanRequest({
       where: { id: pending.id },
       data: { decision, decidedBy: executiveId, decidedAt: new Date(), comment },
     });
+
+    if (decision === "returned") {
+      await tx.loanApproval.create({
+        data: { loanId: id, step: "admin", attempt: pending.attempt + 1 },
+      });
+    }
 
     const final = await tx.loanRequest.findUniqueOrThrow({
       where: { id },
@@ -807,6 +932,6 @@ export async function decideExecutiveLoanRequest({
       },
     });
     return final;
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
 }
 

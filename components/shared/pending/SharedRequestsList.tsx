@@ -10,6 +10,7 @@ interface SharedRequestsListProps {
   hideFilters?: boolean;
   dashboardMode?: "pending" | "all";
   initialRequests?: ActionRequest[];
+  highlightRequestId?: string;
 }
 
 export default function SharedRequestsList({
@@ -17,8 +18,9 @@ export default function SharedRequestsList({
   hideFilters = false,
   dashboardMode = "all",
   initialRequests,
+  highlightRequestId,
 }: SharedRequestsListProps) {
-  const [filter, setFilter] = useState<FilterStatus>("pending");
+  const [filter, setFilter] = useState<FilterStatus>(highlightRequestId ? "all" : "pending");
   const [searchQuery, setSearchQuery] = useState("");
   const requests = initialRequests ?? [];
 
@@ -113,7 +115,11 @@ export default function SharedRequestsList({
       )}
 
       {/* ส่ง userRole ต่อไปให้ RequestsCard เพื่อเปิดปิดสิทธิ์แก้ตัวเลขวงเงิน */}
-      <RequestsCard requests={filteredRequests} userRole={userRole} />
+      <RequestsCard
+        requests={filteredRequests}
+        userRole={userRole}
+        initialSelectedRequestId={highlightRequestId}
+      />
     </div>
   );
 }

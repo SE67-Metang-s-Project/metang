@@ -17,6 +17,11 @@ const requiredRequestBodies = {
   PhoneNumberBody: ["phoneNumber"],
   RoleMutationBody: ["action", "role"],
 };
+// next-openapi-gen only emits application/json request bodies, so a file-upload route generates a
+// contract its own handler rejects. Restate those bodies as multipart/form-data here.
+const multipartRequestBodies = {
+  DisburseLoanRequestBody: { slip: { type: "string", format: "binary" } },
+};
 const loanInputExample = {
   advisorName: "อาจารย์ทดสอบ",
   amount: 5000,
@@ -28,6 +33,14 @@ const loanInputExample = {
   bankAccountName: "นักศึกษาทดสอบ",
   installmentCount: 1,
 };
+
+// next-openapi-gen drops negative numeric literals from a union, so `direction: 1 | -1` in
+// lib/loan-api-types.ts generates as `enum: [1]` - which would tell a consumer that every
+// disbursement row is invalid. Restore both members here.
+const direction = document.components?.schemas?.FundTransactionItem?.properties?.direction;
+if (!direction) throw new Error("Missing FundTransactionItem.direction schema");
+direction.type = "integer";
+direction.enum = [1, -1];
 
 for (const [path, operations] of Object.entries(document.paths ?? {})) {
   for (const operation of Object.values(operations)) {
@@ -42,6 +55,20 @@ for (const [path, operations] of Object.entries(document.paths ?? {})) {
     }
     if (schemaName === "LoanInput") {
       operation.requestBody.content["application/json"].example = loanInputExample;
+    }
+
+    const multipart = multipartRequestBodies[schemaName];
+    if (multipart) {
+      operation.requestBody.required = true;
+      operation.requestBody.content = {
+        "multipart/form-data": {
+          schema: {
+            type: "object",
+            properties: multipart,
+            required: Object.keys(multipart),
+          },
+        },
+      };
     }
 
     const isLoanRequestPath =

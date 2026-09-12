@@ -3,8 +3,9 @@ import {
   tempCurrentLoanDetails,
   type TempLoanFormData,
 } from "@/app/student/temp/tempMockData";
-import { HandCoins, Landmark, UserRound } from "lucide-react";
+import { Landmark, UserRound } from "lucide-react";
 import styles from "@/app/student/student.module.css";
+import BahtCoinIcon from "@/components/shared/BahtCoinIcon";
 import { formatThaiBahtText, parseLoanAmount } from "@/app/student/studentFormatters";
 import CardHeader from "@/components/shared/CardHeader";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
@@ -157,7 +158,7 @@ export default function TempLoanDetailsStep({
       <section className={styles.tempDetailCard}>
         <CardHeader
           className={styles.sectionCardHeading}
-          icon={<HandCoins aria-hidden="true" size={20} strokeWidth={2.2} />}
+          icon={<BahtCoinIcon aria-hidden="true" size={20} />}
           title="ข้อมูลการกู้ยืม"
         />
         <dl className={styles.tempDetailDefinitionList}>

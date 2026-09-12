@@ -18,7 +18,7 @@ export const tempStudentProfile = {
   programName: "พยาบาลศาสตรบัณฑิต",
   educationLevel: "ปริญญาตรี",
   yearLabel: "ชั้นปีที่ 3",
-  studentId: "661215001",
+  studentId: "670550702",
   initials: "MT",
 };
 

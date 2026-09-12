@@ -8,7 +8,7 @@ import { serializeJson } from "@/lib/serialization";
 type Params = { params: Promise<{ id: string }> };
 
 /**
- * Get a loan request awaiting an Admin decision.
+ * Get a loan request awaiting Admin/SuperAdmin action.
  * @tag Admin loans
  * @pathParams LoanRequestIdParams
  * @auth cookieAuth
@@ -34,8 +34,11 @@ export async function GET(_request: Request, { params }: Params) {
     const loan = await prisma.loanRequest.findFirst({
       where: {
         id,
-        status: "pending_admin",
-        OR: [{ assignedAdminId: null }, { assignedAdminId: access.context.user.id }],
+        OR: [
+          { status: "pending_admin", assignedAdminId: null },
+          { status: "pending_admin", assignedAdminId: access.context.user.id },
+          { status: "pending_disbursement" },
+        ],
       },
       select: adminLoanDetailSelect,
     });
