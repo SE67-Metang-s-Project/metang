@@ -576,6 +576,11 @@ export async function getActionRequests(
           fullNameEn: true,
         },
       },
+      advisor: {
+        select: {
+          fullNameTh: true,
+        },
+      },
       // At most one row, per fund_transaction_one_disbursement_per_loan. Only the id is needed:
       // the slip is read through GET /api/fund-transactions/{id}/slip, never by storage path.
       fundTransactions: {
