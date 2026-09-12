@@ -258,6 +258,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
 
   const closeAllModals = () => {
     setSelectedRequest(null);
+    if (uploadedSlip) URL.revokeObjectURL(uploadedSlip);
     setUploadedSlip(null);
     setSlipFile(null);
     setIsCopied(false);
@@ -273,6 +274,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (uploadedSlip) URL.revokeObjectURL(uploadedSlip);
       const imageUrl = URL.createObjectURL(file);
       setUploadedSlip(imageUrl);
       setSlipFile(file);
@@ -281,6 +283,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
   };
 
   const handleDisburse = async () => {
+    if (isSubmitting) return;
     if (!selectedRequest || !slipFile) return;
 
     setIsSubmitting(true);
@@ -488,7 +491,8 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
               </div>
               <button
                 onClick={closeAllModals}
-                className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors"
+                disabled={isSubmitting}
+                className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X size={20} />
               </button>
@@ -685,7 +689,10 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                         />
                         <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button
-                            onClick={() => setUploadedSlip(null)}
+                            onClick={() => {
+                              if (uploadedSlip) URL.revokeObjectURL(uploadedSlip);
+                              setUploadedSlip(null);
+                            }}
                             className="bg-white text-red-600 px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-red-50"
                           >
                             เปลี่ยนรูปภาพ
