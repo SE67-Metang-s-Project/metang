@@ -9,6 +9,9 @@ const read = (file) => readFileSync(resolve(root, file), "utf8");
 const query = read("db/queries/loan-requests.ts");
 const disburseService = query.slice(query.indexOf("export async function disburseLoanRequest"));
 const route = read("app/api/admin/loan-requests/[id]/disburse/route.ts");
+const auth = read("lib/loan-auth.ts");
+const queueRoute = read("app/api/admin/loan-requests/route.ts");
+const detailRoute = read("app/api/admin/loan-requests/[id]/route.ts");
 
 test("disbursement is wrapped in a transaction and every write uses the tx client", () => {
   assert.match(disburseService, /return prisma\.\$transaction\(async \(tx\) => \{/);
@@ -121,4 +124,36 @@ test("cancel guard: disbursed loans are excluded from cancellation everywhere", 
 
   const dashboard = read("components/student/dashboard/StudentDashboard.tsx");
   assert.match(dashboard, /showCancelRequest=\{Boolean\(\s*currentActiveLoan && !\("isDisbursed" in currentActiveLoan && currentActiveLoan\.isDisbursed\)/);
+});
+
+test("NAT-162: pending_disbursement is a shared queue, not owned by one admin", () => {
+  // The single line the whole "Admin and SuperAdmin" half of the ticket rests on.
+  assert.match(
+    auth,
+    /function hasAdminRole\(roles: \{ role: UserRoleName \}\[\]\) \{\s*return roles\.some\(\(\{ role \}\) => role === "admin" \|\| role === "super_admin"\);/,
+  );
+
+  // Queue: pending_disbursement branch must be a bare object with no ownership filter -
+  // it's a shared post-approval action, not owned by one admin. The exact-literal match
+  // itself proves no assignedAdminId sits inside that object.
+  assert.match(queueRoute, /\{ status: "pending_disbursement" as const \}/);
+
+  // Queue: pending_admin branch DOES keep the ownership filter.
+  assert.match(
+    queueRoute,
+    /status: "pending_admin" as const,\s*OR: \[\{ assignedAdminId: null \}, \{ assignedAdminId: access\.context\.user\.id \}\]/,
+  );
+
+  // Detail: the OR array's pending_disbursement entry is bare (no assignedAdminId attached),
+  // alongside the two ownership-scoped pending_admin entries.
+  assert.match(detailRoute, /\{ status: "pending_admin", assignedAdminId: null \}/);
+  assert.match(
+    detailRoute,
+    /\{ status: "pending_admin", assignedAdminId: access\.context\.user\.id \}/,
+  );
+  assert.match(detailRoute, /\{ status: "pending_disbursement" \}/);
+
+  // Validator must actually accept the value the routes branch on, or it's dead code.
+  const validation = read("lib/loan-validation.ts");
+  assert.match(validation, /if \(value === "pending_disbursement"\) return "pending_disbursement";/);
 });
