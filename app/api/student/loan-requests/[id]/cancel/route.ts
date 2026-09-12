@@ -8,7 +8,7 @@ import { studentLoanSelect } from "@/db/queries/loan-requests";
 
 type Params = { params: Promise<{ id: string }> };
 
-const terminalStatuses: LoanStatus[] = ["closed", "rejected", "cancelled"];
+const terminalStatuses: LoanStatus[] = ["disbursed", "closed", "rejected", "cancelled"];
 
 /**
  * Cancel the current student's active loan request.

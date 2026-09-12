@@ -37,7 +37,9 @@ export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProp
       : details;
 
   const isReturned = details.statusCode === "returned" || details.statusLabel.includes("แก้ไข");
-  const canCancelRequest = !["closed", "rejected", "cancelled"].includes(details.statusCode ?? "");
+  const canCancelRequest = !["disbursed", "closed", "rejected", "cancelled"].includes(
+    details.statusCode ?? "",
+  );
 
   const handleCancelRequest = async () => {
     if (!details.id) return;

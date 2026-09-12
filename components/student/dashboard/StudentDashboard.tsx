@@ -260,7 +260,9 @@ export default function StudentDashboard({
           <LoanTimeline
             items={dashboardTimeline}
             onCancelRequest={() => setIsCancelDialogOpen(true)}
-            showCancelRequest={Boolean(currentActiveLoan)}
+            showCancelRequest={Boolean(
+              currentActiveLoan && !("isDisbursed" in currentActiveLoan && currentActiveLoan.isDisbursed),
+            )}
           />
 
           <LoanDetailSchedule items={schedule ?? []} />
