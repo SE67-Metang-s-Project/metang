@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, Mail, Menu } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import type { UserRole } from "@/components/shared/SidebarNav";
 import type { StudentLanguage } from "@/app/student/StudentLanguageProvider";
 
@@ -24,6 +26,7 @@ export interface TopNavProps {
   language?: StudentLanguage;
   onLanguageChange?: (language: StudentLanguage) => void;
   logoutLabel?: string;
+  dashboardHref?: string;
 }
 
 export default function TopNav({
@@ -37,12 +40,14 @@ export default function TopNav({
   language,
   onLanguageChange,
   logoutLabel = "ออกจากระบบ",
+  dashboardHref,
 }: TopNavProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const displayRole = userRole ?? (role ? ROLE_DISPLAY_NAMES[role] : undefined) ?? "ผู้ใช้งาน";
   const displayCode = userId ?? displayRole;
   const displayEmail = userEmail ?? (userId ? `${userId.toLowerCase()}@cmu.ac.th` : "user@cmu.ac.th");
+  const logoHref = dashboardHref ?? (role ? `/${role}` : userRole === "นักศึกษา" ? "/student" : "/");
 
   useEffect(() => {
     const closeProfileOnOutsideClick = (event: MouseEvent) => {
@@ -67,6 +72,21 @@ export default function TopNav({
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white sm:h-20">
+        <Link
+          aria-label="กลับไปยังหน้าแดชบอร์ด"
+          className="ml-6 flex shrink-0 items-center rounded-lg transition-all duration-200 hover:scale-105 hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+          href={logoHref}
+        >
+          <Image
+            alt="METANG"
+            className="h-11 w-11 object-contain sm:h-12 sm:w-12"
+            height={48}
+            priority
+            src="/metang-logo.png"
+            width={48}
+          />
+        </Link>
+
         {showSidebarButton && onOpenSidebar ? (
           <div className="flex items-center min-[1576px]:hidden">
             <button

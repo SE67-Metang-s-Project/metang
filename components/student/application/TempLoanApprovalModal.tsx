@@ -1,8 +1,10 @@
 import type { TempLoanFormData } from "@/app/student/temp/tempMockData";
 import { tempStudentProfile } from "@/app/student/temp/tempMockData";
 import { formatThaiBahtText, parseLoanAmount } from "@/app/student/studentFormatters";
-import { HandCoins, Landmark, UserRound, X } from "lucide-react";
+import { AlertCircle, Landmark, UserRound, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import styles from "@/app/student/student.module.css";
+import BahtCoinIcon from "@/components/shared/BahtCoinIcon";
 import CardHeader from "@/components/shared/CardHeader";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 
@@ -30,6 +32,7 @@ export default function TempLoanApprovalModal({
   errorDetails = null,
   isResubmit = false,
 }: TempLoanApprovalModalProps) {
+  const router = useRouter();
   const currentProfile = profile ?? tempStudentProfile;
   const loanAmount = parseLoanAmount(formData.loanAmount);
   const installmentAmount = Math.floor(loanAmount / formData.installmentCount);
@@ -57,6 +60,38 @@ export default function TempLoanApprovalModal({
       onClose();
     }
   };
+
+  if (errorDetails && errorDetails.status >= 500) {
+    return (
+      <div
+        className={styles.loanApprovalModalBackdrop}
+        onClick={onClose}
+        role="presentation"
+      >
+        <section
+          aria-labelledby="loan-server-error-title"
+          aria-modal="true"
+          className={styles.loanServerErrorModal}
+          role="dialog"
+        >
+          <AlertCircle aria-hidden="true" className={styles.loanServerErrorIcon} size={44} />
+          <h2 id="loan-server-error-title">เกิดข้อผิดพลาดจากเซิร์ฟเวอร์</h2>
+          <p>ระบบเซิร์ฟเวอร์ขัดข้องชั่วคราว กรุณารอสักครู่แล้วลองใหม่อีกครั้ง</p>
+          <button
+            className={styles.loanServerErrorAction}
+            onClick={(event) => {
+              event.stopPropagation();
+              onClose();
+              router.push("/student");
+            }}
+            type="button"
+          >
+            กลับไปยังหน้าหลัก
+          </button>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -208,7 +243,7 @@ export default function TempLoanApprovalModal({
         <section className={styles.loanApprovalInfoCard}>
           <CardHeader
             className={styles.sectionCardHeading}
-            icon={<HandCoins aria-hidden="true" size={20} strokeWidth={2.2} />}
+            icon={<BahtCoinIcon aria-hidden="true" size={20} />}
             title="ข้อมูลการกู้ยืม"
           />
           <dl>
@@ -238,7 +273,7 @@ export default function TempLoanApprovalModal({
 
         </section>
 
-        <LoanDetailSchedule items={schedule} />
+        <LoanDetailSchedule iconSize={20} items={schedule} />
 
         <div className={styles.loanApprovalActions}>
           <button

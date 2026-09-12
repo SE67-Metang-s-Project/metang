@@ -3,17 +3,18 @@ import type { LoanScheduleItem } from "@/app/student/studentMockData";
 import styles from "@/app/student/student.module.css";
 
 type LoanDetailScheduleProps = {
+  iconSize?: number;
   items?: LoanScheduleItem[];
 };
 
-export default function LoanDetailSchedule({ items = [] }: LoanDetailScheduleProps) {
+export default function LoanDetailSchedule({ iconSize = 23, items = [] }: LoanDetailScheduleProps) {
   const hasItems = items && items.length > 0;
 
   return (
     <section className={`${styles.loanDetailSection} ${styles.detailDashboardCard} ${styles.loanScheduleSection}`}>
       <header className={styles.sectionCardHeading}>
         <h2>
-          <CalendarDays aria-hidden="true" size={23} strokeWidth={2.2} />
+          <CalendarDays aria-hidden="true" size={iconSize} strokeWidth={2.2} />
           ตารางการชำระ
         </h2>
       </header>
