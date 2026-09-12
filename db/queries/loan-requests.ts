@@ -552,6 +552,11 @@ export async function getActionRequests(
           },
         },
       },
+      advisor: {
+        select: {
+          fullNameTh: true,
+        },
+      },
       approvals: {
         include: {
           decider: {

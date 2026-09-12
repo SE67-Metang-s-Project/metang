@@ -336,7 +336,7 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                 <div className="flex gap-4">
                   <div>
                     <div className="text-[11px] text-gray-500 mb-0.5">ยอดกู้ยืมรวม</div>
-                    <div className="font-bold text-[#ea580c]">฿{formatAmount(req.amount)}</div>
+                    <div className="font-bold text-[#ea580c]">{formatAmount(req.amount)}</div>
                   </div>
                   <div>
                     <div className="text-[11px] text-gray-500 mb-0.5">จำนวนงวด</div>
@@ -423,7 +423,7 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                     <div className="line-clamp-2">{req.objective}</div>
                   </td>
                   <td className="py-4 px-4 text-center font-normal text-gray-900 border-r border-gray-200 whitespace-nowrap">
-                    ฿{formatAmount(req.amount)}
+                    {formatAmount(req.amount)}
                   </td>
                   <td className="py-4 px-4 text-center font-normal text-gray-700 border-r border-gray-200 whitespace-nowrap">
                     {req.term} งวด
@@ -583,7 +583,7 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                   <div className={styles.loanAmountRow}>
                     <dt>ยอดกู้ยืมรวม (บาท)</dt>
                     <dd className="font-bold text-[#ea580c]">
-                      ฿{formatAmount(selectedRequest.amount)}
+                      {formatAmount(selectedRequest.amount)}
                     </dd>
                   </div>
                   <div>
@@ -654,7 +654,7 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                                 inst.expectedAmount === 0 ? "text-gray-400" : "text-gray-700"
                               }`}
                             >
-                              ฿{formatAmount(inst.expectedAmount)}
+                              {formatAmount(inst.expectedAmount)}
                             </span>
                           </td>
 
@@ -671,7 +671,7 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                                         : "text-[#ea580c]"
                                   }`}
                                 >
-                                  ฿{formatAmount(inst.evidence.amount)}
+                                  {formatAmount(inst.evidence.amount)}
                                 </span>
                                 {inst.evidence.paidTime && (
                                   <span className="text-[10px] text-gray-500 mt-0.5">
@@ -953,7 +953,7 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                       <div className={styles.loanAmountRow}>
                         <dt>ยอดเงินที่โอนมา (บาท)</dt>
                         <dd className="font-bold text-[#ea580c]">
-                          ฿{formatAmount(selectedEvidence.amount)}
+                          {formatAmount(selectedEvidence.amount)}
                         </dd>
                       </div>
                       <div>

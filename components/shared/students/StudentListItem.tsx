@@ -203,12 +203,12 @@ export default function StudentListTable({ students }: StudentListTableProps) {
 
                 {/* คอลัมน์การกู้ยืมทั้งหมด */}
                 <td className="py-3 px-4 text-gray-700 font-medium border-r border-gray-200 whitespace-nowrap text-center">
-                  ฿{student.totalBorrowed}
+                  {student.totalBorrowed}
                 </td>
 
                 {/* คอลัมน์หนี้คงเหลือ */}
                 <td className="py-3 px-4 text-[#dc2626] font-bold whitespace-nowrap text-center">
-                  ฿{student.balance}
+                  {student.balance}
                 </td>
               </tr>
             ))}

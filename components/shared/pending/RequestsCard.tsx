@@ -458,7 +458,7 @@ export default function RequestsCard({
         }
         if (originalRequestedAmount > 0 && parsed > originalRequestedAmount) {
           setErrorMessage(
-            `ไม่สามารถปรับวงเงินมากกว่าที่ขอได้ (สูงสุด ฿${originalRequestedAmount.toLocaleString("th-TH")})`,
+            `ไม่สามารถปรับวงเงินมากกว่าที่ขอได้ (สูงสุด ${originalRequestedAmount.toLocaleString("th-TH")})`,
           );
           setIsSubmitting(false);
           return;
@@ -516,7 +516,7 @@ export default function RequestsCard({
 
     if (originalRequestedAmount > 0 && num > originalRequestedAmount) {
       setAmountError(
-        `ไม่สามารถปรับวงเงินมากกว่าที่ขอได้ (สูงสุด ฿${originalRequestedAmount.toLocaleString("th-TH")})`,
+        `ไม่สามารถปรับวงเงินมากกว่าที่ขอได้ (สูงสุด ${originalRequestedAmount.toLocaleString("th-TH")})`,
       );
       return;
     }
@@ -622,7 +622,7 @@ export default function RequestsCard({
                 <div className="flex gap-4">
                   <div>
                     <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่ขอ</div>
-                    <div className="font-bold text-[#ea580c]">฿{formatAmount(req.amount)}</div>
+                    <div className="font-bold text-[#ea580c]">{formatAmount(req.amount)}</div>
                   </div>
                   <div>
                     <div className="text-[11px] text-gray-500 mb-0.5">จำนวนงวด</div>
@@ -891,7 +891,6 @@ export default function RequestsCard({
                       {isEditingAmount ? (
                         <div className="flex flex-col items-end gap-1 mt-1">
                           <div className="flex items-center justify-end gap-1.5">
-                            <span className="font-bold text-gray-700">฿</span>
                             <input
                               type="number"
                               min={1}
@@ -938,7 +937,7 @@ export default function RequestsCard({
                             <p className="text-[11px] text-red-500 text-right">{amountError}</p>
                           ) : (
                             <p className="text-[11px] text-gray-400 text-right">
-                              (ปรับลดได้สูงสุด ฿{originalRequestedAmount.toLocaleString("th-TH")})
+                              (ปรับลดได้สูงสุด {originalRequestedAmount.toLocaleString("th-TH")})
                             </p>
                           )}
                         </div>
@@ -947,10 +946,10 @@ export default function RequestsCard({
                           {originalRequestedAmount > 0 &&
                             Number(selectedRequest.amount) < originalRequestedAmount && (
                               <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-medium">
-                                ปรับลดจาก ฿{formatAmount(originalRequestedAmount)}
+                                ปรับลดจาก {formatAmount(originalRequestedAmount)}
                               </span>
                             )}
-                          <span>฿{formatAmount(selectedRequest.amount)}</span>
+                          <span>{formatAmount(selectedRequest.amount)}</span>
                         </div>
                       )}
                     </dd>
@@ -997,7 +996,7 @@ export default function RequestsCard({
                               ชำระแล้ว
                             </span>
                             <strong className="text-emerald-700">
-                              ฿{formatAmount(inst.paidAmount)}
+                              {formatAmount(inst.paidAmount)}
                             </strong>
                           </>
                         ) : (
@@ -1006,7 +1005,7 @@ export default function RequestsCard({
                               inst.expectedAmount === 0 ? "text-gray-400" : "text-[#ea580c]"
                             }
                           >
-                            ฿{formatAmount(inst.expectedAmount)}
+                            {formatAmount(inst.expectedAmount)}
                           </strong>
                         )}
                       </div>
@@ -1229,9 +1228,9 @@ export default function RequestsCard({
                         <div className="mb-2.5 text-[12px] bg-amber-50 border border-amber-200 text-amber-800 px-3 py-1.5 rounded-lg flex items-center justify-between">
                           <span>วงเงินที่อนุมัติ (ปรับลดลง):</span>
                           <span className="font-bold text-[#ea580c]">
-                            ฿{formatAmount(selectedRequest.amount)}{" "}
+                            {formatAmount(selectedRequest.amount)}{" "}
                             <span className="text-gray-400 font-normal line-through text-[11px]">
-                              (จาก ฿{formatAmount(originalRequestedAmount)})
+                              (จาก {formatAmount(originalRequestedAmount)})
                             </span>
                           </span>
                         </div>

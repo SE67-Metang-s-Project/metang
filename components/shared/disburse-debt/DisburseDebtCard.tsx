@@ -17,6 +17,7 @@ import {
   FileImage,
   AlertCircle,
   SearchX,
+  FileText,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
 import { formatThaiBahtText } from "@/app/student/studentFormatters";
@@ -101,6 +102,7 @@ export type ActionRequest = StudentInfo &
     approvals?: ApprovalStep[];
     paymentHistory?: PaymentHistoryRecord[];
     slipUrl?: string; // รองรับการแสดงรูปสลิป
+    documentUrl?: string; // รองรับการแสดงไฟล์เอกสาร
   };
 
 interface DisburseDebtCardProps {
@@ -246,6 +248,8 @@ function EmptyRequestsState() {
 export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
 
+  const [viewDocumentReq, setViewDocumentReq] = useState<ActionRequest | null>(null);
+
   // State สำหรับอัปโหลดสลิป & คัดลอกเลขบัญชี
   const [uploadedSlip, setUploadedSlip] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
@@ -257,6 +261,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
 
   const closeAllModals = () => {
     setSelectedRequest(null);
+    setViewDocumentReq(null);
     setUploadedSlip(null);
     setIsCopied(false);
   };
@@ -264,6 +269,11 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
   const backdropDismiss = useModalDismiss({
     onClose: closeAllModals,
     isOpen: Boolean(selectedRequest),
+  });
+
+  const documentModalDismiss = useModalDismiss({
+    onClose: () => setViewDocumentReq(null),
+    isOpen: Boolean(viewDocumentReq),
   });
 
   const handleCopy = (text: string) => {
@@ -315,7 +325,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                 <div className="flex gap-4">
                   <div>
                     <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่ขอ</div>
-                    <div className="font-bold text-[#ea580c]">฿{formatAmount(req.amount)}</div>
+                    <div className="font-bold text-[#ea580c]">{formatAmount(req.amount)}</div>
                   </div>
                   <div>
                     <div className="text-[11px] text-gray-500 mb-0.5">จำนวนงวด</div>
@@ -430,9 +440,10 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                       ) : (
                         <button
                           onClick={() => setSelectedRequest(req)}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 transition-colors px-3 py-1.5 text-[13px] font-bold text-green-700 shadow-sm cursor-pointer"
+                          className="inline-flex items-center justify-center gap-1 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 transition-colors px-2.5 py-1.5 text-[12px] font-bold text-green-700 shadow-sm cursor-pointer"
+                          title="ดูหลักฐานการโอน"
                         >
-                          <CheckCircle2 size={15} className="shrink-0" /> ดูหลักฐาน
+                          <CheckCircle2 size={14} className="shrink-0" /> ดูหลักฐาน
                         </button>
                       )}
                     </div>
@@ -607,13 +618,13 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     </div>
                   )}
                   <div className={styles.loanAmountRow}>
-                    <dt>{isCompleted ? "ยอดเงินที่โอนแล้ว (บาท)" : "จำนวนเงินที่ขอกู้ยืม (บาท)"}</dt>
+                    <dt>
+                      {isCompleted ? "ยอดเงินที่โอนแล้ว (บาท)" : "จำนวนเงินที่ขอกู้ยืม (บาท)"}
+                    </dt>
                     <dd
-                      className={`font-bold ${
-                        isCompleted ? "text-green-600" : "text-[#ea580c]"
-                      }`}
+                      className={`font-bold ${isCompleted ? "text-green-600" : "text-[#ea580c]"}`}
                     >
-                      ฿{formatAmount(selectedRequest.amount)}
+                      {formatAmount(selectedRequest.amount)}
                     </dd>
                   </div>
                   <div>
@@ -658,7 +669,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                               ชำระแล้ว
                             </span>
                             <strong className="text-emerald-700">
-                              ฿{formatAmount(inst.paidAmount)}
+                              {formatAmount(inst.paidAmount)}
                             </strong>
                           </>
                         ) : (
@@ -667,7 +678,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                               inst.expectedAmount === 0 ? "text-gray-400" : "text-[#ea580c]"
                             }
                           >
-                            ฿{formatAmount(inst.expectedAmount)}
+                            {formatAmount(inst.expectedAmount)}
                           </strong>
                         )}
                       </div>
@@ -894,6 +905,37 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   </div>
                 )}
               </section>
+
+              {/* เอกสารคำร้อง */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<FileText aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="เอกสารคำร้อง"
+                />
+                <div className="mt-2 flex items-center justify-between p-3.5 rounded-xl border border-orange-100 bg-orange-50/30">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-orange-100 text-[#ea580c] p-2 rounded-lg">
+                      <FileText size={20} />
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-bold text-gray-900">เอกสารคำร้องขอกู้ยืม</div>
+                      <div className="text-[11px] text-gray-500">
+                        {selectedRequest.documentUrl
+                          ? "เอกสารแนบคำร้องของนักศึกษา"
+                          : "เอกสารแนบคำร้อง"}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setViewDocumentReq(selectedRequest)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-bold rounded-lg border border-orange-200 bg-orange-50 hover:bg-orange-100 text-[#ea580c] hover:text-[#c2410c] transition-colors cursor-pointer shadow-sm"
+                  >
+                    <FileText size={15} /> เอกสาร
+                  </button>
+                </div>
+              </section>
             </div>
 
             {/* Footer Buttons */}
@@ -932,6 +974,66 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   </button>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewDocumentReq && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/70 backdrop-blur-sm"
+          {...documentModalDismiss}
+          role="presentation"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col h-[85vh] sm:h-[90vh] overflow-hidden relative border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header ของ Modal เอกสาร */}
+            <div className="flex justify-between items-center px-5 sm:px-6 py-4 border-b border-gray-100 bg-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="bg-orange-100 text-[#ea580c] p-2 rounded-lg">
+                  <FileText size={22} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 leading-tight">เอกสารคำร้อง</h2>
+                  <p className="text-[13px] text-gray-500 mt-0.5">
+                    รหัสคำร้อง: {viewDocumentReq.id} • {viewDocumentReq.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewDocumentReq(null)}
+                className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
+                aria-label="ปิดหน้าต่าง"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* ส่วนแสดงเนื้อหาเอกสาร (รองรับ PDF หรือรูปภาพ) */}
+            <div className="flex-1 bg-gray-100 p-4 sm:p-6 overflow-hidden">
+              {viewDocumentReq.documentUrl ? (
+                <iframe
+                  src={viewDocumentReq.documentUrl}
+                  className="w-full h-full rounded-xl border border-gray-300 shadow-sm bg-white"
+                  title="Petition Document"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-400 bg-white rounded-xl border border-dashed border-gray-300">
+                  <FileText size={48} className="mb-4 opacity-50" />
+                  <p className="text-gray-600 font-medium text-lg">ไม่พบไฟล์เอกสารคำร้อง</p>
+                  <p className="text-sm mt-1 text-gray-500">นักศึกษาอาจไม่ได้แนบไฟล์เอกสารมาด้วย</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-white border-t border-gray-100 flex justify-end shrink-0">
+              <button
+                onClick={() => setViewDocumentReq(null)}
+                className="px-6 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
+                type="button"
+              >
+                ปิดหน้าต่าง
+              </button>
             </div>
           </div>
         </div>

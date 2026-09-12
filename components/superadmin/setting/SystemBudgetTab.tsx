@@ -94,7 +94,7 @@ export default function SystemBudgetTab() {
               </button>
             </div>
             <p className="text-sm text-gray-500 mt-2 font-medium">
-              ยอดวงเงินรวม: <span className="font-bold text-gray-800">฿{formatCurrency(currentTotal)}</span>
+              ยอดวงเงินรวม: <span className="font-bold text-gray-800">{formatCurrency(currentTotal)}</span>
             </p>
           </div>
 
@@ -143,25 +143,25 @@ export default function SystemBudgetTab() {
           <div className="flex justify-between items-center pb-4 border-b border-gray-100">
             <span className="text-[13px] text-gray-600">วงเงินที่ปรับปรุง</span>
             <span className="text-[15px] font-bold text-gray-900">
-              ฿{formatCurrency(currentTotal)}
+              {formatCurrency(currentTotal)}
             </span>
           </div>
           <div className="flex justify-between items-center pb-4 border-b border-gray-100">
             <span className="text-[13px] text-gray-600">เบิกจ่ายแล้ว</span>
             <span className="text-[14px] font-bold text-green-600">
-              ฿{formatCurrency(spentAmount)}
+              {formatCurrency(spentAmount)}
             </span>
           </div>
           <div className="flex justify-between items-center pb-4 border-b border-gray-100">
             <span className="text-[13px] text-gray-600">รออนุมัติ / ตรวจสอบ</span>
             <span className="text-[14px] font-bold text-amber-500">
-              ฿{formatCurrency(pendingAmount)}
+              {formatCurrency(pendingAmount)}
             </span>
           </div>
           <div className="flex justify-between items-center pb-4">
             <span className="text-[14px] font-bold text-gray-900">คงเหลือใช้งานได้</span>
             <span className={`text-lg font-black ${remainingBudget < 0 ? "text-red-500" : "text-[#ea580c]"}`}>
-              ฿{formatCurrency(remainingBudget)}
+              {formatCurrency(remainingBudget)}
             </span>
           </div>
 
