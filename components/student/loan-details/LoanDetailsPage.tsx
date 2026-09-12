@@ -11,6 +11,7 @@ import LoanPaymentHistory from "./LoanPaymentHistory";
 import LoanTimeline from "./LoanTimeline";
 import TempDetailCard from "./TempDetailCard";
 import TransferSlipModal from "./TransferSlipModal";
+import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import styles from "@/app/student/student.module.css";
 
 type LoanDetailsPageProps = {
@@ -23,6 +24,13 @@ export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProp
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+
+  const cancelDialogDismiss = useModalDismiss({
+    onClose: () => {
+      if (!isCancelling) setIsCancelDialogOpen(false);
+    },
+    isOpen: isCancelDialogOpen,
+  });
   const isWaitingForTransferConfirmation = details.statusLabel === "รอยืนยันการรับเงิน";
   const [isTransferAccepted, setIsTransferAccepted] = useState(!isWaitingForTransferConfirmation);
   const hasAdminTransferredFunds =
@@ -138,6 +146,7 @@ export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProp
       {isCancelDialogOpen ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
+          {...cancelDialogDismiss}
           role="presentation"
         >
           <section

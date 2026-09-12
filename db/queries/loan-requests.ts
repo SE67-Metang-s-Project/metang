@@ -469,6 +469,11 @@ export async function getActionRequests(
           fullNameEn: true,
         },
       },
+      advisor: {
+        select: {
+          fullNameTh: true,
+        },
+      },
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
   });
@@ -614,9 +619,13 @@ export async function getActionRequests(
       studentId: student.studentCode ?? "-",
       major: "พยาบาลศาสตร์",
       program: "พยาบาลศาสตรบัณฑิต",
+      degree: student.educationLevel ?? "ปริญญาตรี",
+      educationLevel: student.educationLevel ?? undefined,
+      advisorName: loan.advisor?.fullNameTh ?? undefined,
       year: String(loan.studentYear),
       phone: student.phone ?? "-",
       objective: loan.purpose,
+      additionalNote: loan.additionalNote ?? undefined,
       amount: String(loan.amount),
       term: String(loan.installmentCount),
       submitDate: formatThaiDate(submitDateObj),

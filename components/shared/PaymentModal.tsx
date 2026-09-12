@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ChevronDown, ChevronLeft, ChevronRight, Download, Landmark, ReceiptText, UploadCloud, X } from "lucide-react";
 import type { InstallmentPayment, PaymentAccount } from "@/app/student/studentMockData";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 type PaymentModalProps = {
   installment: InstallmentPayment;
@@ -67,6 +68,23 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
     document.addEventListener("mousedown", closePickersOnOutsidePress);
     return () => document.removeEventListener("mousedown", closePickersOnOutsidePress);
   }, []);
+
+  useBodyScrollLock(true);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (isQrSaveNoticeOpen) {
+          setIsQrSaveNoticeOpen(false);
+        } else {
+          onClose();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isQrSaveNoticeOpen, onClose]);
 
   useEffect(() => {
     if (!isTimePickerOpen) return;
@@ -172,6 +190,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
     <div
       aria-label={t("หน้าต่างชำระเงิน", "Payment dialog")}
       className="fixed inset-0 z-40 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
+      onClick={handleBackdropClick}
       onMouseDown={handleBackdropClick}
       role="presentation"
     >
@@ -593,7 +612,16 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
         </footer>
       </section>
       {isQrSaveNoticeOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsQrSaveNoticeOpen(false);
+          }}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsQrSaveNoticeOpen(false);
+          }}
+          role="presentation"
+        >
           <section
             aria-labelledby="qr-save-notice-title"
             aria-modal="true"

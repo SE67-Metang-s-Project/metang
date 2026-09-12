@@ -1,20 +1,25 @@
+// components/shared/verify-slip/VerifySlipCard.tsx
 "use client";
 
 import React, { useState } from "react";
 import {
   X,
-  GraduationCap,
-  Wallet,
-  FileText,
-  CheckCircle2,
-  Clock,
+  UserRound,
   Landmark,
+  HandCoins,
   CalendarDays,
-  ShieldAlert,
+  CreditCard,
+  MessageSquare,
+  History,
+  CheckCircle2,
   Receipt,
-  ShieldCheck,
+  ShieldAlert,
   SearchX,
 } from "lucide-react";
+import CardHeader from "@/components/shared/CardHeader";
+import { formatThaiBahtText } from "@/app/student/studentFormatters";
+import { useModalDismiss } from "@/hooks/useBodyScrollLock";
+import styles from "@/app/student/student.module.css";
 
 // ==========================================
 // 1. Types
@@ -35,8 +40,11 @@ export type StudentInfo = {
   studentId: string;
   major: string;
   program?: string;
+  degree?: string;
+  educationLevel?: string;
   year: string;
   phone?: string;
+  advisorName?: string;
 };
 
 export type BankDetails = {
@@ -51,6 +59,7 @@ export type LoanDetails = {
   term: string;
   expectedReturnDate?: string;
   bankDetails?: BankDetails;
+  additionalNote?: string;
 };
 
 export type RequestStatus = {
@@ -115,6 +124,21 @@ interface VerifySlipCardProps {
 // ==========================================
 // 2. Helper Functions
 // ==========================================
+const thaiMonths = [
+  "ม.ค.",
+  "ก.พ.",
+  "มี.ค.",
+  "เม.ย.",
+  "พ.ค.",
+  "มิ.ย.",
+  "ก.ค.",
+  "ส.ค.",
+  "ก.ย.",
+  "ต.ค.",
+  "พ.ย.",
+  "ธ.ค.",
+];
+
 const formatAmount = (amountStr: string | number) => {
   const num = Number(amountStr);
   if (isNaN(num)) return amountStr;
@@ -124,6 +148,19 @@ const formatAmount = (amountStr: string | number) => {
 export const hasPendingSlip = (history?: PaymentEvidence[]) => {
   if (!history) return false;
   return history.some((ev) => ev.status === "pending");
+};
+
+const getRoleDisplay = (step: string) => {
+  switch (step) {
+    case "advisor":
+      return "อ.ที่ปรึกษา";
+    case "admin":
+      return "เจ้าหน้าที่";
+    case "executive":
+      return "ผู้บริหาร";
+    default:
+      return step;
+  }
 };
 
 function EmptySlipState() {
@@ -139,21 +176,6 @@ function EmptySlipState() {
     </div>
   );
 }
-
-const thaiMonths = [
-  "ม.ค.",
-  "ก.พ.",
-  "มี.ค.",
-  "เม.ย.",
-  "พ.ค.",
-  "มิ.ย.",
-  "ก.ค.",
-  "ส.ค.",
-  "ก.ย.",
-  "ต.ค.",
-  "พ.ย.",
-  "ธ.ค.",
-];
 
 // ==========================================
 // ฟังก์ชันคำนวณงวดชำระ
@@ -239,6 +261,9 @@ function calculateInstallments(
   });
 }
 
+// ==========================================
+// Main Component
+// ==========================================
 export default function VerifySlipCard({ requests, userRole = "admin" }: VerifySlipCardProps) {
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
   const [selectedEvidence, setSelectedEvidence] = useState<PaymentEvidence | null>(null);
@@ -246,6 +271,7 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
   const [slipRemark, setSlipRemark] = useState("");
 
   const canViewSensitiveData = userRole === "admin" || userRole === "super_admin";
+  const selectedRequestHistory = selectedRequest?.history ?? [];
 
   const closeAllModals = () => {
     setSelectedRequest(null);
@@ -260,10 +286,23 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
     setSlipRemark("");
   };
 
+  const isEvidenceModalOpen = Boolean(selectedEvidence && selectedRequest);
+  const isRequestModalOpen = Boolean(selectedRequest && !selectedEvidence);
+
+  const requestModalDismiss = useModalDismiss({
+    onClose: closeAllModals,
+    isOpen: isRequestModalOpen,
+  });
+
+  const evidenceModalDismiss = useModalDismiss({
+    onClose: closeEvidenceModal,
+    isOpen: isEvidenceModalOpen,
+  });
+
   return (
     <div className="w-full">
       {/* ========================================== */}
-      {/* มุมมอง Mobile */}
+      {/* 1. มุมมอง Mobile (แสดงเป็นการ์ด) */}
       {/* ========================================== */}
       <div className="md:hidden space-y-4">
         {requests.length === 0 ? (
@@ -272,7 +311,7 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
           requests.map((req, idx) => (
             <div
               key={idx}
-              className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col gap-3"
+              className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md"
             >
               <div className="flex justify-between items-start gap-2">
                 <div>
@@ -283,19 +322,30 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                     {req.studentId} • {req.major} • ปี {req.year}
                   </div>
                 </div>
-                <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded-md shrink-0 border border-gray-200">
+                <span className="text-[11px] text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md shrink-0 border border-gray-200">
                   {req.submitDate?.split(" ")[0]}
                 </span>
               </div>
 
+              <div className="text-[13px] text-gray-700 bg-orange-50/40 p-3 rounded-xl border border-orange-100/60 line-clamp-2">
+                <span className="font-semibold text-gray-900">นำไปใช้: </span>
+                {req.objective}
+              </div>
+
               <div className="flex justify-between items-end border-t border-gray-100 pt-3 mt-1">
-                <div>
-                  <div className="text-[11px] text-gray-500 mb-0.5">ยอดกู้ยืมรวม</div>
-                  <div className="font-bold text-[#ea580c]">฿{formatAmount(req.amount)}</div>
+                <div className="flex gap-4">
+                  <div>
+                    <div className="text-[11px] text-gray-500 mb-0.5">ยอดกู้ยืมรวม</div>
+                    <div className="font-bold text-[#ea580c]">฿{formatAmount(req.amount)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-gray-500 mb-0.5">จำนวนงวด</div>
+                    <div className="font-medium text-gray-700 text-[14px]">{req.term} งวด</div>
+                  </div>
                 </div>
                 <button
                   onClick={() => setSelectedRequest(req)}
-                  className="w-fit max-w-full px-4 py-2 text-[14px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200"
+                  className="w-fit max-w-full px-4 py-2 text-[13px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200 cursor-pointer"
                 >
                   <span className="block truncate">ตรวจสอบ</span>
                 </button>
@@ -306,10 +356,19 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
       </div>
 
       {/* ========================================== */}
-      {/* มุมมอง Desktop */}
+      {/* 2. มุมมอง Desktop/Tablet (แสดงเป็นตาราง) */}
       {/* ========================================== */}
       <div className="hidden md:block overflow-x-auto relative rounded-xl border border-gray-300 shadow-sm">
-        <table className="w-full text-left border-collapse min-w-[900px] bg-white">
+        <table className="w-full table-fixed text-left border-collapse min-w-[1050px] bg-white">
+          <colgroup>
+            <col className="w-[130px]" />
+            <col className="w-[28%]" />
+            <col className="w-[12%]" />
+            <col className="w-[21%]" />
+            <col className="w-[7.5%]" />
+            <col className="w-[7.5%]" />
+            <col className="w-[14%]" />
+          </colgroup>
           <thead>
             <tr className="bg-gray-100/70 border-b border-gray-300 text-gray-700 text-[14px]">
               <th className="py-3.5 px-4 font-semibold border-r border-gray-300 text-center whitespace-nowrap">
@@ -321,8 +380,14 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
               <th className="py-3.5 px-4 font-semibold border-r border-gray-300 text-center whitespace-nowrap">
                 วันที่ยื่น
               </th>
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 min-w-[200px] text-center">
+                รายละเอียดเพื่อนำไปใช้
+              </th>
               <th className="py-3.5 px-4 font-semibold border-r border-gray-300 text-center whitespace-nowrap">
                 ยอดกู้ยืมรวม
+              </th>
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 text-center whitespace-nowrap">
+                จำนวนงวด
               </th>
               <th className="py-3.5 px-4 font-bold text-center whitespace-nowrap">จัดการ</th>
             </tr>
@@ -330,7 +395,7 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
           <tbody>
             {requests.length === 0 ? (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={7}>
                   <EmptySlipState />
                 </td>
               </tr>
@@ -340,28 +405,34 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                   key={idx}
                   className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
                 >
-                  <td className="py-4 px-4 text-center text-gray-600 border-r border-gray-200">
+                  <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
                     {req.id}
                   </td>
                   <td className="py-4 px-4 border-r border-gray-200">
                     <div className="font-bold text-gray-900 max-[1201px]:line-clamp-1">
                       {req.name}
                     </div>
-                    <div className="text-[13px] text-gray-500 mt-0.5 max-[1201px]:truncate">
+                    <div className="mt-0.5 text-[13px] text-gray-500 max-[1201px]:truncate">
                       {req.studentId} • {req.major} • ปี {req.year}
                     </div>
                   </td>
-                  <td className="py-4 px-4 text-center text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                  <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
                     {req.submitDate?.split(" ")[0]}
                   </td>
-                  <td className="py-4 px-4 text-center text-gray-900 font-bold border-r border-gray-200 whitespace-nowrap">
+                  <td className="py-4 px-4 text-left font-normal text-gray-700 border-r border-gray-200">
+                    <div className="line-clamp-2">{req.objective}</div>
+                  </td>
+                  <td className="py-4 px-4 text-center font-normal text-gray-900 border-r border-gray-200 whitespace-nowrap">
                     ฿{formatAmount(req.amount)}
+                  </td>
+                  <td className="py-4 px-4 text-center font-normal text-gray-700 border-r border-gray-200 whitespace-nowrap">
+                    {req.term} งวด
                   </td>
                   <td className="py-4 px-4 align-middle">
                     <div className="flex justify-center">
                       <button
                         onClick={() => setSelectedRequest(req)}
-                        className="w-fit max-w-full px-3 py-1.5 text-[14px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200"
+                        className="w-fit max-w-full px-3 py-1.5 text-[13px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200 cursor-pointer"
                       >
                         <span className="block truncate">ตรวจสอบ</span>
                       </button>
@@ -375,132 +446,176 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
       </div>
 
       {/* ========================================== */}
-      {/* Modal 1: รายละเอียดคำร้อง */}
+      {/* 3. Modal 1: รายละเอียดคำร้องและตารางชำระเงิน */}
       {/* ========================================== */}
       {selectedRequest && !selectedEvidence && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-[700px] flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+          {...requestModalDismiss}
+          role="presentation"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[620px] flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden relative border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
             {/* Header Modal */}
-            <div className="flex justify-between items-start px-4 sm:px-6 py-4 border-b border-gray-100 bg-white">
-              <h2 className="text-lg font-bold text-gray-900 leading-tight">
-                คำร้อง {selectedRequest.id}
-              </h2>
-              <button
-                onClick={closeAllModals}
-                className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-[#f8fafc] space-y-4">
-              {/* ข้อมูลนักศึกษา */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-start gap-4 shadow-sm">
-                <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 mt-1">
-                  <GraduationCap size={24} />
-                </div>
-                <div className="w-full">
-                  <h3 className="font-bold text-gray-900 text-[15px] sm:text-[16px]">
-                    {selectedRequest.name}
-                  </h3>
-                  <div className="text-[13px] text-gray-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span>{selectedRequest.studentId}</span>
-                    <span className="hidden sm:inline text-gray-300">|</span>
-                    <span>
-                      {selectedRequest.major} · ปี {selectedRequest.year}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Grid 2 ช่อง (จำนวนเงิน, กำหนดคืน) */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-4 shadow-sm">
-                  <div className="text-[12px] text-gray-500 flex items-center gap-1.5 mb-1">
-                    <Wallet size={14} /> จำนวนเงินที่ขอยืม
-                  </div>
-                  <div className="font-bold text-[16px] sm:text-[18px] text-[#ea580c]">
-                    ฿{formatAmount(selectedRequest.amount)}
-                  </div>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-4 shadow-sm">
-                  <div className="text-[12px] text-gray-500 flex items-center gap-1.5 mb-1">
-                    <Clock size={14} /> จำนวนงวดที่ผ่อน
-                  </div>
-                  <div className="font-bold text-[14px] sm:text-[16px] text-gray-900 mt-1">
-                    {selectedRequest.term} งวด
-                  </div>
-                </div>
-              </div>
-
-              {/* วัตถุประสงค์ */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-2.5 border-b border-gray-100 pb-2">
-                  <FileText size={15} className="text-gray-400" /> มีความประสงค์ขอยืมเพื่อนำไปใช้
-                </div>
-                <p className="text-[14px] text-gray-800 leading-relaxed">
-                  {selectedRequest.objective}
+            <div className="flex justify-between items-start px-5 sm:px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
+              <div className="pr-2">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
+                  คำร้อง {selectedRequest.id}
+                </h2>
+                <p className="text-[13px] text-gray-500 mt-0.5">
+                  ยื่นเมื่อ {selectedRequest.submitDate}
                 </p>
               </div>
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <button
+                  onClick={closeAllModals}
+                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
+                  aria-label="ปิดหน้าต่าง"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
 
-              {/* ข้อมูลบัญชีรับเงิน */}
-              {canViewSensitiveData ? (
-                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                  <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-2.5 border-b border-gray-100 pb-2">
-                    <Landmark size={15} className="text-[#ea580c]" /> โอนเข้าบัญชีรับเงิน
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[13px]">
-                    <div className="flex flex-col">
-                      <span className="text-gray-500 text-[11px]">ธนาคาร</span>
-                      <span className="font-medium text-gray-900">
-                        {selectedRequest.bankDetails?.bankName}
-                      </span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-gray-500 text-[11px]">เลขที่บัญชี</span>
-                      <span className="font-medium text-gray-900">
-                        {selectedRequest.bankDetails?.accountNumber}
-                      </span>
-                    </div>
-                    <div className="flex flex-col sm:col-span-2">
-                      <span className="text-gray-500 text-[11px]">ชื่อบัญชี</span>
-                      <span className="font-medium text-gray-900">
-                        {selectedRequest.bankDetails?.accountName}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm flex items-center justify-center text-gray-500 gap-2 py-6">
-                  <ShieldAlert size={18} />
-                  <span className="text-[13px]">
-                    ข้อมูลบัญชีธนาคารสงวนสิทธิ์การเข้าถึงเฉพาะผู้ดูแลระบบ
-                  </span>
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 bg-gray-50/50">
+              {hasPendingSlip(selectedRequest.paymentHistory) && (
+                <div className={styles.loanApprovalWarning}>
+                  มีรายการสลิปที่รอการตรวจสอบ กรุณาตรวจสอบสลิปการชำระเงินในตารางด้านล่าง
                 </div>
               )}
 
-              {/* ตารางรวบยอด: กำหนดการและประวัติการชำระเงิน */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="text-[13px] font-semibold text-gray-700 flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
-                  <div className="flex items-center gap-1.5">
-                    <CalendarDays size={15} className="text-[#ea580c]" />{" "}
-                    กำหนดการและประวัติการชำระเงิน
+              {/* ข้อมูลนักศึกษา */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<UserRound aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ข้อมูลนักศึกษา"
+                />
+                <dl>
+                  <div>
+                    <dt>ชื่อ-นามสกุล</dt>
+                    <dd>{selectedRequest.name}</dd>
                   </div>
-                </div>
+                  <div>
+                    <dt>รหัสนักศึกษา</dt>
+                    <dd>{selectedRequest.studentId}</dd>
+                  </div>
+                  <div>
+                    <dt>คณะ</dt>
+                    <dd>คณะพยาบาลศาสตร์</dd>
+                  </div>
+                  <div>
+                    <dt>หลักสูตร</dt>
+                    <dd>
+                      {selectedRequest.program || selectedRequest.major || "พยาบาลศาสตรบัณฑิต"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>วุฒิการศึกษา</dt>
+                    <dd>
+                      {selectedRequest.degree || selectedRequest.educationLevel || "ปริญญาตรี"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>ชั้นปีการศึกษา</dt>
+                    <dd>ชั้นปีที่ {selectedRequest.year}</dd>
+                  </div>
+                  <div>
+                    <dt>เบอร์โทรศัพท์</dt>
+                    <dd>{selectedRequest.phone || "-"}</dd>
+                  </div>
+                  {selectedRequest.advisorName && (
+                    <div>
+                      <dt>อาจารย์ที่ปรึกษา</dt>
+                      <dd>{selectedRequest.advisorName}</dd>
+                    </div>
+                  )}
+                </dl>
+              </section>
 
-                <div className="overflow-x-auto rounded-lg border border-gray-200">
+              {/* ข้อมูลธนาคาร */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<Landmark aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ข้อมูลธนาคาร"
+                />
+                {canViewSensitiveData ? (
+                  <dl>
+                    <div>
+                      <dt>ธนาคาร</dt>
+                      <dd>{selectedRequest.bankDetails?.bankName || "-"}</dd>
+                    </div>
+                    <div>
+                      <dt>เลขที่บัญชี</dt>
+                      <dd>{selectedRequest.bankDetails?.accountNumber || "-"}</dd>
+                    </div>
+                    <div>
+                      <dt>ชื่อบัญชี</dt>
+                      <dd>{selectedRequest.bankDetails?.accountName || "-"}</dd>
+                    </div>
+                  </dl>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 py-6 text-gray-500 text-[13px] bg-gray-50/60 rounded-xl border border-dashed border-gray-200">
+                    <ShieldAlert size={18} className="text-amber-500 shrink-0" />
+                    <span>ข้อมูลบัญชีธนาคารสงวนสิทธิ์การเข้าถึงเฉพาะผู้ดูแลระบบ</span>
+                  </div>
+                )}
+              </section>
+
+              {/* ข้อมูลการกู้ยืม */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<HandCoins aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ข้อมูลการกู้ยืม"
+                />
+                <dl>
+                  <div>
+                    <dt>วัตถุประสงค์การกู้ยืม</dt>
+                    <dd>{selectedRequest.objective || "-"}</dd>
+                  </div>
+                  {selectedRequest.additionalNote && (
+                    <div>
+                      <dt>หมายเหตุเพิ่มเติม</dt>
+                      <dd>{selectedRequest.additionalNote}</dd>
+                    </div>
+                  )}
+                  <div className={styles.loanAmountRow}>
+                    <dt>ยอดกู้ยืมรวม (บาท)</dt>
+                    <dd className="font-bold text-[#ea580c]">
+                      ฿{formatAmount(selectedRequest.amount)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>จำนวนเงินตัวอักษร</dt>
+                    <dd className={styles.loanAmountText}>
+                      {formatThaiBahtText(String(selectedRequest.amount))}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>จำนวนงวดการชำระ</dt>
+                    <dd>{selectedRequest.term} งวด</dd>
+                  </div>
+                </dl>
+              </section>
+
+              {/* ตารางกำหนดการและประวัติการชำระเงิน */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<CalendarDays aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="กำหนดการและประวัติการชำระเงิน"
+                />
+
+                <div className="overflow-x-auto rounded-xl border border-gray-200 mt-2">
                   <table className="w-full text-left border-collapse text-[13px]">
                     <thead>
-                      <tr className="bg-gray-50 text-gray-600 border-b border-gray-200">
-                        <th className="py-2.5 px-3 font-semibold text-center w-[10%]">งวดที่</th>
-                        <th className="py-2.5 px-3 font-semibold text-center w-[25%]">กำหนดชำระ</th>
-                        <th className="py-2.5 px-3 font-semibold text-right w-[20%]">
-                          ยอดเรียกเก็บ
-                        </th>
+                      <tr className="bg-gray-50 text-gray-600 border-b border-gray-200 text-[13px]">
+                        <th className="py-2.5 px-3 font-semibold text-center w-[12%]">งวดที่</th>
+                        <th className="py-2.5 px-3 font-semibold text-center w-[23%]">กำหนดชำระ</th>
+                        <th className="py-2.5 px-3 font-semibold text-right w-[20%]">ยอดเรียกเก็บ</th>
                         <th className="py-2.5 px-3 font-semibold text-right w-[20%]">ยอดที่ชำระ</th>
-                        <th className="py-2.5 px-3 font-semibold text-center w-[25%]">
-                          สถานะ / สลิป
-                        </th>
+                        <th className="py-2.5 px-3 font-semibold text-center w-[25%]">สถานะ / สลิป</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -513,25 +628,29 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                         <tr
                           key={inst.installmentNumber}
                           className={`border-b border-gray-100 last:border-0 ${
-                            inst.isPaid ? "bg-green-50/30" : ""
+                            inst.isPaid ? "bg-emerald-50/30" : ""
                           }`}
                         >
                           <td className="py-3 px-3 text-center">
                             <div className="flex items-center justify-center gap-1.5">
                               <span
                                 className={`font-medium ${
-                                  inst.isPaid ? "text-green-700" : "text-gray-700"
+                                  inst.isPaid ? "text-emerald-700 font-bold" : "text-gray-700"
                                 }`}
                               >
                                 {inst.installmentNumber}
                               </span>
-                              {inst.isPaid && <CheckCircle2 size={14} className="text-green-600" />}
+                              {inst.isPaid && (
+                                <CheckCircle2 size={14} className="text-emerald-600" />
+                              )}
                             </div>
                           </td>
-                          <td className="py-3 px-3 text-center text-gray-600">{inst.dateString}</td>
+                          <td className="py-3 px-3 text-center text-gray-600 whitespace-nowrap">
+                            {inst.dateString}
+                          </td>
                           <td className="py-3 px-3 text-right">
                             <span
-                              className={`font-bold ${
+                              className={`font-semibold ${
                                 inst.expectedAmount === 0 ? "text-gray-400" : "text-gray-700"
                               }`}
                             >
@@ -539,14 +658,14 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                             </span>
                           </td>
 
-                          {/* โชว์ยอดเงินและเวลา */}
+                          {/* ยอดเงินที่ชำระ */}
                           <td className="py-3 px-3 text-right">
                             {inst.evidence ? (
                               <div className="flex flex-col items-end">
                                 <span
                                   className={`font-bold ${
                                     inst.evidence.status === "verified"
-                                      ? "text-green-700"
+                                      ? "text-emerald-700"
                                       : inst.evidence.status === "rejected"
                                         ? "text-red-700"
                                         : "text-[#ea580c]"
@@ -554,38 +673,38 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                                 >
                                   ฿{formatAmount(inst.evidence.amount)}
                                 </span>
-                                {/* แสดงเวลาถ้ามีข้อมูล */}
                                 {inst.evidence.paidTime && (
                                   <span className="text-[10px] text-gray-500 mt-0.5">
-                                    เวลา {inst.evidence.paidTime} น.
+                                    {inst.evidence.paidTime} น.
                                   </span>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-gray-400 font-medium">-</span>
+                              <span className="text-gray-400 font-normal">-</span>
                             )}
                           </td>
 
-                          <td className="py-2 px-3 text-center">
+                          {/* ปุ่มสถานะ / ตรวจสอบสลิป */}
+                          <td className="py-2.5 px-3 text-center">
                             {inst.evidence ? (
                               <button
                                 onClick={() => setSelectedEvidence(inst.evidence!)}
-                                className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-lg border transition-colors hover:shadow-sm w-full sm:w-auto
-                                  ${
-                                    inst.evidence.status === "verified"
-                                      ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                                      : inst.evidence.status === "pending"
-                                        ? "bg-orange-50 text-[#ea580c] border-orange-200 hover:bg-orange-100"
-                                        : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
-                                  }`}
+                                className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-lg border transition-all hover:shadow-sm cursor-pointer ${
+                                  inst.evidence.status === "verified"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                    : inst.evidence.status === "pending"
+                                      ? "bg-orange-50 text-[#ea580c] border-orange-200 hover:bg-orange-100"
+                                      : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                                }`}
+                                type="button"
                               >
-                                <Receipt size={14} className="shrink-0" />
+                                <Receipt size={13} className="shrink-0" />
                                 {inst.evidence.status === "verified" && "ตรวจสอบแล้ว"}
                                 {inst.evidence.status === "pending" && "รอตรวจสอบ"}
                                 {inst.evidence.status === "rejected" && "ไม่อนุมัติ"}
                               </button>
                             ) : (
-                              <span className="text-gray-400 text-[11px]">ยังไม่ชำระ</span>
+                              <span className="text-gray-400 text-[12px]">ยังไม่ชำระ</span>
                             )}
                           </td>
                         </tr>
@@ -593,116 +712,351 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </section>
+
+              {/* ความเห็นประกอบการพิจารณา */}
+              {selectedRequest.approvals && selectedRequest.approvals.length > 0 && (
+                <section className={styles.loanApprovalInfoCard}>
+                  <CardHeader
+                    className={styles.sectionCardHeading}
+                    icon={<MessageSquare aria-hidden="true" size={20} strokeWidth={2.2} />}
+                    title="ความเห็นประกอบการพิจารณา"
+                  />
+                  <div className="space-y-3 pt-1">
+                    {selectedRequest.approvals.map((approval, idx) => {
+                      let roleBadgeClass = "bg-gray-100 text-gray-700 border-gray-200";
+                      let boxBgClass = "bg-gray-50 border-gray-100";
+
+                      if (approval.step === "advisor") {
+                        roleBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                        boxBgClass = "bg-emerald-50/40 border-emerald-100";
+                      } else if (approval.step === "admin") {
+                        roleBadgeClass = "bg-blue-100 text-blue-800 border-blue-200";
+                        boxBgClass = "bg-blue-50/40 border-blue-100";
+                      } else if (approval.step === "executive") {
+                        roleBadgeClass = "bg-purple-100 text-purple-800 border-purple-200";
+                        boxBgClass = "bg-purple-50/40 border-purple-100";
+                      }
+
+                      return (
+                        <div key={idx} className={`p-3.5 rounded-xl border ${boxBgClass}`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                              <span className="font-bold text-gray-900 text-[13px]">
+                                {approval.actorName}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${roleBadgeClass}`}
+                              >
+                                {getRoleDisplay(approval.step)}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-gray-500 shrink-0">
+                              {approval.date}
+                            </span>
+                          </div>
+                          <p className="text-[13px] text-gray-700 leading-relaxed italic">
+                            &ldquo;{approval.comment}&rdquo;
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {/* ประวัติการชำระคืนกองทุน */}
+              {selectedRequest.paymentBehavior && (
+                <section className={styles.loanApprovalInfoCard}>
+                  <div className="flex justify-between items-center pb-2.5 mb-3 border-b border-gray-200">
+                    <header className="flex items-center gap-2">
+                      <CreditCard
+                        aria-hidden="true"
+                        size={20}
+                        strokeWidth={2.2}
+                        className="text-gray-400"
+                      />
+                      <h3 className="m-0 text-gray-900 text-[17px] font-semibold">
+                        ประวัติการชำระคืนกองทุน
+                      </h3>
+                    </header>
+                    <span
+                      className={`text-[12px] font-bold px-2.5 py-0.5 rounded-full ${
+                        (selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-red-50 text-red-700 border border-red-200"
+                      }`}
+                    >
+                      ●{" "}
+                      {(selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0
+                        ? "ชำระตรงเวลา"
+                        : "ชำระล่าช้า"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
+                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                      <div className="text-[11px] text-gray-500">ประวัติกู้ยืม</div>
+                      <div className="font-bold text-[15px] text-gray-900 mt-0.5">
+                        {selectedRequest.paymentBehavior?.totalLoanRequests ?? 0} ครั้ง
+                      </div>
+                    </div>
+                    <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
+                      <div className="text-[11px] text-emerald-700 font-medium">ตรงเวลา</div>
+                      <div className="font-bold text-[15px] text-emerald-800 mt-0.5">
+                        {selectedRequest.paymentBehavior?.onTimeInstallments ?? 0} งวด
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                      <div className="text-[11px] text-gray-500">ล่าช้า</div>
+                      <div className="font-bold text-[15px] text-gray-900 mt-0.5">
+                        {selectedRequest.paymentBehavior?.lateInstallments ?? 0} งวด
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* ประวัติการดำเนินการ */}
+              {selectedRequestHistory.length > 0 && (
+                <section className={styles.loanApprovalInfoCard}>
+                  <CardHeader
+                    className={styles.sectionCardHeading}
+                    icon={<History aria-hidden="true" size={20} strokeWidth={2.2} />}
+                    title="ประวัติการดำเนินการ"
+                  />
+                  <div className="relative border-l-2 border-orange-200 ml-2.5 space-y-4 my-2">
+                    {selectedRequestHistory.map((step, index) => (
+                      <div key={index} className="relative pl-5">
+                        <div
+                          className={`absolute w-3 h-3 rounded-full -left-[7px] top-1.5 ${
+                            index === selectedRequestHistory.length - 1
+                              ? "bg-[#ea580c] ring-4 ring-orange-100"
+                              : "bg-gray-300"
+                          }`}
+                        ></div>
+                        <div
+                          className={`font-bold text-[14px] ${
+                            index === selectedRequestHistory.length - 1
+                              ? "text-gray-900"
+                              : "text-gray-600"
+                          }`}
+                        >
+                          {step.action}
+                        </div>
+                        <div className="text-[12px] text-gray-500 mt-0.5">
+                          {step.date} · {step.actor}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+
+            {/* Footer Modal 1 */}
+            <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex shrink-0">
+              <button
+                onClick={closeAllModals}
+                className="w-full py-3 flex items-center justify-center rounded-xl text-[14px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
+                type="button"
+              >
+                ปิดหน้าต่าง
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {/* ========================================== */}
-      {/* Modal 2: ตรวจสลิป (Sub-Modal เมื่อกดที่สลิป) */}
+      {/* 4. Modal 2: ตรวจสลิป (Sub-Modal เมื่อกดดูสลิป) */}
       {/* ========================================== */}
       {selectedEvidence && selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-gray-900/80 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[95vh] overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-white shrink-0">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <ShieldCheck className="text-[#ea580c]" size={22} />
-                  {selectedEvidence.status === "pending" ? "ตรวจสอบสลิป" : "รายละเอียดสลิป"}
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-gray-900/70 backdrop-blur-sm"
+          {...evidenceModalDismiss}
+          role="presentation"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden relative border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header Modal 2 */}
+            <div className="flex justify-between items-center px-5 sm:px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10 shrink-0">
+              <div className="pr-2">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
+                  {selectedEvidence.status === "pending" ? "ตรวจสอบสลิปการชำระเงิน" : "รายละเอียดสลิปการชำระเงิน"}
                 </h2>
                 <p className="text-[13px] text-gray-500 mt-0.5">
-                  งวดที่ {selectedEvidence.installmentNumber}
+                  คำร้อง {selectedRequest.id} · งวดที่ {selectedEvidence.installmentNumber}
                 </p>
               </div>
-              <button
-                onClick={closeEvidenceModal}
-                className="text-gray-400 hover:text-gray-700 bg-gray-50 p-2 rounded-full"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <span
+                  className={`text-[12px] font-bold px-3 py-1 rounded-full border ${
+                    selectedEvidence.status === "verified"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : selectedEvidence.status === "pending"
+                        ? "bg-orange-50 text-[#ea580c] border-orange-200"
+                        : "bg-red-50 text-red-700 border-red-200"
+                  }`}
+                >
+                  ●{" "}
+                  {selectedEvidence.status === "verified"
+                    ? "ตรวจสอบแล้ว"
+                    : selectedEvidence.status === "pending"
+                      ? "รอตรวจสอบ"
+                      : "ไม่อนุมัติ"}
+                </span>
+                <button
+                  onClick={closeEvidenceModal}
+                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
+                  aria-label="ปิดหน้าต่าง"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             {/* Body (Split View) */}
-            <div className="flex flex-col md:flex-row flex-1 overflow-hidden bg-gray-50/50">
-              {/* ซ้าย: รูป */}
-              <div className="w-full md:w-1/2 p-6 flex flex-col items-center justify-center bg-gray-100/50 min-h-[300px]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={selectedEvidence.slipImageUrl}
-                  alt="slip"
-                  className="max-w-full max-h-full object-contain rounded-lg shadow-sm"
-                />
-              </div>
-              {/* ขวา: ข้อมูล */}
-              <div className="w-full md:w-1/2 p-6 bg-white space-y-4 overflow-y-auto">
-                <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
-                  <div className="text-[12px] text-gray-500 mb-1">ยอดที่โอนมา</div>
-                  <div className="font-black text-[#ea580c] text-[24px]">
-                    ฿{formatAmount(selectedEvidence.amount)}
-                  </div>
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 bg-gray-50/50">
+              {selectedEvidence.status === "pending" && (
+                <div className={styles.loanApprovalWarning}>
+                  กรุณาตรวจสอบความถูกต้องของยอดเงิน วันที่ และเวลาในสลิปกับข้อมูลที่นักศึกษาระบุ
                 </div>
+              )}
 
-                {/* เพิ่มเวลาที่โอน และ แบ่งเป็น 2 คอลัมน์ */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                    <div className="text-[12px] text-gray-500 mb-1">วันที่โอน</div>
-                    <div className="font-bold text-gray-900">{selectedEvidence.paidAt}</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* ซ้าย: รูปสลิป */}
+                <section className={styles.loanApprovalInfoCard}>
+                  <CardHeader
+                    className={styles.sectionCardHeading}
+                    icon={<Receipt aria-hidden="true" size={20} strokeWidth={2.2} />}
+                    title="รูปภาพสลิปโอนเงิน"
+                  />
+                  <div className="relative rounded-xl border border-gray-200 bg-gray-50/50 p-2 flex justify-center items-center min-h-[260px] mt-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={selectedEvidence.slipImageUrl}
+                      alt="สลิปหลักฐานการโอนเงิน"
+                      className="max-h-[48vh] w-auto max-w-full rounded-lg shadow-sm object-contain"
+                    />
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                    <div className="text-[12px] text-gray-500 mb-1">เวลาที่โอน</div>
-                    <div className="font-bold text-gray-900">
-                      {selectedEvidence.paidTime ? `${selectedEvidence.paidTime} น.` : "-"}
-                    </div>
-                  </div>
+                </section>
+
+                {/* ขวา: ข้อมูลสลิปและนักศึกษา */}
+                <div className="space-y-4">
+                  {/* ข้อมูลการชำระเงิน */}
+                  <section className={styles.loanApprovalInfoCard}>
+                    <CardHeader
+                      className={styles.sectionCardHeading}
+                      icon={<HandCoins aria-hidden="true" size={20} strokeWidth={2.2} />}
+                      title="ข้อมูลการชำระเงิน"
+                    />
+                    <dl>
+                      <div className={styles.loanAmountRow}>
+                        <dt>ยอดเงินที่โอนมา (บาท)</dt>
+                        <dd className="font-bold text-[#ea580c]">
+                          ฿{formatAmount(selectedEvidence.amount)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>จำนวนเงินตัวอักษร</dt>
+                        <dd className={styles.loanAmountText}>
+                          {formatThaiBahtText(String(selectedEvidence.amount))}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>วันที่โอน</dt>
+                        <dd>{selectedEvidence.paidAt}</dd>
+                      </div>
+                      <div>
+                        <dt>เวลาที่โอน</dt>
+                        <dd>{selectedEvidence.paidTime ? `${selectedEvidence.paidTime} น.` : "-"}</dd>
+                      </div>
+                      <div>
+                        <dt>สถานะการตรวจสอบ</dt>
+                        <dd>
+                          <span
+                            className={`font-semibold ${
+                              selectedEvidence.status === "verified"
+                                ? "text-emerald-700"
+                                : selectedEvidence.status === "pending"
+                                  ? "text-[#ea580c]"
+                                  : "text-red-600"
+                            }`}
+                          >
+                            {selectedEvidence.status === "verified"
+                              ? "ตรวจสอบแล้ว"
+                              : selectedEvidence.status === "pending"
+                                ? "รอตรวจสอบ"
+                                : "ไม่อนุมัติ"}
+                          </span>
+                        </dd>
+                      </div>
+                    </dl>
+                  </section>
+
+                  {/* ข้อมูลนักศึกษาและงวด */}
+                  <section className={styles.loanApprovalInfoCard}>
+                    <CardHeader
+                      className={styles.sectionCardHeading}
+                      icon={<UserRound aria-hidden="true" size={20} strokeWidth={2.2} />}
+                      title="ข้อมูลนักศึกษา"
+                    />
+                    <dl>
+                      <div>
+                        <dt>ชื่อ-นามสกุล</dt>
+                        <dd>{selectedRequest.name}</dd>
+                      </div>
+                      <div>
+                        <dt>รหัสนักศึกษา</dt>
+                        <dd>{selectedRequest.studentId}</dd>
+                      </div>
+                      <div>
+                        <dt>งวดที่ชำระ</dt>
+                        <dd>
+                          งวดที่ {selectedEvidence.installmentNumber} จาก {selectedRequest.term} งวด
+                        </dd>
+                      </div>
+                    </dl>
+                  </section>
                 </div>
-
-                {selectedEvidence.status !== "pending" && (
-                  <div
-                    className={`p-4 rounded-xl border flex justify-between items-center ${
-                      selectedEvidence.status === "verified"
-                        ? "bg-green-50 border-green-200 text-green-700"
-                        : "bg-red-50 border-red-200 text-red-700"
-                    }`}
-                  >
-                    <div className="text-[13px] font-semibold">สถานะ</div>
-                    <div className="font-bold">
-                      {selectedEvidence.status === "verified" ? "ตรวจสอบสำเร็จ" : "ไม่อนุมัติ"}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Footer ตรวจสอบ */}
-            {selectedEvidence.status === "pending" && (
-              <div className="p-4 bg-white border-t border-gray-100 shrink-0">
+            {/* Footer ตรวจสอบสลิป */}
+            {selectedEvidence.status === "pending" ? (
+              <div className="p-4 sm:p-5 bg-white border-t border-gray-100 shrink-0">
                 {!slipConfirmAction ? (
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <button
                       onClick={() => setSlipConfirmAction("reject")}
-                      className="flex-1 py-3 bg-white border-2 border-red-100 text-red-600 font-bold rounded-xl hover:bg-red-50"
+                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98] cursor-pointer"
+                      type="button"
                     >
                       ปฏิเสธสลิป
                     </button>
                     <button
                       onClick={() => setSlipConfirmAction("approve")}
-                      className="flex-1 py-3 bg-[#059669] text-white font-bold rounded-xl hover:bg-[#047857]"
+                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98] cursor-pointer"
+                      type="button"
                     >
                       อนุมัติสลิป ถูกต้อง
                     </button>
                   </div>
                 ) : (
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                    <h4 className="font-bold text-[14px] mb-2">
+                  <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2">
+                    <h4
+                      className={`font-bold text-[14px] mb-2 flex items-center gap-2 ${
+                        slipConfirmAction === "approve" ? "text-emerald-700" : "text-red-700"
+                      }`}
+                    >
                       {slipConfirmAction === "approve"
                         ? "ยืนยันการอนุมัติสลิป"
                         : "เหตุผลที่ปฏิเสธสลิป"}
                     </h4>
                     {slipConfirmAction === "reject" && (
                       <textarea
-                        className="w-full border p-2 rounded-lg text-[13px] mb-3"
+                        className="w-full border border-gray-300 rounded-xl p-3 text-[13px] mb-3 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
+                        placeholder="ระบุเหตุผล เช่น ยอดเงินไม่ตรงกับยอดที่เรียกเก็บ, รูปภาพไม่ชัดเจน..."
+                        rows={3}
                         value={slipRemark}
                         onChange={(e) => setSlipRemark(e.target.value)}
                       />
@@ -710,21 +1064,35 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                     <div className="flex gap-2 justify-end">
                       <button
                         onClick={() => setSlipConfirmAction(null)}
-                        className="px-4 py-2 border rounded-lg text-[13px]"
+                        className="px-4 py-2 border border-gray-300 rounded-xl text-[13px] font-semibold text-gray-700 bg-white hover:bg-gray-100 transition-colors cursor-pointer"
+                        type="button"
                       >
                         ยกเลิก
                       </button>
                       <button
                         onClick={closeEvidenceModal}
-                        className={`px-4 py-2 text-white font-bold rounded-lg text-[13px] ${
-                          slipConfirmAction === "approve" ? "bg-green-600" : "bg-red-600"
+                        className={`px-5 py-2 text-white font-bold rounded-xl text-[13px] shadow-sm transition-all active:scale-[0.98] cursor-pointer ${
+                          slipConfirmAction === "approve"
+                            ? "bg-[#059669] hover:bg-[#047857]"
+                            : "bg-red-600 hover:bg-red-700"
                         }`}
+                        type="button"
                       >
                         ยืนยัน
                       </button>
                     </div>
                   </div>
                 )}
+              </div>
+            ) : (
+              <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex shrink-0">
+                <button
+                  onClick={closeEvidenceModal}
+                  className="w-full py-3 flex items-center justify-center rounded-xl text-[14px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
+                  type="button"
+                >
+                  ปิดหน้าต่าง
+                </button>
               </div>
             )}
           </div>

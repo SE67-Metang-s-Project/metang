@@ -5,6 +5,7 @@ import { HandCoins, Landmark, UserRound, X } from "lucide-react";
 import styles from "@/app/student/student.module.css";
 import CardHeader from "@/components/shared/CardHeader";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
+import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 
 import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
 import type { StudentUiError } from "@/lib/student-error-mapper";
@@ -52,17 +53,16 @@ export default function TempLoanApprovalModal({
     };
   });
 
-  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) {
-      onClose();
-    }
-  };
+  const backdropDismiss = useModalDismiss({
+    onClose,
+    closeOnEscape: !isSubmitting,
+  });
 
   return (
     <div
       aria-label="ยืนยันข้อมูลการกู้ยืม"
       className={styles.loanApprovalModalBackdrop}
-      onMouseDown={handleBackdropClick}
+      {...backdropDismiss}
       role="presentation"
     >
       <section

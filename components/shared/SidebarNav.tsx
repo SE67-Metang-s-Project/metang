@@ -17,6 +17,7 @@ import {
   Settings,
   Bug,
 } from "lucide-react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 export type UserRole = "student" | "advisor" | "admin" | "executive" | "superadmin";
 
@@ -114,6 +115,8 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
 
   const activeRole = process.env.NODE_ENV === "development" ? debugRole : role;
   const allowedMenus = ALL_MENU_ITEMS.filter((item) => item.roles.includes(activeRole));
+
+  useBodyScrollLock(isOpen);
 
   return (
     <>

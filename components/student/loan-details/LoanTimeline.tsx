@@ -4,6 +4,7 @@ import { Fragment, useState } from "react";
 import { Check, CheckCircle2, CircleX, Clock3, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { LoanTimelineItem } from "@/app/student/studentMockData";
+import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import styles from "@/app/student/student.module.css";
 
 type LoanTimelineProps = {
@@ -28,6 +29,11 @@ export default function LoanTimeline({
   const router = useRouter();
   const [isTransferConfirmed, setIsTransferConfirmed] = useState(false);
   const [isConfirmationSuccessOpen, setIsConfirmationSuccessOpen] = useState(false);
+
+  const successDismiss = useModalDismiss({
+    onClose: () => router.replace("/student"),
+    isOpen: isConfirmationSuccessOpen,
+  });
   const hasAcceptedTransfer = isTransferAccepted || isTransferConfirmed;
   const shouldShowConfirmation = !hasAcceptedTransfer && Boolean(confirmTransferLabel || onConfirmTransfer);
   const confirmationLabel = confirmTransferLabel ?? "ยืนยันการรับเงิน";
@@ -142,6 +148,7 @@ export default function LoanTimeline({
       {isConfirmationSuccessOpen ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
+          {...successDismiss}
           role="presentation"
         >
           <section
