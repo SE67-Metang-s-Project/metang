@@ -5,24 +5,26 @@ import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   X,
-  GraduationCap,
-  Wallet,
-  FileText,
-  CheckCircle2,
-  History,
-  CreditCard,
-  Phone,
+  UserRound,
   Landmark,
+  HandCoins,
   CalendarDays,
+  CreditCard,
   MessageSquare,
-  SearchX,
+  History,
+  CheckCircle2,
   Copy,
   UploadCloud,
   FileImage,
   AlertCircle,
   Loader2,
   XCircle,
+  SearchX,
 } from "lucide-react";
+import CardHeader from "@/components/shared/CardHeader";
+import { formatThaiBahtText } from "@/app/student/studentFormatters";
+import { useModalDismiss } from "@/hooks/useBodyScrollLock";
+import styles from "@/app/student/student.module.css";
 
 // ==========================================
 // การกำหนด Type
@@ -32,8 +34,11 @@ export type StudentInfo = {
   studentId: string;
   major: string;
   program?: string;
+  degree?: string;
+  educationLevel?: string;
   year: string;
   phone?: string;
+  advisorName?: string;
 };
 
 export type BankDetails = {
@@ -48,6 +53,7 @@ export type LoanDetails = {
   term: string;
   expectedReturnDate?: string;
   bankDetails?: BankDetails;
+  additionalNote?: string;
 };
 
 export type RequestStatus = {
@@ -265,6 +271,11 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
     setErrorMessage(null);
   };
 
+  const backdropDismiss = useModalDismiss({
+    onClose: closeAllModals,
+    isOpen: Boolean(selectedRequest),
+  });
+
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     setIsCopied(true);
@@ -329,7 +340,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
           requests.map((req, idx) => (
             <div
               key={idx}
-              className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col gap-3"
+              className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md"
             >
               <div className="flex justify-between items-start gap-2">
                 <div>
@@ -340,30 +351,39 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     {req.studentId} • {req.major} • ปี {req.year}
                   </div>
                 </div>
-                <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded-md shrink-0 border border-gray-200">
+                <span className="text-[11px] text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md shrink-0 border border-gray-200">
                   {req.submitDate}
                 </span>
               </div>
-              <div className="text-[13px] text-gray-700 bg-orange-50/50 p-3 rounded-lg border border-orange-100/50 line-clamp-2">
+
+              <div className="text-[13px] text-gray-700 bg-orange-50/40 p-3 rounded-xl border border-orange-100/60 line-clamp-2">
                 <span className="font-semibold text-gray-900">นำไปใช้: </span>
                 {req.objective}
               </div>
+
               <div className="flex justify-between items-end border-t border-gray-100 pt-3 mt-1">
-                <div>
-                  <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่ขอ</div>
-                  <div className="font-bold text-[#ea580c]">{formatAmount(req.amount)}</div>
+                <div className="flex gap-4">
+                  <div>
+                    <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่ขอ</div>
+                    <div className="font-bold text-[#ea580c]">฿{formatAmount(req.amount)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-gray-500 mb-0.5">จำนวนงวด</div>
+                    <div className="font-medium text-gray-700 text-[14px]">{req.term} งวด</div>
+                  </div>
                 </div>
+
                 {req.requestStatus !== "disbursed" && req.requestStatus !== "closed" ? (
                   <button
                     onClick={() => setSelectedRequest(req)}
-                    className="px-4 py-2 text-[13px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200"
+                    className="w-fit max-w-full px-4 py-2 text-[13px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200 cursor-pointer"
                   >
                     ดำเนินการ
                   </button>
                 ) : (
                   <button
                     onClick={() => setSelectedRequest(req)}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 transition-colors px-3 py-1.5 text-[13px] font-bold text-green-700 shadow-sm"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 transition-colors px-3 py-1.5 text-[13px] font-bold text-green-700 shadow-sm cursor-pointer"
                   >
                     <CheckCircle2 size={15} className="shrink-0" /> ดูหลักฐาน
                   </button>
@@ -388,25 +408,25 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
           </colgroup>
           <thead>
             <tr className="bg-gray-100/70 border-b border-gray-300 text-gray-700 text-[14px]">
-              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300">
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 รหัสคำร้อง
               </th>
-              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300">
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 min-w-[200px]">
                 ชื่อ - ข้อมูลนักศึกษา
               </th>
-              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300">
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 วันที่-เวลายื่นคำร้อง
               </th>
-              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300">
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 min-w-[200px]">
                 รายละเอียดเพื่อนำไปใช้
               </th>
-              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300">
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 จำนวนเงิน
               </th>
-              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300">
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 จำนวนงวด
               </th>
-              <th className="py-3.5 px-4 text-center font-bold">จัดการ</th>
+              <th className="py-3.5 px-4 text-center font-bold whitespace-nowrap">จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -422,7 +442,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   key={idx}
                   className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
                 >
-                  <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200">
+                  <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
                     {req.id}
                   </td>
                   <td className="py-4 px-4 border-r border-gray-200">
@@ -433,8 +453,8 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                       {req.studentId} • {req.major} • ปี {req.year}
                     </div>
                   </td>
-                  <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200">
-                    <div className="flex flex-col items-center">
+                  <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                    <div className="flex flex-col items-center leading-relaxed">
                       <span>{req.submitDate}</span>
                       {getSubmittedTime(req) && <span>{getSubmittedTime(req)}</span>}
                     </div>
@@ -442,10 +462,10 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   <td className="py-4 px-4 text-left font-normal text-gray-700 border-r border-gray-200">
                     <div className="line-clamp-2">{req.objective}</div>
                   </td>
-                  <td className="py-4 px-4 text-center font-normal text-gray-900 border-r border-gray-200">
+                  <td className="py-4 px-4 text-center font-normal text-gray-900 border-r border-gray-200 whitespace-nowrap">
                     {formatAmount(req.amount)}
                   </td>
-                  <td className="py-4 px-4 text-center font-normal text-gray-700 border-r border-gray-200">
+                  <td className="py-4 px-4 text-center font-normal text-gray-700 border-r border-gray-200 whitespace-nowrap">
                     {req.term} งวด
                   </td>
                   <td className="py-4 px-4 align-middle">
@@ -453,14 +473,14 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                       {req.requestStatus !== "disbursed" && req.requestStatus !== "closed" ? (
                         <button
                           onClick={() => setSelectedRequest(req)}
-                          className="px-3 py-1.5 text-[13px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200"
+                          className="w-fit max-w-full px-3 py-1.5 text-[13px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200 cursor-pointer"
                         >
-                          ดำเนินการ
+                          <span className="block truncate">ดำเนินการ</span>
                         </button>
                       ) : (
                         <button
                           onClick={() => setSelectedRequest(req)}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 transition-colors px-3 py-1.5 text-[13px] font-bold text-green-700 shadow-sm"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 transition-colors px-3 py-1.5 text-[13px] font-bold text-green-700 shadow-sm cursor-pointer"
                         >
                           <CheckCircle2 size={15} className="shrink-0" /> ดูหลักฐาน
                         </button>
@@ -476,216 +496,270 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
 
       {/* 3. Modal หลัก: ดำเนินการเบิกจ่ายเงิน / ดูหลักฐาน */}
       {selectedRequest && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[95vh] overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+          {...backdropDismiss}
+          role="presentation"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[620px] flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden relative border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
             {/* Header Modal */}
-            <div className="flex justify-between items-start px-6 py-4 border-b border-gray-100 bg-white">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <Wallet className={isCompleted ? "text-green-600" : "text-[#ea580c]"} size={22} />
-                  {isCompleted ? "หลักฐานการเบิกจ่ายเงิน" : "ดำเนินการเบิกจ่ายเงิน (Disbursement)"}
+            <div className="flex justify-between items-start px-5 sm:px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
+              <div className="pr-2">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
+                  {isCompleted ? "หลักฐานการเบิกจ่ายเงิน" : "ดำเนินการเบิกจ่ายเงิน"}
                 </h2>
                 <p className="text-[13px] text-gray-500 mt-0.5">
                   อ้างอิงคำร้อง: {selectedRequest.id}
                 </p>
               </div>
-              <button
-                onClick={closeAllModals}
-                disabled={isSubmitting}
-                className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <span
+                  className={`text-[12px] font-bold px-3 py-1 rounded-full border ${
+                    isCompleted
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-orange-50 text-[#ea580c] border-orange-200"
+                  }`}
+                >
+                  ● {isCompleted ? "โอนเงินแล้ว" : "รอเบิกจ่าย"}
+                </span>
+                <button
+                  onClick={closeAllModals}
+                  disabled={isSubmitting}
+                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="ปิดหน้าต่าง"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-[#f8fafc] space-y-4 text-left">
-              {/* ข้อมูลนักศึกษา และ ยอดเงิน */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                    <GraduationCap size={24} />
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 bg-gray-50/50">
+              {!isCompleted && (
+                <div className={styles.loanApprovalWarning}>
+                  กรุณาตรวจสอบข้อมูลทางการเงินและเลขที่บัญชีให้ถูกต้องก่อนกดยืนยันการโอนเงิน
+                </div>
+              )}
+
+              {/* ข้อมูลนักศึกษา */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<UserRound aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ข้อมูลนักศึกษา"
+                />
+                <dl>
+                  <div>
+                    <dt>ชื่อ-นามสกุล</dt>
+                    <dd>{selectedRequest.name}</dd>
                   </div>
                   <div>
-                    <div className="text-[12px] text-gray-500">
-                      {isCompleted ? "โอนเงินให้แก่" : "โอนเงินให้แก่นักศึกษา"}
-                    </div>
-                    <div className="font-bold text-gray-900 text-[15px] mt-0.5">
-                      {selectedRequest.name}
-                    </div>
-                    <div className="text-[13px] text-gray-600 mt-0.5 flex items-center gap-2">
-                      {selectedRequest.studentId} <span className="text-gray-300">|</span>{" "}
-                      <Phone size={12} /> {selectedRequest.phone ?? "-"}
-                    </div>
+                    <dt>รหัสนักศึกษา</dt>
+                    <dd>{selectedRequest.studentId}</dd>
                   </div>
-                </div>
-
-                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center items-start">
-                  <div className="text-[13px] text-gray-500 mb-1 flex items-center gap-1.5">
-                    <Wallet size={15} /> ยอดเงิน{isCompleted && "ที่โอนแล้ว"}
+                  <div>
+                    <dt>คณะ</dt>
+                    <dd>คณะพยาบาลศาสตร์</dd>
                   </div>
-                  <div
-                    className={`font-black text-[26px] leading-tight ${isCompleted ? "text-green-600" : "text-[#ea580c]"}`}
-                  >
-                    ฿{formatAmount(selectedRequest.amount)}
+                  <div>
+                    <dt>หลักสูตร</dt>
+                    <dd>
+                      {selectedRequest.program || selectedRequest.major || "พยาบาลศาสตรบัณฑิต"}
+                    </dd>
                   </div>
-                </div>
-              </div>
-
-              {/* วันที่กำหนดชำระ (แบบตาราง) */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-3 border-b border-gray-100 pb-2">
-                  <CalendarDays size={15} className="text-[#ea580c]" /> กำหนดการผ่อนชำระ (
-                  {selectedRequest.term} งวด)
-                </div>
-                <div className="overflow-x-auto rounded-lg border border-gray-200">
-                  <table className="w-full text-left border-collapse text-[13px]">
-                    <thead>
-                      <tr className="bg-gray-50 text-gray-600 border-b border-gray-200">
-                        <th className="py-2.5 px-3 font-semibold text-center w-[25%]">งวดที่</th>
-                        <th className="py-2.5 px-3 font-semibold text-center w-[40%]">กำหนดชำระ</th>
-                        <th className="py-2.5 px-3 font-semibold text-right w-[35%]">ยอดชำระ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {calculateInstallments(
-                        selectedRequest.submitDate,
-                        selectedRequest.term,
-                        selectedRequest.amount,
-                        selectedRequest.paymentHistory,
-                      ).map((inst) => (
-                        <tr
-                          key={inst.installmentNumber}
-                          className={`border-b border-gray-100 last:border-0 ${inst.isPaid ? "bg-green-50/40" : ""}`}
-                        >
-                          <td className="py-2.5 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <span
-                                className={`font-medium ${inst.isPaid ? "text-green-700" : "text-gray-700"}`}
-                              >
-                                {inst.installmentNumber}
-                              </span>
-                              {inst.isPaid && <CheckCircle2 size={14} className="text-green-600" />}
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-3 text-center text-gray-600">
-                            {inst.dateString}
-                          </td>
-                          <td className="py-2.5 px-3 text-right">
-                            {inst.isPaid ? (
-                              <span className="font-bold text-green-700">
-                                ฿{formatAmount(inst.paidAmount)}
-                              </span>
-                            ) : (
-                              <span
-                                className={`font-bold ${inst.expectedAmount === 0 ? "text-gray-400" : "text-[#ea580c]"}`}
-                              >
-                                ฿{formatAmount(inst.expectedAmount)}
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* วัตถุประสงค์ */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-2.5 border-b border-gray-100 pb-2">
-                  <FileText size={15} className="text-gray-400" /> มีความประสงค์ขอยืมเพื่อนำไปใช้
-                </div>
-                <p className="text-[14px] text-gray-800 leading-relaxed">
-                  {selectedRequest.objective}
-                </p>
-              </div>
-
-              {/* ============================================================== */}
-              {/* ข้อมูลบัญชีรับเงิน (มีคัดลอก) และ อัปโหลดสลิป */}
-              {/* ============================================================== */}
-              <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-200 shadow-sm">
-                <div className="text-[13px] font-bold text-blue-800 flex items-center gap-1.5 mb-3 border-b border-blue-100 pb-2">
-                  <Landmark size={15} />{" "}
-                  {isCompleted ? "บัญชีปลายทาง" : "โอนเข้าบัญชีรับเงิน (คัดลอกเพื่อโอนเงิน)"}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-white p-3 rounded-lg border border-blue-100">
-                    <span className="block text-[11px] text-gray-500 mb-0.5">ธนาคาร</span>
-                    <span className="font-bold text-gray-900">
-                      {selectedRequest.bankDetails?.bankName ?? "-"}
-                    </span>
+                  <div>
+                    <dt>วุฒิการศึกษา</dt>
+                    <dd>
+                      {selectedRequest.degree || selectedRequest.educationLevel || "ปริญญาตรี"}
+                    </dd>
                   </div>
-                  <div className="bg-white p-3 rounded-lg border border-blue-100">
-                    <span className="block text-[11px] text-gray-500 mb-0.5">ชื่อบัญชี</span>
-                    <span className="font-bold text-gray-900">
-                      {selectedRequest.bankDetails?.accountName ?? "-"}
-                    </span>
+                  <div>
+                    <dt>ชั้นปีการศึกษา</dt>
+                    <dd>ชั้นปีที่ {selectedRequest.year}</dd>
                   </div>
-                  <div className="bg-white p-3 rounded-lg border border-blue-100 sm:col-span-2 flex justify-between items-center transition-all">
+                  <div>
+                    <dt>เบอร์โทรศัพท์</dt>
+                    <dd>{selectedRequest.phone || "-"}</dd>
+                  </div>
+                  {selectedRequest.advisorName && (
                     <div>
-                      <span className="block text-[11px] text-gray-500 mb-0.5">เลขที่บัญชี</span>
-                      <span className="font-mono font-bold text-lg text-blue-700 tracking-wider">
-                        {selectedRequest.bankDetails?.accountNumber ?? "-"}
-                      </span>
+                      <dt>อาจารย์ที่ปรึกษา</dt>
+                      <dd>{selectedRequest.advisorName}</dd>
                     </div>
-                    {!isCompleted && (
-                      <button
-                        onClick={() => handleCopy(selectedRequest.bankDetails?.accountNumber ?? "")}
-                        className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
-                          isCopied
-                            ? "bg-green-100 text-green-700 shadow-sm"
-                            : "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                        }`}
-                      >
-                        {isCopied ? (
+                  )}
+                </dl>
+              </section>
+
+              {/* ข้อมูลธนาคาร */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<Landmark aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ข้อมูลธนาคาร"
+                />
+                <dl>
+                  <div>
+                    <dt>ธนาคาร</dt>
+                    <dd>{selectedRequest.bankDetails?.bankName || "-"}</dd>
+                  </div>
+                  <div>
+                    <dt>เลขที่บัญชี</dt>
+                    <dd className="flex items-center justify-end gap-2">
+                      <span className="font-mono font-bold text-gray-900 text-[15px]">
+                        {selectedRequest.bankDetails?.accountNumber || "-"}
+                      </span>
+                      {selectedRequest.bankDetails?.accountNumber && (
+                        <button
+                          onClick={() =>
+                            handleCopy(selectedRequest.bankDetails?.accountNumber ?? "")
+                          }
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                            isCopied
+                              ? "bg-green-100 text-green-700"
+                              : "bg-orange-50 text-[#ea580c] hover:bg-orange-100 border border-orange-200"
+                          }`}
+                          type="button"
+                        >
+                          {isCopied ? (
+                            <>
+                              <CheckCircle2 size={13} /> คัดลอกแล้ว
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={13} /> คัดลอก
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>ชื่อบัญชี</dt>
+                    <dd>{selectedRequest.bankDetails?.accountName || "-"}</dd>
+                  </div>
+                </dl>
+              </section>
+
+              {/* ข้อมูลการกู้ยืม */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<HandCoins aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ข้อมูลการกู้ยืม"
+                />
+                <dl>
+                  <div>
+                    <dt>วัตถุประสงค์การกู้ยืม</dt>
+                    <dd>{selectedRequest.objective || "-"}</dd>
+                  </div>
+                  {selectedRequest.additionalNote && (
+                    <div>
+                      <dt>หมายเหตุเพิ่มเติม</dt>
+                      <dd>{selectedRequest.additionalNote}</dd>
+                    </div>
+                  )}
+                  <div className={styles.loanAmountRow}>
+                    <dt>{isCompleted ? "ยอดเงินที่โอนแล้ว (บาท)" : "จำนวนเงินที่ขอกู้ยืม (บาท)"}</dt>
+                    <dd
+                      className={`font-bold ${
+                        isCompleted ? "text-green-600" : "text-[#ea580c]"
+                      }`}
+                    >
+                      ฿{formatAmount(selectedRequest.amount)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>จำนวนเงินตัวอักษร</dt>
+                    <dd className={styles.loanAmountText}>
+                      {formatThaiBahtText(String(selectedRequest.amount))}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>จำนวนงวดการชำระ</dt>
+                    <dd>{selectedRequest.term} งวด</dd>
+                  </div>
+                </dl>
+              </section>
+
+              {/* กำหนดการผ่อนชำระ */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<CalendarDays aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title={`กำหนดการผ่อนชำระ (${selectedRequest.term} งวด)`}
+                />
+                <div className={styles.loanScheduleList}>
+                  {calculateInstallments(
+                    selectedRequest.submitDate,
+                    selectedRequest.term,
+                    selectedRequest.amount,
+                    selectedRequest.paymentHistory,
+                  ).map((inst) => (
+                    <div className={styles.loanScheduleRow} key={inst.installmentNumber}>
+                      <strong className="flex items-center gap-1">
+                        งวด {inst.installmentNumber}
+                        {inst.isPaid && (
+                          <CheckCircle2 size={14} className="text-green-600 inline ml-1" />
+                        )}
+                      </strong>
+                      <span>{inst.dateString}</span>
+                      <div className="flex items-center gap-1.5 justify-end">
+                        {inst.isPaid ? (
                           <>
-                            <CheckCircle2 size={14} /> คัดลอกแล้ว
+                            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                              ชำระแล้ว
+                            </span>
+                            <strong className="text-emerald-700">
+                              ฿{formatAmount(inst.paidAmount)}
+                            </strong>
                           </>
                         ) : (
-                          <>
-                            <Copy size={14} /> คัดลอก
-                          </>
+                          <strong
+                            className={
+                              inst.expectedAmount === 0 ? "text-gray-400" : "text-[#ea580c]"
+                            }
+                          >
+                            ฿{formatAmount(inst.expectedAmount)}
+                          </strong>
                         )}
-                      </button>
-                    )}
-                  </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              </section>
 
-              {/* อัปโหลดสลิป / ดูสลิป */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-3 border-b border-gray-100 pb-2">
-                  <FileImage size={15} className="text-gray-400" />
-                  {isCompleted ? "สลิปหลักฐานการโอนเงิน" : "แนบสลิปหลักฐานการโอนเงิน"}
-                </div>
+              {/* สลิปหลักฐานการโอนเงิน / แนบสลิป */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<FileImage aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title={isCompleted ? "สลิปหลักฐานการโอนเงิน" : "แนบสลิปหลักฐานการโอนเงิน"}
+                />
 
                 {isCompleted ? (
-                  // โหมดดูข้อมูล
-                  <div className="relative rounded-xl border border-gray-200 bg-gray-50 p-2 flex justify-center items-center min-h-[200px]">
+                  <div className="relative rounded-xl border border-gray-200 bg-gray-50/50 p-3 flex justify-center items-center min-h-[180px] mt-2">
                     {selectedRequest.slipUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={selectedRequest.slipUrl}
                         alt="slip proof"
-                        className="max-h-[50vh] rounded-lg shadow-sm"
+                        className="max-h-[45vh] rounded-lg shadow-sm object-contain"
                       />
                     ) : (
-                      <div className="flex flex-col items-center justify-center text-gray-400 py-10">
-                        <FileImage size={40} className="mb-2 opacity-50" />
+                      <div className="flex flex-col items-center justify-center text-gray-400 py-8">
+                        <FileImage size={36} className="mb-2 opacity-50" />
                         <p className="text-sm">ไม่พบรูปภาพหลักฐานการโอนเงิน</p>
                       </div>
                     )}
                   </div>
                 ) : (
-                  // โหมดอัปโหลดไฟล์
-                  <>
+                  <div className="mt-2 space-y-3">
                     {uploadedSlip ? (
-                      <div className="relative rounded-xl border-2 border-dashed border-green-300 bg-green-50 p-2 flex justify-center items-center h-48 group">
+                      <div className="relative rounded-xl border-2 border-dashed border-green-300 bg-green-50/50 p-2 flex justify-center items-center h-48 group">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={uploadedSlip}
                           alt="slip preview"
-                          className="max-h-full rounded-lg shadow-sm"
+                          className="max-h-full rounded-lg shadow-sm object-contain"
                         />
                         <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button
@@ -693,7 +767,8 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                               if (uploadedSlip) URL.revokeObjectURL(uploadedSlip);
                               setUploadedSlip(null);
                             }}
-                            className="bg-white text-red-600 px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-red-50"
+                            className="bg-white text-red-600 px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-red-50 transition-colors cursor-pointer"
+                            type="button"
                           >
                             เปลี่ยนรูปภาพ
                           </button>
@@ -702,7 +777,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     ) : (
                       <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-orange-50 hover:border-orange-300 transition-colors p-6 flex flex-col justify-center items-center h-48 cursor-pointer"
+                        className="rounded-xl border-2 border-dashed border-gray-300 bg-gray-50/50 hover:bg-orange-50/40 hover:border-orange-300 transition-colors p-6 flex flex-col justify-center items-center h-44 cursor-pointer"
                       >
                         <UploadCloud size={32} className="text-gray-400 mb-2" />
                         <div className="text-[13px] font-bold text-gray-700">
@@ -720,24 +795,25 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                         />
                       </div>
                     )}
-                    <div className="mt-4 flex gap-2 text-[12px] text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                      <AlertCircle size={16} className="shrink-0" />
+                    <div className="flex gap-2 text-[12px] text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                      <AlertCircle size={16} className="shrink-0 mt-0.5" />
                       <span>
                         โปรดตรวจสอบชื่อบัญชีและเลขที่บัญชีให้ตรงกับข้อมูลนักศึกษาก่อนกดยืนยันการโอนเงินทุกครั้ง
                       </span>
                     </div>
-                  </>
+                  </div>
                 )}
-              </div>
+              </section>
 
-              {/* ความเห็นประกอบการพิจารณาจาก Role ต่างๆ */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-3 border-b border-gray-100 pb-2">
-                  <MessageSquare size={15} className="text-[#ea580c]" /> ความเห็นประกอบการพิจารณา
-                </div>
-
+              {/* ความเห็นประกอบการพิจารณา */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<MessageSquare aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ความเห็นประกอบการพิจารณา"
+                />
                 {selectedRequest.approvals && selectedRequest.approvals.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-3 pt-1">
                     {selectedRequest.approvals.map((approval, idx) => {
                       let roleBadgeClass = "bg-gray-100 text-gray-700 border-gray-200";
                       let boxBgClass = "bg-gray-50 border-gray-100";
@@ -754,7 +830,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                       }
 
                       return (
-                        <div key={idx} className={`p-3.5 rounded-lg border ${boxBgClass}`}>
+                        <div key={idx} className={`p-3.5 rounded-xl border ${boxBgClass}`}>
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
                               <span className="font-bold text-gray-900 text-[13px]">
@@ -778,18 +854,26 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     })}
                   </div>
                 ) : (
-                  <div className="text-center py-4 bg-gray-50 rounded-lg border border-gray-100 border-dashed">
+                  <div className="text-center py-4 bg-gray-50/50 rounded-xl border border-dashed border-gray-200 mt-2">
                     <p className="text-[13px] text-gray-500">ยังไม่มีความเห็นประกอบการพิจารณา</p>
                   </div>
                 )}
-              </div>
+              </section>
 
-              {/* พฤติกรรมการชำระ */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="flex justify-between items-center mb-3 border-b border-gray-100 pb-2">
-                  <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5">
-                    <CreditCard size={15} className="text-gray-400" /> ประวัติการชำระคืนกองทุน
-                  </div>
+              {/* ประวัติการชำระคืนกองทุน */}
+              <section className={styles.loanApprovalInfoCard}>
+                <div className="flex justify-between items-center pb-2.5 mb-3 border-b border-gray-200">
+                  <header className="flex items-center gap-2">
+                    <CreditCard
+                      aria-hidden="true"
+                      size={20}
+                      strokeWidth={2.2}
+                      className="text-gray-400"
+                    />
+                    <h3 className="m-0 text-gray-900 text-[17px] font-semibold">
+                      ประวัติการชำระคืนกองทุน
+                    </h3>
+                  </header>
                   <span
                     className={`text-[12px] font-bold px-2.5 py-0.5 rounded-full ${
                       (selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0
@@ -804,60 +888,66 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
-                  <div className="bg-gray-50/80 p-2.5 rounded-lg border border-gray-100">
+                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                     <div className="text-[11px] text-gray-500">ประวัติกู้ยืม</div>
-                    <div className="font-bold text-[14px] text-gray-900 mt-0.5">
+                    <div className="font-bold text-[15px] text-gray-900 mt-0.5">
                       {selectedRequest.paymentBehavior?.totalLoanRequests ?? 0} ครั้ง
                     </div>
                   </div>
-                  <div className="bg-emerald-50/60 p-2.5 rounded-lg border border-emerald-100">
-                    <div className="text-[11px] text-emerald-700">ตรงเวลา</div>
-                    <div className="font-bold text-[14px] text-emerald-800 mt-0.5">
+                  <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
+                    <div className="text-[11px] text-emerald-700 font-medium">ตรงเวลา</div>
+                    <div className="font-bold text-[15px] text-emerald-800 mt-0.5">
                       {selectedRequest.paymentBehavior?.onTimeInstallments ?? 0} งวด
                     </div>
                   </div>
-                  <div className="bg-gray-50/80 p-2.5 rounded-lg border border-gray-100">
+                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                     <div className="text-[11px] text-gray-500">ล่าช้า</div>
-                    <div className="font-bold text-[14px] text-gray-900 mt-0.5">
+                    <div className="font-bold text-[15px] text-gray-900 mt-0.5">
                       {selectedRequest.paymentBehavior?.lateInstallments ?? 0} งวด
                     </div>
                   </div>
                 </div>
-              </div>
+              </section>
 
               {/* ประวัติการดำเนินการ */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-4 border-b border-gray-100 pb-2">
-                  <History size={15} className="text-gray-400" /> ประวัติการดำเนินการ
-                </div>
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<History aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ประวัติการดำเนินการ"
+                />
                 {selectedRequestHistory.length > 0 ? (
-                  <div className="relative border-l-2 border-blue-200 ml-2 space-y-5 mt-2">
+                  <div className="relative border-l-2 border-orange-200 ml-2.5 space-y-4 my-2">
                     {selectedRequestHistory.map((step, index) => (
                       <div key={index} className="relative pl-5">
                         <div
-                          className={`absolute w-3 h-3 rounded-full -left-[7px] top-1 ${
+                          className={`absolute w-3 h-3 rounded-full -left-[7px] top-1.5 ${
                             index === selectedRequestHistory.length - 1
-                              ? "bg-blue-500 ring-4 ring-blue-50"
+                              ? "bg-[#ea580c] ring-4 ring-orange-100"
                               : "bg-gray-300"
                           }`}
                         ></div>
                         <div
-                          className={`font-bold text-[14px] ${index === selectedRequestHistory.length - 1 ? "text-gray-900" : "text-gray-600"}`}
+                          className={`font-bold text-[14px] ${
+                            index === selectedRequestHistory.length - 1
+                              ? "text-gray-900"
+                              : "text-gray-600"
+                          }`}
                         >
                           {step.action}
                         </div>
-                        <div className="text-[12px] sm:text-[13px] text-gray-500 mt-0.5">
+                        <div className="text-[12px] text-gray-500 mt-0.5">
                           {step.date} · {step.actor}
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500 italic text-center py-4 bg-gray-50 rounded-lg">
-                    ยังไม่มีประวัติการดำเนินการ
+                  <div className="text-center py-4 bg-gray-50/50 rounded-xl border border-dashed border-gray-200 mt-2">
+                    <p className="text-[13px] text-gray-500">ยังไม่มีประวัติการดำเนินการ</p>
                   </div>
                 )}
-              </div>
+              </section>
             </div>
 
             {/* Footer Buttons */}
@@ -865,7 +955,8 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
               {isCompleted ? (
                 <button
                   onClick={closeAllModals}
-                  className="w-full py-3 flex items-center justify-center gap-2 rounded-xl text-[14px] font-bold text-white bg-gray-800 hover:bg-gray-900 transition-all shadow-sm"
+                  className="w-full py-3 flex items-center justify-center rounded-xl text-[14px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
+                  type="button"
                 >
                   ปิดหน้าต่าง
                 </button>
@@ -881,16 +972,18 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     <button
                       onClick={closeAllModals}
                       disabled={isSubmitting}
-                      className="flex-1 py-3 text-[14px] font-bold text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 py-3 text-[14px] font-bold text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      type="button"
                     >
                       ยกเลิก
                     </button>
                     <button
                       disabled={!uploadedSlip || isSubmitting}
                       onClick={handleDisburse}
+                      type="button"
                       className={`flex-1 py-3 flex items-center justify-center gap-2 rounded-xl text-[14px] font-bold text-white transition-all shadow-sm disabled:cursor-not-allowed ${
                         uploadedSlip && !isSubmitting
-                          ? "bg-[#059669] hover:bg-[#047857] shadow-green-600/20"
+                          ? "bg-[#059669] hover:bg-[#047857] shadow-green-600/20 cursor-pointer active:scale-[0.98]"
                           : "bg-gray-300"
                       }`}
                     >

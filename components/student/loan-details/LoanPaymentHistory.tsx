@@ -6,6 +6,7 @@ import type { LoanPaymentHistoryItem } from "@/app/student/studentMockData";
 import StatusPill from "@/components/shared/StatusPill";
 import styles from "@/app/student/student.module.css";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
+import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 
 type LoanPaymentHistoryProps = {
   items: LoanPaymentHistoryItem[];
@@ -42,9 +43,10 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
         .filter((item) => item.installmentNumber === selectedReceipt.installmentNumber).length
     : 0;
 
-  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) setSelectedReceipt(null);
-  };
+  const backdropDismiss = useModalDismiss({
+    onClose: () => setSelectedReceipt(null),
+    isOpen: Boolean(selectedReceipt),
+  });
 
   return (
     <section className={`${styles.loanDetailSection} ${styles.detailDashboardCard} ${styles.paymentHistorySection}`}>
@@ -95,7 +97,7 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
         <div
           aria-label={t("หลักฐานการชำระเงิน", "Payment evidence")}
           className={styles.transferSlipModalBackdrop}
-          onMouseDown={handleBackdropClick}
+          {...backdropDismiss}
           role="presentation"
         >
           <section aria-labelledby="payment-receipt-title" className={styles.transferSlipModal} role="dialog">

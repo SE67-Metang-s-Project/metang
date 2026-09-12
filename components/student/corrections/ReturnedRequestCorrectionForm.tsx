@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, UserRound, X } from "lucide-react";
 import type { LoanInput } from "@/lib/loan-validation";
 import LoanFormSelect from "@/components/student/application/LoanFormSelect";
@@ -9,6 +9,7 @@ import { studentProfile } from "@/app/student/studentMockData";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import LoanDetailSchedule from "@/components/student/loan-details/LoanDetailSchedule";
 import CardHeader from "@/components/shared/CardHeader";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import styles from "@/app/student/student.module.css";
 
 export type AdvisorOption = {
@@ -120,6 +121,23 @@ export default function ReturnedRequestCorrectionForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
+  useBodyScrollLock(true);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (isConfirmOpen) {
+          if (!isSubmitting) setIsConfirmOpen(false);
+        } else {
+          if (!isSubmitting) onClose();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isConfirmOpen, isSubmitting, onClose]);
+
   const updateField = (field: EditableTextField, value: string) => {
     setValues((current) => ({ ...current, [field]: value }));
     if (touched[field]) {
@@ -207,6 +225,7 @@ export default function ReturnedRequestCorrectionForm({
     <div
       aria-label={t("แก้ไขคำร้องกู้ยืม", "Correct loan request")}
       className={styles.returnedCorrectionBackdrop}
+      onClick={handleBackdropMouseDown}
       onMouseDown={handleBackdropMouseDown}
       role="presentation"
     >
@@ -504,7 +523,16 @@ export default function ReturnedRequestCorrectionForm({
         </footer>
 
         {isConfirmOpen ? (
-          <div className={styles.returnedCorrectionConfirmationBackdrop} role="presentation">
+          <div
+            className={styles.returnedCorrectionConfirmationBackdrop}
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !isSubmitting) setIsConfirmOpen(false);
+            }}
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget && !isSubmitting) setIsConfirmOpen(false);
+            }}
+            role="presentation"
+          >
             <section
               aria-labelledby="returned-request-confirmation-title"
               aria-modal="true"

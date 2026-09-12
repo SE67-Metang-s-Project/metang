@@ -22,6 +22,7 @@ import type { InstallmentPayment, LoanRequestHistoryItem, LoanScheduleItem, Loan
 import { MedicalBagIcon } from "./StudentIllustrations";
 import ContactFooter from "../loan-details/ContactFooter";
 import TopNav from "@/components/shared/TopNav";
+import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import {
   computePaymentBehavior,
   mapToActiveLoanSummary,
@@ -58,6 +59,18 @@ export default function StudentDashboard({
   const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+
+  const paymentSuccessDismiss = useModalDismiss({
+    onClose: () => setIsPaymentSuccessOpen(false),
+    isOpen: isPaymentSuccessOpen,
+  });
+
+  const cancelDialogDismiss = useModalDismiss({
+    onClose: () => {
+      if (!isCancelling) setIsCancelDialogOpen(false);
+    },
+    isOpen: isCancelDialogOpen,
+  });
   const preservedScrollPosition = useRef<number | null>(null);
   const router = useRouter();
 
@@ -171,7 +184,7 @@ export default function StudentDashboard({
   };
 
   const handleCancelRequest = async () => {
-    if (!currentActiveLoan?.id) return;
+    if (!currentActiveLoan || !("id" in currentActiveLoan) || !currentActiveLoan.id) return;
 
     setIsCancelling(true);
     try {
@@ -293,6 +306,7 @@ export default function StudentDashboard({
       {isPaymentSuccessOpen ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
+          {...paymentSuccessDismiss}
           role="presentation"
         >
           <section
@@ -320,6 +334,7 @@ export default function StudentDashboard({
       {isCancelDialogOpen ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
+          {...cancelDialogDismiss}
           role="presentation"
         >
           <section

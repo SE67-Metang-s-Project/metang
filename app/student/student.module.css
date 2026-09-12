@@ -890,6 +890,7 @@
   inset: 0;
   display: grid;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 24px;
   place-items: center;
   background: rgb(17 24 39 / 60%);
@@ -2474,6 +2475,7 @@
   inset: 0;
   display: grid;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 18px;
   place-items: center;
   background: rgb(17 24 39 / 60%);
@@ -3454,6 +3456,7 @@
   inset: 0;
   display: grid;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 18px;
   place-items: center;
   background: rgb(17 24 39 / 60%);

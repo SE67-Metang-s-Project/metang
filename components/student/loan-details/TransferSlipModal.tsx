@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import styles from "@/app/student/student.module.css";
+import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 
 type TransferSlipModalProps = {
   imageSrc: string;
@@ -7,17 +8,13 @@ type TransferSlipModalProps = {
 };
 
 export default function TransferSlipModal({ imageSrc, onClose }: TransferSlipModalProps) {
-  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) {
-      onClose();
-    }
-  };
+  const backdropDismiss = useModalDismiss({ onClose });
 
   return (
     <div
       aria-label="หลักฐานการโอนเงิน"
       className={styles.transferSlipModalBackdrop}
-      onMouseDown={handleBackdropClick}
+      {...backdropDismiss}
       role="presentation"
     >
       <section

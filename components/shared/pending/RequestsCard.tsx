@@ -5,23 +5,24 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   X,
-  GraduationCap,
-  Wallet,
-  FileText,
+  UserRound,
+  Landmark,
+  HandCoins,
+  CalendarDays,
+  CreditCard,
+  MessageSquare,
+  History,
   CheckCircle2,
   XCircle,
-  Clock,
-  History,
-  CreditCard,
-  Phone,
-  Landmark,
-  CalendarDays,
   ShieldAlert,
-  MessageSquare,
   Pencil,
   SearchX,
   Loader2,
 } from "lucide-react";
+import CardHeader from "@/components/shared/CardHeader";
+import { formatThaiBahtText } from "@/app/student/studentFormatters";
+import { useModalDismiss } from "@/hooks/useBodyScrollLock";
+import styles from "@/app/student/student.module.css";
 
 // ==========================================
 // การกำหนด Type (อ้างอิงจาก Database Schema)
@@ -34,6 +35,8 @@ export type StudentInfo = {
   degree?: string;
   year: string;
   phone?: string;
+  advisorName?: string;
+  educationLevel?: string;
 };
 
 export type BankDetails = {
@@ -48,6 +51,7 @@ export type LoanDetails = {
   term: string;
   expectedReturnDate?: string;
   bankDetails?: BankDetails;
+  additionalNote?: string;
 };
 
 export type RequestStatus = {
@@ -157,7 +161,7 @@ function calculateInstallments(
   paymentHistory?: PaymentRecord[],
 ) {
   const termsCount = parseInt(termStr, 10) || 0;
-  const totalAmount = parseFloat(amountStr) || 0;
+  const totalAmount = parseFloat(String(amountStr).replace(/,/g, "")) || 0;
   if (termsCount === 0 || !startDateStr) return [];
 
   const baseAmount = totalAmount / termsCount;
@@ -284,6 +288,31 @@ const getStatusDisplay = (status: LoanStatus) => {
   }
 };
 
+const getStatusBadgeClass = (status: LoanStatus) => {
+  const s = String(status).toLowerCase();
+  if (
+    s.includes("reject") ||
+    s.includes("cancel") ||
+    s.includes("return") ||
+    s.includes("ไม่อนุมัติ") ||
+    s.includes("ยกเลิก") ||
+    s.includes("แก้ไข")
+  ) {
+    return "bg-red-50 text-red-700 border-red-200";
+  } else if (s.includes("pending") || s.includes("รอ")) {
+    return "bg-amber-50 text-amber-700 border-amber-200";
+  } else if (
+    s.includes("disbursed") ||
+    s.includes("closed") ||
+    s.includes("อนุมัติแล้ว") ||
+    s.includes("เสร็จสิ้น") ||
+    s.includes("โอนเงิน")
+  ) {
+    return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  }
+  return "bg-gray-100 text-gray-700 border-gray-200";
+};
+
 const getRoleDisplay = (step: string) => {
   switch (step) {
     case "advisor":
@@ -330,14 +359,19 @@ export default function RequestsCard({
   // State สำหรับการแก้ไขวงเงิน (Admin / Super Admin)
   const [isEditingAmount, setIsEditingAmount] = useState(false);
   const [editAmountValue, setEditAmountValue] = useState("");
+  const [originalRequestedAmount, setOriginalRequestedAmount] = useState<number>(0);
+  const [amountError, setAmountError] = useState<string | null>(null);
 
   const canViewSensitiveData = userRole === "admin" || userRole === "super_admin";
   const canEditAmount = userRole === "admin" || userRole === "super_admin";
 
   const openRequestModal = (req: ActionRequest) => {
+    const parsedAmount = parseInt(String(req.amount || "").replace(/,/g, ""), 10) || 0;
     setSelectedRequest(req);
-    setEditAmountValue(req.amount);
+    setOriginalRequestedAmount(parsedAmount);
+    setEditAmountValue(String(parsedAmount));
     setIsEditingAmount(false);
+    setAmountError(null);
     setConfirmAction(null);
     setRemark("");
     setErrorMessage(null);
@@ -359,16 +393,25 @@ export default function RequestsCard({
     setRemark("");
     setErrorMessage(null);
     setIsEditingAmount(false);
+    setAmountError(null);
+    setOriginalRequestedAmount(0);
   };
+
+  const backdropDismiss = useModalDismiss({
+    onClose: closeAllModals,
+    isOpen: Boolean(selectedRequest),
+  });
 
   const handleConfirmDecision = async () => {
     if (!selectedRequest || !confirmAction) return;
 
-    if (confirmAction !== "approve" && !remark.trim()) {
+    if (!remark.trim()) {
       setErrorMessage(
-        confirmAction === "return"
-          ? "กรุณาระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข"
-          : "กรุณาระบุเหตุผลที่ไม่อนุมัติ",
+        confirmAction === "approve"
+          ? "กรุณาระบุความเห็นประกอบการพิจารณา"
+          : confirmAction === "return"
+            ? "กรุณาระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข"
+            : "กรุณาระบุเหตุผลที่ไม่อนุมัติ",
       );
       return;
     }
@@ -403,14 +446,24 @@ export default function RequestsCard({
       };
 
       if ((userRole === "admin" || userRole === "super_admin") && confirmAction === "approve") {
-        const rawAmount = (editAmountValue || selectedRequest.amount || "")
-          .toString()
+        const currentAmountStr = isEditingAmount ? editAmountValue : selectedRequest.amount;
+        const rawAmount = String(currentAmountStr || "")
           .replace(/,/g, "")
           .trim();
         const parsed = parseInt(rawAmount, 10);
-        if (!isNaN(parsed) && parsed > 0) {
-          payload.approvedAmount = parsed;
+        if (isNaN(parsed) || parsed <= 0) {
+          setErrorMessage("กรุณาระบุวงเงินที่มากกว่า 0 บาท");
+          setIsSubmitting(false);
+          return;
         }
+        if (originalRequestedAmount > 0 && parsed > originalRequestedAmount) {
+          setErrorMessage(
+            `ไม่สามารถปรับวงเงินมากกว่าที่ขอได้ (สูงสุด ฿${originalRequestedAmount.toLocaleString("th-TH")})`,
+          );
+          setIsSubmitting(false);
+          return;
+        }
+        payload.approvedAmount = parsed;
       }
 
       const res = await fetch(endpoint, {
@@ -452,11 +505,32 @@ export default function RequestsCard({
   };
 
   const handleSaveAmount = () => {
-    if (selectedRequest && editAmountValue) {
-      setSelectedRequest({ ...selectedRequest, amount: editAmountValue });
-      setIsEditingAmount(false);
-      console.log(`อัปเดตวงเงินใหม่สำหรับคำร้อง ${selectedRequest.id}: ${editAmountValue}`);
+    if (!selectedRequest) return;
+    const raw = String(editAmountValue || "").replace(/,/g, "").trim();
+    const num = parseInt(raw, 10);
+
+    if (isNaN(num) || num <= 0) {
+      setAmountError("กรุณาระบุวงเงินที่มากกว่า 0 บาท");
+      return;
     }
+
+    if (originalRequestedAmount > 0 && num > originalRequestedAmount) {
+      setAmountError(
+        `ไม่สามารถปรับวงเงินมากกว่าที่ขอได้ (สูงสุด ฿${originalRequestedAmount.toLocaleString("th-TH")})`,
+      );
+      return;
+    }
+
+    setAmountError(null);
+    setSelectedRequest({ ...selectedRequest, amount: String(num) });
+    setEditAmountValue(String(num));
+    setIsEditingAmount(false);
+  };
+
+  const handleCancelEditAmount = () => {
+    setIsEditingAmount(false);
+    setEditAmountValue(selectedRequest?.amount || String(originalRequestedAmount));
+    setAmountError(null);
   };
 
   const renderActionButton = (req: ActionRequest, isMobile: boolean) => {
@@ -523,7 +597,7 @@ export default function RequestsCard({
           requests.map((req, idx) => (
             <div
               key={idx}
-              className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md"
+              className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md"
             >
               <div className="flex justify-between items-start gap-2">
                 <div>
@@ -534,12 +608,12 @@ export default function RequestsCard({
                     {req.studentId} • {req.major} • ปี {req.year}
                   </div>
                 </div>
-                <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded-md shrink-0 border border-gray-200">
+                <span className="text-[11px] text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md shrink-0 border border-gray-200">
                   {req.submitDate}
                 </span>
               </div>
 
-              <div className="text-[13px] text-gray-700 bg-orange-50/50 p-3 rounded-lg border border-orange-100/50 line-clamp-2">
+              <div className="text-[13px] text-gray-700 bg-orange-50/40 p-3 rounded-xl border border-orange-100/60 line-clamp-2">
                 <span className="font-semibold text-gray-900">นำไปใช้: </span>
                 {req.objective}
               </div>
@@ -548,7 +622,11 @@ export default function RequestsCard({
                 <div className="flex gap-4">
                   <div>
                     <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่ขอ</div>
-                    <div className="font-bold text-[#ea580c]">{formatAmount(req.amount)}</div>
+                    <div className="font-bold text-[#ea580c]">฿{formatAmount(req.amount)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-gray-500 mb-0.5">จำนวนงวด</div>
+                    <div className="font-medium text-gray-700 text-[14px]">{req.term} งวด</div>
                   </div>
                 </div>
                 {renderActionButton(req, true)}
@@ -664,245 +742,289 @@ export default function RequestsCard({
 
       {/* 3. Modal หลัก: ตรวจสอบรายละเอียดคำร้อง */}
       {selectedRequest && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-[600px] flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+          {...backdropDismiss}
+          role="presentation"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[620px] flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden relative border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
             {/* Header Modal */}
-            <div className="flex justify-between items-start px-4 sm:px-6 py-4 border-b border-gray-100 bg-white">
+            <div className="flex justify-between items-start px-5 sm:px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
               <div className="pr-2">
-                <h2 className="text-lg font-bold text-gray-900 leading-tight">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
                   คำร้อง {selectedRequest.id}
                 </h2>
+                <p className="text-[13px] text-gray-500 mt-0.5">
+                  ยื่นเมื่อ {selectedRequest.submitDate}
+                </p>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                <span className="hidden sm:inline-block bg-yellow-100 text-yellow-800 text-[12px] font-bold px-2.5 py-1 rounded-md">
-                  {selectedRequest.history?.[selectedRequest.history.length - 1]?.action ||
-                    "ยื่นคำร้อง"}
+                <span
+                  className={`text-[12px] font-bold px-3 py-1 rounded-full border ${getStatusBadgeClass(
+                    selectedRequest.requestStatus,
+                  )}`}
+                >
+                  ● {getStatusDisplay(selectedRequest.requestStatus)}
                 </span>
                 <button
                   onClick={closeAllModals}
-                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors"
+                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
+                  aria-label="ปิดหน้าต่าง"
                 >
                   <X size={20} />
                 </button>
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-[#f8fafc] space-y-4">
-              {/* ข้อมูลคณะ/สาขา และ เบอร์โทร */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-start gap-4 shadow-sm">
-                <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 mt-1">
-                  <GraduationCap size={24} />
-                </div>
-                <div className="w-full">
-                  <div className="flex flex-col sm:flex-row justify-between items-start gap-1 w-full">
-                    <h3 className="font-bold text-gray-900 text-[15px] sm:text-[16px]">
-                      {selectedRequest.name}
-                    </h3>
-                    <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded-md shrink-0 border border-gray-200 mt-1 sm:mt-0">
-                      ยื่นเมื่อ {selectedRequest.submitDate}
-                    </span>
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 bg-gray-50/50">
+              {/* ข้อมูลนักศึกษา */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<UserRound aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ข้อมูลนักศึกษา"
+                />
+                <dl>
+                  <div>
+                    <dt>ชื่อ-นามสกุล</dt>
+                    <dd>{selectedRequest.name}</dd>
                   </div>
-                  <div className="text-[13px] text-gray-700 font-medium mt-1">คณะพยาบาลศาสตร์</div>
-                  <div className="text-[13px] text-gray-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span>{selectedRequest.studentId}</span>
-                    <span className="hidden sm:inline text-gray-300">|</span>
-                    <span>
-                      {selectedRequest.major} · ปี {selectedRequest.year}
-                    </span>
-                    <span className="hidden sm:inline text-gray-300">|</span>
-                    <span className="flex items-center gap-1 text-gray-600">
-                      <Phone size={12} /> {selectedRequest.phone}
-                    </span>
+                  <div>
+                    <dt>รหัสนักศึกษา</dt>
+                    <dd>{selectedRequest.studentId}</dd>
                   </div>
-                </div>
-              </div>
-
-              {/* Grid 2 ช่อง (จำนวนเงิน, กำหนดคืน) */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-4 shadow-sm relative">
-                  <div className="text-[12px] text-gray-500 flex items-center justify-between mb-1">
-                    <span className="flex items-center gap-1.5">
-                      <Wallet size={14} /> จำนวนเงินที่ขอยืม
-                    </span>
-                    {canEditAmount && !isEditingAmount && (
-                      <button
-                        onClick={() => setIsEditingAmount(true)}
-                        className="text-blue-500 hover:text-blue-700 flex items-center gap-1 text-[11px] bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md transition-colors"
-                      >
-                        <Pencil size={12} /> ปรับวงเงิน
-                      </button>
-                    )}
+                  <div>
+                    <dt>คณะ</dt>
+                    <dd>คณะพยาบาลศาสตร์</dd>
                   </div>
-
-                  {isEditingAmount ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="font-bold text-gray-700">฿</span>
-                      <input
-                        type="number"
-                        value={editAmountValue}
-                        onChange={(e) => setEditAmountValue(e.target.value)}
-                        className="w-full border border-gray-300 rounded-md px-2 py-1 text-[14px] font-bold text-[#ea580c] focus:outline-none focus:ring-1 focus:ring-[#ea580c]"
-                        autoFocus
-                      />
-                      <button
-                        onClick={handleSaveAmount}
-                        className="bg-green-100 text-green-700 p-1.5 rounded-md hover:bg-green-200 transition-colors"
-                      >
-                        <CheckCircle2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsEditingAmount(false);
-                          setEditAmountValue(selectedRequest.amount);
-                        }}
-                        className="bg-gray-100 text-gray-600 p-1.5 rounded-md hover:bg-gray-200 transition-colors"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="font-bold text-[16px] sm:text-[18px] text-[#ea580c]">
-                      ฿{formatAmount(selectedRequest.amount)}
+                  <div>
+                    <dt>หลักสูตร</dt>
+                    <dd>{selectedRequest.program || "พยาบาลศาสตรบัณฑิต"}</dd>
+                  </div>
+                  <div>
+                    <dt>วุฒิการศึกษา</dt>
+                    <dd>
+                      {selectedRequest.degree || selectedRequest.educationLevel || "ปริญญาตรี"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>ชั้นปีการศึกษา</dt>
+                    <dd>ชั้นปีที่ {selectedRequest.year}</dd>
+                  </div>
+                  <div>
+                    <dt>เบอร์โทรศัพท์</dt>
+                    <dd>{selectedRequest.phone || "-"}</dd>
+                  </div>
+                  {selectedRequest.advisorName && (
+                    <div>
+                      <dt>อาจารย์ที่ปรึกษา</dt>
+                      <dd>{selectedRequest.advisorName}</dd>
                     </div>
                   )}
-                </div>
+                </dl>
+              </section>
 
-                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-4 shadow-sm">
-                  <div className="text-[12px] text-gray-500 flex items-center gap-1.5 mb-1">
-                    <Clock size={14} /> จำนวนงวดที่ผ่อน
+              {/* ข้อมูลธนาคาร */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<Landmark aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ข้อมูลธนาคาร"
+                />
+                {canViewSensitiveData ? (
+                  <dl>
+                    <div>
+                      <dt>ธนาคาร</dt>
+                      <dd>{selectedRequest.bankDetails?.bankName || "-"}</dd>
+                    </div>
+                    <div>
+                      <dt>เลขที่บัญชี</dt>
+                      <dd>{selectedRequest.bankDetails?.accountNumber || "-"}</dd>
+                    </div>
+                    <div>
+                      <dt>ชื่อบัญชี</dt>
+                      <dd>{selectedRequest.bankDetails?.accountName || "-"}</dd>
+                    </div>
+                  </dl>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 py-6 text-gray-500 text-[13px] bg-gray-50/60 rounded-xl border border-dashed border-gray-200">
+                    <ShieldAlert size={18} className="text-amber-500 shrink-0" />
+                    <span>ข้อมูลบัญชีธนาคารสงวนสิทธิ์การเข้าถึงเฉพาะผู้ดูแลระบบ</span>
                   </div>
-                  <div className="font-bold text-[14px] sm:text-[16px] text-gray-900 mt-1">
-                    {selectedRequest.term} งวด
-                  </div>
-                </div>
-              </div>
+                )}
+              </section>
 
-              {/* วันที่กำหนดชำระ (แบบตาราง) */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="text-[13px] font-semibold text-gray-700 flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
-                  <div className="flex items-center gap-1.5">
-                    <CalendarDays size={15} className="text-[#ea580c]" /> กำหนดการผ่อนชำระ (งวดละ 30
-                    วัน)
+              {/* ข้อมูลการกู้ยืม */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<HandCoins aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ข้อมูลการกู้ยืม"
+                />
+                <dl>
+                  <div>
+                    <dt>วัตถุประสงค์การกู้ยืม</dt>
+                    <dd>{selectedRequest.objective || "-"}</dd>
                   </div>
-                </div>
-
-                <div className="overflow-x-auto rounded-lg border border-gray-200">
-                  <table className="w-full text-left border-collapse text-[13px]">
-                    <thead>
-                      <tr className="bg-gray-50 text-gray-600 border-b border-gray-200">
-                        <th className="py-2.5 px-3 font-semibold text-center w-[25%]">งวดที่</th>
-                        <th className="py-2.5 px-3 font-semibold text-center w-[40%]">กำหนดชำระ</th>
-                        <th className="py-2.5 px-3 font-semibold text-right w-[35%]">ยอดชำระ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {calculateInstallments(
-                        selectedRequest.submitDate,
-                        selectedRequest.term,
-                        selectedRequest.amount,
-                        selectedRequest.paymentHistory,
-                      ).map((inst) => (
-                        <tr
-                          key={inst.installmentNumber}
-                          className={`border-b border-gray-100 last:border-0 ${
-                            inst.isPaid ? "bg-green-50/40" : ""
-                          }`}
+                  <div>
+                    <dt>หมายเหตุเพิ่มเติม</dt>
+                    <dd>{selectedRequest.additionalNote || "-"}</dd>
+                  </div>
+                  <div className={styles.loanAmountRow}>
+                    <dt className="flex items-center gap-2">
+                      <span>จำนวนเงินที่ขอกู้ยืม (บาท)</span>
+                      {canEditAmount && !isEditingAmount && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditAmountValue(selectedRequest.amount);
+                            setAmountError(null);
+                            setIsEditingAmount(true);
+                          }}
+                          className="text-blue-500 hover:text-blue-700 inline-flex items-center gap-1 text-[11px] bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md transition-colors font-normal cursor-pointer"
                         >
-                          <td className="py-2.5 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <span
-                                className={`font-medium ${
-                                  inst.isPaid ? "text-green-700" : "text-gray-700"
-                                }`}
-                              >
-                                {inst.installmentNumber}
-                              </span>
-                              {inst.isPaid && <CheckCircle2 size={14} className="text-green-600" />}
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-3 text-center text-gray-600">
-                            {inst.dateString}
-                          </td>
-                          <td className="py-2.5 px-3 text-right">
-                            {inst.isPaid ? (
-                              <span className="font-bold text-green-700">
-                                ฿{formatAmount(inst.paidAmount)}
-                              </span>
-                            ) : (
-                              <span
-                                className={`font-bold ${
-                                  inst.expectedAmount === 0 ? "text-gray-400" : "text-[#ea580c]"
-                                }`}
-                              >
-                                ฿{formatAmount(inst.expectedAmount)}
+                          <Pencil size={12} /> ปรับวงเงิน
+                        </button>
+                      )}
+                    </dt>
+                    <dd>
+                      {isEditingAmount ? (
+                        <div className="flex flex-col items-end gap-1 mt-1">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span className="font-bold text-gray-700">฿</span>
+                            <input
+                              type="number"
+                              min={1}
+                              max={originalRequestedAmount || undefined}
+                              value={editAmountValue}
+                              onChange={(e) => {
+                                setEditAmountValue(e.target.value);
+                                if (amountError) setAmountError(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleSaveAmount();
+                                } else if (e.key === "Escape") {
+                                  e.preventDefault();
+                                  handleCancelEditAmount();
+                                }
+                              }}
+                              className={`w-28 border rounded px-2 py-0.5 text-sm font-bold text-[#ea580c] focus:outline-none text-right ${
+                                amountError
+                                  ? "border-red-500 focus:ring-1 focus:ring-red-500"
+                                  : "border-gray-300 focus:ring-1 focus:ring-[#ea580c]"
+                              }`}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={handleSaveAmount}
+                              className="bg-green-100 text-green-700 p-1 rounded hover:bg-green-200 transition-colors cursor-pointer"
+                              title="บันทึก"
+                            >
+                              <CheckCircle2 size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCancelEditAmount}
+                              className="bg-gray-100 text-gray-600 p-1 rounded hover:bg-gray-200 transition-colors cursor-pointer"
+                              title="ยกเลิก"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                          {amountError ? (
+                            <p className="text-[11px] text-red-500 text-right">{amountError}</p>
+                          ) : (
+                            <p className="text-[11px] text-gray-400 text-right">
+                              (ปรับลดได้สูงสุด ฿{originalRequestedAmount.toLocaleString("th-TH")})
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-2">
+                          {originalRequestedAmount > 0 &&
+                            Number(selectedRequest.amount) < originalRequestedAmount && (
+                              <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-medium">
+                                ปรับลดจาก ฿{formatAmount(originalRequestedAmount)}
                               </span>
                             )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* วัตถุประสงค์ */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-2.5 border-b border-gray-100 pb-2">
-                  <FileText size={15} className="text-gray-400" /> มีความประสงค์ขอยืมเพื่อนำไปใช้
-                </div>
-                <p className="text-[14px] text-gray-800 leading-relaxed">
-                  {selectedRequest.objective}
-                </p>
-              </div>
-
-              {/* ข้อมูลบัญชีรับเงิน */}
-              {canViewSensitiveData ? (
-                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                  <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-2.5 border-b border-gray-100 pb-2">
-                    <Landmark size={15} className="text-[#ea580c]" /> โอนเข้าบัญชีรับเงิน
+                          <span>฿{formatAmount(selectedRequest.amount)}</span>
+                        </div>
+                      )}
+                    </dd>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[13px]">
-                    <div className="flex flex-col">
-                      <span className="text-gray-500 text-[11px]">ธนาคาร</span>
-                      <span className="font-medium text-gray-900">
-                        {selectedRequest.bankDetails?.bankName}
-                      </span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-gray-500 text-[11px]">เลขที่บัญชี</span>
-                      <span className="font-medium text-gray-900">
-                        {selectedRequest.bankDetails?.accountNumber}
-                      </span>
-                    </div>
-                    <div className="flex flex-col sm:col-span-2">
-                      <span className="text-gray-500 text-[11px]">ชื่อบัญชี</span>
-                      <span className="font-medium text-gray-900">
-                        {selectedRequest.bankDetails?.accountName}
-                      </span>
-                    </div>
+                  <div>
+                    <dt>จำนวนเงินตัวอักษร</dt>
+                    <dd className={styles.loanAmountText}>
+                      {formatThaiBahtText(selectedRequest.amount)}
+                    </dd>
                   </div>
-                </div>
-              ) : (
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm flex items-center justify-center text-gray-500 gap-2 py-6">
-                  <ShieldAlert size={18} />
-                  <span className="text-[13px]">
-                    ข้อมูลบัญชีธนาคารสงวนสิทธิ์การเข้าถึงเฉพาะผู้ดูแลระบบ
-                  </span>
-                </div>
-              )}
+                  <div>
+                    <dt>จำนวนงวดการชำระ</dt>
+                    <dd>{selectedRequest.term} งวด</dd>
+                  </div>
+                </dl>
+              </section>
 
-              {/* ============================================================== */}
-              {/* ความเห็นประกอบการพิจารณาจาก Role ต่างๆ (ย้ายมาไว้บน พฤติกรรมการชำระ) */}
-              {/* ============================================================== */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-3 border-b border-gray-100 pb-2">
-                  <MessageSquare size={15} className="text-[#ea580c]" /> ความเห็นประกอบการพิจารณา
+              {/* ตารางการชำระ */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<CalendarDays aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ตารางการชำระ"
+                />
+                <div className={styles.loanScheduleList}>
+                  {calculateInstallments(
+                    selectedRequest.submitDate,
+                    selectedRequest.term,
+                    selectedRequest.amount,
+                    selectedRequest.paymentHistory,
+                  ).map((inst) => (
+                    <div className={styles.loanScheduleRow} key={inst.installmentNumber}>
+                      <strong className="flex items-center gap-1">
+                        งวด {inst.installmentNumber}
+                        {inst.isPaid && (
+                          <CheckCircle2 size={14} className="text-green-600 inline ml-1" />
+                        )}
+                      </strong>
+                      <span>{inst.dateString}</span>
+                      <div className="flex items-center gap-1.5 justify-end">
+                        {inst.isPaid ? (
+                          <>
+                            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                              ชำระแล้ว
+                            </span>
+                            <strong className="text-emerald-700">
+                              ฿{formatAmount(inst.paidAmount)}
+                            </strong>
+                          </>
+                        ) : (
+                          <strong
+                            className={
+                              inst.expectedAmount === 0 ? "text-gray-400" : "text-[#ea580c]"
+                            }
+                          >
+                            ฿{formatAmount(inst.expectedAmount)}
+                          </strong>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              </section>
 
+              {/* ความเห็นประกอบการพิจารณา */}
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<MessageSquare aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ความเห็นประกอบการพิจารณา"
+                />
                 {selectedRequest.approvals && selectedRequest.approvals.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-3 pt-1">
                     {selectedRequest.approvals.map((approval, idx) => {
-                      // กำหนดสีและสไตล์ตาม Role
                       let roleBadgeClass = "bg-gray-100 text-gray-700 border-gray-200";
                       let boxBgClass = "bg-gray-50 border-gray-100";
 
@@ -918,7 +1040,7 @@ export default function RequestsCard({
                       }
 
                       return (
-                        <div key={idx} className={`p-3.5 rounded-lg border ${boxBgClass}`}>
+                        <div key={idx} className={`p-3.5 rounded-xl border ${boxBgClass}`}>
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
                               <span className="font-bold text-gray-900 text-[13px]">
@@ -942,18 +1064,26 @@ export default function RequestsCard({
                     })}
                   </div>
                 ) : (
-                  <div className="text-center py-4 bg-gray-50 rounded-lg border border-gray-100 border-dashed">
+                  <div className="text-center py-4 bg-gray-50/50 rounded-xl border border-dashed border-gray-200 mt-2">
                     <p className="text-[13px] text-gray-500">ยังไม่มีความเห็นประกอบการพิจารณา</p>
                   </div>
                 )}
-              </div>
+              </section>
 
-              {/* พฤติกรรมการชำระ */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="flex justify-between items-center mb-3 border-b border-gray-100 pb-2">
-                  <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5">
-                    <CreditCard size={15} className="text-gray-400" /> ประวัติการชำระคืนกองทุน
-                  </div>
+              {/* ประวัติการชำระคืนกองทุน */}
+              <section className={styles.loanApprovalInfoCard}>
+                <div className="flex justify-between items-center pb-2.5 mb-3 border-b border-gray-200">
+                  <header className="flex items-center gap-2">
+                    <CreditCard
+                      aria-hidden="true"
+                      size={20}
+                      strokeWidth={2.2}
+                      className="text-gray-400"
+                    />
+                    <h3 className="m-0 text-gray-900 text-[17px] font-semibold">
+                      ประวัติการชำระคืนกองทุน
+                    </h3>
+                  </header>
                   <span
                     className={`text-[12px] font-bold px-2.5 py-0.5 rounded-full ${
                       (selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0
@@ -968,40 +1098,42 @@ export default function RequestsCard({
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
-                  <div className="bg-gray-50/80 p-2.5 rounded-lg border border-gray-100">
+                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                     <div className="text-[11px] text-gray-500">ประวัติกู้ยืม</div>
-                    <div className="font-bold text-[14px] text-gray-900 mt-0.5">
+                    <div className="font-bold text-[15px] text-gray-900 mt-0.5">
                       {selectedRequest.paymentBehavior?.totalLoanRequests ?? 0} ครั้ง
                     </div>
                   </div>
-                  <div className="bg-emerald-50/60 p-2.5 rounded-lg border border-emerald-100">
-                    <div className="text-[11px] text-emerald-700">ตรงเวลา</div>
-                    <div className="font-bold text-[14px] text-emerald-800 mt-0.5">
+                  <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
+                    <div className="text-[11px] text-emerald-700 font-medium">ตรงเวลา</div>
+                    <div className="font-bold text-[15px] text-emerald-800 mt-0.5">
                       {selectedRequest.paymentBehavior?.onTimeInstallments ?? 0} งวด
                     </div>
                   </div>
-                  <div className="bg-gray-50/80 p-2.5 rounded-lg border border-gray-100">
+                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                     <div className="text-[11px] text-gray-500">ล่าช้า</div>
-                    <div className="font-bold text-[14px] text-gray-900 mt-0.5">
+                    <div className="font-bold text-[15px] text-gray-900 mt-0.5">
                       {selectedRequest.paymentBehavior?.lateInstallments ?? 0} งวด
                     </div>
                   </div>
                 </div>
-              </div>
+              </section>
 
               {/* ประวัติการดำเนินการ */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                <div className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 mb-4 border-b border-gray-100 pb-2">
-                  <History size={15} className="text-gray-400" /> ประวัติการดำเนินการ
-                </div>
+              <section className={styles.loanApprovalInfoCard}>
+                <CardHeader
+                  className={styles.sectionCardHeading}
+                  icon={<History aria-hidden="true" size={20} strokeWidth={2.2} />}
+                  title="ประวัติการดำเนินการ"
+                />
                 {selectedRequestHistory.length > 0 ? (
-                  <div className="relative border-l-2 border-blue-200 ml-2 space-y-5 mt-2">
+                  <div className="relative border-l-2 border-orange-200 ml-2.5 space-y-4 my-2">
                     {selectedRequestHistory.map((step, index) => (
                       <div key={index} className="relative pl-5">
                         <div
-                          className={`absolute w-3 h-3 rounded-full -left-[7px] top-1 ${
+                          className={`absolute w-3 h-3 rounded-full -left-[7px] top-1.5 ${
                             index === selectedRequestHistory.length - 1
-                              ? "bg-blue-500 ring-4 ring-blue-50"
+                              ? "bg-[#ea580c] ring-4 ring-orange-100"
                               : "bg-gray-300"
                           }`}
                         ></div>
@@ -1014,18 +1146,18 @@ export default function RequestsCard({
                         >
                           {step.action}
                         </div>
-                        <div className="text-[12px] sm:text-[13px] text-gray-500 mt-0.5">
+                        <div className="text-[12px] text-gray-500 mt-0.5">
                           {step.date} · {step.actor}
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500 italic text-center py-4 bg-gray-50 rounded-lg">
-                    ยังไม่มีประวัติการดำเนินการ
+                  <div className="text-center py-4 bg-gray-50/50 rounded-xl border border-dashed border-gray-200 mt-2">
+                    <p className="text-[13px] text-gray-500">ยังไม่มีประวัติการดำเนินการ</p>
                   </div>
                 )}
-              </div>
+              </section>
             </div>
 
             {/* Footer Buttons */}
@@ -1081,24 +1213,48 @@ export default function RequestsCard({
                       ) : (
                         <XCircle size={16} />
                       )}
-                      {confirmAction === "approve"
-                        ? "ความเห็นประกอบการพิจารณา (แนบในแบบฟอร์ม)"
-                        : confirmAction === "return"
-                          ? "ระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข (เช่น แนบเอกสารใหม่)"
-                          : "ระบุเหตุผลเพื่อแจ้งกลับให้นักศึกษาทราบ"}
+                      <span>
+                        {confirmAction === "approve"
+                          ? "ความเห็นประกอบการพิจารณา (แนบในแบบฟอร์ม)"
+                          : confirmAction === "return"
+                            ? "ระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข (เช่น แนบเอกสารใหม่)"
+                            : "ระบุเหตุผลเพื่อแจ้งกลับให้นักศึกษาทราบ"}
+                      </span>
+                      <span className="text-red-500 font-bold" title="จำเป็น">*</span>
                     </h4>
+
+                    {confirmAction === "approve" &&
+                      originalRequestedAmount > 0 &&
+                      Number(selectedRequest.amount) < originalRequestedAmount && (
+                        <div className="mb-2.5 text-[12px] bg-amber-50 border border-amber-200 text-amber-800 px-3 py-1.5 rounded-lg flex items-center justify-between">
+                          <span>วงเงินที่อนุมัติ (ปรับลดลง):</span>
+                          <span className="font-bold text-[#ea580c]">
+                            ฿{formatAmount(selectedRequest.amount)}{" "}
+                            <span className="text-gray-400 font-normal line-through text-[11px]">
+                              (จาก ฿{formatAmount(originalRequestedAmount)})
+                            </span>
+                          </span>
+                        </div>
+                      )}
 
                     <textarea
                       placeholder={
                         confirmAction === "approve"
-                          ? "เช่น เห็นสมควรให้กู้ยืมเพื่อนำไปใช้จ่าย..."
+                          ? "ระบุความเห็นประกอบการพิจารณา เช่น เห็นสมควรให้กู้ยืมเพื่อนำไปใช้จ่าย..."
                           : confirmAction === "return"
                             ? "เช่น ใบแจ้งหนี้ไม่ชัดเจน กรุณาถ่ายรูปและแนบไฟล์มาใหม่..."
                             : "เช่น เอกสารหรือเหตุผลไม่เพียงพอต่อการกู้ยืม..."
                       }
-                      className="w-full border border-gray-300 rounded-lg p-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none h-20 mb-3 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      className={`w-full border rounded-lg p-3 text-[13px] focus:outline-none resize-none h-20 mb-3 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors ${
+                        errorMessage
+                          ? "border-red-400 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                          : "border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      }`}
                       value={remark}
-                      onChange={(e) => setRemark(e.target.value)}
+                      onChange={(e) => {
+                        setRemark(e.target.value);
+                        if (errorMessage) setErrorMessage(null);
+                      }}
                       disabled={isSubmitting}
                       autoFocus
                     />
@@ -1115,6 +1271,7 @@ export default function RequestsCard({
                         onClick={() => {
                           setConfirmAction(null);
                           setErrorMessage(null);
+                          setRemark("");
                         }}
                         disabled={isSubmitting}
                         className="px-4 py-2 text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
