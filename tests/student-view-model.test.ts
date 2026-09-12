@@ -144,6 +144,18 @@ test("maps installments to InstallmentPayment display objects", () => {
   assert.equal(payments[2].status, "upcoming");
 });
 
+test("marks the first unsettled installment as current on a freshly disbursed loan", () => {
+  const installments = [
+    { seq: 1, dueDate: "2026-10-12", amountDue: 2500, amountPaid: 0, settledAt: null },
+    { seq: 2, dueDate: "2026-11-11", amountDue: 2500, amountPaid: 0, settledAt: null },
+  ];
+
+  const payments = mapToInstallmentPayments(installments);
+  assert.equal(payments.length, 2);
+  assert.equal(payments[0].status, "current");
+  assert.equal(payments[1].status, "upcoming");
+});
+
 test("computePaymentBehavior returns never-borrowed status for empty loans or loans without installments", () => {
   const emptyResult = computePaymentBehavior([]);
   assert.equal(emptyResult.totalLoanRequests, 0);
