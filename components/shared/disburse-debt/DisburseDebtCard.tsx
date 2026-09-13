@@ -268,11 +268,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
 
   const closeAllModals = () => {
     setSelectedRequest(null);
-<<<<<<< HEAD
-    setViewDocumentReq(null);
-=======
     if (uploadedSlip) URL.revokeObjectURL(uploadedSlip);
->>>>>>> 925e28d8b608fee0565b070883aa6600e4f3ebfe
     setUploadedSlip(null);
     setSlipFile(null);
     setIsCopied(false);
