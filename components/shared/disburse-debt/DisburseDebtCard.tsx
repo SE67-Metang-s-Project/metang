@@ -21,12 +21,13 @@ import {
   XCircle,
   SearchX,
   FileText,
+  Download,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
 import { formatThaiBahtText } from "@/app/student/studentFormatters";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import styles from "@/app/student/student.module.css";
-import LoanPetitionDocument from "./LoanPetitionDocument";
+import LoanPetitionDocument, { downloadLoanPetitionPdf } from "./LoanPetitionDocument";
 
 // ==========================================
 // การกำหนด Type
@@ -1147,8 +1148,18 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
               </span>
               <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                 <button
+                  type="button"
+                  onClick={() =>
+                    downloadLoanPetitionPdf(viewDocumentReq, documentViewTab === "attachment")
+                  }
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white bg-[#ea580c] hover:bg-[#c2410c] shadow-sm hover:shadow transition-all cursor-pointer active:scale-[0.98]"
+                >
+                  <Download size={15} />
+                  <span>ดาวน์โหลด PDF</span>
+                </button>
+                <button
                   onClick={() => setViewDocumentReq(null)}
-                  className="px-6 py-2 rounded-xl text-[13px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
+                  className="flex-1 sm:flex-initial px-5 py-2 rounded-xl text-[13px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer text-center active:scale-[0.98]"
                   type="button"
                 >
                   ปิดหน้าต่าง

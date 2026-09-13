@@ -1,11 +1,138 @@
 "use client";
 
 import React from "react";
+import { Download } from "lucide-react";
 import { formatThaiBahtText } from "@/app/student/studentFormatters";
 import type { ActionRequest } from "./DisburseDebtCard";
 
-interface LoanPetitionDocumentProps {
+export interface LoanPetitionDocumentProps {
   request: ActionRequest;
+  showDownloadButton?: boolean;
+}
+
+export function downloadLoanPetitionPdf(
+  request?: { id?: string; studentId?: string; name?: string; documentUrl?: string } | null,
+  isAttachment = false,
+) {
+  if (typeof window === "undefined" || !request) return;
+
+  if (isAttachment && request.documentUrl) {
+    const link = document.createElement("a");
+    link.href = request.documentUrl;
+    link.download = `เอกสารแนบ_${request.studentId || request.id || "คำร้อง"}.pdf`;
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    return;
+  }
+
+  const paperEl = document.getElementById("loan-petition-document-paper");
+  if (!paperEl) {
+    window.print();
+    return;
+  }
+
+  const studentId = request.studentId || "";
+  const name = request.name || "";
+  const reqId = request.id || "";
+  const docTitle = `แบบคำร้องขอยืมเงินทุน_${studentId ? `${studentId}_` : ""}${name || reqId}`.trim();
+
+  // สร้าง iframe แยกเฉพาะสำหรับพิมพ์ เพื่อป้องกันไม่ให้เนื้อหาหน้าเว็บหลักหรือ Navbar/ตาราง ดันจนเกิดหน้าขาวว่างก่อนหน้าเอกสาร
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.style.visibility = "hidden";
+  iframe.setAttribute("aria-hidden", "true");
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentDocument || iframe.contentWindow?.document;
+  if (!doc) {
+    document.body.removeChild(iframe);
+    window.print();
+    return;
+  }
+
+  const styles = Array.from(document.querySelectorAll("style, link[rel='stylesheet']"))
+    .map((el) => el.outerHTML)
+    .join("\n");
+
+  doc.open();
+  doc.write(`
+    <!DOCTYPE html>
+    <html lang="th" class="${document.documentElement.className}">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${docTitle || "แบบคำร้องขอยืมเงินทุนสวัสดิการ"}</title>
+        ${styles}
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 8mm 10mm;
+          }
+          *, *::before, *::after {
+            box-sizing: border-box;
+          }
+          html, body {
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
+          #loan-petition-document-paper {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
+            position: static !important;
+          }
+          table {
+            border-collapse: collapse !important;
+          }
+          tr {
+            page-break-inside: avoid !important;
+          }
+        </style>
+      </head>
+      <body class="${document.body.className}" style="background: white !important; margin: 0 !important; padding: 0 !important;">
+        <div style="width: 100%; display: flex; justify-content: center; background: white;">
+          ${paperEl.outerHTML}
+        </div>
+      </body>
+    </html>
+  `);
+  doc.close();
+
+  const triggerPrint = () => {
+    try {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    } catch {
+      window.print();
+    } finally {
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1500);
+    }
+  };
+
+  if (doc.readyState === "complete") {
+    setTimeout(triggerPrint, 300);
+  } else {
+    iframe.onload = () => setTimeout(triggerPrint, 300);
+  }
 }
 
 const thaiMonthsShort = [
@@ -80,7 +207,10 @@ const formatAmount = (amountStr: string | number) => {
   return num.toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
 
-export default function LoanPetitionDocument({ request }: LoanPetitionDocumentProps) {
+export default function LoanPetitionDocument({
+  request,
+  showDownloadButton = false,
+}: LoanPetitionDocumentProps) {
   // หาข้อมูลการอนุมัติของแต่ละฝ่าย
   const advisorApproval = request.approvals?.find((a) => a.step === "advisor");
   const executiveApproval = request.approvals?.find((a) => a.step === "executive");
@@ -237,6 +367,15 @@ export default function LoanPetitionDocument({ request }: LoanPetitionDocumentPr
     <div className="w-full flex flex-col items-center">
       <style>{`
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: 8mm 10mm;
+          }
+          html, body {
+            background: white !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
           body * {
             visibility: hidden !important;
           }
@@ -251,9 +390,10 @@ export default function LoanPetitionDocument({ request }: LoanPetitionDocumentPr
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
-            padding: 8mm 12mm !important;
+            padding: 0 !important;
             border: none !important;
             box-shadow: none !important;
+            background: white !important;
           }
           table {
             border-collapse: collapse !important;
@@ -263,6 +403,19 @@ export default function LoanPetitionDocument({ request }: LoanPetitionDocumentPr
           }
         }
       `}</style>
+
+      {showDownloadButton && (
+        <div className="w-full max-w-[800px] mb-3 flex justify-end print:hidden">
+          <button
+            type="button"
+            onClick={() => downloadLoanPetitionPdf(request)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white bg-[#ea580c] hover:bg-[#c2410c] shadow-sm hover:shadow transition-all cursor-pointer active:scale-[0.98]"
+          >
+            <Download size={15} />
+            <span>ดาวน์โหลด PDF</span>
+          </button>
+        </div>
+      )}
 
       {/* แผ่นเอกสารจำลอง A4 ตามแบบขอยืมเงินทุนสวัสดิการ.pdf */}
       <div
