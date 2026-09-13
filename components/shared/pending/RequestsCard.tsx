@@ -18,8 +18,11 @@ import {
   Pencil,
   SearchX,
   Loader2,
+  FileText,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
+import LoanPetitionDocument from "@/components/shared/disburse-debt/LoanPetitionDocument";
+import type { ActionRequest as DisburseActionRequest } from "@/components/shared/disburse-debt/DisburseDebtCard";
 import { formatThaiBahtText } from "@/app/student/studentFormatters";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import styles from "@/app/student/student.module.css";
@@ -104,6 +107,9 @@ export type PaymentRecord = {
   amount: number | string;
   paidAt?: string;
   slipImageUrl?: string;
+  dueDate?: string;
+  paidDate?: string;
+  slipUrl?: string;
 };
 
 export type InstallmentRecord = {
@@ -125,6 +131,7 @@ export type ActionRequest = StudentInfo &
     paymentHistory?: PaymentRecord[]; // เพิ่มรองรับการเช็คประวัติชำระเงิน
     installments?: InstallmentRecord[];
     slipUrl?: string; // GET /api/fund-transactions/{id}/slip - redirects to a signed URL
+    documentUrl?: string; // รองรับการแสดงไฟล์เอกสาร
   };
 
 export type UserRole = "advisor" | "executive" | "admin" | "super_admin";
@@ -363,8 +370,20 @@ export default function RequestsCard({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [autoOpenedRequestId, setAutoOpenedRequestId] = useState<string | undefined>(undefined);
+  const [viewDocumentReq, setViewDocumentReq] = useState<ActionRequest | null>(null);
+  const [documentViewTab, setDocumentViewTab] = useState<"official" | "attachment">("official");
   const selectedRequestHistory = selectedRequest?.history ?? [];
   const isExecutiveTable = tableLayout === "executive";
+
+  const isDisbursed =
+    selectedRequest?.requestStatus === "disbursed" ||
+    selectedRequest?.requestStatus === "closed" ||
+    Boolean(selectedRequest?.slipUrl) ||
+    Boolean(
+      selectedRequest?.history?.some(
+        (h) => h.action.includes("โอนเงิน") || h.action.includes("เบิกจ่าย"),
+      ),
+    );
 
   // State สำหรับการแก้ไขวงเงิน (Admin / Super Admin)
   const [isEditingAmount, setIsEditingAmount] = useState(false);
@@ -405,11 +424,17 @@ export default function RequestsCard({
     setIsEditingAmount(false);
     setAmountError(null);
     setOriginalRequestedAmount(0);
+    setViewDocumentReq(null);
   };
 
   const backdropDismiss = useModalDismiss({
     onClose: closeAllModals,
     isOpen: Boolean(selectedRequest),
+  });
+
+  const documentModalDismiss = useModalDismiss({
+    onClose: () => setViewDocumentReq(null),
+    isOpen: Boolean(viewDocumentReq),
   });
 
   const handleConfirmDecision = async () => {
@@ -1167,10 +1192,46 @@ export default function RequestsCard({
                   </div>
                 )}
               </section>
+
+              {/* เอกสารคำร้อง - แสดงเฉพาะเมื่อโอนเงินเรียบร้อยแล้ว */}
+              {isDisbursed && (
+                <section className={styles.loanApprovalInfoCard}>
+                  <CardHeader
+                    className={styles.sectionCardHeading}
+                    icon={<FileText aria-hidden="true" size={20} strokeWidth={2.2} />}
+                    title="เอกสารคำร้อง"
+                  />
+                  <div className="mt-2 flex items-center justify-between p-3.5 rounded-xl border border-orange-100 bg-orange-50/30">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-orange-100 text-[#ea580c] p-2 rounded-lg">
+                        <FileText size={20} />
+                      </div>
+                      <div>
+                        <div className="text-[13px] font-bold text-gray-900">
+                          แบบขอยืมเงินทุนสวัสดิการ
+                        </div>
+                        <div className="text-[11px] text-gray-500">
+                          แบบฟอร์มเอกสารคำร้องขอกู้ยืมทางการ
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDocumentViewTab("official");
+                        setViewDocumentReq(selectedRequest);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-bold rounded-lg border border-orange-200 bg-orange-50 hover:bg-orange-100 text-[#ea580c] hover:text-[#c2410c] transition-colors cursor-pointer shadow-sm"
+                    >
+                      <FileText size={15} /> ดูเอกสารคำร้อง
+                    </button>
+                  </div>
+                </section>
+              )}
             </div>
 
             {/* Footer Buttons */}
-            {checkCanTakeAction(userRole, selectedRequest.requestStatus) && (
+            {checkCanTakeAction(userRole, selectedRequest.requestStatus) ? (
               <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex flex-col shrink-0">
                 {!confirmAction ? (
                   <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -1315,7 +1376,113 @@ export default function RequestsCard({
                   </div>
                 )}
               </div>
+            ) : (
+              <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex gap-3 shrink-0">
+                <button
+                  onClick={closeAllModals}
+                  className="w-full py-3 flex items-center justify-center rounded-xl text-[14px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
+                  type="button"
+                >
+                  ปิดหน้าต่าง
+                </button>
+              </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {viewDocumentReq && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/70 backdrop-blur-sm print:p-0 print:bg-white"
+          {...documentModalDismiss}
+          role="presentation"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col h-[88vh] sm:h-[92vh] overflow-hidden relative border border-gray-200 animate-in fade-in zoom-in-95 duration-200 print:h-auto print:max-w-full print:border-none print:shadow-none">
+            {/* Header ของ Modal เอกสาร */}
+            <div className="flex justify-between items-center px-5 sm:px-6 py-4 border-b border-gray-100 bg-white shrink-0 print:hidden">
+              <div className="flex items-center gap-3">
+                <div className="bg-orange-100 text-[#ea580c] p-2 rounded-lg">
+                  <FileText size={22} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 leading-tight">
+                    แบบขอยืมเงินทุนสวัสดิการ
+                  </h2>
+                  <p className="text-[13px] text-gray-500 mt-0.5">
+                    รหัสคำร้อง: {viewDocumentReq.id} • {viewDocumentReq.name}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* แถบเลือกสลับระหว่างแบบฟอร์มทางการ และไฟล์แนบ (หากมี) */}
+                {viewDocumentReq.documentUrl && (
+                  <div className="flex rounded-lg bg-gray-100 p-0.5 border border-gray-200 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setDocumentViewTab("official")}
+                      className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                        documentViewTab === "official"
+                          ? "bg-white text-gray-900 shadow-xs"
+                          : "text-gray-500 hover:text-gray-900"
+                      }`}
+                    >
+                      แบบฟอร์มทางการ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDocumentViewTab("attachment")}
+                      className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                        documentViewTab === "attachment"
+                          ? "bg-white text-gray-900 shadow-xs"
+                          : "text-gray-500 hover:text-gray-900"
+                      }`}
+                    >
+                      ไฟล์แนบต้นฉบับ
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setViewDocumentReq(null)}
+                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
+                  aria-label="ปิดหน้าต่าง"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* ส่วนแสดงเนื้อหาเอกสาร */}
+            <div className="flex-1 bg-gray-100/90 p-4 sm:p-6 overflow-y-auto print:bg-white print:p-0">
+              {viewDocumentReq.documentUrl && documentViewTab === "attachment" ? (
+                <iframe
+                  src={viewDocumentReq.documentUrl}
+                  className="w-full h-full min-h-[500px] rounded-xl border border-gray-300 shadow-sm bg-white"
+                  title="Petition Document"
+                />
+              ) : (
+                <LoanPetitionDocument
+                  request={viewDocumentReq as unknown as DisburseActionRequest}
+                />
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-3.5 sm:p-4 bg-white border-t border-gray-100 flex justify-between items-center shrink-0 print:hidden">
+              <span className="text-[11px] sm:text-xs text-gray-500 hidden sm:inline">
+                แบบฟอร์มทางการกองทุนสวัสดิการนักศึกษา คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่
+              </span>
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  onClick={() => setViewDocumentReq(null)}
+                  className="px-6 py-2 rounded-xl text-[13px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
+                  type="button"
+                >
+                  ปิดหน้าต่าง
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
