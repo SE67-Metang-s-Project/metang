@@ -26,6 +26,7 @@ import CardHeader from "@/components/shared/CardHeader";
 import { formatThaiBahtText } from "@/app/student/studentFormatters";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import styles from "@/app/student/student.module.css";
+import LoanPetitionDocument from "./LoanPetitionDocument";
 
 // ==========================================
 // การกำหนด Type
@@ -93,7 +94,17 @@ export type PaymentHistoryRecord = {
   amount: number | string;
   dueDate?: string;
   paidDate?: string;
+  paidAt?: string;
   slipUrl?: string;
+};
+
+export type InstallmentRecord = {
+  installmentNumber: number;
+  dueDate?: string;
+  amount: number | string;
+  paidAmount?: number | string;
+  isPaid?: boolean;
+  paidDate?: string;
 };
 
 export type ActionRequest = StudentInfo &
@@ -104,6 +115,7 @@ export type ActionRequest = StudentInfo &
     paymentBehavior?: PaymentBehaviorInfo;
     approvals?: ApprovalStep[];
     paymentHistory?: PaymentHistoryRecord[];
+    installments?: InstallmentRecord[];
     slipUrl?: string; // รองรับการแสดงรูปสลิป
     documentUrl?: string; // รองรับการแสดงไฟล์เอกสาร
   };
@@ -253,6 +265,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
 
   const [viewDocumentReq, setViewDocumentReq] = useState<ActionRequest | null>(null);
+  const [documentViewTab, setDocumentViewTab] = useState<"official" | "attachment">("official");
 
   // State สำหรับอัปโหลดสลิป & คัดลอกเลขบัญชี
   const [uploadedSlip, setUploadedSlip] = useState<string | null>(null);
@@ -325,7 +338,8 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
         if (res.status === 401) msg = "กรุณาเข้าสู่ระบบใหม่ (Session หมดอายุ)";
         else if (res.status === 403) msg = "ไม่มีสิทธิ์ดำเนินการสำหรับบทบาทนี้";
         else if (res.status === 404) msg = "ไม่พบข้อมูลคำร้องนี้ในระบบ";
-        else if (res.status === 409) msg = data?.error?.message || "คำร้องนี้ถูกดำเนินการไปแล้ว หรือเกิดข้อขัดแย้ง";
+        else if (res.status === 409)
+          msg = data?.error?.message || "คำร้องนี้ถูกดำเนินการไปแล้ว หรือเกิดข้อขัดแย้ง";
         else if (res.status === 422) msg = data?.error?.message || "ไฟล์สลิปไม่ถูกต้อง";
         throw new Error(msg);
       }
@@ -794,7 +808,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                           คลิกเพื่ออัปโหลดสลิปโอนเงิน
                         </div>
                         <div className="text-[11px] text-gray-500 mt-1">
-                          รองรับ JPG, PNG หรือ PDF (ขนาดไม่เกิน 5MB)
+                          รองรับ JPG หรือ PNG(ขนาดไม่เกิน 500 KB)
                         </div>
                         <input
                           type="file"
@@ -959,36 +973,41 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                 )}
               </section>
 
-              {/* เอกสารคำร้อง */}
-              <section className={styles.loanApprovalInfoCard}>
-                <CardHeader
-                  className={styles.sectionCardHeading}
-                  icon={<FileText aria-hidden="true" size={20} strokeWidth={2.2} />}
-                  title="เอกสารคำร้อง"
-                />
-                <div className="mt-2 flex items-center justify-between p-3.5 rounded-xl border border-orange-100 bg-orange-50/30">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-orange-100 text-[#ea580c] p-2 rounded-lg">
-                      <FileText size={20} />
-                    </div>
-                    <div>
-                      <div className="text-[13px] font-bold text-gray-900">เอกสารคำร้องขอกู้ยืม</div>
-                      <div className="text-[11px] text-gray-500">
-                        {selectedRequest.documentUrl
-                          ? "เอกสารแนบคำร้องของนักศึกษา"
-                          : "เอกสารแนบคำร้อง"}
+              {/* เอกสารคำร้อง - แสดงเฉพาะเมื่อโอนเงินเรียบร้อยแล้ว */}
+              {isCompleted && (
+                <section className={styles.loanApprovalInfoCard}>
+                  <CardHeader
+                    className={styles.sectionCardHeading}
+                    icon={<FileText aria-hidden="true" size={20} strokeWidth={2.2} />}
+                    title="เอกสารคำร้อง"
+                  />
+                  <div className="mt-2 flex items-center justify-between p-3.5 rounded-xl border border-orange-100 bg-orange-50/30">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-orange-100 text-[#ea580c] p-2 rounded-lg">
+                        <FileText size={20} />
+                      </div>
+                      <div>
+                        <div className="text-[13px] font-bold text-gray-900">
+                          แบบขอยืมเงินทุนสวัสดิการ
+                        </div>
+                        <div className="text-[11px] text-gray-500">
+                          แบบฟอร์มเอกสารคำร้องขอกู้ยืมทางการ
+                        </div>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDocumentViewTab("official");
+                        setViewDocumentReq(selectedRequest);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-bold rounded-lg border border-orange-200 bg-orange-50 hover:bg-orange-100 text-[#ea580c] hover:text-[#c2410c] transition-colors cursor-pointer shadow-sm"
+                    >
+                      <FileText size={15} /> ดูเอกสารคำร้อง
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setViewDocumentReq(selectedRequest)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-bold rounded-lg border border-orange-200 bg-orange-50 hover:bg-orange-100 text-[#ea580c] hover:text-[#c2410c] transition-colors cursor-pointer shadow-sm"
-                  >
-                    <FileText size={15} /> เอกสาร
-                  </button>
-                </div>
-              </section>
+                </section>
+              )}
             </div>
 
             {/* Footer Buttons */}
@@ -1048,59 +1067,93 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
 
       {viewDocumentReq && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/70 backdrop-blur-sm print:p-0 print:bg-white"
           {...documentModalDismiss}
           role="presentation"
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col h-[85vh] sm:h-[90vh] overflow-hidden relative border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col h-[88vh] sm:h-[92vh] overflow-hidden relative border border-gray-200 animate-in fade-in zoom-in-95 duration-200 print:h-auto print:max-w-full print:border-none print:shadow-none">
             {/* Header ของ Modal เอกสาร */}
-            <div className="flex justify-between items-center px-5 sm:px-6 py-4 border-b border-gray-100 bg-white shrink-0">
+            <div className="flex justify-between items-center px-5 sm:px-6 py-4 border-b border-gray-100 bg-white shrink-0 print:hidden">
               <div className="flex items-center gap-3">
                 <div className="bg-orange-100 text-[#ea580c] p-2 rounded-lg">
                   <FileText size={22} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 leading-tight">เอกสารคำร้อง</h2>
+                  <h2 className="text-lg font-bold text-gray-900 leading-tight">
+                    แบบขอยืมเงินทุนสวัสดิการ
+                  </h2>
                   <p className="text-[13px] text-gray-500 mt-0.5">
                     รหัสคำร้อง: {viewDocumentReq.id} • {viewDocumentReq.name}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setViewDocumentReq(null)}
-                className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
-                aria-label="ปิดหน้าต่าง"
-              >
-                <X size={20} />
-              </button>
+
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* แถบเลือกสลับระหว่างแบบฟอร์มทางการ และไฟล์แนบ (หากมี) */}
+                {viewDocumentReq.documentUrl && (
+                  <div className="flex rounded-lg bg-gray-100 p-0.5 border border-gray-200 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setDocumentViewTab("official")}
+                      className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                        documentViewTab === "official"
+                          ? "bg-white text-gray-900 shadow-xs"
+                          : "text-gray-500 hover:text-gray-900"
+                      }`}
+                    >
+                      แบบฟอร์มทางการ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDocumentViewTab("attachment")}
+                      className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                        documentViewTab === "attachment"
+                          ? "bg-white text-gray-900 shadow-xs"
+                          : "text-gray-500 hover:text-gray-900"
+                      }`}
+                    >
+                      ไฟล์แนบต้นฉบับ
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setViewDocumentReq(null)}
+                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
+                  aria-label="ปิดหน้าต่าง"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
-            {/* ส่วนแสดงเนื้อหาเอกสาร (รองรับ PDF หรือรูปภาพ) */}
-            <div className="flex-1 bg-gray-100 p-4 sm:p-6 overflow-hidden">
-              {viewDocumentReq.documentUrl ? (
+            {/* ส่วนแสดงเนื้อหาเอกสาร */}
+            <div className="flex-1 bg-gray-100/90 p-4 sm:p-6 overflow-y-auto print:bg-white print:p-0">
+              {viewDocumentReq.documentUrl && documentViewTab === "attachment" ? (
                 <iframe
                   src={viewDocumentReq.documentUrl}
-                  className="w-full h-full rounded-xl border border-gray-300 shadow-sm bg-white"
+                  className="w-full h-full min-h-[500px] rounded-xl border border-gray-300 shadow-sm bg-white"
                   title="Petition Document"
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400 bg-white rounded-xl border border-dashed border-gray-300">
-                  <FileText size={48} className="mb-4 opacity-50" />
-                  <p className="text-gray-600 font-medium text-lg">ไม่พบไฟล์เอกสารคำร้อง</p>
-                  <p className="text-sm mt-1 text-gray-500">นักศึกษาอาจไม่ได้แนบไฟล์เอกสารมาด้วย</p>
-                </div>
+                <LoanPetitionDocument request={viewDocumentReq} />
               )}
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-white border-t border-gray-100 flex justify-end shrink-0">
-              <button
-                onClick={() => setViewDocumentReq(null)}
-                className="px-6 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
-                type="button"
-              >
-                ปิดหน้าต่าง
-              </button>
+            <div className="p-3.5 sm:p-4 bg-white border-t border-gray-100 flex justify-between items-center shrink-0 print:hidden">
+              <span className="text-[11px] sm:text-xs text-gray-500 hidden sm:inline">
+                แบบฟอร์มทางการกองทุนสวัสดิการนักศึกษา คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่
+              </span>
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  onClick={() => setViewDocumentReq(null)}
+                  className="px-6 py-2 rounded-xl text-[13px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
+                  type="button"
+                >
+                  ปิดหน้าต่าง
+                </button>
+              </div>
             </div>
           </div>
         </div>

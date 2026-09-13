@@ -581,11 +581,6 @@ export async function getActionRequests(
           fullNameEn: true,
         },
       },
-      advisor: {
-        select: {
-          fullNameTh: true,
-        },
-      },
       // At most one row, per fund_transaction_one_disbursement_per_loan. Only the id is needed:
       // the slip is read through GET /api/fund-transactions/{id}/slip, never by storage path.
       fundTransactions: {
@@ -733,6 +728,14 @@ export async function getActionRequests(
 
     const disbursement = loan.fundTransactions[0];
 
+    const installments = (loan.installments || []).map((inst) => ({
+      installmentNumber: inst.seq,
+      dueDate: formatThaiDate(inst.dueDate),
+      amount: String(inst.amountDue),
+      paidAmount: String(inst.amountPaid),
+      isPaid: inst.settledAt !== null || inst.amountPaid >= inst.amountDue,
+    }));
+
     return {
       id: loan.id,
       name: student.fullNameTh,
@@ -757,6 +760,7 @@ export async function getActionRequests(
       ...(bankDetails ? { bankDetails } : {}),
       paymentBehavior,
       paymentHistory,
+      installments,
       ...(disbursement ? { slipUrl: `/api/fund-transactions/${disbursement.id}/slip` } : {}),
     };
   });

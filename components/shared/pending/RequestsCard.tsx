@@ -106,6 +106,15 @@ export type PaymentRecord = {
   slipImageUrl?: string;
 };
 
+export type InstallmentRecord = {
+  installmentNumber: number;
+  dueDate: string;
+  amount: number | string;
+  paidAmount?: number | string;
+  isPaid?: boolean;
+  paidDate?: string;
+};
+
 export type ActionRequest = StudentInfo &
   LoanDetails &
   RequestStatus & {
@@ -114,6 +123,7 @@ export type ActionRequest = StudentInfo &
     paymentBehavior?: PaymentBehaviorInfo;
     approvals?: ApprovalStep[];
     paymentHistory?: PaymentRecord[]; // เพิ่มรองรับการเช็คประวัติชำระเงิน
+    installments?: InstallmentRecord[];
     slipUrl?: string; // GET /api/fund-transactions/{id}/slip - redirects to a signed URL
   };
 
