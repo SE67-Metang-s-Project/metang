@@ -24,10 +24,11 @@ export const fundTransactionSelect = {
 } satisfies Prisma.FundTransactionSelect;
 
 export async function getFundBalance() {
-  const rows = await prisma.fundTransaction.findMany({
-    select: { amount: true, direction: true },
+  const totals = await prisma.fundTransaction.groupBy({
+    by: ["direction"],
+    _sum: { amount: true },
   });
-  return rows.reduce((total, row) => total + row.amount * row.direction, 0);
+  return totals.reduce((total, row) => total + (row._sum.amount ?? 0) * row.direction, 0);
 }
 
 export async function listFundTransactions() {
