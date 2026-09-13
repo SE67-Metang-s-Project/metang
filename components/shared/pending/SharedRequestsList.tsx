@@ -22,7 +22,35 @@ export default function SharedRequestsList({
 }: SharedRequestsListProps) {
   const [filter, setFilter] = useState<FilterStatus>(highlightRequestId ? "all" : "pending");
   const [searchQuery, setSearchQuery] = useState("");
-  const requests = initialRequests ?? [];
+  const [requests, setRequests] = useState<ActionRequest[]>(initialRequests ?? []);
+  const [prevInitial, setPrevInitial] = useState(initialRequests);
+
+  if (prevInitial !== initialRequests) {
+    setPrevInitial(initialRequests);
+    setRequests(initialRequests ?? []);
+  }
+
+  const handleRequestDecided = (requestId: string, decision: string) => {
+    setRequests((prev) =>
+      prev.map((req) => {
+        if (req.id !== requestId) return req;
+        let newStatus = req.requestStatus;
+        if (decision === "approved") {
+          newStatus =
+            userRole === "advisor"
+              ? "pending_admin"
+              : userRole === "admin"
+                ? "pending_executive"
+                : "pending_disbursement";
+        } else if (decision === "rejected") {
+          newStatus = "rejected";
+        } else if (decision === "returned") {
+          newStatus = "returned";
+        }
+        return { ...req, requestStatus: newStatus };
+      }),
+    );
+  };
 
   // ฟังก์ชันเช็คว่า Role นี้ต้องดูคำร้องสถานะไหน
   const getTargetPendingStatus = (role: UserRole) => {
@@ -88,15 +116,28 @@ export default function SharedRequestsList({
         isStatusMatch = ["pending_disbursement", "disbursed", "closed"].includes(req.requestStatus);
       }
     } else if (filter === "rejected") {
-      isStatusMatch = ["returned", "rejected", "cancelled"].includes(req.requestStatus);
+      isStatusMatch = ["returned", "rejected"].includes(req.requestStatus);
+    } else if (filter === "cancelled") {
+      isStatusMatch = req.requestStatus === "cancelled";
+    } else {
+      isStatusMatch = req.requestStatus === filter;
     }
 
-    const lowerQuery = searchQuery.toLowerCase();
+    const lowerQuery = searchQuery.toLowerCase().trim();
     const isSearchMatch =
-      req.name.toLowerCase().includes(lowerQuery) || req.studentId.includes(lowerQuery);
+      !lowerQuery ||
+      req.name.toLowerCase().includes(lowerQuery) ||
+      req.studentId.toLowerCase().includes(lowerQuery) ||
+      req.id.toLowerCase().includes(lowerQuery);
 
     return isStatusMatch && isSearchMatch;
   });
+
+  const advisorStatusOptions = [
+    { id: "approved" as const, label: "อนุมัติแล้ว" },
+    { id: "rejected" as const, label: "ไม่อนุมัติ / ส่งกลับแก้ไข" },
+    { id: "cancelled" as const, label: "นักศึกษายกเลิกคำร้อง" },
+  ];
 
   return (
     <div className="w-full">
@@ -110,6 +151,7 @@ export default function SharedRequestsList({
             pendingCount={pendingCount}
             // เปลี่ยน Label ให้ตรงกับ Role แบบอัตโนมัติ
             pendingLabel={getPendingLabel(userRole)}
+            statusOptions={userRole === "advisor" ? advisorStatusOptions : undefined}
           />
         </div>
       )}
@@ -119,6 +161,7 @@ export default function SharedRequestsList({
         requests={filteredRequests}
         userRole={userRole}
         initialSelectedRequestId={highlightRequestId}
+        onRequestDecided={handleRequestDecided}
       />
     </div>
   );

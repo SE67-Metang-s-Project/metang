@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
-import { ShieldCheck } from "lucide-react";
+import React from "react";
+import SharedRequestsList from "@/components/shared/pending/SharedRequestsList";
+import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
 type AdvisorPendingPageProps = {
   initialRequests?: ActionRequest[];
@@ -13,28 +13,6 @@ export default function AdvisorPendingPage({
   initialRequests = [],
   highlightRequestId,
 }: AdvisorPendingPageProps) {
-  // กำหนด State ให้กับ requests จาก DB
-  const [requests, setRequests] = useState<ActionRequest[]>(initialRequests);
-  const [prevInitial, setPrevInitial] = useState(initialRequests);
-
-  if (prevInitial !== initialRequests) {
-    setPrevInitial(initialRequests);
-    setRequests(initialRequests);
-  }
-
-  const handleRequestDecided = (requestId: string) => {
-    setRequests((prev) => prev.filter((req) => req.id !== requestId));
-  };
-
-  // กรองเฉพาะคำร้องที่รออาจารย์ที่ปรึกษาพิจารณา (รวมคำร้องที่มาจาก deep link แม้สถานะจะเปลี่ยนไปแล้ว)
-  const pendingRequests = useMemo(
-    () =>
-      requests.filter(
-        (req) => req.requestStatus === "pending_advisor" || req.id === highlightRequestId,
-      ),
-    [requests, highlightRequestId],
-  );
-
   return (
     <div>
       <div className="mb-6">
@@ -42,35 +20,16 @@ export default function AdvisorPendingPage({
           คำร้องรอพิจารณา (ในฐานะอาจารย์ที่ปรึกษา)
         </h1>
         <p className="text-gray-500 mt-1 text-sm">
-          รายการคำขอขอกู้ยืมจากนักศึกษาที่อยู่ในความดูแลของท่าน
+          รายการคำขอกู้ยืมจากนักศึกษาที่อยู่ในความดูแลของท่าน
           ซึ่งรอการพิจารณาและอนุมัติจากอาจารย์ที่ปรึกษา
         </p>
       </div>
 
-      {/* แสดงรายการคำร้อง หรือ ข้อความเมื่อไม่มีคำร้อง */}
-      {pendingRequests.length > 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <RequestsCard
-            requests={pendingRequests}
-            userRole="advisor"
-            onRequestDecided={handleRequestDecided}
-            initialSelectedRequestId={highlightRequestId}
-          />
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center mt-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
-            <ShieldCheck size={24} />
-          </div>
-          <h3 className="font-semibold text-gray-800 text-base mb-1">
-            ไม่มีคำร้องรอพิจารณาในขณะนี้
-          </h3>
-          <p className="text-sm text-gray-500 max-w-md mx-auto">
-            ท่านได้พิจารณาคำร้องของนักศึกษาในความดูแลครบถ้วนแล้ว
-            หากมีคำร้องใหม่จากนักศึกษาจะปรากฏในส่วนนี้ทันที
-          </p>
-        </div>
-      )}
+      <SharedRequestsList
+        userRole="advisor"
+        initialRequests={initialRequests}
+        highlightRequestId={highlightRequestId}
+      />
     </div>
   );
 }
