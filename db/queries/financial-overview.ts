@@ -83,7 +83,7 @@ export async function getExecutiveFinancialOverviewData(
   const yearStart = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0));
   const yearEnd = new Date(Date.UTC(currentYear + 1, 0, 1, 0, 0, 0));
 
-  const [topUpAggregate, allFundTransactions, approvedLoansAggregate, yearLoans, yearPayments] =
+  const [topUpAggregate, fundTotals, approvedLoansAggregate, yearLoans, yearPayments] =
     await Promise.all([
       // 1. Total capital injected into system
       prisma.fundTransaction.aggregate({
@@ -91,9 +91,10 @@ export async function getExecutiveFinancialOverviewData(
         _sum: { amount: true },
       }),
 
-      // 2. All fund transactions for current balance
-      prisma.fundTransaction.findMany({
-        select: { amount: true, direction: true },
+      // 2. Current balance, summed per direction by Postgres (two rows at most)
+      prisma.fundTransaction.groupBy({
+        by: ["direction"],
+        _sum: { amount: true },
       }),
 
       // 3. Approved loans metric
@@ -133,8 +134,8 @@ export async function getExecutiveFinancialOverviewData(
     ]);
 
   const totalSystem = topUpAggregate._sum.amount ?? 0;
-  const fundBalance = allFundTransactions.reduce(
-    (total, tx) => total + tx.amount * tx.direction,
+  const fundBalance = fundTotals.reduce(
+    (total, row) => total + (row._sum.amount ?? 0) * row.direction,
     0,
   );
   const approvedAmount = approvedLoansAggregate._sum.approvedAmount ?? 0;

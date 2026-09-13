@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@/lib/generated/prisma/client";
+import { Prisma, type ApprovalStep as LoanApprovalStep, type Decision } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
 import { computeInstallmentSchedule, type ExecutiveDecision, type LoanDecision } from "@/lib/loan-validation";
 import type {
@@ -212,6 +212,30 @@ export class AdvisorDecisionError extends Error {
   }
 }
 
+function latestPendingApproval<T extends { step: LoanApprovalStep; decision: Decision; attempt: number }>(
+  approvals: readonly T[],
+  step: LoanApprovalStep,
+) {
+  return approvals
+    .filter((approval) => approval.step === step && approval.decision === "pending")
+    .reduce<T | null>(
+      (latest, approval) => (latest && latest.attempt >= approval.attempt ? latest : approval),
+      null,
+    );
+}
+
+function nextAttempt(
+  approvals: readonly { step: LoanApprovalStep; attempt: number }[],
+  step: LoanApprovalStep,
+) {
+  return (
+    approvals.reduce(
+      (max, approval) => (approval.step === step && approval.attempt > max ? approval.attempt : max),
+      0,
+    ) + 1
+  );
+}
+
 export async function decideLoanRequest({
   id,
   advisorId,
@@ -236,10 +260,7 @@ export async function decideLoanRequest({
       throw new AdvisorDecisionError("STALE_DECISION");
     }
 
-    const pending = await tx.loanApproval.findFirst({
-      where: { loanId: id, step: "advisor", decision: "pending" },
-      orderBy: { attempt: "desc" },
-    });
+    const pending = latestPendingApproval(current.approvals, "advisor");
     if (!pending) throw new AdvisorDecisionError("STALE_DECISION");
 
     const nextStatus = decision === "approved" ? "pending_admin" : decision;
@@ -254,12 +275,7 @@ export async function decideLoanRequest({
       data: { decision, decidedBy: advisorId, decidedAt: new Date(), comment },
     });
     if (decision === "approved") {
-      const latestAdmin = await tx.loanApproval.findFirst({
-        where: { loanId: id, step: "admin" },
-        orderBy: { attempt: "desc" },
-        select: { attempt: true },
-      });
-      const attempt = (latestAdmin?.attempt ?? 0) + 1;
+      const attempt = nextAttempt(current.approvals, "admin");
       await tx.loanApproval.create({ data: { loanId: id, step: "admin", attempt } });
 
     }
@@ -326,10 +342,7 @@ export async function decideAdminLoanRequest({
     });
     if (!current) throw new AdminDecisionError("NOT_FOUND");
 
-    const pending = await tx.loanApproval.findFirst({
-      where: { loanId: id, step: "admin", decision: "pending" },
-      orderBy: { attempt: "desc" },
-    });
+    const pending = latestPendingApproval(current.approvals, "admin");
     if (!pending) throw new AdminDecisionError("STALE_DECISION");
 
     if (decision === "approved") {
@@ -902,10 +915,7 @@ export async function decideExecutiveLoanRequest({
       throw new ExecutiveDecisionError("MISSING_ADMIN_ASSIGNMENT");
     }
 
-    const pending = await tx.loanApproval.findFirst({
-      where: { loanId: id, step: "executive", decision: "pending" },
-      orderBy: { attempt: "desc" },
-    });
+    const pending = latestPendingApproval(current.approvals, "executive");
     if (!pending) throw new ExecutiveDecisionError("STALE_DECISION");
 
     const nextStatus =

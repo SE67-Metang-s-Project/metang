@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "prisma generate",
     "dev": "node scripts/with-infisical.mjs next dev -p 8080",
     "dev-normal": "next dev -p 8080",
+    "prebuild": "prisma generate",
     "build": "NODE_ENV=production node scripts/with-infisical.mjs next build",
     "start": "next start",
     "lint": "eslint",
