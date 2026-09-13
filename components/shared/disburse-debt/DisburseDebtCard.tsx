@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   X,
   UserRound,
@@ -16,6 +17,8 @@ import {
   UploadCloud,
   FileImage,
   AlertCircle,
+  Loader2,
+  XCircle,
   SearchX,
   FileText,
 } from "lucide-react";
@@ -246,13 +249,17 @@ function EmptyRequestsState() {
 // Main Component
 // ==========================================
 export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
+  const router = useRouter();
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
 
   const [viewDocumentReq, setViewDocumentReq] = useState<ActionRequest | null>(null);
 
   // State สำหรับอัปโหลดสลิป & คัดลอกเลขบัญชี
   const [uploadedSlip, setUploadedSlip] = useState<string | null>(null);
+  const [slipFile, setSlipFile] = useState<File | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedRequestHistory = selectedRequest?.history ?? [];
@@ -261,9 +268,15 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
 
   const closeAllModals = () => {
     setSelectedRequest(null);
+<<<<<<< HEAD
     setViewDocumentReq(null);
+=======
+    if (uploadedSlip) URL.revokeObjectURL(uploadedSlip);
+>>>>>>> 925e28d8b608fee0565b070883aa6600e4f3ebfe
     setUploadedSlip(null);
+    setSlipFile(null);
     setIsCopied(false);
+    setErrorMessage(null);
   };
 
   const backdropDismiss = useModalDismiss({
@@ -285,8 +298,48 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (uploadedSlip) URL.revokeObjectURL(uploadedSlip);
       const imageUrl = URL.createObjectURL(file);
       setUploadedSlip(imageUrl);
+      setSlipFile(file);
+      setErrorMessage(null);
+    }
+  };
+
+  const handleDisburse = async () => {
+    if (isSubmitting) return;
+    if (!selectedRequest || !slipFile) return;
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("slip", slipFile);
+
+      const res = await fetch(`/api/admin/loan-requests/${selectedRequest.id}/disburse`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        let msg = data?.error?.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล";
+        if (res.status === 401) msg = "กรุณาเข้าสู่ระบบใหม่ (Session หมดอายุ)";
+        else if (res.status === 403) msg = "ไม่มีสิทธิ์ดำเนินการสำหรับบทบาทนี้";
+        else if (res.status === 404) msg = "ไม่พบข้อมูลคำร้องนี้ในระบบ";
+        else if (res.status === 409) msg = data?.error?.message || "คำร้องนี้ถูกดำเนินการไปแล้ว หรือเกิดข้อขัดแย้ง";
+        else if (res.status === 422) msg = data?.error?.message || "ไฟล์สลิปไม่ถูกต้อง";
+        throw new Error(msg);
+      }
+
+      closeAllModals();
+      router.refresh();
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการส่งข้อมูล");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -485,7 +538,8 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                 </span>
                 <button
                   onClick={closeAllModals}
-                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
+                  disabled={isSubmitting}
+                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="ปิดหน้าต่าง"
                 >
                   <X size={20} />
@@ -723,7 +777,10 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                         />
                         <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button
-                            onClick={() => setUploadedSlip(null)}
+                            onClick={() => {
+                              if (uploadedSlip) URL.revokeObjectURL(uploadedSlip);
+                              setUploadedSlip(null);
+                            }}
                             className="bg-white text-red-600 px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-red-50 transition-colors cursor-pointer"
                             type="button"
                           >
@@ -949,30 +1006,44 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   ปิดหน้าต่าง
                 </button>
               ) : (
-                <>
-                  <button
-                    onClick={closeAllModals}
-                    className="flex-1 py-3 text-[14px] font-bold text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
-                    type="button"
-                  >
-                    ยกเลิก
-                  </button>
-                  <button
-                    disabled={!uploadedSlip}
-                    onClick={() => {
-                      console.log(`Disbursed for ID: ${selectedRequest.id}`);
-                      closeAllModals();
-                    }}
-                    className={`flex-1 py-3 flex items-center justify-center gap-2 rounded-xl text-[14px] font-bold text-white transition-all shadow-sm ${
-                      uploadedSlip
-                        ? "bg-[#059669] hover:bg-[#047857] shadow-green-600/20 cursor-pointer active:scale-[0.98]"
-                        : "bg-gray-300 cursor-not-allowed"
-                    }`}
-                    type="button"
-                  >
-                    <CheckCircle2 size={18} /> ยืนยันว่าโอนเงินแล้ว
-                  </button>
-                </>
+                <div className="w-full space-y-3">
+                  {errorMessage && (
+                    <div className="text-[12px] text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200 flex items-center gap-2">
+                      <XCircle size={14} className="shrink-0" />
+                      <span>{errorMessage}</span>
+                    </div>
+                  )}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={closeAllModals}
+                      disabled={isSubmitting}
+                      className="flex-1 py-3 text-[14px] font-bold text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      type="button"
+                    >
+                      ยกเลิก
+                    </button>
+                    <button
+                      disabled={!uploadedSlip || isSubmitting}
+                      onClick={handleDisburse}
+                      type="button"
+                      className={`flex-1 py-3 flex items-center justify-center gap-2 rounded-xl text-[14px] font-bold text-white transition-all shadow-sm disabled:cursor-not-allowed ${
+                        uploadedSlip && !isSubmitting
+                          ? "bg-[#059669] hover:bg-[#047857] shadow-green-600/20 cursor-pointer active:scale-[0.98]"
+                          : "bg-gray-300"
+                      }`}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 size={18} className="animate-spin" /> กำลังบันทึก...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 size={18} /> ยืนยันว่าโอนเงินแล้ว
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>

@@ -243,12 +243,17 @@ export function mapToActiveLoanSummary(loan: RawStudentLoan | null): ActiveLoanS
 }
 
 export function mapToInstallmentPayments(installments: RawInstallment[] = []): InstallmentPayment[] {
+  let nextPayableFound = false;
+
   return installments.map((inst) => {
+    const isSettled = Boolean(inst.settledAt) || inst.amountPaid >= inst.amountDue;
+
     let status: InstallmentStatus = "upcoming";
-    if (inst.settledAt || inst.amountPaid >= inst.amountDue) {
+    if (isSettled) {
       status = "paid";
-    } else if (inst.amountPaid > 0) {
+    } else if (!nextPayableFound) {
       status = "current";
+      nextPayableFound = true;
     }
 
     const remaining = Math.max(0, inst.amountDue - inst.amountPaid);
