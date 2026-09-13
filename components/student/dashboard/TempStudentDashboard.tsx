@@ -11,7 +11,7 @@ import {
 import LoanHistoryList from "./LoanHistoryList";
 import TempLoanSummaryCard from "./TempLoanSummaryCard";
 import PaymentBehaviorCard from "./PaymentBehaviorCard";
-import TopNav from "@/components/shared/TopNav";
+import StudentTopNav from "@/components/student/StudentTopNav";
 import ContactFooter from "../loan-details/ContactFooter";
 import LoanDetailOverview from "../loan-details/LoanDetailOverview";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
@@ -28,7 +28,7 @@ export default function TempStudentDashboard() {
 
   return (
     <main className={`${styles.studentPage} ${styles.studentPageNoLoan}`}>
-      <TopNav
+      <StudentTopNav
         showSidebarButton={false}
         userEmail={`${tempStudentProfile.studentId}@cmu.ac.th`}
         userId={tempStudentProfile.studentId}

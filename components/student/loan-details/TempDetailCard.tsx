@@ -1,8 +1,24 @@
 import { GraduationCap, Landmark } from "lucide-react";
-import { paymentAccount, studentProfile } from "@/app/student/studentMockData";
+import type { LoanDetails } from "@/app/student/studentMockData";
+import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
 import styles from "@/app/student/student.module.css";
 
-export default function TempDetailCard() {
+type TempDetailCardProps = {
+  details: LoanDetails;
+  profile: StudentProfileDisplay & { phoneNumber?: string };
+};
+
+const educationLevelsByStudentIdDigit: Record<string, string> = {
+  "0": "ประกาศนียบัตรผู้ช่วยพยาบาล",
+  "1": "ปริญญาตรี",
+  "3": "ปริญญาโท",
+  "5": "ปริญญาเอก",
+};
+
+export default function TempDetailCard({ details, profile }: TempDetailCardProps) {
+  const educationLevel =
+    educationLevelsByStudentIdDigit[profile.studentId.charAt(4)] ?? profile.educationLevel ?? "-";
+
   return (
     <>
       <section className={`${styles.loanDetailSection} ${styles.detailDashboardCard}`}>
@@ -15,31 +31,31 @@ export default function TempDetailCard() {
         <dl className={styles.loanDetailDefinitionList}>
           <div>
             <dt>ชื่อ-นามสกุล</dt>
-            <dd>{studentProfile.displayName}</dd>
+            <dd>{profile.displayName}</dd>
           </div>
           <div>
             <dt>รหัสนักศึกษา</dt>
-            <dd>{studentProfile.studentId}</dd>
+            <dd>{profile.studentId}</dd>
           </div>
           <div>
             <dt>หลักสูตร</dt>
-            <dd>{studentProfile.programName}</dd>
+            <dd>{profile.programName || "พยาบาลศาสตรบัณฑิต"}</dd>
           </div>
           <div>
             <dt>วุฒิการศึกษา</dt>
-            <dd>{studentProfile.educationLevel}</dd>
+            <dd>{educationLevel}</dd>
           </div>
           <div>
             <dt>ชั้นปีการศึกษา</dt>
-            <dd>{studentProfile.yearLabel}</dd>
+            <dd>{details.studentYear ? `ชั้นปีที่ ${details.studentYear}` : "-"}</dd>
           </div>
           <div>
             <dt>เบอร์โทรศัพท์</dt>
-            <dd>0950000000</dd>
+            <dd>{profile.phoneNumber || "-"}</dd>
           </div>
           <div>
             <dt>อาจารย์ที่ปรึกษา</dt>
-            <dd>ดร.พิมพา มีโชค</dd>
+            <dd>{details.advisorName || "-"}</dd>
           </div>
         </dl>
       </section>
@@ -54,15 +70,15 @@ export default function TempDetailCard() {
         <dl className={styles.loanDetailDefinitionList}>
           <div>
             <dt>ธนาคาร</dt>
-            <dd>{paymentAccount.bankName}</dd>
+            <dd>{details.bankName || "-"}</dd>
           </div>
           <div>
             <dt>เลขที่บัญชี</dt>
-            <dd>{paymentAccount.accountNumber}</dd>
+            <dd>{details.bankAccountNo || "-"}</dd>
           </div>
           <div className={styles.bankAccountNameRow}>
             <dt>ชื่อบัญชี</dt>
-            <dd>{paymentAccount.accountName}</dd>
+            <dd>{details.bankAccountName || "-"}</dd>
           </div>
         </dl>
       </section>

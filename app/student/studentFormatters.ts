@@ -51,6 +51,65 @@ export function formatThaiBahtText(amount: string): string {
   return `${formatThaiInteger(baht)}บาทไทยถ้วน`;
 }
 
+const englishOnes = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+  "eleven",
+  "twelve",
+  "thirteen",
+  "fourteen",
+  "fifteen",
+  "sixteen",
+  "seventeen",
+  "eighteen",
+  "nineteen",
+];
+
+const englishTens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+
+function formatEnglishUnderThousand(value: number): string {
+  const words: string[] = [];
+  const hundreds = Math.floor(value / 100);
+  const remainder = value % 100;
+
+  if (hundreds) words.push(englishOnes[hundreds], "hundred");
+  if (remainder >= 20) {
+    words.push(`${englishTens[Math.floor(remainder / 10)]}${remainder % 10 ? `-${englishOnes[remainder % 10]}` : ""}`);
+  } else if (remainder) {
+    words.push(englishOnes[remainder]);
+  }
+
+  return words.join(" ");
+}
+
+export function formatEnglishBahtText(amount: string): string {
+  const numericAmount = Number(amount.replace(/[^0-9.]/g, ""));
+  if (!Number.isFinite(numericAmount)) return amount;
+
+  const baht = Math.floor(numericAmount);
+  if (baht === 0) return "zero baht only";
+
+  const thousands = Math.floor(baht / 1000);
+  const remainder = baht % 1000;
+  const words = [
+    thousands ? `${formatEnglishUnderThousand(thousands)} thousand` : "",
+    remainder ? formatEnglishUnderThousand(remainder) : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return `${words} baht only`;
+}
+
 export function formatLoanAmountInput(amount: string): string {
   const numericValue = amount.replace(/\D/g, "");
   return numericValue ? Number(numericValue).toLocaleString("en-US") : "";

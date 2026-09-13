@@ -1,15 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Clock3, Copy, Headphones, Mail, MapPin, Phone } from "lucide-react";
-import { loanContact } from "@/app/student/studentMockData";
+import { loanContact, type LoanContact } from "@/app/student/studentMockData";
+import {
+  getSystemAddress,
+  systemAddressUpdatedEvent,
+} from "@/components/shared/mock-data/mockSystemSettings";
 import styles from "@/app/student/student.module.css";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 
 export default function ContactFooter() {
   const { t } = useStudentLanguage();
+  const [contact, setContact] = useState<LoanContact>(loanContact);
   const [isPhoneCopied, setIsPhoneCopied] = useState(false);
   const [isEmailCopied, setIsEmailCopied] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSystemContact = async () => {
+      const address = await getSystemAddress();
+      if (!isMounted) return;
+
+      setContact({
+        phone: address.phone,
+        email: address.email,
+        location: address.submissionLocation,
+        openingHours: address.openingHours,
+      });
+    };
+
+    void loadSystemContact();
+    window.addEventListener(systemAddressUpdatedEvent, loadSystemContact);
+    window.addEventListener("storage", loadSystemContact);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener(systemAddressUpdatedEvent, loadSystemContact);
+      window.removeEventListener("storage", loadSystemContact);
+    };
+  }, []);
 
   const copyContactValue = async (
     value: string,
@@ -34,13 +65,13 @@ export default function ContactFooter() {
       <header className={styles.sectionCardHeading}>
         <h2>
           <Headphones aria-hidden="true" size={27} strokeWidth={2.2} />
-          {t("ติดต่อเจ้าหน้าที่", "Contact staff")}
+          {t("ติดต่อเจ้าหน้าที่", "Contact")}
         </h2>
       </header>
       <div className={styles.contactFooterGrid}>
         <div className={`${styles.contactFooterItem} ${styles.contactFooterPrimaryItem}`}>
           <Phone aria-hidden="true" />
-          <a href={`tel:${loanContact.phone}`}>{loanContact.phone}</a>
+          <a href={`tel:${contact.phone}`}>{contact.phone}</a>
           <button
             aria-label={
               isPhoneCopied
@@ -48,7 +79,7 @@ export default function ContactFooter() {
                 : t("คัดลอกเบอร์โทรศัพท์", "Copy phone number")
             }
             className={styles.contactFooterCopyButton}
-            onClick={() => copyContactValue(loanContact.phone, setIsPhoneCopied)}
+            onClick={() => copyContactValue(contact.phone, setIsPhoneCopied)}
             title={
               isPhoneCopied
                 ? t("คัดลอกเบอร์โทรศัพท์แล้ว", "Phone number copied")
@@ -61,7 +92,7 @@ export default function ContactFooter() {
         </div>
         <div className={`${styles.contactFooterItem} ${styles.contactFooterPrimaryItem}`}>
           <Mail aria-hidden="true" />
-          <a href={`mailto:${loanContact.email}`}>{loanContact.email}</a>
+          <a href={`mailto:${contact.email}`}>{contact.email}</a>
           <button
             aria-label={
               isEmailCopied
@@ -69,7 +100,7 @@ export default function ContactFooter() {
                 : t("คัดลอกอีเมล", "Copy email")
             }
             className={styles.contactFooterCopyButton}
-            onClick={() => copyContactValue(loanContact.email, setIsEmailCopied)}
+            onClick={() => copyContactValue(contact.email, setIsEmailCopied)}
             title={
               isEmailCopied
                 ? t("คัดลอกอีเมลแล้ว", "Email copied")
@@ -83,15 +114,13 @@ export default function ContactFooter() {
         <div className={`${styles.contactFooterItem} ${styles.contactFooterTwoLineItem}`}>
           <MapPin aria-hidden="true" />
           <span>
-            ชั้น 1 อาคารเทพรัตน์
-            <br className={styles.contactFooterNarrowBreak} /> คณะพยาบาลศาสตร์ มช.
+            {contact.location}
           </span>
         </div>
         <div className={`${styles.contactFooterItem} ${styles.contactFooterTwoLineItem}`}>
           <Clock3 aria-hidden="true" />
           <span>
-            จันทร์-ศุกร์
-            <br className={styles.contactFooterNarrowBreak} /> 08:30 - 16:30 น.
+            {contact.openingHours}
           </span>
         </div>
       </div>

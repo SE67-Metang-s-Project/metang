@@ -23,6 +23,7 @@ type LoanDetailOverviewProps = {
 };
 
 const statusTypeByCode: Record<string, LoanRequestStatus> = {
+  draft: "draft",
   returned: "revisionRequired",
   pending_advisor: "waitingAdvisorApproval",
   pending_admin: "waitingDocumentReview",
@@ -36,9 +37,12 @@ const statusTypeByCode: Record<string, LoanRequestStatus> = {
 
 const getHistoryStatusClassName = (statusCode: string | undefined, statusLabel: string) => {
   if (statusCode && statusTypeByCode[statusCode]) return styles[statusTypeByCode[statusCode]];
+  if (statusLabel.includes("แบบร่าง")) return styles.draft;
   if (statusLabel.includes("ปฏิเสธ")) return styles.rejectedExecutive;
   if (statusLabel.includes("ไม่อนุมัติ")) return styles.rejectedExecutive;
-  if (statusLabel.includes("ยืนยันการรับเงิน")) return styles.waitingPaymentConfirmation;
+  if (statusLabel.includes("ยืนยันการรับเงิน") || statusLabel.includes("ยืนยันการโอนเงิน")) {
+    return styles.waitingPaymentConfirmation;
+  }
   if (statusLabel.includes("แก้ไข")) return styles.revisionRequired;
   if (statusLabel.includes("อาจารย์")) return styles.waitingAdvisorApproval;
   if (statusLabel.includes("ผู้บริหาร")) return styles.waitingExecutiveApproval;
@@ -57,7 +61,9 @@ export default function LoanDetailOverview({ details, showDownload = false }: Lo
     <section className={`${styles.loanDetailSection} ${styles.detailDashboardCard} ${styles.loanDetailOverview}`}>
       <header className={`${styles.sectionCardHeading} ${styles.loanDetailOverviewHeader}`}>
         <h2>{details.requestNumber}</h2>
-        <span className={`${styles.historyStatus} ${getHistoryStatusClassName(details.statusCode, details.statusLabel)}`}>
+        <span
+          className={`${styles.historyStatus} ${getHistoryStatusClassName(details.statusCode, details.statusLabel)} ${language === "en" ? styles.studentEnglishStatus : ""}`}
+        >
           ● {localizeStudentContent(details.statusLabel, language)}
         </span>
       </header>
@@ -69,7 +75,7 @@ export default function LoanDetailOverview({ details, showDownload = false }: Lo
         {details.schedule ? (
           <div className={styles.loanDetailInstallmentSummary}>
             <span>{t("จำนวนงวด", "Installments")}</span>
-            <strong>{details.schedule.length} {t("งวด", "installments")}</strong>
+            <strong>{details.schedule.length} {t("งวด", "Inst.")}</strong>
           </div>
         ) : null}
       </div>

@@ -10,6 +10,7 @@ export interface Student {
   name: string;
   studentId: string;
   major: string;
+  degree: string;
   year: string;
   rawStatus: string;
   requestStatusLabel: string;
@@ -73,7 +74,7 @@ export default function StudentListTable({ students }: StudentListTableProps) {
               <div className="flex-1">
                 <h4 className="font-bold text-[#1e293b] text-[15px] mb-0.5">{student.name}</h4>
                 <p className="text-[12px] text-gray-400 font-medium">
-                  {student.studentId} • {student.major} • ปี {student.year}
+                  {student.studentId} • {student.major} • {student.degree} • ปี {student.year}
                 </p>
               </div>
             </div>
@@ -163,7 +164,7 @@ export default function StudentListTable({ students }: StudentListTableProps) {
                     <div>
                       <div className="font-bold text-gray-900">{student.name}</div>
                       <div className="text-[13px] text-gray-500 mt-0.5">
-                        {student.studentId} • {student.major} • ปี {student.year}
+                        {student.studentId} • {student.major} • {student.degree} • ปี {student.year}
                       </div>
                     </div>
                   </div>

@@ -79,11 +79,11 @@ export default function TopNav({
         >
           <Image
             alt="METANG"
-            className="h-11 w-11 object-contain sm:h-12 sm:w-12"
-            height={48}
+            className="h-12 w-12 object-contain sm:h-14 sm:w-14"
+            height={56}
             priority
             src="/metang-logo.png"
-            width={48}
+            width={56}
           />
         </Link>
 
@@ -101,27 +101,7 @@ export default function TopNav({
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-2 pr-4 sm:gap-3">
-          {language && onLanguageChange ? (
-            <div aria-label="Language selector" className="flex overflow-hidden rounded-lg border border-gray-200 text-sm font-semibold">
-              <button
-                aria-pressed={language === "th"}
-                className={`px-2.5 py-1.5 transition-colors ${language === "th" ? "bg-orange-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
-                onClick={() => onLanguageChange("th")}
-                type="button"
-              >
-                ไทย
-              </button>
-              <button
-                aria-pressed={language === "en"}
-                className={`border-l border-gray-200 px-2.5 py-1.5 transition-colors ${language === "en" ? "bg-orange-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
-                onClick={() => onLanguageChange("en")}
-                type="button"
-              >
-                EN
-              </button>
-            </div>
-          ) : null}
+        <div className="flex items-center pr-4 sm:gap-3">
           <div className="relative" ref={profileRef}>
           <button
             type="button"
@@ -134,7 +114,11 @@ export default function TopNav({
               {userName.substring(0, 2)}
             </span>
             <span className="flex flex-col">
-              <span className="text-[15px] font-bold leading-tight text-gray-900">{userName}</span>
+              <span
+                className={`${language === "en" ? "text-[14px]" : "text-[15px]"} font-bold leading-tight text-gray-900`}
+              >
+                {userName}
+              </span>
               <span className="text-sm text-gray-500">{displayCode}</span>
             </span>
             <ChevronDown
@@ -159,6 +143,32 @@ export default function TopNav({
                   </a>
                 </div>
               </div>
+              {language && onLanguageChange ? (
+                <div className="flex items-center justify-between gap-4 border-t border-gray-100 px-4 py-3">
+                  <span className="text-[14px] font-medium text-gray-600">Language</span>
+                  <div
+                    aria-label="Language selector"
+                    className="flex overflow-hidden rounded-lg border border-gray-200 text-sm font-semibold"
+                  >
+                    <button
+                      aria-pressed={language === "th"}
+                      className={`px-2.5 py-1.5 transition-colors ${language === "th" ? "bg-orange-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+                      onClick={() => onLanguageChange("th")}
+                      type="button"
+                    >
+                      ไทย
+                    </button>
+                    <button
+                      aria-pressed={language === "en"}
+                      className={`border-l border-gray-200 px-2.5 py-1.5 transition-colors ${language === "en" ? "bg-orange-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+                      onClick={() => onLanguageChange("en")}
+                      type="button"
+                    >
+                      EN
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               <form action="/api/auth/logout" method="post" className="border-t border-gray-100">
                 <button
                   type="submit"

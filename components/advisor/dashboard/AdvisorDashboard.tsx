@@ -102,6 +102,7 @@ export default function AdvisorDashboard({
         name: req.name,
         studentId: req.studentId,
         major: req.major,
+        degree: req.degree || "-",
         year: req.year,
         rawStatus: req.requestStatus, // <--- ส่งให้ครบตาม Type ใหม่
         requestStatusLabel: requestLabel, // <--- ส่งข้อความไทย

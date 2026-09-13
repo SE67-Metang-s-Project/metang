@@ -13,6 +13,16 @@ import type {
 
 export type LoanRequestVisibility = { scope: "global" } | { scope: "assigned"; advisorId: string };
 
+const educationLevelByStudentCodeDigit: Record<string, string> = {
+  "0": "ประกาศนียบัตรผู้ช่วยพยาบาล",
+  "1": "ปริญญาตรี",
+  "3": "ปริญญาโท",
+  "5": "ปริญญาเอก",
+};
+
+const getEducationLevel = (studentCode: string | null) =>
+  studentCode ? educationLevelByStudentCodeDigit[studentCode.charAt(4)] : undefined;
+
 const userSummarySelect = {
   id: true,
   fullNameTh: true,
@@ -755,7 +765,7 @@ export async function getActionRequests(
       studentId: student.studentCode ?? "-",
       major: "พยาบาลศาสตร์",
       program: "พยาบาลศาสตรบัณฑิต",
-      degree: student.educationLevel ?? "ปริญญาตรี",
+      degree: student.educationLevel || getEducationLevel(student.studentCode) || "-",
       educationLevel: student.educationLevel ?? undefined,
       advisorName: loan.advisor?.fullNameTh ?? undefined,
       year: String(loan.studentYear),
@@ -958,4 +968,3 @@ export async function decideExecutiveLoanRequest({
     return final;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
 }
-

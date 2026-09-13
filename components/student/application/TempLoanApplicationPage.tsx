@@ -12,18 +12,21 @@ import {
 } from "lucide-react";
 import {
   tempLoanAgreement,
+  tempLoanAgreementEn,
   tempLoanApplicationLimit,
   tempLoanFormDefaults,
   tempLoanFormOptions,
   tempStudentProfile,
   type TempLoanFormData,
 } from "@/app/student/temp/tempMockData";
+import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import { saveStudentEducationLevel } from "@/lib/student-education";
 import {
   getSavedStudentApplicationProfile,
   saveStudentApplicationProfile,
 } from "@/lib/student-application-profile";
 import {
+  formatEnglishBahtText,
   formatLoanAmountInput,
   formatThaiBahtText,
   parseLoanAmount,
@@ -32,7 +35,7 @@ import TempLoanApprovalModal from "./TempLoanApprovalModal";
 import TempLoanDetailsStep from "./TempLoanDetailsStep";
 import LoanFormSelect from "./LoanFormSelect";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
-import TopNav from "@/components/shared/TopNav";
+import StudentTopNav from "@/components/student/StudentTopNav";
 import CardHeader from "@/components/shared/CardHeader";
 import BahtCoinIcon from "@/components/shared/BahtCoinIcon";
 import styles from "@/app/student/student.module.css";
@@ -49,7 +52,6 @@ type FormField = Exclude<keyof TempLoanFormData, "installmentCount">;
 type RequiredFormField = Exclude<FormField, "additionalNote">;
 type FormErrors = Partial<Record<RequiredFormField, string>>;
 
-const requiredFieldMessage = "โปรดระบุข้อมูลในช่องนี้";
 const educationLevelsByStudentIdDigit: Record<string, string> = {
   "0": "ประกาศนียบัตรผู้ช่วยพยาบาล",
   "1": "ปริญญาตรี",
@@ -59,6 +61,24 @@ const educationLevelsByStudentIdDigit: Record<string, string> = {
 
 const getEducationLevelFromStudentId = (studentId: string) =>
   educationLevelsByStudentIdDigit[studentId.charAt(4)] ?? "";
+
+const getProgramLabel = (programName: string | undefined, language: "th" | "en") => {
+  const program = programName?.trim() ?? "";
+  const isNursingProgram = program.includes("พยาบาลศาสตรบัณฑิต");
+  const isInternationalProgram = program.includes("นานาชาติ") || /international/i.test(program);
+
+  if (!isNursingProgram) return localizeStudentContent(program, language);
+
+  if (language === "en") {
+    return isInternationalProgram
+      ? "Bachelor of Nursing Science Program (International Program)"
+      : "Bachelor of Nursing Science Program";
+  }
+
+  return isInternationalProgram
+    ? "หลักสูตรพยาบาลศาสตรบัณฑิต (หลักสูตรนานาชาติ)"
+    : "หลักสูตรพยาบาลศาสตรบัณฑิต";
+};
 
 const requiredFormFields: RequiredFormField[] = [
   "educationLevel",
@@ -72,30 +92,36 @@ const requiredFormFields: RequiredFormField[] = [
   "loanAmount",
 ];
 
-const validateField = (field: RequiredFormField, value: string) => {
+const validateField = (field: RequiredFormField, value: string, language: "th" | "en") => {
   if (field === "phoneNumber") {
     const cleaned = value.trim().replace(/[-\s]/g, "");
     if (!/^0(?:[689]\d{8}|[23457]\d{7})$/.test(cleaned)) {
-      return "กรุณากรอกเบอร์โทรศัพท์ที่ถูกต้อง (เบอร์มือถือ 10 หลัก หรือเบอร์บ้าน 9 หลัก)";
+      return language === "en"
+        ? "Please enter a valid phone number (10-digit mobile or 9-digit landline)."
+        : "กรุณากรอกเบอร์โทรศัพท์ที่ถูกต้อง (เบอร์มือถือ 10 หลัก หรือเบอร์บ้าน 9 หลัก)";
     }
   }
 
   if (field === "accountNumber" && !/^\d{10}$/.test(value)) {
-    return "กรุณากรอกเลขที่บัญชีธนาคาร 10 หลัก";
+    return language === "en"
+      ? "Please enter a 10-digit bank account number."
+      : "กรุณากรอกเลขที่บัญชีธนาคาร 10 หลัก";
   }
 
   if (field === "loanAmount") {
     const amount = Number(value.replace(/,/g, ""));
     if (!value.trim() || isNaN(amount) || amount <= 0) {
-      return "กรุณากรอกจำนวนเงินที่ถูกต้อง";
+      return language === "en" ? "Please enter a valid amount." : "กรุณากรอกจำนวนเงินที่ถูกต้อง";
     }
     if (amount > tempLoanApplicationLimit) {
-      return "จำนวนเงินเกินวงเงินที่กำหนด กรุณากรอกจำนวนเงินใหม่";
+      return language === "en"
+        ? "Amount exceeds the limit. Please enter a new amount."
+        : "จำนวนเงินเกินวงเงินที่กำหนด กรุณากรอกจำนวนเงินใหม่";
     }
   }
 
   if (!value.trim()) {
-    return requiredFieldMessage;
+    return language === "en" ? "Please fill out this field." : "โปรดระบุข้อมูลในช่องนี้";
   }
 
   return "";
@@ -130,6 +156,8 @@ export default function TempLoanApplicationPage({
 }: TempLoanApplicationPageProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { language, t } = useStudentLanguage();
+  const loanAgreement = language === "en" ? tempLoanAgreementEn : tempLoanAgreement;
   const isResubmit = existingLoan?.status === "returned";
   const fieldRefs = useRef<Partial<Record<RequiredFormField, HTMLLabelElement>>>({});
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(
@@ -147,6 +175,14 @@ export default function TempLoanApplicationPage({
     initialProfile ?? tempStudentProfile,
   );
   const educationLevel = getEducationLevelFromStudentId(profile.studentId);
+  const studentName =
+    language === "en"
+      ? profile.displayNameEn || profile.displayName
+      : profile.displayName.replace("นางสาว", "").trim();
+  const programLabel = getProgramLabel(profile.programName, language);
+  const educationLevelLabel = educationLevel
+    ? localizeStudentContent(educationLevel, language)
+    : t("ไม่พบข้อมูลวุฒิการศึกษา", "Education level not found");
 
   const [advisors, setAdvisors] = useState<string[]>(advisorOptions ?? []);
 
@@ -194,8 +230,7 @@ export default function TempLoanApplicationPage({
 
     return {
       ...tempLoanFormDefaults,
-      phoneNumber:
-        savedProfile.phoneNumber || initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
+      phoneNumber: savedProfile.phoneNumber || tempLoanFormDefaults.phoneNumber,
       educationLevel: educationLevel || tempLoanFormDefaults.educationLevel,
       academicYear: savedProfile.academicYear || tempLoanFormDefaults.academicYear,
       advisorName: savedProfile.advisorName || tempLoanFormDefaults.advisorName,
@@ -260,7 +295,7 @@ export default function TempLoanApplicationPage({
   const updateFormField = (field: FormField, value: string) => {
     setFormData((current) => ({ ...current, [field]: value }));
     if (field === "loanAmount" || (field !== "additionalNote" && touchedFields[field])) {
-      setFormErrors((current) => ({ ...current, [field]: validateField(field, value) }));
+      setFormErrors((current) => ({ ...current, [field]: validateField(field, value, language) }));
     }
   };
 
@@ -277,7 +312,7 @@ export default function TempLoanApplicationPage({
 
   const validateLoanForm = () => {
     return requiredFormFields.reduce<FormErrors>((errors, field) => {
-      const error = validateField(field, savedFormData[field]);
+      const error = validateField(field, savedFormData[field], language);
 
       if (error) {
         errors[field] = error;
@@ -291,7 +326,7 @@ export default function TempLoanApplicationPage({
     setTouchedFields((current) => ({ ...current, [field]: true }));
     setFormErrors((current) => ({
       ...current,
-      [field]: validateField(field, formData[field]),
+      [field]: validateField(field, formData[field], language),
     }));
   };
 
@@ -428,11 +463,12 @@ export default function TempLoanApplicationPage({
   if (existingLoan && existingLoan.status !== "returned") {
     return (
       <main className={styles.studentPage}>
-        <TopNav
+        <StudentTopNav
           showSidebarButton={false}
           userEmail={profile.contactEmail || `${profile.studentId}@cmu.ac.th`}
           userId={profile.studentId}
           userName={profile.displayName}
+          userNameEn={profile.displayNameEn}
           userRole="นักศึกษา"
         />
         <div className={styles.studentPageContent}>
@@ -450,11 +486,16 @@ export default function TempLoanApplicationPage({
                 />
               </span>
               <h2 className={styles.existingLoanTitle}>
-                คุณมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว
+                {t(
+                  "คุณมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว",
+                  "You already have a loan request in progress",
+                )}
               </h2>
               <p style={{ color: "#4b5563", marginBottom: "2rem" }}>
-                ระบบอนุญาตให้มีคำร้องขอกู้ยืมที่เปิดอยู่ได้ครั้งละ 1 คำร้องเท่านั้น
-                ท่านสามารถตรวจสอบสถานะคำร้องปัจจุบันได้ที่หน้าหลัก
+                {t(
+                  "ระบบอนุญาตให้มีคำร้องขอกู้ยืมที่เปิดอยู่ได้ครั้งละ 1 คำร้องเท่านั้น ท่านสามารถตรวจสอบสถานะคำร้องปัจจุบันได้ที่หน้าหลัก",
+                  "The system allows only one open loan request at a time. You can check the status of your current request on the home page.",
+                )}
               </p>
               <button
                 className={styles.loanApplicationDashboardButton}
@@ -462,7 +503,7 @@ export default function TempLoanApplicationPage({
                 type="button"
               >
                 <House aria-hidden="true" size={19} strokeWidth={2.2} />
-                กลับหน้าหลักเพื่อดูสถานะคำร้อง
+                {t("กลับหน้าหลักเพื่อดูสถานะคำร้อง", "Back to home to check the request status")}
               </button>
             </section>
           </div>
@@ -473,20 +514,26 @@ export default function TempLoanApplicationPage({
 
   return (
     <main className={styles.studentPage}>
-      <TopNav
+      <StudentTopNav
         showSidebarButton={false}
         userEmail={profile.contactEmail || `${profile.studentId}@cmu.ac.th`}
         userId={profile.studentId}
         userName={profile.displayName}
+        userNameEn={profile.displayNameEn}
         userRole="นักศึกษา"
       />
       <div className={styles.studentPageContent}>
         <div className={styles.loanApplicationPage}>
           <h1 className={styles.loanApplicationTitle}>
-            {isResubmit ? "แก้ไขและยื่นคำร้องกู้ยืม" : "ยื่นคำร้องกู้ยืม"}
+            {isResubmit
+              ? t("แก้ไขและยื่นคำร้องกู้ยืม", "Edit Loan Application")
+              : t("ยื่นคำร้องกู้ยืม", "Loan Application")}
           </h1>
 
-          <ol className={styles.applicationStepper} aria-label="ขั้นตอนการยื่นคำร้องกู้ยืม">
+          <ol
+            className={styles.applicationStepper}
+            aria-label={t("ขั้นตอนการยื่นคำร้องกู้ยืม", "Loan request submission steps")}
+          >
             <li className={stepClassName(1)}>
               <span>1</span>
             </li>
@@ -501,16 +548,16 @@ export default function TempLoanApplicationPage({
           {currentStep === 1 ? (
             <section className={styles.loanAgreementCard} aria-labelledby="agreement-title">
               <header className={styles.sectionCardHeading}>
-                <h2 id="agreement-title">ขั้นตอนที่ 1: ยืนยันข้อตกลงการกู้ยืม</h2>
+                <h2 id="agreement-title">{t("ขั้นตอนที่ 1: ยืนยันข้อตกลงการกู้ยืม", "Step 1: Confirm the Loan Agreement")}</h2>
               </header>
 
               <div className={styles.loanAgreementScroll}>
                 <h3 className={styles.loanAgreementHeading}>
-                  <span>ข้อกำหนดและเงื่อนไขการกู้ยืมเงิน</span>
-                  <span>คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่</span>
+                  <span>{loanAgreement.title}</span>
+                  <span>{loanAgreement.organization}</span>
                 </h3>
-                <p>{tempLoanAgreement.introduction}</p>
-                {tempLoanAgreement.sections.map((section) => (
+                <p>{loanAgreement.introduction}</p>
+                {loanAgreement.sections.map((section) => (
                   <section key={section.title}>
                     <h4>{section.title}</h4>
                     <p>{section.body}</p>
@@ -532,12 +579,14 @@ export default function TempLoanApplicationPage({
                   onChange={(event) => setHasAcceptedAgreement(event.target.checked)}
                   type="checkbox"
                 />
-                <span>{tempLoanAgreement.acceptanceLabel}</span>
+                <span>{loanAgreement.acceptanceLabel}</span>
               </label>
             </section>
           ) : currentStep === 2 ? (
             <section className={styles.loanFormCard} aria-labelledby="loan-form-title">
-              <h2 id="loan-form-title">ขั้นตอนที่ 2: กรอกข้อมูลการกู้ยืม</h2>
+              <h2 id="loan-form-title">
+                {t("ขั้นตอนที่ 2: กรอกข้อมูลการกู้ยืม", "Step 2: Fill in Loan Information")}
+              </h2>
 
               {isResubmit && existingLoan ? (
                 <section
@@ -563,7 +612,7 @@ export default function TempLoanApplicationPage({
                           fontWeight: 700,
                         }}
                       >
-                        คำร้องขอกู้ยืมถูกส่งกลับเพื่อแก้ไข
+                        {t("คำร้องขอกู้ยืมถูกส่งกลับเพื่อแก้ไข", "The loan request was returned for correction")}
                       </h3>
                       {existingLoan.returnComment ? (
                         <div
@@ -578,17 +627,20 @@ export default function TempLoanApplicationPage({
                           }}
                         >
                           <strong>
-                            ข้อความจาก
+                            {t("ข้อความจาก", "Message from ")}
                             {existingLoan.returnStep === "admin"
-                              ? "เจ้าหน้าที่"
-                              : "อาจารย์ที่ปรึกษา"}
+                              ? t("เจ้าหน้าที่", "the staff")
+                              : t("อาจารย์ที่ปรึกษา", "the advisor")}
                             :
                           </strong>{" "}
                           {existingLoan.returnComment}
                         </div>
                       ) : null}
                       <p style={{ margin: 0, color: "#b45309", fontSize: "0.875rem" }}>
-                        กรุณาแก้ไขข้อมูลให้ถูกต้องตามคำแนะนำ แล้วกดยืนยันเพื่อยื่นคำร้องใหม่อีกครั้ง
+                        {t(
+                          "กรุณาแก้ไขข้อมูลให้ถูกต้องตามคำแนะนำ แล้วกดยืนยันเพื่อยื่นคำร้องใหม่อีกครั้ง",
+                          "Please correct the information as advised, then confirm to submit the request again.",
+                        )}
                       </p>
                     </div>
                   </div>
@@ -600,24 +652,26 @@ export default function TempLoanApplicationPage({
                   <CardHeader
                     className={styles.loanFormSectionHeading}
                     icon={<UserRound aria-hidden="true" size={20} />}
-                    title="ข้อมูลนักศึกษา"
+                    title={t("ข้อมูลนักศึกษา", "Student Information")}
                   />
                   <div className={styles.loanFormStudentDetails}>
                     <p>
-                      <span>ชื่อ-นามสกุล</span>
-                      <strong>{profile.displayName.replace("นางสาว", "").trim()}</strong>
+                      <span>{t("ชื่อ-นามสกุล", "Full name")}</span>
+                      <strong>{studentName}</strong>
                     </p>
                     <p>
-                      <span>รหัสนักศึกษา</span>
+                      <span>{t("รหัสนักศึกษา", "Student ID")}</span>
                       <strong>{profile.studentId}</strong>
                     </p>
                     <p>
-                      <span>หลักสูตร</span>
-                      <strong>{profile.programName || "พยาบาลศาสตรบัณฑิต"}</strong>
+                      <span>{t("หลักสูตร", "Program")}</span>
+                      <strong>
+                        {programLabel || t("พยาบาลศาสตรบัณฑิต", "Bachelor of Nursing Science")}
+                      </strong>
                     </p>
                     <p>
-                      <span>วุฒิการศึกษา</span>
-                      <strong>{educationLevel || "ไม่พบข้อมูลวุฒิการศึกษา"}</strong>
+                      <span>{t("วุฒิการศึกษา", "Education level")}</span>
+                      <strong>{educationLevelLabel}</strong>
                     </p>
                   </div>
                   <div className={styles.loanFormFields}>
@@ -632,13 +686,13 @@ export default function TempLoanApplicationPage({
                         fieldRefs.current.academicYear = element ?? undefined;
                       }}
                     >
-                      <span>ชั้นปีการศึกษา</span>
+                      <span>{t("ชั้นปีการศึกษา", "Academic year")}</span>
                       <LoanFormSelect
                         error={formErrors.academicYear}
                         onBlur={() => handleFieldBlur("academicYear")}
                         onChange={(value) => updateFormField("academicYear", value)}
                         options={tempLoanFormOptions.academicYears}
-                        placeholder="เลือกชั้นปีการศึกษา"
+                        placeholder={t("เลือกชั้นปีการศึกษา", "Select academic year")}
                         value={formData.academicYear}
                       />
                       {formErrors.academicYear ? (
@@ -659,13 +713,13 @@ export default function TempLoanApplicationPage({
                         fieldRefs.current.advisorName = element ?? undefined;
                       }}
                     >
-                      <span>อาจารย์ที่ปรึกษา</span>
+                      <span>{t("อาจารย์ที่ปรึกษา", "Advisor")}</span>
                       <LoanFormSelect
                         error={formErrors.advisorName}
                         onBlur={() => handleFieldBlur("advisorName")}
                         onChange={(value) => updateFormField("advisorName", value)}
                         options={advisorSelectOptions}
-                        placeholder="เลือกอาจารย์ที่ปรึกษา"
+                        placeholder={t("เลือกอาจารย์ที่ปรึกษา", "Select advisor")}
                         value={formData.advisorName}
                       />
                       {formErrors.advisorName ? (
@@ -686,7 +740,7 @@ export default function TempLoanApplicationPage({
                         fieldRefs.current.phoneNumber = element ?? undefined;
                       }}
                     >
-                      <span>เบอร์โทรศัพท์</span>
+                      <span>{t("เบอร์โทรศัพท์", "Phone number")}</span>
                       <input
                         aria-invalid={Boolean(formErrors.phoneNumber)}
                         inputMode="numeric"
@@ -698,7 +752,7 @@ export default function TempLoanApplicationPage({
                             event.target.value.replace(/\D/g, "").slice(0, 10),
                           )
                         }
-                        placeholder="กรอกเบอร์โทรศัพท์"
+                        placeholder={t("กรอกเบอร์โทรศัพท์", "Enter phone number")}
                         type="text"
                         value={formData.phoneNumber}
                       />
@@ -715,7 +769,7 @@ export default function TempLoanApplicationPage({
                   <CardHeader
                     className={styles.loanFormSectionHeading}
                     icon={<Landmark aria-hidden="true" size={20} />}
-                    title="ข้อมูลธนาคาร"
+                    title={t("ข้อมูลธนาคาร", "Bank Information")}
                   />
                   <div className={styles.loanFormFields}>
                     <label
@@ -729,13 +783,13 @@ export default function TempLoanApplicationPage({
                         fieldRefs.current.bankName = element ?? undefined;
                       }}
                     >
-                      <span>ธนาคาร</span>
+                      <span>{t("ธนาคาร", "Bank")}</span>
                       <LoanFormSelect
                         error={formErrors.bankName}
                         onBlur={() => handleFieldBlur("bankName")}
                         onChange={(value) => updateFormField("bankName", value)}
                         options={tempLoanFormOptions.banks}
-                        placeholder="เลือกธนาคาร"
+                        placeholder={t("เลือกธนาคาร", "Select bank")}
                         value={formData.bankName}
                       />
                       {formErrors.bankName ? (
@@ -754,7 +808,7 @@ export default function TempLoanApplicationPage({
                         fieldRefs.current.accountNumber = element ?? undefined;
                       }}
                     >
-                      <span>เลขที่บัญชีธนาคาร</span>
+                      <span>{t("เลขที่บัญชีธนาคาร", "Bank account number")}</span>
                       <input
                         aria-invalid={Boolean(formErrors.accountNumber)}
                         inputMode="numeric"
@@ -766,7 +820,7 @@ export default function TempLoanApplicationPage({
                             event.target.value.replace(/\D/g, "").slice(0, 10),
                           )
                         }
-                        placeholder="กรอกเลขที่บัญชี"
+                        placeholder={t("กรอกเลขที่บัญชี", "Enter account number")}
                         type="text"
                         value={formData.accountNumber}
                       />
@@ -788,12 +842,12 @@ export default function TempLoanApplicationPage({
                         fieldRefs.current.accountName = element ?? undefined;
                       }}
                     >
-                      <span>ชื่อบัญชีธนาคาร</span>
+                      <span>{t("ชื่อบัญชีธนาคาร", "Bank account name")}</span>
                       <input
                         aria-invalid={Boolean(formErrors.accountName)}
                         onBlur={() => handleFieldBlur("accountName")}
                         onChange={(event) => updateFormField("accountName", event.target.value)}
-                        placeholder="กรอกชื่อบัญชี"
+                        placeholder={t("กรอกชื่อบัญชี", "Enter account name")}
                         type="text"
                         value={formData.accountName}
                       />
@@ -810,7 +864,7 @@ export default function TempLoanApplicationPage({
                   <CardHeader
                     className={styles.loanFormSectionHeading}
                     icon={<ClipboardList aria-hidden="true" size={20} />}
-                    title="วัตถุประสงค์การกู้ยืม"
+                    title={t("วัตถุประสงค์การกู้ยืม", "Loan Purpose")}
                   />
                   <div className={styles.loanFormFields}>
                     <label
@@ -824,34 +878,37 @@ export default function TempLoanApplicationPage({
                         fieldRefs.current.purpose = element ?? undefined;
                       }}
                     >
-                      <span>วัตถุประสงค์การกู้ยืม</span>
+                      <span>{t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}</span>
                       <input
                         aria-invalid={Boolean(formErrors.purpose)}
                         maxLength={40}
                         onBlur={() => handleFieldBlur("purpose")}
                         onChange={(event) => updateFormField("purpose", event.target.value)}
-                        placeholder="กรอกวัตถุประสงค์"
+                        placeholder={t("กรอกวัตถุประสงค์", "Enter purpose")}
                         type="text"
                         value={formData.purpose}
                       />
-                      <small className={styles.loanFormCharacterCount}>
-                        {formData.purpose.length}/40 ตัวอักษร
-                      </small>
-                      {formErrors.purpose ? (
-                        <small className={styles.loanFormFieldError}>{formErrors.purpose}</small>
-                      ) : null}
+                      <div className={styles.loanFormFieldMeta}>
+                        {formErrors.purpose ? (
+                          <small className={styles.loanFormFieldError}>{formErrors.purpose}</small>
+                        ) : null}
+                        <small className={styles.loanFormCharacterCount}>
+                          {formData.purpose.length}/40 {t("ตัวอักษร", "characters")}
+                        </small>
+                      </div>
                     </label>
 
                     <label className={styles.loanFormField}>
-                      <span>หมายเหตุเพิ่มเติม</span>
+                      <span>{t("หมายเหตุเพิ่มเติม", "Additional note")}</span>
                       <textarea
                         maxLength={200}
                         onChange={(event) => updateFormField("additionalNote", event.target.value)}
-                        placeholder="กรอกหมายเหตุเพิ่มเติม"
+                        placeholder={t("กรอกหมายเหตุเพิ่มเติม", "Enter additional note")}
                         value={formData.additionalNote === "-" ? "" : formData.additionalNote}
                       />
                       <small className={styles.loanFormCharacterCount}>
-                        {(formData.additionalNote === "-" ? "" : formData.additionalNote).length}/200 ตัวอักษร
+                        {(formData.additionalNote === "-" ? "" : formData.additionalNote).length}/200{" "}
+                        {t("ตัวอักษร", "characters")}
                       </small>
                     </label>
                   </div>
@@ -861,7 +918,7 @@ export default function TempLoanApplicationPage({
                   <CardHeader
                     className={styles.loanFormSectionHeading}
                     icon={<BahtCoinIcon aria-hidden="true" size={20} />}
-                    title="จำนวนเงินที่ขอกู้ยืม"
+                    title={t("จำนวนเงินที่ขอกู้ยืม", "Requested Loan Amount")}
                   />
                   <div className={styles.loanFormFields}>
                     <label
@@ -875,7 +932,7 @@ export default function TempLoanApplicationPage({
                         fieldRefs.current.loanAmount = element ?? undefined;
                       }}
                     >
-                      <span>จำนวนเงินที่ขอกู้ยืม (บาท)</span>
+                      <span>{t("จำนวนเงินที่ขอกู้ยืม (บาท)", "Requested loan amount (baht)")}</span>
                       <input
                         aria-invalid={Boolean(formErrors.loanAmount)}
                         inputMode="numeric"
@@ -887,16 +944,17 @@ export default function TempLoanApplicationPage({
                       />
                       {formData.loanAmount ? (
                         <p className={styles.loanAmountText}>
-                          {formatThaiBahtText(formData.loanAmount)}
+                          {language === "en"
+                            ? formatEnglishBahtText(formData.loanAmount)
+                            : formatThaiBahtText(formData.loanAmount)}
                         </p>
                       ) : null}
                       {formErrors.loanAmount ? (
                         <small className={styles.loanFormFieldError}>{formErrors.loanAmount}</small>
                       ) : null}
                     </label>
-
                     <fieldset className={styles.loanInstallmentField}>
-                      <legend>จำนวนงวดการชำระ</legend>
+                      <legend>{t("จำนวนงวดการชำระ", "Number of installments")}</legend>
                       <div className={styles.loanInstallmentOptions}>
                         {[1, 2, 3].map((count) => (
                           <button
@@ -914,7 +972,7 @@ export default function TempLoanApplicationPage({
                             }
                             type="button"
                           >
-                            {count} งวด
+                            {count} {t("งวด", "Inst.")}
                           </button>
                         ))}
                       </div>
@@ -940,7 +998,7 @@ export default function TempLoanApplicationPage({
                 type="button"
               >
                 <House aria-hidden="true" size={19} strokeWidth={2.2} />
-                กลับหน้าหลัก
+                {t("กลับหน้าหลัก", "Back to home")}
               </button>
               <button
                 className={styles.loanApplicationNext}
@@ -948,7 +1006,7 @@ export default function TempLoanApplicationPage({
                 onClick={() => setCurrentStep(2)}
                 type="button"
               >
-                ถัดไป
+                {t("ถัดไป", "Next")}
               </button>
             </div>
           ) : currentStep === 2 ? (
@@ -958,14 +1016,14 @@ export default function TempLoanApplicationPage({
                 onClick={() => setCurrentStep(1)}
                 type="button"
               >
-                ย้อนกลับ
+                {t("ย้อนกลับ", "Back")}
               </button>
               <button
                 className={styles.loanApplicationNext}
                 onClick={handleLoanFormNext}
                 type="button"
               >
-                ถัดไป
+                {t("ถัดไป", "Next")}
               </button>
             </div>
           ) : (
@@ -976,7 +1034,7 @@ export default function TempLoanApplicationPage({
                   onClick={() => setCurrentStep(2)}
                   type="button"
                 >
-                  กลับไปแก้ไขข้อมูล
+                  {t("กลับไปแก้ไขข้อมูล", "Back to edit information")}
                 </button>
               ) : null}
               <button
@@ -985,7 +1043,7 @@ export default function TempLoanApplicationPage({
                 type="button"
               >
                 <House aria-hidden="true" size={19} strokeWidth={2.2} />
-                กลับหน้าหลัก
+                {t("กลับหน้าหลัก", "Back to home")}
               </button>
             </div>
           )}

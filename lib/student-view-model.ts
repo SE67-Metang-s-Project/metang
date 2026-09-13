@@ -18,22 +18,22 @@ export type StatusDisplay = {
 const statusDisplayMap: Record<LoanStatus, StatusDisplay> = {
   draft: {
     label: "แบบร่าง",
-    statusType: "pending",
+    statusType: "draft",
   },
   returned: {
-    label: "รอแก้ไขเอกสาร",
+    label: "แก้ไขเอกสาร",
     statusType: "revisionRequired",
   },
   pending_advisor: {
-    label: "รออาจารย์ที่ปรึกษาอนุมัติ",
+    label: "รออาจารย์",
     statusType: "waitingAdvisorApproval",
   },
   pending_admin: {
-    label: "รอเจ้าหน้าที่ตรวจสอบ",
+    label: "รอเจ้าหน้าที่",
     statusType: "waitingDocumentReview",
   },
   pending_executive: {
-    label: "รอผู้บริหารอนุมัติ",
+    label: "รอผู้บริหาร",
     statusType: "waitingExecutiveApproval",
   },
   pending_disbursement: {
@@ -41,15 +41,15 @@ const statusDisplayMap: Record<LoanStatus, StatusDisplay> = {
     statusType: "waitingPaymentConfirmation",
   },
   disbursed: {
-    label: "อยู่ระหว่างการชำระเงิน",
+    label: "กำลังชำระ",
     statusType: "pending",
   },
   closed: {
-    label: "ชำระเสร็จสิ้น",
+    label: "ชำระแล้ว",
     statusType: "completed",
   },
   rejected: {
-    label: "ไม่อนุมัติ",
+    label: "ไม่อนุมัติโดยผู้บริหาร",
     statusType: "rejectedExecutive",
   },
   cancelled: {
@@ -134,8 +134,12 @@ export type RawStudentLoan = {
   studentId?: string;
   amount: number;
   approvedAmount?: number | null;
+  studentYear?: number;
   purpose: string;
   additionalNote?: string | null;
+  bankName?: string;
+  bankAccountNo?: string;
+  bankAccountName?: string;
   installmentCount: number;
   firstDueDate: string | Date;
   status: LoanStatus;
@@ -156,7 +160,7 @@ export type RawStudentLoan = {
 };
 
 const rejectionRoleByStep: Record<RawLoanApproval["step"], string> = {
-  advisor: "อาจารย์ที่ปรึกษา",
+  advisor: "อาจารย์",
   admin: "เจ้าหน้าที่",
   executive: "ผู้บริหาร",
 };
@@ -173,7 +177,7 @@ function getRejectedStatusLabel(loan: RawStudentLoan, fallbackLabel: string) {
     .find((approval) => approval.decision === "rejected");
 
   return rejectedApproval
-    ? `ไม่อนุมัติ · ${rejectionRoleByStep[rejectedApproval.step]}`
+    ? `ไม่อนุมัติโดย${rejectionRoleByStep[rejectedApproval.step]}`
     : fallbackLabel;
 }
 
@@ -187,7 +191,7 @@ export function mapToLoanRequestHistoryItem(loan: RawStudentLoan): LoanRequestHi
   const isDisbursed = loan.status === "disbursed" || loan.status === "closed";
   const statusLabel = getRejectedStatusLabel(loan, display.label);
 
-  let amountString = `${effectiveAmount.toLocaleString("th-TH")} บาท`;
+  let amountString = effectiveAmount.toLocaleString("th-TH");
   if (isDisbursed && loan.installments && loan.installments.length > 0) {
     const paid = loan.installments.reduce((sum, item) => sum + item.amountPaid, 0);
     amountString = `${paid.toLocaleString("th-TH")}/${effectiveAmount.toLocaleString("th-TH")}`;
@@ -232,7 +236,7 @@ export function mapToActiveLoanSummary(loan: RawStudentLoan | null): ActiveLoanS
     id: loan.id,
     requestNumber: formatRequestNumber(loan.id),
     status: loan.status,
-    statusLabel: display.label,
+    statusLabel: getRejectedStatusLabel(loan, display.label),
     statusType: display.statusType,
     paidAmount: paid.toLocaleString("th-TH"),
     totalAmount: total.toLocaleString("th-TH"),
@@ -275,7 +279,7 @@ export function mapToInstallmentPayments(installments: RawInstallment[] = []): I
 export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
   const display = mapLoanStatus(loan.status);
   const statusLabel = getRejectedStatusLabel(loan, display.label);
-  const effectiveAmount = loan.approvedAmount ?? loan.amount;
+  const requestedAmount = loan.amount;
 
   const timeline: LoanTimelineItem[] = [];
 
@@ -319,6 +323,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
       actorName = app.decider?.fullNameTh ?? "เจ้าหน้าที่";
       if (app.decision === "approved") {
         stepTitle = "เจ้าหน้าที่ตรวจสอบเอกสารผ่านการอนุมัติ";
+        commentTitle = "ความคิดเห็นของเจ้าหน้าที่";
       } else if (app.decision === "returned") {
         stepTitle = "เจ้าหน้าที่ส่งกลับแก้ไข";
         commentTitle = "ข้อความจากเจ้าหน้าที่";
@@ -330,6 +335,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
       actorName = app.decider?.fullNameTh ?? "ผู้บริหาร";
       if (app.decision === "approved") {
         stepTitle = "ผู้บริหารอนุมัติคำร้องกู้ยืม";
+        commentTitle = "ความคิดเห็นของผู้บริหาร";
       } else if (app.decision === "returned") {
         stepTitle = "ผู้บริหารส่งกลับแก้ไขให้เจ้าหน้าที่ตรวจสอบใหม่";
         commentTitle = "ข้อความจากผู้บริหาร";
@@ -424,13 +430,13 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
   } else {
     // Estimated schedule
     const count = loan.installmentCount || 1;
-    const perMonth = Math.floor(effectiveAmount / count);
-    const remainder = effectiveAmount % count;
+    const perMonth = Math.floor(requestedAmount / count);
+    const remainder = requestedAmount % count;
     const firstDue = loan.firstDueDate ? new Date(loan.firstDueDate) : new Date();
 
     schedule = Array.from({ length: count }, (_, idx) => {
       const d = new Date(firstDue);
-      d.setMonth(d.getMonth() + idx);
+      d.setUTCDate(d.getUTCDate() + 30 * idx);
       const amount = idx === count - 1 ? perMonth + remainder : perMonth;
       return {
         installmentNumber: idx + 1,
@@ -456,13 +462,18 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
   return {
     id: loan.id,
     statusCode: loan.status,
+    studentYear: loan.studentYear,
+    advisorName: loan.advisor?.fullNameTh ?? "-",
+    bankName: loan.bankName,
+    bankAccountNo: loan.bankAccountNo,
+    bankAccountName: loan.bankAccountName,
     requestNumber: formatRequestNumber(loan.id),
     statusLabel,
     submittedAt: formatThaiDateTime(loan.submittedAt ?? loan.createdAt),
     purposeLabel: "วัตถุประสงค์การกู้ยืม",
     purpose: loan.purpose,
     amountLabel: "จำนวนเงินที่ขอกู้",
-    amount: `${effectiveAmount.toLocaleString("th-TH")} บาท`,
+    amount: `${requestedAmount.toLocaleString("th-TH")} บาท`,
     additionalReasonLabel: "เหตุผลความจำเป็นเพิ่มเติม",
     additionalReason: loan.additionalNote ?? "-",
     downloadLabel: "ดาวน์โหลดแบบคำร้อง (PDF)",

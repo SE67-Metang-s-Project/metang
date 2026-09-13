@@ -32,6 +32,7 @@ export default async function StudentPage() {
 
   const initialProfile = {
     displayName: context.user.fullNameTh || context.identity.displayName || "นักศึกษา",
+    displayNameEn: context.user.fullNameEn ?? undefined,
     studentId: context.user.studentCode || context.identity.studentCode || "",
     educationLevel: context.user.educationLevel ?? undefined,
     programName: "พยาบาลศาสตรบัณฑิต",

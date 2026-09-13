@@ -54,6 +54,7 @@ export default function SharedStudentList({ rawRequests }: SharedStudentListProp
       name: req.name,
       studentId: req.studentId,
       major: req.major,
+      degree: req.degree || "-",
       year: req.year,
       rawStatus: req.requestStatus, // เก็บสถานะดิบไว้ใช้ทำ Filter ด้านล่าง
       requestStatusLabel: requestLabel, // ข้อความที่จะโชว์ใน UI

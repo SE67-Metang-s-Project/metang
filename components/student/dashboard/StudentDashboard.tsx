@@ -21,7 +21,8 @@ import PaymentModal from "@/components/shared/PaymentModal";
 import type { InstallmentPayment, LoanRequestHistoryItem, LoanScheduleItem, LoanTimelineItem } from "@/app/student/studentMockData";
 import { MedicalBagIcon } from "./StudentIllustrations";
 import ContactFooter from "../loan-details/ContactFooter";
-import TopNav from "@/components/shared/TopNav";
+import StudentTopNav from "@/components/student/StudentTopNav";
+import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import {
   computePaymentBehavior,
@@ -86,8 +87,17 @@ export default function StudentDashboard({
   const [dashboardError, setDashboardError] = useState<StudentUiError | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { setDefaultLanguage } = useStudentLanguage();
   const activeTimeline = timeline ?? [];
   const dashboardTimeline = activeTimeline.filter((item) => !item.isUpcoming);
+  const defaultLanguage =
+    profile.programName?.includes("นานาชาติ") || /international/i.test(profile.programName ?? "")
+      ? "en"
+      : "th";
+
+  useEffect(() => {
+    setDefaultLanguage(defaultLanguage);
+  }, [defaultLanguage, setDefaultLanguage]);
 
   useEffect(() => {
     if (initialActiveLoan !== undefined && initialHistoryRequests !== undefined && refreshKey === 0) {
@@ -208,11 +218,20 @@ export default function StudentDashboard({
   const displayedRequests = historyRequests ?? defaultLoanRequestHistory;
   const currentActiveLoan = activeLoanData === undefined ? defaultActiveLoan : activeLoanData;
   const currentInstallments = installments ?? defaultInstallmentPayments;
+  const hasAdminTransferredFunds =
+    Boolean(
+      currentActiveLoan &&
+        "isDisbursed" in currentActiveLoan &&
+        currentActiveLoan.isDisbursed,
+    ) ||
+    Boolean(currentActiveLoan && "status" in currentActiveLoan && currentActiveLoan.status === "closed") ||
+    dashboardTimeline.some((item) => Boolean(item.transferDetails));
 
   return (
     <main className={`${styles.studentPage} ${!currentActiveLoan ? styles.studentPageNoLoan : ""}`}>
-      <TopNav
+      <StudentTopNav
         userName={profile.displayName}
+        userNameEn={profile.displayNameEn}
         userId={profile.studentId}
         userRole="นักศึกษา"
         userEmail={profile.contactEmail || `${profile.studentId}@cmu.ac.th`}
@@ -273,9 +292,7 @@ export default function StudentDashboard({
           <LoanTimeline
             items={dashboardTimeline}
             onCancelRequest={() => setIsCancelDialogOpen(true)}
-            showCancelRequest={Boolean(
-              currentActiveLoan && !("isDisbursed" in currentActiveLoan && currentActiveLoan.isDisbursed),
-            )}
+            showCancelRequest={Boolean(currentActiveLoan) && !hasAdminTransferredFunds}
           />
 
           <LoanDetailSchedule items={schedule ?? []} />
@@ -341,6 +358,7 @@ export default function StudentDashboard({
             aria-labelledby="dashboard-cancel-request-title"
             aria-modal="true"
             className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
             role="alertdialog"
           >
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">

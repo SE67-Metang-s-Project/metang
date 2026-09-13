@@ -4,7 +4,7 @@ import { requireStudentAccess } from "@/lib/loan-auth";
 import { getStudentCurrentLoan, getStudentLoanDetail } from "@/db/queries/loan-requests";
 import { mapToLoanDetails, type RawStudentLoan } from "@/lib/student-view-model";
 import StudentRequestDetailPage from "@/components/student/loan-details/StudentRequestDetailPage";
-import TopNav from "@/components/shared/TopNav";
+import StudentTopNav from "@/components/student/StudentTopNav";
 import { activeLoan, getLoanDetails } from "@/app/student/studentMockData";
 import styles from "@/app/student/student.module.css";
 
@@ -29,10 +29,12 @@ export default async function StudentDetailPage({ searchParams }: StudentDetailP
 
   const profile = {
     displayName: context.user.fullNameTh || context.identity.displayName || "นักศึกษา",
+    displayNameEn: context.user.fullNameEn ?? undefined,
     studentId: context.user.studentCode || context.identity.studentCode || "",
     educationLevel: context.user.educationLevel ?? undefined,
     programName: "พยาบาลศาสตรบัณฑิต",
     contactEmail: context.user.email || `${context.user.studentCode}@cmu.ac.th`,
+    phoneNumber: context.user.phone ?? undefined,
   };
 
   const details = loan
@@ -42,11 +44,12 @@ export default async function StudentDetailPage({ searchParams }: StudentDetailP
   if (!details) {
     return (
       <main className={styles.studentPage}>
-        <TopNav
+        <StudentTopNav
           showSidebarButton={false}
           userEmail={profile.contactEmail}
           userId={profile.studentId}
           userName={profile.displayName}
+          userNameEn={profile.displayNameEn}
           userRole="นักศึกษา"
         />
         <div className={styles.studentPageContent}>

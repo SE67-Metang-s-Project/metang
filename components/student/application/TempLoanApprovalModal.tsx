@@ -1,8 +1,13 @@
 import type { TempLoanFormData } from "@/app/student/temp/tempMockData";
-import { tempStudentProfile } from "@/app/student/temp/tempMockData";
-import { formatThaiBahtText, parseLoanAmount } from "@/app/student/studentFormatters";
+import { tempLoanFormOptions, tempStudentProfile } from "@/app/student/temp/tempMockData";
+import {
+  formatEnglishBahtText,
+  formatThaiBahtText,
+  parseLoanAmount,
+} from "@/app/student/studentFormatters";
 import { AlertCircle, Landmark, UserRound, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
 import BahtCoinIcon from "@/components/shared/BahtCoinIcon";
 import CardHeader from "@/components/shared/CardHeader";
@@ -23,6 +28,24 @@ type TempLoanApprovalModalProps = {
   isResubmit?: boolean;
 };
 
+function getProgramLabel(programName: string | undefined, language: "th" | "en") {
+  const program = programName?.trim() ?? "";
+  const isNursingProgram = program.includes("พยาบาลศาสตรบัณฑิต");
+  const isInternationalProgram = program.includes("นานาชาติ") || /international/i.test(program);
+
+  if (!isNursingProgram) return localizeStudentContent(program, language);
+
+  if (language === "en") {
+    return isInternationalProgram
+      ? "Bachelor of Nursing Science Program (International Program)"
+      : "Bachelor of Nursing Science Program";
+  }
+
+  return isInternationalProgram
+    ? "หลักสูตรพยาบาลศาสตรบัณฑิต (หลักสูตรนานาชาติ)"
+    : "หลักสูตรพยาบาลศาสตรบัณฑิต";
+}
+
 export default function TempLoanApprovalModal({
   formData,
   profile,
@@ -34,7 +57,20 @@ export default function TempLoanApprovalModal({
   isResubmit = false,
 }: TempLoanApprovalModalProps) {
   const router = useRouter();
-  const currentProfile = profile ?? tempStudentProfile;
+  const { language, t } = useStudentLanguage();
+  const currentProfile: StudentProfileDisplay = profile ?? tempStudentProfile;
+  const studentName =
+    language === "en"
+      ? currentProfile.displayNameEn || currentProfile.displayName
+      : currentProfile.displayName.replace("นางสาว", "").trim();
+  const programLabel = getProgramLabel(currentProfile.programName, language);
+  const educationLevel = formData.educationLevel
+    ? localizeStudentContent(formData.educationLevel, language)
+    : "-";
+  const bankLabel =
+    language === "en"
+      ? tempLoanFormOptions.banks.find((bank) => bank.value === formData.bankName)?.labelEn || formData.bankName
+      : formData.bankName;
   const loanAmount = parseLoanAmount(formData.loanAmount);
   const installmentAmount = Math.floor(loanAmount / formData.installmentCount);
   const installmentRemainder = loanAmount % formData.installmentCount;
@@ -75,8 +111,13 @@ export default function TempLoanApprovalModal({
           role="dialog"
         >
           <AlertCircle aria-hidden="true" className={styles.loanServerErrorIcon} size={44} />
-          <h2 id="loan-server-error-title">เกิดข้อผิดพลาดจากเซิร์ฟเวอร์</h2>
-          <p>ระบบเซิร์ฟเวอร์ขัดข้องชั่วคราว กรุณารอสักครู่แล้วลองใหม่อีกครั้ง</p>
+          <h2 id="loan-server-error-title">{t("เกิดข้อผิดพลาดจากเซิร์ฟเวอร์", "A Server Error Occurred")}</h2>
+          <p>
+            {t(
+              "ระบบเซิร์ฟเวอร์ขัดข้องชั่วคราว กรุณารอสักครู่แล้วลองใหม่อีกครั้ง",
+              "The server is temporarily unavailable. Please wait a moment and try again.",
+            )}
+          </p>
           <button
             className={styles.loanServerErrorAction}
             onClick={(event) => {
@@ -86,7 +127,7 @@ export default function TempLoanApprovalModal({
             }}
             type="button"
           >
-            กลับไปยังหน้าหลัก
+            {t("กลับไปยังหน้าหลัก", "Back to home")}
           </button>
         </section>
       </div>
@@ -95,7 +136,7 @@ export default function TempLoanApprovalModal({
 
   return (
     <div
-      aria-label="ยืนยันข้อมูลการกู้ยืม"
+      aria-label={t("ยืนยันข้อมูลการกู้ยืม", "Confirm Loan Information")}
       className={styles.loanApprovalModalBackdrop}
       {...backdropDismiss}
       role="presentation"
@@ -106,7 +147,7 @@ export default function TempLoanApprovalModal({
         role="dialog"
       >
         <button
-          aria-label="ปิดหน้าต่างยืนยันข้อมูล"
+          aria-label={t("ปิดหน้าต่างยืนยันข้อมูล", "Close confirmation window")}
           className="absolute right-5 top-4 z-10 rounded-full bg-gray-50 p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
           onClick={onClose}
           type="button"
@@ -115,12 +156,17 @@ export default function TempLoanApprovalModal({
         </button>
 
         <h2 id="loan-approval-modal-title">
-          {isResubmit ? "ยืนยันการแก้ไขข้อมูลการกู้ยืม" : "ยืนยันข้อมูลการกู้ยืม"}
+          {isResubmit
+            ? t("ยืนยันการแก้ไขข้อมูลการกู้ยืม", "Confirm Edited Loan Information")
+            : t("ยืนยันข้อมูลการกู้ยืม", "Confirm Loan Information")}
         </h2>
         <p className={styles.loanApprovalWarning}>
-          กรุณาตรวจสอบข้อมูลทางการเงินให้ถูกต้อง
+          {t("กรุณาตรวจสอบข้อมูลทางการเงินให้ถูกต้อง", "Please verify your financial information.")}
           <br />
-          หากข้อมูลผิดพลาดอาจทำให้คำร้องกู้ยืมเกิดความล่าช้า
+          {t(
+            "หากข้อมูลผิดพลาดอาจทำให้คำร้องกู้ยืมเกิดความล่าช้า",
+            "Incorrect details may delay your request.",
+          )}
         </p>
 
         {errorDetails || errorMessage ? (
@@ -157,7 +203,7 @@ export default function TempLoanApprovalModal({
                   textDecoration: "none",
                 }}
               >
-                เข้าสู่ระบบใหม่
+                {t("เข้าสู่ระบบใหม่", "Log in again")}
               </a>
             ) : errorDetails?.action === "dashboard" ? (
               <a
@@ -174,7 +220,7 @@ export default function TempLoanApprovalModal({
                   textDecoration: "none",
                 }}
               >
-                ไปที่หน้าหลัก
+                {t("ไปที่หน้าหลัก", "Go to home")}
               </a>
             ) : null}
           </div>
@@ -184,35 +230,35 @@ export default function TempLoanApprovalModal({
           <CardHeader
             className={styles.sectionCardHeading}
             icon={<UserRound aria-hidden="true" size={20} strokeWidth={2.2} />}
-            title="ข้อมูลนักศึกษา"
+            title={t("ข้อมูลนักศึกษา", "Student Information")}
           />
           <dl>
             <div>
-              <dt>ชื่อ-นามสกุล</dt>
-              <dd>{currentProfile.displayName.replace("นางสาว", "").trim()}</dd>
+              <dt>{t("ชื่อ-นามสกุล", "Full name")}</dt>
+              <dd>{studentName}</dd>
             </div>
             <div>
-              <dt>รหัสนักศึกษา</dt>
+              <dt>{t("รหัสนักศึกษา", "Student ID")}</dt>
               <dd>{currentProfile.studentId}</dd>
             </div>
             <div>
-              <dt>หลักสูตร</dt>
-              <dd>{currentProfile.programName || "พยาบาลศาสตรบัณฑิต"}</dd>
+              <dt>{t("หลักสูตร", "Program")}</dt>
+              <dd>{programLabel || t("พยาบาลศาสตรบัณฑิต", "Bachelor of Nursing Science")}</dd>
             </div>
             <div>
-              <dt>วุฒิการศึกษา</dt>
-              <dd>{formData.educationLevel || "-"}</dd>
+              <dt>{t("วุฒิการศึกษา", "Education level")}</dt>
+              <dd>{educationLevel}</dd>
             </div>
             <div>
-              <dt>ชั้นปีการศึกษา</dt>
-              <dd>ชั้นปีที่ {formData.academicYear}</dd>
+              <dt>{t("ชั้นปีการศึกษา", "Academic year")}</dt>
+              <dd>{t("ชั้นปีที่", "Year")} {formData.academicYear}</dd>
             </div>
             <div>
-              <dt>เบอร์โทรศัพท์</dt>
+              <dt>{t("เบอร์โทรศัพท์", "Phone number")}</dt>
               <dd>{formData.phoneNumber || "-"}</dd>
             </div>
             <div>
-              <dt>อาจารย์ที่ปรึกษา</dt>
+              <dt>{t("อาจารย์ที่ปรึกษา", "Advisor")}</dt>
               <dd>{formData.advisorName || "-"}</dd>
             </div>
           </dl>
@@ -222,52 +268,54 @@ export default function TempLoanApprovalModal({
           <CardHeader
             className={styles.sectionCardHeading}
             icon={<Landmark aria-hidden="true" size={20} strokeWidth={2.2} />}
-            title="ข้อมูลธนาคาร"
+            title={t("ข้อมูลธนาคาร", "Bank Information")}
           />
           <dl>
             <div>
-              <dt>ธนาคาร</dt>
-              <dd>{formData.bankName || "-"}</dd>
+              <dt>{t("ธนาคาร", "Bank")}</dt>
+              <dd>{bankLabel || "-"}</dd>
             </div>
             <div>
-              <dt>เลขที่บัญชี</dt>
+              <dt>{t("เลขที่บัญชี", "Account number")}</dt>
               <dd>{formData.accountNumber || "-"}</dd>
             </div>
             <div>
-              <dt>ชื่อบัญชี</dt>
+              <dt>{t("ชื่อบัญชี", "Account name")}</dt>
               <dd>{formData.accountName || "-"}</dd>
             </div>
           </dl>
         </section>
 
-        <section className={styles.loanApprovalInfoCard}>
+        <section className={`${styles.loanApprovalInfoCard} ${styles.loanApprovalLoanInfoCard}`}>
           <CardHeader
             className={styles.sectionCardHeading}
             icon={<BahtCoinIcon aria-hidden="true" size={20} />}
-            title="ข้อมูลการกู้ยืม"
+            title={t("ข้อมูลการกู้ยืม", "Loan Information")}
           />
           <dl>
             <div>
-              <dt>วัตถุประสงค์การกู้ยืม</dt>
+              <dt>{t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}</dt>
               <dd>{formData.purpose || "-"}</dd>
             </div>
             <div>
-              <dt>หมายเหตุเพิ่มเติม</dt>
+              <dt>{t("หมายเหตุเพิ่มเติม", "Additional note")}</dt>
               <dd>{formData.additionalNote || "-"}</dd>
             </div>
             <div className={styles.loanAmountRow}>
-              <dt>จำนวนเงินที่ขอกู้ยืม (บาท)</dt>
+              <dt>{t("จำนวนเงินที่ขอกู้ยืม (บาท)", "Requested loan amount (baht)")}</dt>
               <dd>{formData.loanAmount || "0"}</dd>
             </div>
             <div>
-              <dt>จำนวนเงินตัวอักษร</dt>
+              <dt>{t("จำนวนเงินตัวอักษร", "Amount in words")}</dt>
               <dd className={styles.loanAmountText}>
-                {formatThaiBahtText(formData.loanAmount || "0")}
+                {language === "en"
+                  ? formatEnglishBahtText(formData.loanAmount || "0")
+                  : formatThaiBahtText(formData.loanAmount || "0")}
               </dd>
             </div>
-            <div>
-              <dt>จำนวนงวดการชำระ</dt>
-              <dd>{formData.installmentCount} งวด</dd>
+            <div className={styles.loanInstallmentRow}>
+              <dt>{t("จำนวนงวดการชำระ", "Number of installments")}</dt>
+              <dd>{formData.installmentCount} {t("งวด", "Inst.")}</dd>
             </div>
           </dl>
 
@@ -282,7 +330,7 @@ export default function TempLoanApprovalModal({
             onClick={onClose}
             type="button"
           >
-            ยกเลิก
+            {t("ยกเลิก", "Cancel")}
           </button>
           <button
             className={styles.loanApprovalConfirm}
@@ -291,10 +339,10 @@ export default function TempLoanApprovalModal({
             type="button"
           >
             {isSubmitting
-              ? "กำลังส่งคำร้อง..."
+              ? t("กำลังส่งคำร้อง...", "Submitting request...")
               : isResubmit
-                ? "ยืนยันการแก้ไขและยื่นคำร้อง"
-                : "ยืนยัน"}
+                ? t("ยืนยันการแก้ไขและยื่นคำร้อง", "Confirm edit and submit request")
+                : t("ยืนยัน", "Confirm")}
           </button>
         </div>
       </section>

@@ -15,7 +15,7 @@ import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import LoanTimeline from "../loan-details/LoanTimeline";
 import LoanDetailOverview from "../loan-details/LoanDetailOverview";
 import TransferSlipModal from "../loan-details/TransferSlipModal";
-import TopNav from "@/components/shared/TopNav";
+import StudentTopNav from "@/components/student/StudentTopNav";
 import ContactFooter from "../loan-details/ContactFooter";
 import styles from "@/app/student/student.module.css";
 
@@ -26,7 +26,7 @@ export default function TempSubmittedStudentDashboard() {
 
   return (
     <main className={styles.studentPage}>
-      <TopNav
+      <StudentTopNav
         showSidebarButton={false}
         userEmail={`${tempStudentProfile.studentId}@cmu.ac.th`}
         userId={tempStudentProfile.studentId}
@@ -40,7 +40,7 @@ export default function TempSubmittedStudentDashboard() {
           <div>
             <h1 id="submitted-summary-title">สวัสดี, {tempStudentProfile.displayName}</h1>
             <p>
-              {tempStudentProfile.programName} · {tempStudentProfile.yearLabel} ·{" "}
+              {tempStudentProfile.programName} | {tempStudentProfile.yearLabel} |{" "}
               {tempStudentProfile.studentId}
             </p>
           </div>

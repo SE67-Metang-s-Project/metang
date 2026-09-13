@@ -1,5 +1,8 @@
+"use client";
+
 import { History } from "lucide-react";
 import type { LoanRequestHistoryItem } from "@/app/student/studentMockData";
+import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import LoanHistoryCard from "./LoanHistoryCard";
 import styles from "@/app/student/student.module.css";
 
@@ -24,6 +27,7 @@ export default function LoanHistoryList({
   onShowMore,
   onOpenRequest,
 }: LoanHistoryListProps) {
+  const { t } = useStudentLanguage();
   const visibleRequests = showAllRequests
     ? requests
     : requests.slice(0, initialVisibleCount);
@@ -43,7 +47,7 @@ export default function LoanHistoryList({
       <header className={styles.sectionCardHeading}>
         <h2 id="history-title">
           <History aria-hidden="true" size={27} strokeWidth={2.2} />
-          ประวัติคำร้องกู้ยืม
+          {t("ประวัติคำร้องกู้ยืม", "Loan History")}
         </h2>
       </header>
       <div className={styles.historyList}>

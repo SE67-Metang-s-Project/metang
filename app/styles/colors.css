@@ -83,6 +83,8 @@
   --color-history-first-danger-border: #ffd6d6;
   --color-history-first-blue-soft: #f7fbff;
   --color-history-first-blue-border: #c8dcef;
+  --color-history-first-purple-soft: #faf5ff;
+  --color-history-first-purple-border: #ddd6fe;
   --color-history-first-orange-soft: #fff9f4;
   --color-history-first-orange-border: #f5d8c5;
   --color-history-first-yellow-soft: #fffdf2;
@@ -95,6 +97,9 @@
   --color-history-blue: #356aa8;
   --color-history-blue-soft: #eaf2ff;
   --color-history-blue-border: #8fb5e4;
+  --color-history-purple: #7c3aed;
+  --color-history-purple-soft: #f3e8ff;
+  --color-history-purple-border: #c4b5fd;
   --color-history-orange-soft: #fff5ed;
   --color-history-yellow: #c99a1a;
   --color-history-yellow-soft: #fff8dc;

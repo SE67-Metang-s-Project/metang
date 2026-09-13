@@ -9,6 +9,17 @@
   font-size: 14px;
 }
 
+:global(html[data-student-language="en"]) .studentPage,
+:global(html[data-student-language="en"]) .studentPage * {
+  font-family: var(--font-prompt), "Prompt", Arial, sans-serif !important;
+}
+
+:global(html[data-student-language="en"]) .studentContent,
+:global(html[data-student-language="en"]) .loanApplicationPage,
+:global(html[data-student-language="en"]) .loanDetailsPage {
+  max-width: 1055px;
+}
+
 .studentPageNoLoan {
   background-image: linear-gradient(180deg, #e0f2fe 0%, transparent 34%);
 }
@@ -49,11 +60,15 @@
   font-weight: 500;
 }
 
+.studentEnglishStatus {
+  font-family: var(--font-prompt), "Prompt", Arial, sans-serif;
+}
+
 .studentContent {
   display: grid;
   gap: 12px;
   width: 100%;
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
@@ -290,6 +305,20 @@
   text-align: center;
   text-wrap: pretty;
   word-break: keep-all;
+}
+
+:global(html[data-student-language="en"]) .loanAgreementHeading {
+  font-size: 15px;
+}
+
+:global(html[data-student-language="en"]) .loanAgreementCard .sectionCardHeading h2,
+:global(html[data-student-language="en"]) .loanFormCard > h2,
+:global(html[data-student-language="en"]) .tempLoanDetailsSection > h2 {
+  font-size: 17px;
+}
+
+:global(html[data-student-language="en"]) .loanAgreementScroll section h4 {
+  font-size: 15px;
 }
 
 .loanAgreementHeading span + span::before {
@@ -535,7 +564,7 @@
 
 .loanFormStudentDetails p strong {
   color: var(--color-heading);
-  font-weight: 500;
+  font-weight: 400;
   text-align: right;
 }
 
@@ -766,6 +795,24 @@
   margin-top: -2px;
 }
 
+.loanFormFieldMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: -2px;
+}
+
+.loanFormFieldMeta .loanFormCharacterCount {
+  margin-top: 0;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.loanFormFieldMeta .loanFormFieldError {
+  min-width: 0;
+}
+
 .loanInstallmentField {
   display: grid;
   gap: 14px;
@@ -776,6 +823,7 @@
 }
 
 .loanInstallmentField legend {
+  margin-bottom: 8px;
   padding: 0;
   color: var(--color-heading);
   font-size: 14px;
@@ -924,7 +972,7 @@
 }
 
 .loanApprovalModal > h2 {
-  margin: 0 0 18px;
+  margin: 20px 0 18px;
   color: var(--color-heading);
   font-size: 25px;
   font-weight: 600;
@@ -947,6 +995,10 @@
   padding: 13px;
   margin-top: 14px;
   box-shadow: 0 1px 3px rgb(15 23 42 / 7%);
+}
+
+.loanApprovalLoanInfoCard {
+  margin-top: 18px;
 }
 
 .loanApprovalInfoCard .sectionCardHeading {
@@ -994,6 +1046,15 @@
   color: var(--color-heading);
   overflow-wrap: anywhere;
   text-align: right;
+}
+
+.loanApprovalInfoCard dl > .loanInstallmentRow {
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.loanInstallmentRow dt,
+.loanInstallmentRow dd {
+  white-space: nowrap;
 }
 
 .loanApprovalInfoCard .loanAmountText {
@@ -1216,6 +1277,11 @@
   color: var(--color-heading);
   font-size: 20px;
   font-weight: 600;
+}
+
+:global(html[data-student-language="en"]) .tempLoanDetailsSection .tempDetailCard .sectionCardHeading h3,
+:global(html[data-student-language="en"]) .tempLoanDetailsSection .detailDashboardCard:not(.loanDetailOverview) .sectionCardHeading h2 {
+  font-size: 17px;
 }
 
 .tempDetailCard {
@@ -1480,6 +1546,24 @@
   letter-spacing: -0.2px;
 }
 
+.summaryProfileDetails {
+  display: grid;
+}
+
+@media (min-width: 640px) {
+  .summaryProfileDetails {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+  }
+
+  .summaryProfileDetails p + p::before {
+    margin: 0 8px;
+    content: "|";
+  }
+}
+
 .medicalBag {
   width: 76px;
   height: 54px;
@@ -1556,6 +1640,11 @@
   background: var(--color-loan-label-active);
   color: var(--color-loan-label-active-text);
   font-weight: 600;
+}
+
+.loanStatusDraft {
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
 .loanBackLabel {
@@ -1656,7 +1745,14 @@
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
+  box-shadow: 0 3px 7px rgb(154 52 18 / 24%);
+  transition: background-color 160ms ease, box-shadow 160ms ease;
   white-space: nowrap;
+}
+
+.summaryFooter button:hover {
+  background: #be123c;
+  box-shadow: 0 4px 9px rgb(190 18 60 / 30%);
 }
 
 .summaryFooter span {
@@ -1954,13 +2050,20 @@
   font-weight: 700;
 }
 
+.behaviorStat small {
+  color: var(--color-card-muted);
+  font-size: 14px;
+  line-height: 1;
+}
+
 .behaviorStatOnTime {
   border-color: #b5f5d7;
   background: #f0fff8;
 }
 
 .behaviorStatOnTime span,
-.behaviorStatOnTime strong {
+.behaviorStatOnTime strong,
+.behaviorStatOnTime small {
   color: #16a34a;
 }
 
@@ -2315,9 +2418,14 @@
   background: var(--color-history-first-danger-soft);
 }
 
+.historyList > .historyCard:first-child[data-status="draft"] {
+  border-color: #e5e7eb;
+  background: #f9fafb;
+}
+
 .historyList > .historyCard:first-child[data-status="waitingPaymentConfirmation"] {
-  border-color: var(--color-history-first-blue-border);
-  background: var(--color-history-first-blue-soft);
+  border-color: var(--color-history-first-purple-border);
+  background: var(--color-history-first-purple-soft);
 }
 
 .historyList > .historyCard:first-child[data-status="revisionRequired"] {
@@ -2371,6 +2479,17 @@
   margin: 3px 0 10px;
   color: var(--color-history-date);
   font-size: 14px;
+  white-space: nowrap;
+}
+
+@media (max-width: 639px) {
+  .historySubmittedAt {
+    white-space: normal;
+  }
+
+  .historySubmittedDate {
+    display: block;
+  }
 }
 
 .historyCard small {
@@ -2708,6 +2827,12 @@
   color: var(--color-info);
 }
 
+.draft {
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
 .rejectedExecutive {
   border: 1px solid var(--color-danger-border);
   background: var(--color-danger-soft);
@@ -2715,9 +2840,9 @@
 }
 
 .waitingPaymentConfirmation {
-  border: 1px solid var(--color-history-blue-border);
-  background: var(--color-history-blue-soft);
-  color: var(--color-history-blue);
+  border: 1px solid var(--color-history-purple-border);
+  background: var(--color-history-purple-soft);
+  color: var(--color-history-purple);
 }
 
 .revisionRequired {
@@ -2787,16 +2912,19 @@
 .contactFooterGrid {
   display: grid;
   gap: 12px;
+  justify-items: start;
 }
 
 .contactFooterItem {
   display: flex;
   min-width: 0;
   align-items: center;
+  justify-content: flex-start;
   gap: 10px;
   color: var(--color-contact-footer-text);
   font-size: 14px;
   line-height: 1.35;
+  text-align: left;
   text-decoration: none;
 }
 
@@ -2924,7 +3052,7 @@
   display: grid;
   gap: 14px;
   width: 100%;
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
   padding-bottom: 8px;
   font-size: 14px;
@@ -3000,11 +3128,19 @@
   min-width: 0;
 }
 
+:global(html[data-student-language="en"]) .loanDetailOverviewHeader h2 {
+  font-size: 15px;
+}
+
 .loanDetailOverviewHeader .historyStatus {
   position: static;
   flex: 0 0 auto;
   max-width: 100%;
   text-align: center;
+}
+
+:global(html[data-student-language="en"]) .loanDetailOverviewHeader .historyStatus {
+  font-size: 13px;
 }
 
 .loanDetailSummary {
@@ -3055,6 +3191,13 @@
   line-height: 1.3;
 }
 
+:global(html[data-student-language="en"]) .loanDetailSummary > .loanDetailAmountSummary span,
+:global(html[data-student-language="en"]) .loanDetailSummary > .loanDetailAmountSummary strong,
+:global(html[data-student-language="en"]) .loanDetailSummary > .loanDetailInstallmentSummary span,
+:global(html[data-student-language="en"]) .loanDetailSummary > .loanDetailInstallmentSummary strong {
+  font-size: 13px;
+}
+
 .loanDetailInfoList {
   display: grid;
   margin: 0;
@@ -3097,7 +3240,7 @@
   align-items: center;
   gap: 6px;
   width: fit-content;
-  margin: 10px 0 0 auto;
+  margin: 16px 0 0 auto;
   padding: 7px 11px;
   border: 1px solid #dc2626;
   border-radius: 8px;
@@ -3107,10 +3250,13 @@
   font-size: 14px;
   font-weight: 700;
   line-height: 1.25;
+  box-shadow: 0 3px 7px rgb(185 28 28 / 24%);
+  transition: background-color 160ms ease, box-shadow 160ms ease;
 }
 
 .loanTimelineCancelButton:hover {
   background: #b91c1c;
+  box-shadow: 0 4px 9px rgb(185 28 28 / 30%);
 }
 
 .loanDetailInfoList > .loanDetailAdditionalNoteLong {
@@ -3568,10 +3714,10 @@
 }
 
 .loanScheduleRow {
-  display: grid;
-  grid-template-columns: 45px minmax(0, 1fr) max-content;
+  display: flex;
   align-items: center;
-  gap: 7px;
+  justify-content: space-between;
+  gap: 10px;
   padding: 10px;
   border-bottom: 1px solid var(--color-border);
   color: var(--color-detail-muted);
@@ -3591,6 +3737,15 @@
 
 .loanScheduleRow > span {
   text-align: center;
+  white-space: nowrap;
+}
+
+.loanScheduleRow > strong:first-child {
+  text-align: left;
+}
+
+.loanScheduleRow > strong:last-child {
+  text-align: right;
 }
 
 .loanScheduleRow > strong:last-child {
@@ -4143,7 +4298,7 @@
 
   .studentContent {
     gap: 18px;
-    max-width: 900px;
+    max-width: 1000px;
   }
 
   .loanApplicationPage {
@@ -4187,7 +4342,7 @@
 @media (min-width: 1024px) {
   .contactFooterGrid {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: stretch;
     gap: 24px;
   }
@@ -4205,14 +4360,14 @@
   }
 
   .studentPageContent {
-    padding: 32px 200px 64px;
+    padding: 32px 175px 64px;
   }
 
   .studentContent {
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
     gap: 24px;
-    max-width: 900px;
+    max-width: 1000px;
   }
 
   .studentHeader {
@@ -4272,6 +4427,14 @@
 
   .contactFooterItem span {
     white-space: nowrap;
+  }
+}
+
+@media (min-width: 714px) and (max-width: 1399px) {
+  :global(html[data-student-language="en"]) .studentContent .contactFooterGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 }
 
@@ -4401,5 +4564,12 @@
   .studentPageContent,
   .studentDetailPageContent {
     padding: 24px;
+  }
+}
+
+@media (min-width: 856px) and (max-width: 1023px) {
+  .studentPageContent,
+  .studentDetailPageContent {
+    padding: 24px 24px 48px;
   }
 }

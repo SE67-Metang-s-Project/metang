@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Kanit } from "next/font/google";
+import { Geist, Geist_Mono, Kanit, Prompt } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,6 +19,13 @@ const kanit = Kanit({
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
 
+const prompt = Prompt({
+  display: "swap",
+  subsets: ["thai", "latin"],
+  variable: "--font-prompt",
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+});
+
 export const metadata: Metadata = {
   title: "Me Tang",
   description: "CMU student emergency loan system",
@@ -32,7 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="th"
-      className={`${geistSans.variable} ${geistMono.variable} ${kanit.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${kanit.variable} ${prompt.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

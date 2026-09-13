@@ -1,6 +1,9 @@
+"use client";
+
 import { CreditCard } from "lucide-react";
 import { paymentBehavior as defaultPaymentBehavior } from "@/app/student/studentMockData";
 import type { PaymentBehaviorDisplay } from "@/lib/student-view-model";
+import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
 
 type PaymentBehaviorCardProps = {
@@ -8,6 +11,7 @@ type PaymentBehaviorCardProps = {
 };
 
 export default function PaymentBehaviorCard({ behavior }: PaymentBehaviorCardProps = {}) {
+  const { language, t } = useStudentLanguage();
   const currentBehavior = behavior ?? {
     ...defaultPaymentBehavior,
     hasHistory: true,
@@ -24,24 +28,25 @@ export default function PaymentBehaviorCard({ behavior }: PaymentBehaviorCardPro
     : undefined;
 
   return (
-    <section className={styles.paymentBehavior} aria-label="พฤติกรรมการชำระเงิน">
+    <section className={styles.paymentBehavior} aria-label={t("พฤติกรรมการชำระเงิน", "Payment Behavior")}>
       <header className={styles.behaviorHeading}>
         <h2>
           <CreditCard aria-hidden="true" size={27} strokeWidth={2.2} />
-          พฤติกรรมการชำระเงิน
+          {t("พฤติกรรมการชำระเงิน", "Payment Behavior")}
         </h2>
         {currentBehavior.hasHistory ? (
           <span className={styles.behaviorStatus} style={statusBadgeStyle}>
             <i aria-hidden="true" />
-            {currentBehavior.onTimeStatusLabel}
+            {localizeStudentContent(currentBehavior.onTimeStatusLabel, language)}
           </span>
         ) : null}
       </header>
 
-      <div className={styles.behaviorStats}>
-        <div className={styles.behaviorStat}>
-          <span>ประวัติกู้ยืม</span>
-          <strong>{currentBehavior.totalLoanRequests} ครั้ง</strong>
+        <div className={styles.behaviorStats}>
+          <div className={styles.behaviorStat}>
+            <span>{t("ประวัติกู้ยืม", "Loan history")}</span>
+            <strong>{currentBehavior.totalLoanRequests}</strong>
+            <small>{t("ครั้ง", "requests")}</small>
         </div>
         <div
           className={`${styles.behaviorStat} ${
@@ -50,12 +55,14 @@ export default function PaymentBehaviorCard({ behavior }: PaymentBehaviorCardPro
               : ""
           }`}
         >
-          <span>ตรงเวลา</span>
-          <strong>{currentBehavior.onTimeInstallments} งวด</strong>
+          <span>{t("ตรงเวลา", "On time")}</span>
+          <strong>{currentBehavior.onTimeInstallments}</strong>
+          <small>{t("งวด", "installments")}</small>
         </div>
         <div className={styles.behaviorStat}>
-          <span>ล่าช้า</span>
-          <strong>{currentBehavior.lateInstallments} งวด</strong>
+          <span>{t("ล่าช้า", "Late")}</span>
+          <strong>{currentBehavior.lateInstallments}</strong>
+          <small>{t("งวด", "installments")}</small>
         </div>
       </div>
     </section>

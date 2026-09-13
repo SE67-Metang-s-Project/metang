@@ -1,10 +1,11 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { Check, CheckCircle2, CircleX, Clock3, FileText } from "lucide-react";
+import { Check, CheckCircle2, Clock3, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { LoanTimelineItem } from "@/app/student/studentMockData";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
+import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
 
 type LoanTimelineProps = {
@@ -27,6 +28,7 @@ export default function LoanTimeline({
   showCancelRequest = false,
 }: LoanTimelineProps) {
   const router = useRouter();
+  const { language, t } = useStudentLanguage();
   const [isTransferConfirmed, setIsTransferConfirmed] = useState(false);
   const [isConfirmationSuccessOpen, setIsConfirmationSuccessOpen] = useState(false);
 
@@ -59,7 +61,7 @@ export default function LoanTimeline({
       <header className={styles.sectionCardHeading}>
         <h2 id="loan-timeline-title">
           <Clock3 aria-hidden="true" size={23} strokeWidth={2.2} />
-          ติดตามสถานะคำร้อง
+          {t("ติดตามสถานะคำร้อง", "Request Status")}
         </h2>
       </header>
       {hasItems ? (
@@ -75,16 +77,16 @@ export default function LoanTimeline({
                 }`}
               />
               <div className={styles.timelineContent}>
-                <strong>{item.title}</strong>
+                <strong>{localizeStudentContent(item.title, language)}</strong>
                 <p>
-                  {item.dateTime} · โดย {item.actor}
+                  {localizeStudentContent(item.dateTime, language)} · {t("โดย", "by")} {item.actor}
                 </p>
                 {item.commentTitle && item.comment ? (
                   <section className={`${styles.detailDashboardCard} ${styles.timelineCommentCard}`}>
                     <header className={styles.sectionCardHeading}>
-                      <h2>{item.commentTitle}</h2>
+                    <h2>{localizeStudentContent(item.commentTitle, language)}</h2>
                     </header>
-                    <p>{item.comment}</p>
+                    <p>{localizeStudentContent(item.comment, language)}</p>
                   </section>
                 ) : null}
                 {item.transferDetails ? (
@@ -100,11 +102,10 @@ export default function LoanTimeline({
                 {showCancelRequest && index === currentItemIndex ? (
                   <button
                     className={styles.loanTimelineCancelButton}
-                    onClick={onCancelRequest}
-                    type="button"
-                  >
-                    <CircleX aria-hidden="true" size={17} strokeWidth={2.4} />
-                    ยกเลิกคำร้อง
+                  onClick={onCancelRequest}
+                  type="button"
+                >
+                    {t("ยกเลิกคำร้อง", "Cancel request")}
                   </button>
                 ) : null}
               </div>
@@ -114,10 +115,10 @@ export default function LoanTimeline({
       ) : (
         <div style={{ textAlign: "center", padding: "1.5rem 1rem", color: "#6b7280" }}>
           <p style={{ margin: "0 0 0.25rem 0", fontSize: "14px", fontWeight: 500 }}>
-            ไม่มีคำร้องขอกู้ยืมที่อยู่ระหว่างดำเนินการ
+            {t("ไม่มีคำร้องขอกู้ยืมที่อยู่ระหว่างดำเนินการ", "No loan request is in progress")}
           </p>
           <span style={{ color: "#9ca3af", fontSize: "14px" }}>
-            การติดตามสถานะจะแสดงที่นี่เมื่อมีการยื่นคำร้อง
+            {t("การติดตามสถานะจะแสดงที่นี่เมื่อมีการยื่นคำร้อง", "Request tracking will appear here after submission")}
           </span>
         </div>
       )}
@@ -134,7 +135,7 @@ export default function LoanTimeline({
               type="button"
             >
               <FileText aria-hidden="true" size={18} />
-              ดูหลักฐานการโอนเงิน
+              {t("ดูหลักฐานการโอนเงิน", "View transfer proof")}
             </button>
           ) : null}
           {shouldShowConfirmation ? (

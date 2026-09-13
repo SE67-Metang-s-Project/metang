@@ -1,9 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { studentProfile } from "@/app/student/studentMockData";
 import type { LoanDetails } from "@/app/student/studentMockData";
-import TopNav from "@/components/shared/TopNav";
+import StudentTopNav from "@/components/student/StudentTopNav";
 import LoanDetailsPage from "./LoanDetailsPage";
 import styles from "@/app/student/student.module.css";
 
@@ -11,16 +10,15 @@ import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanS
 
 type StudentRequestDetailPageProps = {
   details: LoanDetails;
-  profile?: StudentProfileDisplay;
+  profile?: StudentProfileDisplay & { phoneNumber?: string };
 };
 
 export default function StudentRequestDetailPage({ details, profile }: StudentRequestDetailPageProps) {
-  const router = useRouter();
-  const currentProfile = profile ?? studentProfile;
+  const currentProfile: StudentProfileDisplay & { phoneNumber?: string } = profile ?? studentProfile;
 
   return (
     <main className={styles.studentPage}>
-      <TopNav
+      <StudentTopNav
         showSidebarButton={false}
         userEmail={
           ("contactEmail" in currentProfile && currentProfile.contactEmail) ||
@@ -28,10 +26,11 @@ export default function StudentRequestDetailPage({ details, profile }: StudentRe
         }
         userId={currentProfile.studentId}
         userName={currentProfile.displayName}
+        userNameEn={currentProfile.displayNameEn}
         userRole="นักศึกษา"
       />
       <div className={`${styles.studentPageContent} ${styles.studentDetailPageContent}`}>
-        <LoanDetailsPage details={details} onBack={() => router.push("/student")} />
+        <LoanDetailsPage details={details} profile={currentProfile} />
       </div>
     </main>
   );

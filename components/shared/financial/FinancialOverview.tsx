@@ -14,6 +14,18 @@ const money = (value: number) =>
   new Intl.NumberFormat("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
     value,
   );
+const wholeMoney = (value: number) =>
+  new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(value);
+const pieLabelPosition = (startPercent: number, slicePercent: number) => {
+  const angle = (((startPercent + slicePercent / 2) * 3.6 - 90) * Math.PI) / 180;
+  const radius = 39;
+
+  return {
+    left: `${50 + Math.cos(angle) * radius}%`,
+    top: `${50 + Math.sin(angle) * radius}%`,
+    transform: "translate(-50%, -50%)",
+  };
+};
 const compact = (value: number) =>
   new Intl.NumberFormat("th-TH", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 
@@ -167,6 +179,8 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
       color: "#ffad16",
     },
   ];
+  const balanceLabelPosition = pieLabelPosition(0, balancePercent);
+  const approvedLabelPosition = pieLabelPosition(balancePercent, approvedPercent);
   const max = Math.max(1, ...points.flatMap((point) => [point.loans, point.repayments]));
   const active = hoveredIndex === null ? null : points[hoveredIndex];
   const tooltipLeft = `${(((hoveredIndex ?? 0) + 0.5) / points.length) * 100}%`;
@@ -176,9 +190,7 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
       aria-label="รายงานและสถิติทางการเงิน"
       className="financial-overview space-y-6 font-[family-name:var(--font-kanit)]"
     >
-      <style>{`.financial-overview .text-xs, .financial-overview [class~="text-[10px]"] { font-size: 0.875rem; line-height: 1.25rem; }
-      .financial-overview > div:nth-of-type(2) > article:first-child > div:nth-child(2) > div > span:nth-child(1) { transform: translateX(6px); font-size: 1rem; }
-      .financial-overview > div:nth-of-type(2) > article:first-child > div:nth-child(2) > div > span:nth-child(2) { transform: translateX(-6px); font-size: 1rem; }`}</style>
+      <style>{`.financial-overview .text-xs, .financial-overview [class~="text-[10px]"] { font-size: 0.875rem; line-height: 1.25rem; }`}</style>
       <div className="grid gap-5 lg:grid-cols-3">
         <Metric
           title="เงินทั้งหมดในระบบ"
@@ -216,17 +228,30 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
                 background: `conic-gradient(#3f8a58 0 ${balancePercent}%, #ffad16 ${balancePercent}% 100%)`,
               }}
             >
-              <span className="absolute bottom-[22%] right-[10%] text-lg font-semibold text-white drop-shadow-sm">
-                {balancePercent.toFixed(2)}%
-              </span>
-              <span className="absolute left-[8%] top-[30%] text-lg font-semibold text-white drop-shadow-sm">
-                {approvedPercent.toFixed(2)}%
-              </span>
-              <div className="pointer-events-none flex size-[60%] flex-col items-center justify-center rounded-full bg-[#fffefd] text-center shadow-inner">
-                <span className="text-sm font-semibold text-slate-700 sm:text-base">
-                  ภาพรวมเงินทุน
+              {balancePercent > 0 ? (
+                <span
+                  className="pointer-events-none absolute text-lg font-semibold text-white drop-shadow-sm"
+                  style={balanceLabelPosition}
+                >
+                  {balancePercent.toFixed(2)}%
                 </span>
-                <span className="text-xs text-slate-500 sm:text-sm">ปี {data.year}</span>
+              ) : null}
+              {approvedPercent > 0 ? (
+                <span
+                  className="pointer-events-none absolute text-lg font-semibold text-white drop-shadow-sm"
+                  style={approvedLabelPosition}
+                >
+                  {approvedPercent.toFixed(2)}%
+                </span>
+              ) : null}
+              <div className="pointer-events-none flex size-[60%] flex-col items-center justify-center rounded-full bg-[#fffefd] text-center shadow-inner">
+                <span className="text-xs font-medium text-slate-600 sm:text-sm">
+                  เงินทั้งหมดในระบบ
+                </span>
+                <span className="mt-1 text-xl font-semibold leading-none text-slate-800 sm:text-2xl">
+                  {wholeMoney(data.totalSystem)}
+                </span>
+                <span className="mt-1 text-xs text-slate-500">ปี {data.year}</span>
               </div>
               <svg
                 viewBox="0 0 100 100"
@@ -331,7 +356,7 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
               ยอดการกู้ยืม
             </span>
             <span>
-              <i className="mr-2 inline-block size-3 rounded-sm bg-[#1e5484]" />
+              <i className="mr-2 inline-block size-3 rounded-sm bg-[#0ea5e9]" />
               ยอดการคืนเงิน
             </span>
           </div>
@@ -363,7 +388,7 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
                       onLeave={() => setHoveredIndex(null)}
                     />
                     <Pole
-                      color="#1e5484"
+                      color="#0ea5e9"
                       height={(point.repayments / max) * 100}
                       label={`${point.label}: ยอดการคืนเงิน ${money(point.repayments)}`}
                       onEnter={() => setHoveredIndex(index)}
@@ -400,7 +425,7 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
                     count={active.loanCount}
                   />
                   <Tooltip
-                    color="#0e2a6e"
+                    color="#0ea5e9"
                     label="ยอดการคืนเงิน"
                     amount={active.repayments}
                     count={active.repaymentCount}
@@ -424,7 +449,7 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
               label="อัตราการคืนเงินเฉลี่ยทั้งปี"
               value={`${data.totalLoans > 0 ? ((data.totalRepayments / data.totalLoans) * 100).toFixed(2) : "0.00"}%`}
               detail="ของยอดการกู้ยืม"
-              green
+              blue
             />
           </div>
         </article>
@@ -433,8 +458,9 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
         year={data.year}
         updatedAt={data.updatedAt}
         requests={data.monthly.map(
-          ({ label, transferredCount, rejectedCount, cancelledCount }) => ({
+          ({ label, loanCount, transferredCount, rejectedCount, cancelledCount }) => ({
             label,
+            totalRequestCount: loanCount,
             transferredCount,
             rejectedCount,
             cancelledCount,
@@ -454,6 +480,7 @@ function TransferredRequestsChart({
   updatedAt: string;
   requests: Array<{
     label: string;
+    totalRequestCount: number;
     transferredCount: number;
     rejectedCount: number;
     cancelledCount: number;
@@ -468,12 +495,14 @@ function TransferredRequestsChart({
       requests.slice(quarter * 3, quarter * 3 + 3).reduce(
         (total, request) => ({
           label: `ไตรมาส ${quarter + 1}`,
+          totalRequestCount: total.totalRequestCount + request.totalRequestCount,
           transferredCount: total.transferredCount + request.transferredCount,
           rejectedCount: total.rejectedCount + request.rejectedCount,
           cancelledCount: total.cancelledCount + request.cancelledCount,
         }),
         {
           label: `ไตรมาส ${quarter + 1}`,
+          totalRequestCount: 0,
           transferredCount: 0,
           rejectedCount: 0,
           cancelledCount: 0,
@@ -491,11 +520,12 @@ function TransferredRequestsChart({
   );
   const totals = points.reduce(
     (sum, request) => ({
+      totalRequestCount: sum.totalRequestCount + request.totalRequestCount,
       transferredCount: sum.transferredCount + request.transferredCount,
       rejectedCount: sum.rejectedCount + request.rejectedCount,
       cancelledCount: sum.cancelledCount + request.cancelledCount,
     }),
-    { transferredCount: 0, rejectedCount: 0, cancelledCount: 0 },
+    { totalRequestCount: 0, transferredCount: 0, rejectedCount: 0, cancelledCount: 0 },
   );
   const active = hoveredIndex === null ? null : points[hoveredIndex];
   const tooltipLeft = `${(((hoveredIndex ?? 0) + 0.5) / points.length) * 100}%`;
@@ -632,7 +662,8 @@ function TransferredRequestsChart({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3 border-t border-[#eee8e2] pt-5 text-center sm:grid-cols-3">
+      <div className="mt-6 grid gap-3 border-t border-[#eee8e2] pt-5 text-center sm:grid-cols-2 lg:grid-cols-4">
+        <Summary label="รวมคำร้องทั้งหมด" value={`${totals.totalRequestCount} คำร้อง`} />
         <Summary label="รวมคำร้องที่โอนเงินแล้ว" value={`${totals.transferredCount} คำร้อง`} />
         <Summary label="รวมคำร้องที่ไม่ผ่านการอนุมัติ" value={`${totals.rejectedCount} คำร้อง`} />
         <Summary
@@ -688,9 +719,13 @@ function Legend({
     <div className="grid grid-cols-[10px_1fr_auto] items-center gap-2">
       <span className="size-2.5 rounded-full" style={{ backgroundColor: color }} />
       <span className="text-slate-600">{label}</span>
-      <span className="font-medium text-slate-800">
+      <span className="whitespace-nowrap text-right font-medium text-slate-800">
         {money(amount)}
-        {percent !== undefined && ` (${percent.toFixed(2)}%)`}
+        {percent !== undefined ? (
+          <span className="ml-1 text-xs font-semibold" style={{ color }}>
+            ({percent.toFixed(2)}%)
+          </span>
+        ) : null}
       </span>
     </div>
   );
@@ -729,19 +764,19 @@ function Summary({
   value,
   detail,
   orange = false,
-  green = false,
+  blue = false,
 }: {
   label: string;
   value: string;
   detail?: string;
   orange?: boolean;
-  green?: boolean;
+  blue?: boolean;
 }) {
   return (
     <div>
       <p className="text-xs text-slate-500">{label}</p>
       <p
-        className={`mt-1 text-base font-semibold ${green ? "text-[#3f8a58]" : orange ? "text-[#f75c12]" : "text-slate-800"}`}
+        className={`mt-1 text-base font-semibold ${blue ? "text-[#0ea5e9]" : orange ? "text-[#f75c12]" : "text-slate-800"}`}
       >
         {value}
       </p>

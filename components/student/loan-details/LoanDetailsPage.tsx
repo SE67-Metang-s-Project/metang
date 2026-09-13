@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { House, Pencil, X } from "lucide-react";
+import { Pencil, X } from "lucide-react";
 import type { LoanDetails } from "@/app/student/studentMockData";
+import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
 import ContactFooter from "./ContactFooter";
 import LoanDetailSchedule from "./LoanDetailSchedule";
 import LoanDetailOverview from "./LoanDetailOverview";
@@ -16,32 +17,36 @@ import styles from "@/app/student/student.module.css";
 
 type LoanDetailsPageProps = {
   details: LoanDetails;
-  onBack: () => void;
+  profile: StudentProfileDisplay & { phoneNumber?: string };
 };
 
-export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProps) {
+export default function LoanDetailsPage({ details, profile }: LoanDetailsPageProps) {
   const router = useRouter();
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
-
   const cancelDialogDismiss = useModalDismiss({
     onClose: () => {
       if (!isCancelling) setIsCancelDialogOpen(false);
     },
     isOpen: isCancelDialogOpen,
   });
-  const isWaitingForTransferConfirmation = details.statusLabel === "รอยืนยันการรับเงิน";
+  const isWaitingForTransferConfirmation =
+    details.statusCode === "pending_disbursement" ||
+    details.statusLabel === "รอยืนยันการรับเงิน" ||
+    details.statusLabel === "รอยืนยันการโอนเงิน";
   const [isTransferAccepted, setIsTransferAccepted] = useState(!isWaitingForTransferConfirmation);
   const hasAdminTransferredFunds =
     ["disbursed", "closed"].includes(details.statusCode ?? "") ||
     details.timeline.some((item) => Boolean(item.transferDetails));
   const displayedTimeline = details.timeline.filter((item) => !item.isUpcoming);
   const isRepaymentInProgress =
-    details.statusCode === "disbursed" || details.statusLabel.includes("อยู่ระหว่างการชำระ");
+    details.statusCode === "disbursed" ||
+    details.statusLabel.includes("อยู่ระหว่างการชำระ") ||
+    details.statusLabel.includes("กำลังชำระ");
   const displayedDetails =
     isWaitingForTransferConfirmation && isTransferAccepted
-      ? { ...details, statusLabel: "อยู่ระหว่างการชำระเงิน" }
+      ? { ...details, statusLabel: "กำลังชำระ" }
       : details;
 
   const isReturned = details.statusCode === "returned" || details.statusLabel.includes("แก้ไข");
@@ -71,11 +76,6 @@ export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProp
 
   return (
     <div className={styles.loanDetailsPage}>
-      <button aria-label="กลับหน้าหลัก" className={styles.loanDetailsBack} onClick={onBack} type="button">
-        <House aria-hidden="true" size={17} />
-        กลับหน้าหลัก
-      </button>
-
       {isReturned ? (
         <section
           aria-labelledby="returned-notice-title"
@@ -135,7 +135,7 @@ export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProp
         onCancelRequest={() => setIsCancelDialogOpen(true)}
         showCancelRequest={canCancelRequest}
       />
-      <TempDetailCard />
+      <TempDetailCard details={details} profile={profile} />
       <LoanDetailSchedule items={details.schedule} />
       {isRepaymentInProgress ? <LoanPaymentHistory items={details.paymentHistory} /> : null}
       <ContactFooter />
@@ -155,6 +155,7 @@ export default function LoanDetailsPage({ details, onBack }: LoanDetailsPageProp
             aria-labelledby="cancel-request-title"
             aria-modal="true"
             className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
             role="alertdialog"
           >
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">

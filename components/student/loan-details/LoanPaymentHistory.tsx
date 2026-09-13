@@ -53,7 +53,7 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
       <header className={styles.sectionCardHeading}>
         <h2>
           <ReceiptText aria-hidden="true" size={23} strokeWidth={2.2} />
-          {t("ประวัติหลักฐานการชำระ", "Payment evidence history")}
+          {t("ประวัติหลักฐานการชำระ", "Payment Evidence History")}
         </h2>
       </header>
       <div className={styles.paymentHistoryList}>

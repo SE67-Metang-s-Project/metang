@@ -30,6 +30,7 @@ export type PaymentAccount = {
 };
 
 export type LoanRequestStatus =
+  | "draft"
   | "pending"
   | "rejectedExecutive"
   | "waitingPaymentConfirmation"
@@ -88,6 +89,11 @@ export type LoanContact = {
 export type LoanDetails = {
   id?: string;
   statusCode?: string;
+  studentYear?: number;
+  advisorName?: string;
+  bankName?: string;
+  bankAccountNo?: string;
+  bankAccountName?: string;
   requestNumber: string;
   statusLabel: string;
   submittedAt: string;
@@ -135,7 +141,7 @@ export const studentProfile = {
 
 export const activeLoan = {
   requestNumber: "SL-2568-0001",
-  statusLabel: "อยู่ระหว่างชำระคืน",
+  statusLabel: "กำลังชำระ",
   paidAmount: "2,500",
   totalAmount: "3,000",
   progressPercent: 83,
@@ -208,7 +214,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
   },
   {
     requestNumber: "SL-2568-0002",
-    statusLabel: "ปฏิเสธ · ผู้บริหาร",
+    statusLabel: "ไม่อนุมัติโดยผู้บริหาร",
     statusType: "rejectedExecutive",
     submittedAt: "ยื่นเมื่อ 10 พ.ย. 2569 09:30 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 1/2569",
@@ -217,7 +223,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
   },
   {
     requestNumber: "SL-2568-0003",
-    statusLabel: "รอยืนยันการรับเงิน",
+    statusLabel: "รอยืนยันการโอนเงิน",
     statusType: "waitingPaymentConfirmation",
     submittedAt: "ยื่นเมื่อ 4 พ.ย. 2569 13:15 น.",
     purpose: "ค่าใช้จ่ายเกี่ยวกับการศึกษา",
@@ -226,7 +232,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
   },
   {
     requestNumber: "SL-2568-0004",
-    statusLabel: "รอแก้ไขเอกสาร",
+    statusLabel: "แก้ไขเอกสาร",
     statusType: "revisionRequired",
     submittedAt: "ยื่นเมื่อ 28 ต.ค. 2569 11:00 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 2/2568",
@@ -235,7 +241,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
   },
   {
     requestNumber: "SL-2568-0005",
-    statusLabel: "รออาจารย์ที่ปรึกษา",
+    statusLabel: "รออาจารย์",
     statusType: "waitingAdvisorApproval",
     submittedAt: "ยื่นเมื่อ 22 ต.ค. 2569 14:20 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 2/2568",
@@ -262,7 +268,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
   },
   {
     requestNumber: "SL-2568-0008",
-    statusLabel: "ชำระเสร็จสิ้น",
+    statusLabel: "ชำระแล้ว",
     statusType: "completed",
     submittedAt: "ยื่นเมื่อ 5 ก.ย. 2569 09:10 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 1/2568",

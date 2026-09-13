@@ -44,6 +44,9 @@ export type SystemAddressData = {
   updatedBy: string;
 };
 
+const systemAddressStorageKey = "metang-system-address";
+export const systemAddressUpdatedEvent = "metang:system-address-updated";
+
 export const initialSystemBankAccounts: SystemBankAccount[] = [
   {
     id: "bank-001",
@@ -134,6 +137,21 @@ function delay(ms: number) {
 let cachedBankAccounts: SystemBankAccount[] = JSON.parse(JSON.stringify(initialSystemBankAccounts));
 let cachedAddress: SystemAddressData = JSON.parse(JSON.stringify(initialSystemAddress));
 
+function getStoredSystemAddress(): SystemAddressData {
+  if (typeof window === "undefined") return cachedAddress;
+
+  try {
+    const storedAddress = window.localStorage.getItem(systemAddressStorageKey);
+    if (storedAddress) {
+      cachedAddress = JSON.parse(storedAddress) as SystemAddressData;
+    }
+  } catch {
+    // Use the in-memory default if browser storage is unavailable or malformed.
+  }
+
+  return cachedAddress;
+}
+
 /**
  * Asynchronously fetch system bank accounts
  */
@@ -171,7 +189,7 @@ export async function saveSystemBankAccounts(
  */
 export async function getSystemAddress(): Promise<SystemAddressData> {
   await delay(300);
-  return JSON.parse(JSON.stringify(cachedAddress));
+  return JSON.parse(JSON.stringify(getStoredSystemAddress()));
 }
 
 /**
@@ -194,6 +212,11 @@ export async function saveSystemAddress(
     updatedAt: dateStr,
     updatedBy: actor,
   };
+
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(systemAddressStorageKey, JSON.stringify(cachedAddress));
+    window.dispatchEvent(new CustomEvent(systemAddressUpdatedEvent));
+  }
 
   return JSON.parse(JSON.stringify(cachedAddress));
 }

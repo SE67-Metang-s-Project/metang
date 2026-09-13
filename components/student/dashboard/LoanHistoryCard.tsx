@@ -17,6 +17,7 @@ export default function LoanHistoryCard({
   const [paidAmount, totalAmount] = request.amount.split("/");
   const canCorrect = request.statusType === "revisionRequired" && Boolean(onCorrectRequest);
   const submittedAt = request.submittedAt.replace(/^ยื่นเมื่อ\s*/, "");
+  const amount = request.amount.replace(/\s*บาท\b/g, "");
 
   return (
     <article
@@ -39,12 +40,15 @@ export default function LoanHistoryCard({
       <div>
         <div className={styles.historyCardTitle}>
           <strong>{request.requestNumber}</strong>
-          <span className={`${styles.historyStatus} ${styles[request.statusType]}`}>
+          <span
+            className={`${styles.historyStatus} ${styles[request.statusType]} ${language === "en" ? styles.studentEnglishStatus : ""}`}
+          >
             ● {localizeStudentContent(request.statusLabel, language)}
           </span>
         </div>
-        <p>
-          {t("ยื่นเมื่อ", "Submitted")} {localizeStudentContent(submittedAt, language)}
+        <p className={styles.historySubmittedAt}>
+          <span>{t("ยื่นเมื่อ", "Submitted")}</span>{" "}
+          <span className={styles.historySubmittedDate}>{localizeStudentContent(submittedAt, language)}</span>
         </p>
         <small>{t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}</small>
         <strong className={styles.historyPurpose}>{localizeStudentContent(request.purpose, language)}</strong>
@@ -71,7 +75,7 @@ export default function LoanHistoryCard({
               <span className={styles.historyAmountTotal}>/{totalAmount.trim()}</span>
             </>
           ) : (
-            request.amount
+            amount
           )}
         </strong>
       </div>

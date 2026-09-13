@@ -12,6 +12,16 @@ import {
 } from "@/lib/loan-auth";
 import { getStudentLoanList, studentLoanDetailSelect } from "@/db/queries/loan-requests";
 
+const educationLevelByStudentCodeDigit: Record<string, string> = {
+  "0": "ประกาศนียบัตรผู้ช่วยพยาบาล",
+  "1": "ปริญญาตรี",
+  "3": "ปริญญาโท",
+  "5": "ปริญญาเอก",
+};
+
+const getEducationLevel = (studentCode: string | null | undefined) =>
+  studentCode ? educationLevelByStudentCodeDigit[studentCode.charAt(4)] : undefined;
+
 /**
  * List the current student's loan requests.
  * @tag Student loans
@@ -61,6 +71,7 @@ export async function POST(request: Request) {
   try {
     const loan = await prisma.$transaction(async (tx) => {
       if (!context.identity.cmuAccount) throw new Error("CMU account is missing");
+      const educationLevel = getEducationLevel(context.identity.studentCode);
 
       const advisors = await tx.appUser.findMany({
         where: {
@@ -101,6 +112,7 @@ export async function POST(request: Request) {
               email: context.identity.email ?? existing.email,
               studentCode: context.identity.studentCode,
               fullNameTh: context.identity.displayName,
+              ...(educationLevel ? { educationLevel } : {}),
             },
           })
         : await tx.appUser.create({
@@ -109,6 +121,7 @@ export async function POST(request: Request) {
               email: context.identity.email ?? context.identity.cmuAccount,
               studentCode: context.identity.studentCode,
               fullNameTh: context.identity.displayName,
+              ...(educationLevel ? { educationLevel } : {}),
             },
           });
 
