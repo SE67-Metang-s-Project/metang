@@ -17,7 +17,7 @@
 :global(html[data-student-language="en"]) .studentContent,
 :global(html[data-student-language="en"]) .loanApplicationPage,
 :global(html[data-student-language="en"]) .loanDetailsPage {
-  max-width: 1055px;
+  max-width: 1040px;
 }
 
 .studentPageNoLoan {
@@ -68,7 +68,7 @@
   display: grid;
   gap: 12px;
   width: 100%;
-  max-width: 1000px;
+  max-width: 1040px;
   margin: 0 auto;
 }
 
@@ -174,7 +174,7 @@
   display: grid;
   gap: 16px;
   width: 100%;
-  max-width: 920px;
+  max-width: 1040px;
   min-height: calc(100svh - 48px);
   margin: 16px auto 0;
   align-content: start;
@@ -3052,7 +3052,7 @@
   display: grid;
   gap: 14px;
   width: 100%;
-  max-width: 1000px;
+  max-width: 1040px;
   margin: 0 auto;
   padding-bottom: 8px;
   font-size: 14px;
@@ -4298,7 +4298,7 @@
 
   .studentContent {
     gap: 18px;
-    max-width: 1000px;
+    max-width: 1040px;
   }
 
   .loanApplicationPage {
@@ -4330,8 +4330,8 @@
   }
 
   .contactFooterGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 
   .contactFooterItem {
@@ -4341,18 +4341,17 @@
 
 @media (min-width: 1024px) {
   .contactFooterGrid {
-    display: flex;
-    justify-content: flex-start;
-    align-items: stretch;
-    gap: 24px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 
   .contactFooterTwoLineItem .contactFooterNarrowBreak {
-    display: block;
+    display: none;
   }
 
   .contactFooterTwoLineItem span {
-    white-space: nowrap;
+    white-space: normal;
   }
 
   .studentPage {
@@ -4367,7 +4366,7 @@
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
     gap: 24px;
-    max-width: 1000px;
+    max-width: 1040px;
   }
 
   .studentHeader {
@@ -4398,12 +4397,6 @@
   }
 }
 
-@media (max-width: 1327px) {
-  .contactFooterNarrowBreak {
-    display: block;
-  }
-}
-
 @media (min-width: 640px) and (max-width: 1154px) {
   .contactFooterGrid {
     display: grid;
@@ -4427,14 +4420,6 @@
 
   .contactFooterItem span {
     white-space: nowrap;
-  }
-}
-
-@media (min-width: 714px) and (max-width: 1399px) {
-  :global(html[data-student-language="en"]) .studentContent .contactFooterGrid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
   }
 }
 
