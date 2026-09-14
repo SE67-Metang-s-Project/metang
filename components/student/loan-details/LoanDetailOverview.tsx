@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Download } from "lucide-react";
 import type { LoanDetails, LoanRequestStatus } from "@/app/student/studentMockData";
+import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
 import styles from "@/app/student/student.module.css";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
+import LoanPetitionModal from "@/components/shared/LoanPetitionModal";
+import { mapStudentLoanToActionRequest } from "@/lib/student-action-request";
 
 type LoanDetailOverviewProps = {
   details: Pick<
@@ -18,8 +22,22 @@ type LoanDetailOverviewProps = {
     | "additionalReason"
   > & {
     schedule?: LoanDetails["schedule"];
+    id?: string;
+    studentYear?: number;
+    advisorName?: string;
+    bankName?: string;
+    bankAccountNo?: string;
+    bankAccountName?: string;
+    timeline?: LoanDetails["timeline"];
+    paymentHistory?: LoanDetails["paymentHistory"];
+    contact?: LoanDetails["contact"];
+    approvals?: LoanDetails["approvals"];
+    documentUrl?: string;
+    transferSlipImage?: string;
   };
   showDownload?: boolean;
+  onDownloadClick?: () => void;
+  profile?: StudentProfileDisplay & { phoneNumber?: string };
 };
 
 const statusTypeByCode: Record<string, LoanRequestStatus> = {
@@ -52,55 +70,83 @@ const getHistoryStatusClassName = (statusCode: string | undefined, statusLabel: 
   return styles.pending;
 };
 
-export default function LoanDetailOverview({ details, showDownload = false }: LoanDetailOverviewProps) {
+export default function LoanDetailOverview({
+  details,
+  showDownload = false,
+  onDownloadClick,
+  profile,
+}: LoanDetailOverviewProps) {
   const { language, t } = useStudentLanguage();
+  const [isInternalModalOpen, setIsInternalModalOpen] = useState(false);
   const isAdditionalReasonLong = details.additionalReason.length > 30;
   const isPurposeLong = details.purpose.length > 30;
 
+  const handleDownloadClick = () => {
+    if (onDownloadClick) {
+      onDownloadClick();
+    } else {
+      setIsInternalModalOpen(true);
+    }
+  };
+
   return (
-    <section className={`${styles.loanDetailSection} ${styles.detailDashboardCard} ${styles.loanDetailOverview}`}>
-      <header className={`${styles.sectionCardHeading} ${styles.loanDetailOverviewHeader}`}>
-        <h2>{details.requestNumber}</h2>
-        <span
-          className={`${styles.historyStatus} ${getHistoryStatusClassName(details.statusCode, details.statusLabel)} ${language === "en" ? styles.studentEnglishStatus : ""}`}
-        >
-          ● {localizeStudentContent(details.statusLabel, language)}
-        </span>
-      </header>
-      <div className={styles.loanDetailSummary}>
-        <div className={styles.loanDetailAmountSummary}>
-          <span>{t("จำนวนเงินที่ขอกู้", "Requested amount")}</span>
-          <strong>{details.amount}</strong>
-        </div>
-        {details.schedule ? (
-          <div className={styles.loanDetailInstallmentSummary}>
-            <span>{t("จำนวนงวด", "Installments")}</span>
-            <strong>{details.schedule.length} {t("งวด", "Inst.")}</strong>
+    <>
+      <section className={`${styles.loanDetailSection} ${styles.detailDashboardCard} ${styles.loanDetailOverview}`}>
+        <header className={`${styles.sectionCardHeading} ${styles.loanDetailOverviewHeader}`}>
+          <h2>{details.requestNumber}</h2>
+          <span
+            className={`${styles.historyStatus} ${getHistoryStatusClassName(details.statusCode, details.statusLabel)} ${language === "en" ? styles.studentEnglishStatus : ""}`}
+          >
+            ● {localizeStudentContent(details.statusLabel, language)}
+          </span>
+        </header>
+        <div className={styles.loanDetailSummary}>
+          <div className={styles.loanDetailAmountSummary}>
+            <span>{t("จำนวนเงินที่ขอกู้", "Requested amount")}</span>
+            <strong>{details.amount}</strong>
           </div>
+          {details.schedule ? (
+            <div className={styles.loanDetailInstallmentSummary}>
+              <span>{t("จำนวนงวด", "Installments")}</span>
+              <strong>{details.schedule.length} {t("งวด", "Inst.")}</strong>
+            </div>
+          ) : null}
+        </div>
+        <dl className={styles.loanDetailInfoList}>
+          <div>
+            <dt>{t("ยื่นเมื่อ", "Submitted")}</dt>
+            <dd className={styles.loanDetailSubmittedAt}>
+              {localizeStudentContent(details.submittedAt.replace(/^ยื่นเมื่อ\s*/, ""), language)}
+            </dd>
+          </div>
+          <div className={isPurposeLong ? styles.loanDetailPurposeLong : undefined}>
+            <dt>{t(details.purposeLabel, "Loan purpose")}</dt>
+            <dd>{localizeStudentContent(details.purpose, language)}</dd>
+          </div>
+          <div className={isAdditionalReasonLong ? styles.loanDetailAdditionalNoteLong : undefined}>
+            <dt>{t(details.additionalReasonLabel, "Additional note")}</dt>
+            <dd>{localizeStudentContent(details.additionalReason, language)}</dd>
+          </div>
+        </dl>
+        {showDownload && details.downloadLabel ? (
+          <button
+            className={styles.loanDownloadButton}
+            type="button"
+            onClick={handleDownloadClick}
+          >
+            <Download aria-hidden="true" size={18} />
+            <strong>{t(details.downloadLabel, "Download request form (PDF)")}</strong>
+          </button>
         ) : null}
-      </div>
-      <dl className={styles.loanDetailInfoList}>
-        <div>
-          <dt>{t("ยื่นเมื่อ", "Submitted")}</dt>
-          <dd className={styles.loanDetailSubmittedAt}>
-            {localizeStudentContent(details.submittedAt.replace(/^ยื่นเมื่อ\s*/, ""), language)}
-          </dd>
-        </div>
-        <div className={isPurposeLong ? styles.loanDetailPurposeLong : undefined}>
-          <dt>{t(details.purposeLabel, "Loan purpose")}</dt>
-          <dd>{localizeStudentContent(details.purpose, language)}</dd>
-        </div>
-        <div className={isAdditionalReasonLong ? styles.loanDetailAdditionalNoteLong : undefined}>
-          <dt>{t(details.additionalReasonLabel, "Additional note")}</dt>
-          <dd>{localizeStudentContent(details.additionalReason, language)}</dd>
-        </div>
-      </dl>
-      {showDownload && details.downloadLabel ? (
-        <button className={styles.loanDownloadButton} type="button">
-          <Download aria-hidden="true" size={18} />
-          <strong>{t(details.downloadLabel, "Download loan agreement")}</strong>
-        </button>
+      </section>
+
+      {!onDownloadClick && isInternalModalOpen ? (
+        <LoanPetitionModal
+          isOpen={isInternalModalOpen}
+          onClose={() => setIsInternalModalOpen(false)}
+          request={mapStudentLoanToActionRequest(details as LoanDetails, profile)}
+        />
       ) : null}
-    </section>
+    </>
   );
 }

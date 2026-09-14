@@ -58,7 +58,11 @@ export default function TempSubmittedStudentDashboard() {
         <section className={styles.tempCurrentApplication} aria-labelledby="current-application-title">
           <h2 id="current-application-title">คำร้องปัจจุบัน</h2>
 
-          <LoanDetailOverview details={tempCurrentLoanDetails} />
+          <LoanDetailOverview
+            details={tempCurrentLoanDetails}
+            profile={tempStudentProfile}
+            showDownload={true}
+          />
 
           <LoanTimeline
             items={tempLoanTimeline}

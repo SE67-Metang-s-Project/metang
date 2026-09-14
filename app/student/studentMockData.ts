@@ -1,4 +1,5 @@
 import type { LoanInput } from "@/lib/loan-validation";
+import type { ApprovalStep } from "@/components/shared/disburse-debt/DisburseDebtCard";
 
 export type InstallmentStatus = "paid" | "current" | "upcoming";
 
@@ -110,6 +111,8 @@ export type LoanDetails = {
   paymentHistory: LoanPaymentHistoryItem[];
   contact: LoanContact;
   correction?: ReturnedRequestCorrection;
+  approvals?: ApprovalStep[];
+  documentUrl?: string;
 };
 
 export type ReturnedRequestCorrection = {
@@ -288,7 +291,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
     amount: "3,000",
     additionalReasonLabel: "หมายเหตุเพิ่มเติม",
     additionalReason: "สถานการณ์ทางการเงิน",
-    downloadLabel: "ดาวน์โหลดสัญญาการกู้ยืม",
+    downloadLabel: "ดาวน์โหลดแบบคำร้อง (PDF)",
     transferSlipImage: "/mock-payment-receipt-2.jpg",
     timeline: [
       {

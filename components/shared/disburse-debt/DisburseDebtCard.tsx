@@ -974,41 +974,18 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                 )}
               </section>
 
-              {/* เอกสารคำร้อง - แสดงเฉพาะเมื่อโอนเงินเรียบร้อยแล้ว */}
-              {isCompleted && (
-                <section className={styles.loanApprovalInfoCard}>
-                  <CardHeader
-                    className={styles.sectionCardHeading}
-                    icon={<FileText aria-hidden="true" size={20} strokeWidth={2.2} />}
-                    title="เอกสารคำร้อง"
-                  />
-                  <div className="mt-2 flex items-center justify-between p-3.5 rounded-xl border border-orange-100 bg-orange-50/30">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-orange-100 text-[#ea580c] p-2 rounded-lg">
-                        <FileText size={20} />
-                      </div>
-                      <div>
-                        <div className="text-[13px] font-bold text-gray-900">
-                          แบบขอยืมเงินทุนสวัสดิการ
-                        </div>
-                        <div className="text-[11px] text-gray-500">
-                          แบบฟอร์มเอกสารคำร้องขอกู้ยืมทางการ
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDocumentViewTab("official");
-                        setViewDocumentReq(selectedRequest);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-bold rounded-lg border border-orange-200 bg-orange-50 hover:bg-orange-100 text-[#ea580c] hover:text-[#c2410c] transition-colors cursor-pointer shadow-sm"
-                    >
-                      <FileText size={15} /> ดูเอกสารคำร้อง
-                    </button>
-                  </div>
-                </section>
-              )}
+              {/* ปุ่มดาวน์โหลดแบบคำร้อง (PDF) เหมือนหน้านักศึกษา */}
+              <button
+                className={styles.loanDownloadButton}
+                type="button"
+                onClick={() => {
+                  setDocumentViewTab("official");
+                  setViewDocumentReq(selectedRequest);
+                }}
+              >
+                <Download aria-hidden="true" size={18} />
+                <strong>ดาวน์โหลดแบบคำร้อง (PDF)</strong>
+              </button>
             </div>
 
             {/* Footer Buttons */}

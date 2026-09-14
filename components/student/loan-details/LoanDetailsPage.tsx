@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pencil, X } from "lucide-react";
 import type { LoanDetails } from "@/app/student/studentMockData";
 import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
@@ -12,6 +12,8 @@ import LoanPaymentHistory from "./LoanPaymentHistory";
 import LoanTimeline from "./LoanTimeline";
 import TempDetailCard from "./TempDetailCard";
 import TransferSlipModal from "./TransferSlipModal";
+import LoanPetitionModal from "@/components/shared/LoanPetitionModal";
+import { mapStudentLoanToActionRequest } from "@/lib/student-action-request";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import styles from "@/app/student/student.module.css";
 
@@ -25,6 +27,7 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isPetitionModalOpen, setIsPetitionModalOpen] = useState(false);
   const cancelDialogDismiss = useModalDismiss({
     onClose: () => {
       if (!isCancelling) setIsCancelDialogOpen(false);
@@ -44,10 +47,16 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
     details.statusCode === "disbursed" ||
     details.statusLabel.includes("อยู่ระหว่างการชำระ") ||
     details.statusLabel.includes("กำลังชำระ");
-  const displayedDetails =
-    isWaitingForTransferConfirmation && isTransferAccepted
+  const displayedDetails = useMemo(() => {
+    return isWaitingForTransferConfirmation && isTransferAccepted
       ? { ...details, statusLabel: "กำลังชำระ" }
       : details;
+  }, [details, isTransferAccepted, isWaitingForTransferConfirmation]);
+
+  const petitionRequest = useMemo(
+    () => mapStudentLoanToActionRequest(displayedDetails, profile),
+    [displayedDetails, profile],
+  );
 
   const isReturned = details.statusCode === "returned" || details.statusLabel.includes("แก้ไข");
   const canCancelRequest = !["disbursed", "closed", "rejected", "cancelled"].includes(
@@ -123,7 +132,12 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
         </section>
       ) : null}
 
-      <LoanDetailOverview details={displayedDetails} showDownload={hasAdminTransferredFunds} />
+      <LoanDetailOverview
+        details={displayedDetails}
+        profile={profile}
+        showDownload={displayedDetails.statusCode !== "draft"}
+        onDownloadClick={() => setIsPetitionModalOpen(true)}
+      />
 
       <LoanTimeline
         items={displayedTimeline}
@@ -139,6 +153,13 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
       <LoanDetailSchedule items={details.schedule} />
       {isRepaymentInProgress ? <LoanPaymentHistory items={details.paymentHistory} /> : null}
       <ContactFooter />
+      {isPetitionModalOpen ? (
+        <LoanPetitionModal
+          isOpen={isPetitionModalOpen}
+          onClose={() => setIsPetitionModalOpen(false)}
+          request={petitionRequest}
+        />
+      ) : null}
       {isSlipModalOpen ? (
         <TransferSlipModal
           imageSrc={details.transferSlipImage}

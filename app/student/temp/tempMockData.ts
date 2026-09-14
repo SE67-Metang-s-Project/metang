@@ -7,7 +7,7 @@ export const tempCurrentLoanDetails = {
   purposeLabel: "วัตถุประสงค์การกู้ยืม",
   purpose: "ค่าเทอมภาคเรียนที่ 1/2569",
   amount: "3,000",
-  downloadLabel: "ดาวน์โหลดเอกสาร",
+  downloadLabel: "ดาวน์โหลดแบบคำร้อง (PDF)",
   additionalReasonLabel: "หมายเหตุเพิ่มเติม",
   additionalReason:
     "ข้าพเจ้ามีความจำเป็นต้องกู้ยืมเพื่อชำระค่าเทอม เนื่องจากครอบครัวขาดสภาพคล่องทางการเงิน เพื่อให้สามารถศึกษาต่อได้อย่างต่อเนื่อง",

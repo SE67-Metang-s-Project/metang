@@ -1,4 +1,5 @@
 import type { LoanStatus } from "@/lib/generated/prisma/client";
+import type { ApprovalStep } from "@/components/shared/disburse-debt/DisburseDebtCard";
 import type {
   InstallmentPayment,
   InstallmentStatus,
@@ -459,6 +460,22 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     status: pay.status === "confirmed" ? "verified" : "checking",
   }));
 
+  const mappedApprovals: ApprovalStep[] = (loan.approvals ?? [])
+    .filter((a) => a.decision !== "pending")
+    .map((a) => ({
+      step: a.step,
+      actorName:
+        a.decider?.fullNameTh ??
+        (a.step === "advisor"
+          ? (loan.advisor?.fullNameTh ?? "อาจารย์ที่ปรึกษา")
+          : a.step === "admin"
+            ? "เจ้าหน้าที่"
+            : "ผู้ช่วยศาสตราจารย์ ดร.อนนท์ วิสุทธิ์ธนานนท์"),
+      comment: a.comment ?? "",
+      decision: a.decision,
+      date: formatThaiDate(a.decidedAt),
+    }));
+
   return {
     id: loan.id,
     statusCode: loan.status,
@@ -483,6 +500,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     timeline,
     schedule,
     paymentHistory,
+    approvals: mappedApprovals,
     contact: {
       phone: "053-949-012",
       email: "nurse@cmu.ac.th",
