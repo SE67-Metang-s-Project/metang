@@ -4,6 +4,7 @@ import { localizeStudentContent, useStudentLanguage } from "@/app/student/Studen
 
 type InstallmentCardProps = {
   installment: InstallmentPayment;
+  isPaymentLocked?: boolean;
   onPay: (installment: InstallmentPayment) => void;
 };
 
@@ -13,7 +14,11 @@ function getStatusLabel(status: InstallmentStatus, language: "th" | "en") {
   return language === "th" ? "ชำระล่วงหน้า" : "Upcoming";
 }
 
-export default function InstallmentCard({ installment, onPay }: InstallmentCardProps) {
+function formatInstallmentAmount(amount: string) {
+  return amount.replace(/\s*(บาท|THB)\b/gi, "");
+}
+
+export default function InstallmentCard({ installment, isPaymentLocked = false, onPay }: InstallmentCardProps) {
   const { language, t } = useStudentLanguage();
   const isUpcoming = installment.status === "upcoming";
   const hasCompletedPayment =
@@ -36,7 +41,7 @@ export default function InstallmentCard({ installment, onPay }: InstallmentCardP
         </div>
         <div className={styles.installmentBalance}>
           <span>{t("ค้างชำระ", "Outstanding")}</span>
-          <strong>{installment.outstandingAmount}</strong>
+          <strong>{formatInstallmentAmount(installment.outstandingAmount)}</strong>
         </div>
       </div>
 
@@ -44,7 +49,7 @@ export default function InstallmentCard({ installment, onPay }: InstallmentCardP
         <div className={styles.installmentDetailGroup}>
           <p className={styles.installmentDetailLine}>
             <span>{t("ชำระแล้ว", "Paid")}</span>
-            <span>{installment.paidAmountSummary}</span>
+            <span>{formatInstallmentAmount(installment.paidAmountSummary)}</span>
           </p>
           <p className={styles.installmentDetailLine}>
             <span>{t("ครบกำหนด", "Due")}</span>
@@ -74,13 +79,17 @@ export default function InstallmentCard({ installment, onPay }: InstallmentCardP
       {installment.actionLabel ? (
         <button
           className={styles.installmentAction}
-          disabled={isUpcoming}
+          disabled={isUpcoming || isPaymentLocked}
           onClick={() => onPay(installment)}
           type="button"
         >
-          {installment.status === "current"
-            ? t("ชำระงวดนี้ · คงเหลือ", "Pay this installment · Remaining") + ` ${installment.outstandingAmount}`
-            : t("กรุณาดำเนินการชำระงวดก่อนหน้าให้เสร็จสิ้น", "Please complete the previous installment first")}
+          {isPaymentLocked
+            ? t("กรุณายืนยันการรับเงินก่อนชำระ", "Please confirm receipt before paying")
+            : installment.status === "current"
+            ?
+              t("ชำระงวดนี้ · คงเหลือ", "Pay this installment · Remaining") +
+              ` ${formatInstallmentAmount(installment.outstandingAmount)}`
+            : t("กรุณาดำเนินการชำระงวดก่อนหน้าให้เสร็จสิ้น", "Pay previous installment first")}
         </button>
       ) : null}
     </article>

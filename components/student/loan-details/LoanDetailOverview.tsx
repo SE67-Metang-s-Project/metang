@@ -47,7 +47,7 @@ const statusTypeByCode: Record<string, LoanRequestStatus> = {
   pending_admin: "waitingDocumentReview",
   pending_executive: "waitingExecutiveApproval",
   pending_disbursement: "waitingPaymentConfirmation",
-  disbursed: "pending",
+  disbursed: "waitingPaymentConfirmation",
   closed: "completed",
   rejected: "rejectedExecutive",
   cancelled: "rejectedExecutive",

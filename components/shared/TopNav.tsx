@@ -110,7 +110,7 @@ export default function TopNav({
             aria-expanded={isProfileOpen}
             aria-haspopup="menu"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-medium text-blue-600">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-sm font-medium text-orange-600">
               {userName.substring(0, 2)}
             </span>
             <span className="flex flex-col">
@@ -148,11 +148,11 @@ export default function TopNav({
                   <span className="text-[14px] font-medium text-gray-600">Language</span>
                   <div
                     aria-label="Language selector"
-                    className="flex overflow-hidden rounded-lg border border-gray-200 text-sm font-semibold"
+                    className="flex gap-1 text-sm font-semibold"
                   >
                     <button
                       aria-pressed={language === "th"}
-                      className={`px-2.5 py-1.5 transition-colors ${language === "th" ? "bg-orange-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+                      className={`rounded-md border px-2.5 py-1.5 transition-colors ${language === "th" ? "border-[#ffb58c] bg-[#fff4ed] text-[#ed7740]" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}
                       onClick={() => onLanguageChange("th")}
                       type="button"
                     >
@@ -160,7 +160,7 @@ export default function TopNav({
                     </button>
                     <button
                       aria-pressed={language === "en"}
-                      className={`border-l border-gray-200 px-2.5 py-1.5 transition-colors ${language === "en" ? "bg-orange-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+                      className={`rounded-md border px-2.5 py-1.5 transition-colors ${language === "en" ? "border-[#ffb58c] bg-[#fff4ed] text-[#ed7740]" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}
                       onClick={() => onLanguageChange("en")}
                       type="button"
                     >

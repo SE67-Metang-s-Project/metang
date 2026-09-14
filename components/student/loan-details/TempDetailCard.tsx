@@ -1,4 +1,7 @@
+"use client";
+
 import { GraduationCap, Landmark } from "lucide-react";
+import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import type { LoanDetails } from "@/app/student/studentMockData";
 import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
 import styles from "@/app/student/student.module.css";
@@ -16,8 +19,11 @@ const educationLevelsByStudentIdDigit: Record<string, string> = {
 };
 
 export default function TempDetailCard({ details, profile }: TempDetailCardProps) {
+  const { language, t } = useStudentLanguage();
   const educationLevel =
     educationLevelsByStudentIdDigit[profile.studentId.charAt(4)] ?? profile.educationLevel ?? "-";
+  const displayName = language === "en" ? profile.displayNameEn || profile.displayName : profile.displayName;
+  const programName = profile.programName || "พยาบาลศาสตรบัณฑิต";
 
   return (
     <>
@@ -25,37 +31,37 @@ export default function TempDetailCard({ details, profile }: TempDetailCardProps
         <header className={styles.sectionCardHeading}>
           <h2>
             <GraduationCap aria-hidden="true" size={23} strokeWidth={2.2} />
-            ข้อมูลนักศึกษา
+            {t("ข้อมูลนักศึกษา", "Student Information")}
           </h2>
         </header>
         <dl className={styles.loanDetailDefinitionList}>
           <div>
-            <dt>ชื่อ-นามสกุล</dt>
-            <dd>{profile.displayName}</dd>
+            <dt>{t("ชื่อ-นามสกุล", "Full name")}</dt>
+            <dd>{displayName}</dd>
           </div>
           <div>
-            <dt>รหัสนักศึกษา</dt>
+            <dt>{t("รหัสนักศึกษา", "Student ID")}</dt>
             <dd>{profile.studentId}</dd>
           </div>
           <div>
-            <dt>หลักสูตร</dt>
-            <dd>{profile.programName || "พยาบาลศาสตรบัณฑิต"}</dd>
+            <dt>{t("หลักสูตร", "Program")}</dt>
+            <dd>{localizeStudentContent(programName, language)}</dd>
           </div>
           <div>
-            <dt>วุฒิการศึกษา</dt>
-            <dd>{educationLevel}</dd>
+            <dt>{t("วุฒิการศึกษา", "Education level")}</dt>
+            <dd>{localizeStudentContent(educationLevel, language)}</dd>
           </div>
           <div>
-            <dt>ชั้นปีการศึกษา</dt>
-            <dd>{details.studentYear ? `ชั้นปีที่ ${details.studentYear}` : "-"}</dd>
+            <dt>{t("ชั้นปีการศึกษา", "Year of study")}</dt>
+            <dd>{details.studentYear ? t(`ชั้นปีที่ ${details.studentYear}`, `Year ${details.studentYear}`) : "-"}</dd>
           </div>
           <div>
-            <dt>เบอร์โทรศัพท์</dt>
+            <dt>{t("เบอร์โทรศัพท์", "Phone number")}</dt>
             <dd>{profile.phoneNumber || "-"}</dd>
           </div>
           <div>
-            <dt>อาจารย์ที่ปรึกษา</dt>
-            <dd>{details.advisorName || "-"}</dd>
+            <dt>{t("อาจารย์ที่ปรึกษา", "Advisor")}</dt>
+            <dd>{details.advisorName ? localizeStudentContent(details.advisorName, language) : "-"}</dd>
           </div>
         </dl>
       </section>
@@ -64,20 +70,20 @@ export default function TempDetailCard({ details, profile }: TempDetailCardProps
         <header className={styles.sectionCardHeading}>
           <h2>
             <Landmark aria-hidden="true" size={23} strokeWidth={2.2} />
-            ข้อมูลธนาคาร
+            {t("ข้อมูลธนาคาร", "Bank Information")}
           </h2>
         </header>
         <dl className={styles.loanDetailDefinitionList}>
           <div>
-            <dt>ธนาคาร</dt>
-            <dd>{details.bankName || "-"}</dd>
+            <dt>{t("ธนาคาร", "Bank")}</dt>
+            <dd>{details.bankName ? localizeStudentContent(details.bankName, language) : "-"}</dd>
           </div>
           <div>
-            <dt>เลขที่บัญชี</dt>
+            <dt>{t("เลขที่บัญชี", "Account number")}</dt>
             <dd>{details.bankAccountNo || "-"}</dd>
           </div>
           <div className={styles.bankAccountNameRow}>
-            <dt>ชื่อบัญชี</dt>
+            <dt>{t("ชื่อบัญชี", "Account name")}</dt>
             <dd>{details.bankAccountName || "-"}</dd>
           </div>
         </dl>

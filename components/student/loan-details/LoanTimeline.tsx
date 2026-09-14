@@ -38,7 +38,7 @@ export default function LoanTimeline({
   });
   const hasAcceptedTransfer = isTransferAccepted || isTransferConfirmed;
   const shouldShowConfirmation = !hasAcceptedTransfer && Boolean(confirmTransferLabel || onConfirmTransfer);
-  const confirmationLabel = confirmTransferLabel ?? "ยืนยันการรับเงิน";
+  const confirmationLabel = confirmTransferLabel ?? t("ยืนยันการรับเงิน", "Confirm receipt");
 
   const handleConfirmTransfer = () => {
     setIsTransferConfirmed(true);
@@ -47,7 +47,6 @@ export default function LoanTimeline({
   };
 
   const hasItems = items && items.length > 0;
-  const hasActions = hasItems && Boolean(onShowTransferSlip || shouldShowConfirmation);
   const currentItemIndex = items.reduce(
     (currentIndex, item, index) => (item.isUpcoming ? currentIndex : index),
     -1,
@@ -79,25 +78,52 @@ export default function LoanTimeline({
               <div className={styles.timelineContent}>
                 <strong>{localizeStudentContent(item.title, language)}</strong>
                 <p>
-                  {localizeStudentContent(item.dateTime, language)} · {t("โดย", "by")} {item.actor}
+                  {localizeStudentContent(item.dateTime, language)} · {t("โดย", "by")} {" "}
+                  {localizeStudentContent(item.actor, language)}
                 </p>
                 {item.commentTitle && item.comment ? (
-                  <section className={`${styles.detailDashboardCard} ${styles.timelineCommentCard}`}>
+                  <section
+                    className={`${styles.detailDashboardCard} ${styles.timelineCommentCard} ${
+                      item.isFailed ? styles.timelineCommentCardRejected : ""
+                    }`}
+                  >
                     <header className={styles.sectionCardHeading}>
-                    <h2>{localizeStudentContent(item.commentTitle, language)}</h2>
+                      <h2>{localizeStudentContent(item.commentTitle, language)}</h2>
                     </header>
                     <p>{localizeStudentContent(item.comment, language)}</p>
                   </section>
                 ) : null}
                 {item.transferDetails ? (
-                  <dl className={styles.transferDetails}>
-                    {item.transferDetails.map((detail) => (
-                      <Fragment key={detail}>
-                        <dt>{detail.slice(0, detail.indexOf(":"))}</dt>
-                        <dd>{detail.slice(detail.indexOf(":") + 1).trim()}</dd>
-                      </Fragment>
-                    ))}
-                  </dl>
+                  <>
+                    <dl className={styles.transferDetails}>
+                      {item.transferDetails.map((detail) => (
+                        <Fragment key={detail}>
+                          <dt>{localizeStudentContent(detail.slice(0, detail.indexOf(":")), language)}</dt>
+                          <dd>{localizeStudentContent(detail.slice(detail.indexOf(":") + 1).trim(), language)}</dd>
+                        </Fragment>
+                      ))}
+                    </dl>
+                    {onShowTransferSlip || shouldShowConfirmation ? (
+                      <div
+                        className={`${styles.loanTimelineActions} ${
+                          !shouldShowConfirmation ? styles.loanTimelineActionsSingle : ""
+                        }`}
+                      >
+                        {onShowTransferSlip ? (
+                          <button className={styles.outlineOrangeButton} onClick={onShowTransferSlip} type="button">
+                            <FileText aria-hidden="true" size={18} />
+                            {t("ดูหลักฐาน", "View proof")}
+                          </button>
+                        ) : null}
+                        {shouldShowConfirmation ? (
+                          <button className={styles.loanApplicationNext} onClick={handleConfirmTransfer} type="button">
+                            <Check aria-hidden="true" size={18} strokeWidth={3} />
+                            {confirmationLabel}
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </>
                 ) : null}
                 {showCancelRequest && index === currentItemIndex ? (
                   <button
@@ -122,30 +148,6 @@ export default function LoanTimeline({
           </span>
         </div>
       )}
-      {hasActions ? (
-        <div
-          className={`${styles.loanTimelineActions} ${
-            !shouldShowConfirmation ? styles.loanTimelineActionsSingle : ""
-          }`}
-        >
-          {onShowTransferSlip ? (
-            <button
-              className={styles.outlineOrangeButton}
-              onClick={onShowTransferSlip}
-              type="button"
-            >
-              <FileText aria-hidden="true" size={18} />
-              {t("ดูหลักฐานการโอนเงิน", "View transfer proof")}
-            </button>
-          ) : null}
-          {shouldShowConfirmation ? (
-            <button className={styles.loanApplicationNext} onClick={handleConfirmTransfer} type="button">
-              <Check aria-hidden="true" size={18} strokeWidth={3} />
-              {confirmationLabel}
-            </button>
-          ) : null}
-        </div>
-      ) : null}
       {isConfirmationSuccessOpen ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
@@ -160,15 +162,20 @@ export default function LoanTimeline({
           >
             <CheckCircle2 aria-hidden="true" className="mx-auto text-green-500" size={64} strokeWidth={1.5} />
             <h2 className="mt-4 text-xl font-bold text-gray-900" id="transfer-confirmation-success-title">
-              ยืนยันการรับเงินสำเร็จ
+              {t("ยืนยันการรับเงินสำเร็จ", "Receipt confirmed")}
             </h2>
-            <p className="mt-2 text-sm text-gray-600">ระบบบันทึกการยืนยันของคุณเรียบร้อยแล้ว</p>
+            <p className="mt-2 text-sm text-gray-600">
+              {t("ระบบบันทึกการยืนยันของคุณเรียบร้อยแล้ว", "Your confirmation has been recorded.")}
+            </p>
             <button
               className="mt-5 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-green-700"
-              onClick={() => router.replace("/student")}
+              onClick={() => {
+                setIsConfirmationSuccessOpen(false);
+                router.replace("/student");
+              }}
               type="button"
             >
-              กลับสู่หน้าหลัก
+              {t("กลับสู่หน้าหลัก", "Back to dashboard")}
             </button>
           </section>
         </div>

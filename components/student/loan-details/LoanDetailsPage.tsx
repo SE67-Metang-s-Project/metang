@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { Pencil, X } from "lucide-react";
 import type { LoanDetails } from "@/app/student/studentMockData";
 import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
@@ -14,6 +14,11 @@ import TempDetailCard from "./TempDetailCard";
 import TransferSlipModal from "./TransferSlipModal";
 import LoanPetitionModal from "@/components/shared/LoanPetitionModal";
 import { mapStudentLoanToActionRequest } from "@/lib/student-action-request";
+import {
+  hasConfirmedTransfer,
+  saveTransferConfirmation,
+  subscribeToTransferConfirmation,
+} from "@/lib/student-transfer-confirmation";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import styles from "@/app/student/student.module.css";
 
@@ -38,10 +43,15 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
     details.statusCode === "pending_disbursement" ||
     details.statusLabel === "รอยืนยันการรับเงิน" ||
     details.statusLabel === "รอยืนยันการโอนเงิน";
-  const [isTransferAccepted, setIsTransferAccepted] = useState(!isWaitingForTransferConfirmation);
   const hasAdminTransferredFunds =
     ["disbursed", "closed"].includes(details.statusCode ?? "") ||
     details.timeline.some((item) => Boolean(item.transferDetails));
+  const transferConfirmationKey = details.id ?? details.requestNumber;
+  const isTransferAccepted = useSyncExternalStore(
+    (onChange) => subscribeToTransferConfirmation(transferConfirmationKey, onChange),
+    () => hasConfirmedTransfer(transferConfirmationKey),
+    () => false,
+  );
   const displayedTimeline = details.timeline.filter((item) => !item.isUpcoming);
   const isRepaymentInProgress =
     details.statusCode === "disbursed" ||
@@ -49,7 +59,7 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
     details.statusLabel.includes("กำลังชำระ");
   const displayedDetails = useMemo(() => {
     return isWaitingForTransferConfirmation && isTransferAccepted
-      ? { ...details, statusLabel: "กำลังชำระ" }
+      ? { ...details, statusCode: undefined, statusLabel: "กำลังชำระ" }
       : details;
   }, [details, isTransferAccepted, isWaitingForTransferConfirmation]);
 
@@ -143,7 +153,11 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
         items={displayedTimeline}
         isTransferAccepted={isTransferAccepted}
         onConfirmTransfer={
-          hasAdminTransferredFunds ? () => setIsTransferAccepted(true) : undefined
+          hasAdminTransferredFunds
+            ? () => {
+                saveTransferConfirmation(details.id ?? details.requestNumber);
+              }
+            : undefined
         }
         onShowTransferSlip={hasAdminTransferredFunds ? () => setIsSlipModalOpen(true) : undefined}
         onCancelRequest={() => setIsCancelDialogOpen(true)}

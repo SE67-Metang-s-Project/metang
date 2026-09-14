@@ -6,10 +6,11 @@ import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 
 type InstallmentListProps = {
   installments: InstallmentPayment[];
+  isPaymentLocked?: boolean;
   onPay: (installment: InstallmentPayment) => void;
 };
 
-export default function InstallmentList({ installments, onPay }: InstallmentListProps) {
+export default function InstallmentList({ installments, isPaymentLocked = false, onPay }: InstallmentListProps) {
   const { t } = useStudentLanguage();
   return (
     <section className={styles.installmentsSection} aria-labelledby="installments-title">
@@ -21,7 +22,12 @@ export default function InstallmentList({ installments, onPay }: InstallmentList
       </header>
       <div className={styles.installmentsList}>
         {installments.map((installment) => (
-          <InstallmentCard installment={installment} key={installment.installmentNumber} onPay={onPay} />
+          <InstallmentCard
+            installment={installment}
+            isPaymentLocked={isPaymentLocked}
+            key={installment.installmentNumber}
+            onPay={onPay}
+          />
         ))}
       </div>
     </section>

@@ -42,8 +42,8 @@ const statusDisplayMap: Record<LoanStatus, StatusDisplay> = {
     statusType: "waitingPaymentConfirmation",
   },
   disbursed: {
-    label: "กำลังชำระ",
-    statusType: "pending",
+    label: "รอยืนยันการโอนเงิน",
+    statusType: "waitingPaymentConfirmation",
   },
   closed: {
     label: "ชำระแล้ว",
@@ -220,6 +220,7 @@ export type ActiveLoanSummary = {
   nextInstallmentNumber: number;
   nextDueDate: string;
   isDisbursed: boolean;
+  transferSlipImage?: string;
 };
 
 export function mapToActiveLoanSummary(loan: RawStudentLoan | null): ActiveLoanSummary | null {
@@ -244,6 +245,9 @@ export function mapToActiveLoanSummary(loan: RawStudentLoan | null): ActiveLoanS
     nextInstallmentNumber: nextNumber,
     nextDueDate: nextDue,
     isDisbursed: loan.status === "disbursed",
+    transferSlipImage: loan.fundTransactions?.[0]?.id
+      ? `/api/fund-transactions/${loan.fundTransactions[0].id}/slip`
+      : undefined,
   };
 }
 
@@ -267,9 +271,9 @@ export function mapToInstallmentPayments(installments: RawInstallment[] = []): I
     return {
       installmentNumber: inst.seq,
       status,
-      paidAmountSummary: `${inst.amountPaid.toLocaleString("th-TH")}/${inst.amountDue.toLocaleString("th-TH")} บาท`,
+      paidAmountSummary: `${inst.amountPaid.toLocaleString("th-TH")}/${inst.amountDue.toLocaleString("th-TH")}`,
       dueDateLabel: `ครบกำหนด ${dateLabel}`,
-      outstandingAmount: `${remaining.toLocaleString("th-TH")} บาท`,
+      outstandingAmount: remaining.toLocaleString("th-TH"),
       actionLabel: status !== "paid" ? "ชำระเงิน" : undefined,
       completedPaymentLabel: status === "paid" ? "ชำระเรียบร้อยแล้ว" : undefined,
       completedPaymentDateLabel: inst.settledAt ? formatThaiDate(inst.settledAt) : undefined,
@@ -413,10 +417,15 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
   // Disbursed
   if (loan.disbursedAt) {
     timeline.push({
-      title: "โอนเงินเรียบร้อยแล้ว",
+      title: `เจ้าหน้าที่โอนเงิน จำนวน ${requestedAmount.toLocaleString("th-TH")}`,
       dateTime: formatThaiDateTime(loan.disbursedAt),
-      actor: "เจ้าหน้าที่การเงิน",
+      actor: "เจ้าหน้าที่",
       isCompleted: true,
+      transferDetails: [
+        `ธนาคาร: ${loan.bankName ?? "-"}`,
+        `เลขที่บัญชี: ${loan.bankAccountNo ?? "-"}`,
+        `ชื่อบัญชี: ${loan.bankAccountName ?? "-"}`,
+      ],
     });
   }
 
@@ -452,7 +461,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
   // Payment history
   const paymentHistory: LoanPaymentHistoryItem[] = (loan.payments ?? []).map((pay, idx) => ({
     installmentNumber: idx + 1,
-    amount: `${pay.amount.toLocaleString("th-TH")} บาท`,
+    amount: pay.amount.toLocaleString("th-TH"),
     receiptImage: pay.slipUrl ?? "",
     paidAt: formatThaiDateTime(pay.paidAt ?? pay.createdAt),
     checkedAt: formatThaiDateTime(pay.confirmedAt),
@@ -490,7 +499,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     purposeLabel: "วัตถุประสงค์การกู้ยืม",
     purpose: loan.purpose,
     amountLabel: "จำนวนเงินที่ขอกู้",
-    amount: `${requestedAmount.toLocaleString("th-TH")} บาท`,
+    amount: requestedAmount.toLocaleString("th-TH"),
     additionalReasonLabel: "เหตุผลความจำเป็นเพิ่มเติม",
     additionalReason: loan.additionalNote ?? "-",
     downloadLabel: "ดาวน์โหลดแบบคำร้อง (PDF)",

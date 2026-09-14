@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, LogIn, RefreshCw, X } from "lucide-react";
 import {
@@ -21,6 +21,7 @@ import PaymentModal from "@/components/shared/PaymentModal";
 import type { InstallmentPayment, LoanRequestHistoryItem, LoanScheduleItem, LoanTimelineItem } from "@/app/student/studentMockData";
 import { MedicalBagIcon } from "./StudentIllustrations";
 import ContactFooter from "../loan-details/ContactFooter";
+import TransferSlipModal from "../loan-details/TransferSlipModal";
 import StudentTopNav from "@/components/student/StudentTopNav";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
@@ -34,6 +35,11 @@ import {
   type RawStudentLoan,
 } from "@/lib/student-view-model";
 import { mapNetworkError, mapStudentApiError, type StudentUiError } from "@/lib/student-error-mapper";
+import {
+  hasConfirmedTransfer,
+  saveTransferConfirmation,
+  subscribeToTransferConfirmation,
+} from "@/lib/student-transfer-confirmation";
 import styles from "@/app/student/student.module.css";
 
 type StudentDashboardProps = {
@@ -58,6 +64,7 @@ export default function StudentDashboard({
   const [showAllRequests, setShowAllRequests] = useState(false);
   const [activePayment, setActivePayment] = useState<InstallmentPayment | null>(null);
   const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState(false);
+  const [isTransferSlipOpen, setIsTransferSlipOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
@@ -215,9 +222,12 @@ export default function StudentDashboard({
     }
   };
 
-  const displayedRequests = historyRequests ?? defaultLoanRequestHistory;
   const currentActiveLoan = activeLoanData === undefined ? defaultActiveLoan : activeLoanData;
   const currentInstallments = installments ?? defaultInstallmentPayments;
+  const transferSlipImage =
+    currentActiveLoan && "transferSlipImage" in currentActiveLoan
+      ? currentActiveLoan.transferSlipImage
+      : undefined;
   const hasAdminTransferredFunds =
     Boolean(
       currentActiveLoan &&
@@ -226,6 +236,24 @@ export default function StudentDashboard({
     ) ||
     Boolean(currentActiveLoan && "status" in currentActiveLoan && currentActiveLoan.status === "closed") ||
     dashboardTimeline.some((item) => Boolean(item.transferDetails));
+  const currentLoanKey =
+    currentActiveLoan && "id" in currentActiveLoan && currentActiveLoan.id
+      ? currentActiveLoan.id
+      : currentActiveLoan?.requestNumber;
+  const isTransferAccepted = useSyncExternalStore(
+    (onChange) => subscribeToTransferConfirmation(currentLoanKey, onChange),
+    () => hasConfirmedTransfer(currentLoanKey),
+    () => false,
+  );
+  const displayedActiveLoan =
+    isTransferAccepted && currentActiveLoan
+      ? { ...currentActiveLoan, statusLabel: "กำลังชำระ" }
+      : currentActiveLoan;
+  const displayedRequests = (historyRequests ?? defaultLoanRequestHistory).map((request) =>
+    isTransferAccepted && request.requestNumber === currentActiveLoan?.requestNumber
+      ? { ...request, statusLabel: "กำลังชำระ", statusType: "pending" as const }
+      : request,
+  );
 
   return (
     <main className={`${styles.studentPage} ${!currentActiveLoan ? styles.studentPageNoLoan : ""}`}>
@@ -278,7 +306,7 @@ export default function StudentDashboard({
 
           {currentActiveLoan ? (
             <LoanSummaryCard
-              activeLoan={currentActiveLoan}
+              activeLoan={displayedActiveLoan ?? undefined}
               medicalBag={<MedicalBagIcon />}
               onOpenDetails={() => openLoanDetails(currentActiveLoan.requestNumber)}
               profile={profile}
@@ -291,14 +319,37 @@ export default function StudentDashboard({
 
           <LoanTimeline
             items={dashboardTimeline}
+            isTransferAccepted={isTransferAccepted}
             onCancelRequest={() => setIsCancelDialogOpen(true)}
+            onConfirmTransfer={
+              hasAdminTransferredFunds
+                ? () => {
+                    saveTransferConfirmation(currentLoanKey);
+                  }
+                : undefined
+            }
+            onShowTransferSlip={
+              hasAdminTransferredFunds
+                ? () => {
+                    if (transferSlipImage) {
+                      setIsTransferSlipOpen(true);
+                    } else {
+                      router.push("/student/loan");
+                    }
+                  }
+                : undefined
+            }
             showCancelRequest={Boolean(currentActiveLoan) && !hasAdminTransferredFunds}
           />
 
           <LoanDetailSchedule items={schedule ?? []} />
 
           {currentActiveLoan && "isDisbursed" in currentActiveLoan && currentActiveLoan.isDisbursed && currentInstallments.length > 0 ? (
-            <InstallmentList installments={currentInstallments} onPay={setActivePayment} />
+            <InstallmentList
+              installments={currentInstallments}
+              isPaymentLocked={hasAdminTransferredFunds && !isTransferAccepted}
+              onPay={setActivePayment}
+            />
           ) : null}
 
           <LoanHistoryList
@@ -317,6 +368,12 @@ export default function StudentDashboard({
           installment={activePayment}
           onClose={() => setActivePayment(null)}
           onConfirm={handlePaymentConfirmed}
+        />
+      ) : null}
+      {isTransferSlipOpen && transferSlipImage ? (
+        <TransferSlipModal
+          imageSrc={transferSlipImage}
+          onClose={() => setIsTransferSlipOpen(false)}
         />
       ) : null}
 

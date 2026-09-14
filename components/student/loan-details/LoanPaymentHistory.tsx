@@ -88,7 +88,9 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
           ))
         ) : (
           <div className={styles.paymentHistoryEmpty}>
-            <ReceiptText aria-hidden="true" size={34} strokeWidth={1.8} />
+            <span className={styles.paymentHistoryEmptyIcon}>
+              <ReceiptText aria-hidden="true" size={28} strokeWidth={1.8} />
+            </span>
             <p>{t("ยังไม่มีประวัติการชำระเงิน", "No payment history yet")}</p>
           </div>
         )}
