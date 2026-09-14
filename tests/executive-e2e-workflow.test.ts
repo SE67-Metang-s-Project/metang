@@ -117,7 +117,13 @@ test("Executive UI hides return button and protects bank details (NAT-117, NAT-1
   );
   assert.match(
     requestsCard,
-    /ข้อมูลบัญชีธนาคารสงวนสิทธิ์การเข้าถึงเฉพาะผู้ดูแลระบบ/,
+    /\{canViewSensitiveData && \(\s*<section className=\{styles\.loanApprovalInfoCard\}>[\s\S]*?title="ข้อมูลธนาคาร"/,
+    "RequestsCard must guard bank details box so it only renders for admin and super_admin",
+  );
+  assert.match(
+    requestsCard,
+    /<LoanPetitionDocument[\s\S]*?hideBankDetails=\{!canViewSensitiveData\}/,
+    "RequestsCard must pass hideBankDetails={!canViewSensitiveData} to LoanPetitionDocument",
   );
 });
 

@@ -790,7 +790,7 @@ export async function getActionRequests(
 }
 
 export async function getAdvisorActionRequests(advisorId: string): Promise<ActionRequest[]> {
-  return getActionRequests({ advisorId });
+  return getActionRequests({ advisorId }, { hideBankDetails: true });
 }
 
 export async function getAdminActionRequests(): Promise<ActionRequest[]> {

@@ -854,13 +854,13 @@ export default function RequestsCard({
               </section>
 
               {/* ข้อมูลธนาคาร */}
-              <section className={styles.loanApprovalInfoCard}>
-                <CardHeader
-                  className={styles.sectionCardHeading}
-                  icon={<Landmark aria-hidden="true" size={20} strokeWidth={2.2} />}
-                  title="ข้อมูลธนาคาร"
-                />
-                {canViewSensitiveData ? (
+              {canViewSensitiveData && (
+                <section className={styles.loanApprovalInfoCard}>
+                  <CardHeader
+                    className={styles.sectionCardHeading}
+                    icon={<Landmark aria-hidden="true" size={20} strokeWidth={2.2} />}
+                    title="ข้อมูลธนาคาร"
+                  />
                   <dl>
                     <div>
                       <dt>ธนาคาร</dt>
@@ -875,13 +875,8 @@ export default function RequestsCard({
                       <dd>{selectedRequest.bankDetails?.accountName || "-"}</dd>
                     </div>
                   </dl>
-                ) : (
-                  <div className="flex items-center justify-center gap-2 py-6 text-gray-500 text-[13px] bg-gray-50/60 rounded-xl border border-dashed border-gray-200">
-                    <ShieldAlert size={18} className="text-amber-500 shrink-0" />
-                    <span>ข้อมูลบัญชีธนาคารสงวนสิทธิ์การเข้าถึงเฉพาะผู้ดูแลระบบ</span>
-                  </div>
-                )}
-              </section>
+                </section>
+              )}
 
               {/* ข้อมูลการกู้ยืม */}
               <section className={styles.loanApprovalInfoCard}>
@@ -1435,6 +1430,8 @@ export default function RequestsCard({
               ) : (
                 <LoanPetitionDocument
                   request={viewDocumentReq as unknown as DisburseActionRequest}
+                  hideBankDetails={!canViewSensitiveData}
+                  userRole={userRole}
                 />
               )}
             </div>

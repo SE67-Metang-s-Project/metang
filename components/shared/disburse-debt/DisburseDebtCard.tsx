@@ -1114,7 +1114,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   title="Petition Document"
                 />
               ) : (
-                <LoanPetitionDocument request={viewDocumentReq} />
+                <LoanPetitionDocument request={viewDocumentReq} userRole="admin" />
               )}
             </div>
 

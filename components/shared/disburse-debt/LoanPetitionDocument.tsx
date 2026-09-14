@@ -8,6 +8,8 @@ import type { ActionRequest } from "./DisburseDebtCard";
 export interface LoanPetitionDocumentProps {
   request: ActionRequest;
   showDownloadButton?: boolean;
+  hideBankDetails?: boolean;
+  userRole?: string;
 }
 
 export function downloadLoanPetitionPdf(
@@ -210,7 +212,14 @@ const formatAmount = (amountStr: string | number) => {
 export default function LoanPetitionDocument({
   request,
   showDownloadButton = false,
+  hideBankDetails = false,
+  userRole,
 }: LoanPetitionDocumentProps) {
+  const isBankDataHidden =
+    hideBankDetails ||
+    (userRole !== undefined && userRole !== "admin" && userRole !== "super_admin") ||
+    !request.bankDetails;
+
   // หาข้อมูลการอนุมัติของแต่ละฝ่าย
   const advisorApproval = request.approvals?.find((a) => a.step === "advisor");
   const executiveApproval = request.approvals?.find((a) => a.step === "executive");
@@ -470,20 +479,22 @@ export default function LoanPetitionDocument({
             </span>
           </p>
 
-          <p>
-            <span>โอนเข้าบัญชี ธนาคาร </span>
-            <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[120px] inline-block text-center">
-              {request.bankDetails?.bankName || "-"}
-            </span>
-            <span> เลขที่บัญชี </span>
-            <span className="font-semibold font-mono text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[150px] inline-block text-center">
-              {request.bankDetails?.accountNumber || "-"}
-            </span>
-            <span> ชื่อบัญชี </span>
-            <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[200px] inline-block text-center">
-              {request.bankDetails?.accountName || request.name}
-            </span>
-          </p>
+          {!isBankDataHidden && (
+            <p>
+              <span>โอนเข้าบัญชี ธนาคาร </span>
+              <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[120px] inline-block text-center">
+                {request.bankDetails?.bankName || "-"}
+              </span>
+              <span> เลขที่บัญชี </span>
+              <span className="font-semibold font-mono text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[150px] inline-block text-center">
+                {request.bankDetails?.accountNumber || "-"}
+              </span>
+              <span> ชื่อบัญชี </span>
+              <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[200px] inline-block text-center">
+                {request.bankDetails?.accountName || request.name}
+              </span>
+            </p>
+          )}
         </div>
 
         {/* ย่อหน้าที่ 2: ระเบียบและข้อตกลงการยืมเงิน */}

@@ -22,8 +22,7 @@ export default async function StudentDetailPage({ searchParams }: StudentDetailP
   let loan: RawStudentLoan | null = null;
   if (requestId) {
     loan = (await getStudentLoanDetail(requestId, context.user.id).catch(() => null)) as RawStudentLoan | null;
-  }
-  if (!loan) {
+  } else {
     loan = (await getStudentCurrentLoan(context.user.id).catch(() => null)) as RawStudentLoan | null;
   }
 
@@ -39,7 +38,7 @@ export default async function StudentDetailPage({ searchParams }: StudentDetailP
 
   const details = loan
     ? mapToLoanDetails(loan)
-    : (getLoanDetails(requestId ?? activeLoan.requestNumber) ?? null);
+    : (!requestId ? (getLoanDetails(activeLoan.requestNumber) ?? null) : null);
 
   if (!details) {
     return (

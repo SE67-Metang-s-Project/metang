@@ -12,12 +12,16 @@ export interface LoanPetitionModalProps {
   request: ActionRequest | null;
   isOpen: boolean;
   onClose: () => void;
+  hideBankDetails?: boolean;
+  userRole?: string;
 }
 
 export default function LoanPetitionModal({
   request,
   isOpen,
   onClose,
+  hideBankDetails = false,
+  userRole,
 }: LoanPetitionModalProps) {
   const [documentViewTab, setDocumentViewTab] = useState<"official" | "attachment">("official");
   const modalDismiss = useModalDismiss({
@@ -98,7 +102,11 @@ export default function LoanPetitionModal({
               title="Petition Document"
             />
           ) : (
-            <LoanPetitionDocument request={request} />
+            <LoanPetitionDocument
+              request={request}
+              hideBankDetails={hideBankDetails}
+              userRole={userRole}
+            />
           )}
         </div>
 
