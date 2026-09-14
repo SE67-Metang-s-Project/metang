@@ -35,6 +35,13 @@ function parseDateInputValue(value: string) {
   return new Date(year, month - 1, day);
 }
 
+function formatTransferAmount(value: string) {
+  const [whole = "", decimal] = value.replaceAll(",", "").split(".");
+  const formattedWhole = whole ? Number(whole).toLocaleString("en-US") : "";
+
+  return decimal === undefined ? formattedWhole : `${formattedWhole}.${decimal}`;
+}
+
 export default function PaymentModal({ installment, account, onClose, onConfirm }: PaymentModalProps) {
   const { language, t } = useStudentLanguage();
   const [isQrSaveNoticeOpen, setIsQrSaveNoticeOpen] = useState(false);
@@ -49,6 +56,13 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
   const [hasSelectedTime, setHasSelectedTime] = useState(false);
   const [transferAmount, setTransferAmount] = useState("");
   const [formErrors, setFormErrors] = useState<PaymentFormErrors>({});
+  const hasTransferDetailsError = Boolean(
+    formErrors.transferDate || formErrors.transferTime || formErrors.transferAmount,
+  );
+  const dueDate = localizeStudentContent(installment.dueDateLabel, language).replace(
+    /^(ครบกำหนด|Due)\s*/,
+    "",
+  );
   const modalBodyRef = useRef<HTMLDivElement>(null);
   const fieldRefs = useRef<Partial<Record<PaymentFormField, HTMLElement | null>>>({});
   const calendarPickerRef = useRef<HTMLDivElement>(null);
@@ -150,7 +164,9 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
     if (!fileName) errors.receipt = requiredFieldMessage;
     if (!transferDate) errors.transferDate = requiredFieldMessage;
     if (!hasSelectedTime) errors.transferTime = requiredFieldMessage;
-    if (!transferAmount || Number(transferAmount) <= 0) errors.transferAmount = requiredFieldMessage;
+    if (!transferAmount || Number(transferAmount.replaceAll(",", "")) <= 0) {
+      errors.transferAmount = requiredFieldMessage;
+    }
 
     return errors;
   };
@@ -213,7 +229,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
           <h2 className="text-xl font-bold leading-tight text-gray-900" id="payment-modal-title">
             {t("ชำระงวดที่", "Pay installment")} {installment.installmentNumber}
           </h2>
-          <p className="mt-1 text-sm font-bold text-gray-600">{t("ครบกำหนด", "Due")} {localizeStudentContent(installment.dueDateLabel, language)}</p>
+          <p className="mt-1 text-sm font-bold text-gray-600">{t("ครบกำหนด", "Due")} {dueDate}</p>
         </header>
 
         <div
@@ -228,7 +244,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
           <section className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <h3 className="mb-0 flex items-center gap-2 border-b border-gray-200 pb-3 text-lg font-bold text-gray-900">
               <Landmark aria-hidden="true" className="text-gray-400" size={21} />
-              {t("ข้อมูลบัญชีสำหรับชำระเงิน", "Payment account details")}
+              {t("ข้อมูลบัญชีสำหรับชำระเงิน", "Payment Account Details")}
             </h3>
             <dl className="text-sm">
               <div className="flex items-start justify-between gap-5 border-b border-gray-200 py-2.5">
@@ -269,10 +285,15 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
             </div>
           </section>
 
-          <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <section
+            className={`rounded-xl border bg-white p-4 shadow-sm ${
+              formErrors.receipt ? "border-red-400" : "border-gray-200"
+            }`}
+          >
             <h3 className="mb-3 flex items-center gap-2 text-lg font-bold text-gray-900">
               <ReceiptText aria-hidden="true" className="text-gray-400" size={21} />
-              {t("หลักฐานการโอนเงิน", "Transfer evidence")}
+              {t("หลักฐานการโอนเงิน", "Transfer Evidence")}
+              <span aria-hidden="true" className="text-red-500">*</span>
             </h3>
             <div
               className={`group rounded-xl border-2 border-dashed text-center transition-colors ${
@@ -304,12 +325,12 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                     size={32}
                   />
                 )}
-                <strong className={`${receiptPreview ? "mt-3" : "mt-2"} text-sm text-gray-800`}>
+                <span className={`${receiptPreview ? "mt-3" : "mt-2"} text-sm font-normal text-gray-800`}>
                   {receiptPreview
                     ? t("แตะเพื่ออัปโหลดรูปภาพใหม่", "Tap to upload a new image")
                     : t("แตะเพื่ออัปโหลดหลักฐานการโอน", "Tap to upload transfer evidence")}
-                </strong>
-                <span className="mt-1 text-sm text-gray-500">
+                </span>
+                <span className="mt-1 text-sm font-normal text-gray-500">
                   {receiptPreview ? fileName : t("รองรับ JPG, PNG (สูงสุด 500 KB)", "JPG or PNG, up to 500 KB")}
                 </span>
               </button>
@@ -353,10 +374,15 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
             {formErrors.receipt ? <p className="mt-1.5 text-sm text-red-600">{formErrors.receipt}</p> : null}
           </section>
 
-          <section className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm mt-5">
+          <section
+            className={`mb-6 mt-5 rounded-xl border bg-white p-4 shadow-sm ${
+              hasTransferDetailsError ? "border-red-400" : "border-gray-200"
+            }`}
+          >
             <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
               <ReceiptText aria-hidden="true" className="text-gray-400" size={21} />
-              {t("รายละเอียดการโอนเงิน", "Transfer details")}
+              {t("รายละเอียดการโอนเงิน", "Transfer Details")}
+              <span aria-hidden="true" className="text-red-500">*</span>
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div
@@ -371,15 +397,16 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                 </span>
                 <button
                   aria-expanded={isCalendarOpen}
-                  className={`flex h-11 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-sm transition-colors focus:outline-none ${
+                  className={`flex h-11 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-sm font-normal transition-colors focus:outline-none ${
                     formErrors.transferDate
                       ? "border-red-400 text-red-700 focus:border-red-500"
-                      : "border-gray-300 text-gray-800 hover:border-orange-300 focus:border-orange-400"
+                      : `border-gray-300 font-normal ${transferDate ? "text-gray-800" : "text-gray-400"} hover:border-orange-300 focus:border-orange-400`
                   }`}
                   onClick={() => {
                     setIsCalendarOpen((open) => !open);
                     setIsTimePickerOpen(false);
                   }}
+                  style={{ fontWeight: 400 }}
                   type="button"
                 >
                   {formatPaymentDate(transferDate)}
@@ -463,15 +490,16 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                 </span>
                 <button
                   aria-expanded={isTimePickerOpen}
-                  className={`flex h-11 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-sm transition-colors focus:outline-none ${
+                  className={`flex h-11 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-sm font-normal transition-colors focus:outline-none ${
                     formErrors.transferTime
                       ? "border-red-400 text-red-700 focus:border-red-500"
-                      : "border-gray-300 text-gray-800 hover:border-orange-300 focus:border-orange-400"
+                      : `border-gray-300 font-normal ${hasSelectedTime ? "text-gray-800" : "text-gray-400"} hover:border-orange-300 focus:border-orange-400`
                   }`}
                   onClick={() => {
                     setIsTimePickerOpen((open) => !open);
                     setIsCalendarOpen(false);
                   }}
+                  style={{ fontWeight: 400 }}
                   type="button"
                 >
                   {hasSelectedTime ? `${selectedHour}:${selectedMinute}${language === "th" ? " น." : ""}` : t("เลือกเวลา", "Select time")}
@@ -574,13 +602,20 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                     inputMode="decimal"
                     min="0"
                     onChange={(event) => {
-                      setTransferAmount(event.target.value);
+                      const rawAmount = event.target.value.replaceAll(",", "");
+                      const [whole = "", ...decimalParts] = rawAmount.split(".");
+                      const decimal = decimalParts.join("").replace(/\D/g, "");
+                      const normalizedAmount = `${whole.replace(/\D/g, "")}${
+                        decimalParts.length ? `.${decimal}` : ""
+                      }`;
+
+                      setTransferAmount(normalizedAmount);
                       setFormErrors((current) => ({ ...current, transferAmount: "" }));
                     }}
                     placeholder="0.00"
-                    step="0.01"
-                    type="number"
-                    value={transferAmount}
+                    pattern="[0-9,.]*"
+                    type="text"
+                    value={formatTransferAmount(transferAmount)}
                   />
                   <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-500">
                     {t("บาท", "THB")}

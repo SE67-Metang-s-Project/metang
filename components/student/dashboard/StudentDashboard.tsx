@@ -94,7 +94,7 @@ export default function StudentDashboard({
   const [dashboardError, setDashboardError] = useState<StudentUiError | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { setDefaultLanguage } = useStudentLanguage();
+  const { setDefaultLanguage, t } = useStudentLanguage();
   const activeTimeline = timeline ?? [];
   const dashboardTimeline = activeTimeline.filter((item) => !item.isUpcoming);
   const defaultLanguage =
@@ -391,16 +391,20 @@ export default function StudentDashboard({
           >
             <CheckCircle2 aria-hidden="true" className="mx-auto text-green-500" size={64} strokeWidth={1.5} />
             <h2 className="mt-4 text-2xl font-bold text-gray-900" id="payment-success-title">
-              ดำเนินการสำเร็จ!
+              {t("ดำเนินการสำเร็จ!", "Payment submitted!")}
             </h2>
-            <p className="mt-2 text-gray-600">ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว</p>
-            <p className="mt-1 text-sm text-gray-500">เจ้าหน้าที่จะตรวจสอบและแจ้งผลให้ทราบภายหลัง</p>
+            <p className="mt-2 text-gray-600">
+              {t("ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว", "Your payment evidence has been submitted.")}
+            </p>
+            <p className="mt-1 text-sm text-gray-500">
+              {t("เจ้าหน้าที่จะตรวจสอบและแจ้งผลให้ทราบภายหลัง", "Admin will review it and notify you later.")}
+            </p>
             <button
               className="mt-6 w-full rounded-lg bg-green-600 px-4 py-3 font-bold text-white transition-colors hover:bg-green-700"
               onClick={() => setIsPaymentSuccessOpen(false)}
               type="button"
             >
-              ตกลง
+              {t("ตกลง", "Done")}
             </button>
           </section>
         </div>
