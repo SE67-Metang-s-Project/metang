@@ -3317,6 +3317,53 @@
           "installmentCount"
         ]
       },
+      "LoanReminderBody": {
+        "type": "object",
+        "properties": {
+          "loanId": {
+            "type": "string",
+            "nullable": false
+          }
+        },
+        "required": [
+          "loanId"
+        ]
+      },
+      "LoanReminderResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "loanId": {
+                "type": "string"
+              },
+              "installmentSeq": {
+                "type": "number"
+              },
+              "amountDue": {
+                "type": "number"
+              },
+              "dueDate": {
+                "type": "string"
+              },
+              "sentTo": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "loanId",
+              "installmentSeq",
+              "amountDue",
+              "dueDate",
+              "sentTo"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "LoanRequestCurrentResponse": {
         "type": "object",
         "properties": {
@@ -6637,6 +6684,104 @@
           },
           "429": {
             "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/outlook": {
+      "post": {
+        "operationId": "post-notifications-outlook",
+        "summary": "Outlook (email) due-date reminder to the student for a loan's next unpaid installment - which",
+        "description": "",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoanReminderBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanReminderResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
             "content": {
               "application/json": {
                 "schema": {

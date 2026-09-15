@@ -95,3 +95,39 @@ export async function resolveReviewerRecipients(
   const executiveEmail = await getExecutiveRecipientEmail();
   return executiveEmail ? [executiveEmail] : [];
 }
+
+const installmentReminderSelect = {
+  seq: true,
+  dueDate: true,
+  amountDue: true,
+  amountPaid: true,
+  settledAt: true,
+  loanId: true,
+  loan: {
+    select: {
+      status: true,
+      student: { select: { fullNameTh: true, email: true } },
+    },
+  },
+} satisfies Prisma.InstallmentSelect;
+
+export type InstallmentReminderContext = Prisma.InstallmentGetPayload<{
+  select: typeof installmentReminderSelect;
+}>;
+
+/**
+ * The next unpaid installment for a loan - the caller (POST /api/notifications/outlook) only
+ * supplies loanId; which installment is due, its amount, and its due date are computed here, not
+ * accepted from the request. `seq` doubles as due-date order since installments are generated in
+ * sequence 30 days apart (lib/loan-validation.ts computeInstallmentSchedule), so the lowest
+ * unsettled seq is always the next one due.
+ */
+export async function getNextDueInstallmentContext(
+  loanId: string,
+): Promise<InstallmentReminderContext | null> {
+  return prisma.installment.findFirst({
+    where: { loanId, settledAt: null },
+    orderBy: { seq: "asc" },
+    select: installmentReminderSelect,
+  });
+}

@@ -465,3 +465,17 @@ export type ReviewerNotificationResponse = {
     failed: number;
   };
 };
+
+export type LoanReminderBody = {
+  loanId: string;
+};
+
+export type LoanReminderResponse = {
+  data: {
+    loanId: string;
+    installmentSeq: number;
+    amountDue: number;
+    dueDate: string;
+    sentTo: string;
+  };
+};
