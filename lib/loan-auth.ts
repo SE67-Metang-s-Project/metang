@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getCmuDisplayName, getCmuSession, type CmuProfile, type CmuSession } from "@/lib/cmu-auth";
 import { getNurseAccessDecision } from "@/lib/nurse-auth";
 import {
+  getDevelopmentRoleUserId,
   isDevelopmentApiBypass,
   isDevelopmentEnvironment,
   isDevelopmentRoleEnabled,
@@ -147,7 +148,10 @@ async function getDevelopmentLoanContext(
 
   const user = await prisma.appUser.findUnique({
     where: {
-      id: DEVELOPMENT_USER_IDS[developmentRole],
+      // Per-role override (e.g. DEV_ADVISOR_USER_ID) lets a fixture holding more than one role
+      // be reached through any single one of its roles' bypass, without disturbing the other
+      // roles' own default fixtures.
+      id: getDevelopmentRoleUserId(developmentRole) ?? DEVELOPMENT_USER_IDS[developmentRole],
     },
     include: { roles: { select: { role: true } } },
   });

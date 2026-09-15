@@ -38,3 +38,28 @@ export function isDevelopmentRoleEnabled(
 ) {
   return value === "true" && isDevelopmentEnvironment(infisicalEnvironment, nodeEnvironment);
 }
+
+const developmentRoleUserIdEnvironmentVariables: Record<DevelopmentApiRole, string> = {
+  advisor: "DEV_ADVISOR_USER_ID",
+  admin: "DEV_ADMIN_USER_ID",
+  super_admin: "DEV_SUPERADMIN_USER_ID",
+  executive: "DEV_EXECUTIVE_USER_ID",
+};
+
+/**
+ * Overrides which seeded user a single role's dev bypass resolves to - unlike a blanket
+ * override, this only affects that one role's lookup, so a fixture that legitimately holds more
+ * than one role (e.g. exec@cmu.ac.th also holding "advisor") can be reached through the advisor
+ * bypass without disturbing the admin/super_admin/executive bypasses' own default fixtures.
+ * Unset, each role resolves to its usual fixed fixture (unchanged behavior).
+ */
+export function getDevelopmentRoleUserId(
+  role: DevelopmentApiRole,
+  value = process.env[developmentRoleUserIdEnvironmentVariables[role]],
+  infisicalEnvironment = process.env.INFISICAL_ENV,
+  nodeEnvironment = process.env.NODE_ENV,
+): string | undefined {
+  if (!isDevelopmentEnvironment(infisicalEnvironment, nodeEnvironment)) return undefined;
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
