@@ -149,17 +149,26 @@ test("mapFundTransactionError: 409 INSUFFICIENT_FUNDS returns the specific messa
   );
 });
 
-test("mapFundTransactionError: 409 with other errorCode falls back to the server message, or a generic one", () => {
-  assert.equal(mapFundTransactionError(409, "CONFLICT", "The request changed; please retry"), "The request changed; please retry");
+test("mapFundTransactionError: 409 with other errorCode always returns the generic Thai conflict message, never the raw backend text", () => {
+  assert.equal(
+    mapFundTransactionError(409, "CONFLICT", "The request changed; please retry"),
+    "เกิดข้อขัดแย้ง กรุณาลองใหม่",
+  );
   assert.equal(mapFundTransactionError(409, undefined, ""), "เกิดข้อขัดแย้ง กรุณาลองใหม่");
 });
 
-test("mapFundTransactionError: 422 returns fallback when present, else generic validation message", () => {
-  assert.equal(mapFundTransactionError(422, "VALIDATION_ERROR", "amount is invalid"), "amount is invalid");
-  assert.equal(mapFundTransactionError(422, "VALIDATION_ERROR", ""), "ข้อมูลไม่ถูกต้อง");
+test("mapFundTransactionError: 422 always returns the generic Thai validation message, never the raw backend text", () => {
+  assert.equal(
+    mapFundTransactionError(422, "VALIDATION_ERROR", "amount is invalid"),
+    "ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบจำนวนเงินและเหตุผล",
+  );
+  assert.equal(
+    mapFundTransactionError(422, "VALIDATION_ERROR", ""),
+    "ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบจำนวนเงินและเหตุผล",
+  );
 });
 
-test("mapFundTransactionError: unrecognized status falls back to fallback, else a generic save-error message", () => {
-  assert.equal(mapFundTransactionError(500, undefined, "boom"), "boom");
+test("mapFundTransactionError: unrecognized status always returns the generic Thai save-error message, never the raw backend text", () => {
+  assert.equal(mapFundTransactionError(500, undefined, "boom"), "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
   assert.equal(mapFundTransactionError(500, undefined, ""), "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
 });

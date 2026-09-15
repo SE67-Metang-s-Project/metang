@@ -94,6 +94,7 @@ export default function SystemBudgetTab() {
   };
 
   const handleSave = async () => {
+    if (budgetAmount === "") return;
     const target = Number(budgetAmount) || 0;
     const adjustment = resolveFundAdjustment(target, currentTotal);
 
@@ -223,7 +224,7 @@ export default function SystemBudgetTab() {
           <div className="flex gap-3 pt-2">
             <button
               onClick={handleSave}
-              disabled={isSubmitting || Number(budgetAmount) === currentTotal}
+              disabled={isSubmitting || budgetAmount === "" || Number(budgetAmount) === currentTotal}
               className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#ea580c] hover:bg-[#c2410c] text-white font-bold rounded-lg transition-colors shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save size={18} />

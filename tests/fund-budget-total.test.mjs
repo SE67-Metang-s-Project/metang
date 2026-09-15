@@ -9,6 +9,7 @@ const read = (file) => readFileSync(resolve(root, file), "utf8");
 const query = read("db/queries/loan-requests.ts");
 const pendingTotalFn = query.slice(query.indexOf("export async function getPendingDisbursementTotal"));
 const route = read("app/api/super-admin/fund-transactions/route.ts");
+const tab = read("components/superadmin/setting/SystemBudgetTab.tsx");
 
 test("getPendingDisbursementTotal aggregates by pending_disbursement status, system-wide", () => {
   assert.match(pendingTotalFn, /where: \{ status: "pending_disbursement" \}/);
@@ -56,4 +57,14 @@ test("fund-transactions GET still checks auth before querying (regression guard)
   assert.match(getHandler, /apiError\("UNAUTHORIZED", "Authentication required", 401\)/);
   assert.match(getHandler, /access\.status === "forbidden"/);
   assert.match(getHandler, /apiError\("FORBIDDEN", "SuperAdmin access required", 403\)/);
+});
+
+test("SystemBudgetTab Save button is disabled when the budget-amount input is cleared (regression guard)", () => {
+  // A cleared input ("") must not be treated as target 0 and enable a debit_adjustment that
+  // wipes the whole fund - both the button's disabled check and handleSave itself must guard it.
+  const saveButton = tab.slice(tab.indexOf("onClick={handleSave}"), tab.indexOf("</button>", tab.indexOf("onClick={handleSave}")));
+  assert.match(saveButton, /budgetAmount === ""/);
+
+  const handleSave = tab.slice(tab.indexOf("const handleSave = async"), tab.indexOf("const usagePercentage"));
+  assert.match(handleSave, /if \(budgetAmount === ""\) return;/);
 });
