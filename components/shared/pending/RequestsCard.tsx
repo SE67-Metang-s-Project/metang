@@ -11,7 +11,6 @@ import {
   CalendarDays,
   CreditCard,
   MessageSquare,
-  History,
   CheckCircle2,
   XCircle,
   ShieldAlert,
@@ -28,6 +27,7 @@ import LoanPetitionDocument, {
 import type { ActionRequest as DisburseActionRequest } from "@/components/shared/disburse-debt/DisburseDebtCard";
 import { formatThaiBahtText } from "@/app/student/studentFormatters";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
+import RequestTimeline from "@/components/shared/RequestTimeline";
 import styles from "@/app/student/student.module.css";
 
 // ==========================================
@@ -72,6 +72,14 @@ export type ActionHistory = {
   action: string;
   date: string;
   actor: string;
+  commentTitle?: string;
+  comment?: string;
+  isCompleted?: boolean;
+  isPending?: boolean;
+  isUpcoming?: boolean;
+  isFailed?: boolean;
+  isRevision?: boolean;
+  transferDetails?: string[];
 };
 
 export type PaymentBehaviorInfo = {
@@ -375,10 +383,16 @@ export default function RequestsCard({
   const [autoOpenedRequestId, setAutoOpenedRequestId] = useState<string | undefined>(undefined);
   const [viewDocumentReq, setViewDocumentReq] = useState<ActionRequest | null>(null);
   const [documentViewTab, setDocumentViewTab] = useState<"official" | "attachment">("official");
-  const selectedRequestHistory = selectedRequest?.history ?? [];
   const isExecutiveTable = tableLayout === "executive";
-
-
+  const isDisbursed =
+    selectedRequest?.requestStatus === "disbursed" ||
+    selectedRequest?.requestStatus === "closed" ||
+    Boolean(selectedRequest?.slipUrl) ||
+    Boolean(
+      selectedRequest?.history?.some(
+        (h) => h.action.includes("โอนเงิน") || h.action.includes("เบิกจ่าย"),
+      ),
+    );
   // State สำหรับการแก้ไขวงเงิน (Admin / Super Admin)
   const [isEditingAmount, setIsEditingAmount] = useState(false);
   const [editAmountValue, setEditAmountValue] = useState("");
@@ -1142,58 +1156,31 @@ export default function RequestsCard({
                 </div>
               </section>
 
-              {/* ประวัติการดำเนินการ */}
-              <section className={styles.loanApprovalInfoCard}>
-                <CardHeader
-                  className={styles.sectionCardHeading}
-                  icon={<History aria-hidden="true" size={20} strokeWidth={2.2} />}
-                  title="ประวัติการดำเนินการ"
-                />
-                {selectedRequestHistory.length > 0 ? (
-                  <div className="relative border-l-2 border-orange-200 ml-2.5 space-y-4 my-2">
-                    {selectedRequestHistory.map((step, index) => (
-                      <div key={index} className="relative pl-5">
-                        <div
-                          className={`absolute w-3 h-3 rounded-full -left-[7px] top-1.5 ${
-                            index === selectedRequestHistory.length - 1
-                              ? "bg-[#ea580c] ring-4 ring-orange-100"
-                              : "bg-gray-300"
-                          }`}
-                        ></div>
-                        <div
-                          className={`font-bold text-[14px] ${
-                            index === selectedRequestHistory.length - 1
-                              ? "text-gray-900"
-                              : "text-gray-600"
-                          }`}
-                        >
-                          {step.action}
-                        </div>
-                        <div className="text-[12px] text-gray-500 mt-0.5">
-                          {step.date} · {step.actor}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-4 bg-gray-50/50 rounded-xl border border-dashed border-gray-200 mt-2">
-                    <p className="text-[13px] text-gray-500">ยังไม่มีประวัติการดำเนินการ</p>
-                  </div>
-                )}
-              </section>
+              {/* ติดตามสถานะคำร้อง */}
+              <RequestTimeline
+                history={selectedRequest.history}
+                approvals={selectedRequest.approvals}
+                requestStatus={selectedRequest.requestStatus}
+                bankDetails={selectedRequest.bankDetails}
+                advisorName={selectedRequest.advisorName}
+                studentName={selectedRequest.name}
+                submitDate={selectedRequest.submitDate}
+              />
 
-              {/* ปุ่มดาวน์โหลดแบบคำร้อง (PDF) เหมือนหน้านักศึกษา */}
-              <button
-                className={styles.loanDownloadButton}
-                type="button"
-                onClick={() => {
-                  setDocumentViewTab("official");
-                  setViewDocumentReq(selectedRequest);
-                }}
-              >
-                <Download aria-hidden="true" size={18} />
-                <strong>ดาวน์โหลดแบบคำร้อง (PDF)</strong>
-              </button>
+              {/* ปุ่มดาวน์โหลดแบบคำร้อง (PDF) เหมือนหน้านักศึกษา - แสดงเฉพาะเมื่อ admin/super admin โอนเงินสำเร็จแล้ว */}
+              {isDisbursed && (
+                <button
+                  className={styles.loanDownloadButton}
+                  type="button"
+                  onClick={() => {
+                    setDocumentViewTab("official");
+                    setViewDocumentReq(selectedRequest);
+                  }}
+                >
+                  <Download aria-hidden="true" size={18} />
+                  <strong>ดาวน์โหลดแบบคำร้อง (PDF)</strong>
+                </button>
+              )}
             </div>
 
             {/* Footer Buttons */}

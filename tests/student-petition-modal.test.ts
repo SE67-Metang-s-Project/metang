@@ -83,3 +83,26 @@ test("LoanDetailsPage and LoanDetailOverview connect LoanPetitionModal to 'ด�
     "LoanPetitionModal must support downloading the PDF",
   );
 });
+
+test("Download petition PDF button appears only when admin/super admin has successfully transferred funds", () => {
+  const loanDetailsPageContent = read("components/student/loan-details/LoanDetailsPage.tsx");
+  assert.match(
+    loanDetailsPageContent,
+    /const shouldShowDownload = hasAdminTransferredFunds;/,
+    "LoanDetailsPage must show download button only when admin has transferred funds",
+  );
+
+  const disburseDebtCardContent = read("components/shared/disburse-debt/DisburseDebtCard.tsx");
+  assert.match(
+    disburseDebtCardContent,
+    /\{isCompleted && \(\s*<button[\s\S]*?ดาวน์โหลดแบบคำร้อง \(PDF\)[\s\S]*?<\/button>\s*\)\}/,
+    "DisburseDebtCard must guard download button so it only appears when disbursement is completed",
+  );
+
+  const requestsCardContent = read("components/shared/pending/RequestsCard.tsx");
+  assert.match(
+    requestsCardContent,
+    /\{isDisbursed && \(\s*<button[\s\S]*?ดาวน์โหลดแบบคำร้อง \(PDF\)[\s\S]*?<\/button>\s*\)\}/,
+    "RequestsCard must guard download button so it only appears when disbursement is completed",
+  );
+});

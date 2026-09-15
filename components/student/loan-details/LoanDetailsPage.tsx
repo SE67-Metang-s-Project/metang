@@ -47,6 +47,7 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
     details.statusLabel === "รอยืนยันการโอนเงิน";
   const hasAdminTransferredFunds =
     ["disbursed", "closed"].includes(details.statusCode ?? "") ||
+    Boolean(details.transferSlipImage && details.transferSlipImage.trim() !== "") ||
     details.timeline.some((item) => Boolean(item.transferDetails));
   const transferConfirmationKey = details.id ?? details.requestNumber;
   const isTransferAccepted = useSyncExternalStore(
@@ -59,7 +60,7 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
     details.statusCode === "disbursed" ||
     details.statusLabel.includes("อยู่ระหว่างการชำระ") ||
     details.statusLabel.includes("กำลังชำระ");
-  const shouldShowDownload = isWaitingForTransferConfirmation || isRepaymentInProgress;
+  const shouldShowDownload = hasAdminTransferredFunds;
   const displayedDetails = useMemo(() => {
     return isWaitingForTransferConfirmation && isTransferAccepted
       ? { ...details, statusCode: undefined, statusLabel: "กำลังชำระ" }
