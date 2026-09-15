@@ -38,3 +38,20 @@ export function isDevelopmentRoleEnabled(
 ) {
   return value === "true" && isDevelopmentEnvironment(infisicalEnvironment, nodeEnvironment);
 }
+
+/**
+ * Overrides which seeded user a role-scoped dev bypass resolves to. Without this, each role
+ * always maps to its own fixed fixture (e.g. the advisor bypass always resolves to
+ * advisor@cmu.ac.th), so a fixture that legitimately holds more than one role (e.g.
+ * exec@cmu.ac.th also holding "advisor") can never be reached through the advisor bypass. Set
+ * DEV_ACTIVE_USER_ID to that user's id to test as them under any role they actually hold.
+ */
+export function getDevelopmentActiveUserId(
+  value = process.env.DEV_ACTIVE_USER_ID,
+  infisicalEnvironment = process.env.INFISICAL_ENV,
+  nodeEnvironment = process.env.NODE_ENV,
+): string | undefined {
+  if (!isDevelopmentEnvironment(infisicalEnvironment, nodeEnvironment)) return undefined;
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
