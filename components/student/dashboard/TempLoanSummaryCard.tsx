@@ -40,6 +40,12 @@ export default function TempLoanSummaryCard({ profile }: TempLoanSummaryCardProp
     .map((value) => (value ? localizeStudentContent(value, language) : value))
     .filter(Boolean)
     .join(" | ");
+  const thaiMobileProfileMeta = [educationLevel, currentProfile.studentId]
+    .map((value) => (value ? localizeStudentContent(value, language) : value))
+    .filter(Boolean)
+    .join(" | ");
+  const usesLongThaiDegree = educationLevel?.includes("ประกาศนียบัตรบัณฑิต") ?? false;
+  const thaiMobileSummaryLine = [programLabel, thaiMobileProfileMeta].filter(Boolean).join(" | ");
 
   return (
     <section className={styles.tempLoanSummary} aria-labelledby="temp-loan-summary-title">
@@ -50,8 +56,40 @@ export default function TempLoanSummaryCard({ profile }: TempLoanSummaryCardProp
             : currentProfile.displayName}
         </h1>
         <div className={styles.summaryProfileDetails}>
-          {programLabel ? <p>{programLabel}</p> : null}
-          {profileMeta ? <p>{profileMeta}</p> : null}
+          {language === "th" ? (
+            <>
+              {thaiMobileSummaryLine ? (
+                <p
+                  className={
+                    usesLongThaiDegree
+                      ? styles.summaryThaiMobileHidden
+                      : styles.summaryThaiMobileOnly
+                  }
+                >
+                  {thaiMobileSummaryLine}
+                </p>
+              ) : null}
+              <div
+                className={
+                  usesLongThaiDegree
+                    ? styles.summaryThaiMobileLongOnly
+                    : styles.summaryThaiMobileHidden
+                }
+              >
+                {programLabel ? <p>{programLabel}</p> : null}
+                {thaiMobileProfileMeta ? <p>{thaiMobileProfileMeta}</p> : null}
+              </div>
+              <div className={styles.summaryThaiDesktopOnly}>
+                {programLabel ? <p>{programLabel}</p> : null}
+                {profileMeta ? <p>{profileMeta}</p> : null}
+              </div>
+            </>
+          ) : (
+            <>
+              {programLabel ? <p>{programLabel}</p> : null}
+              {profileMeta ? <p>{profileMeta}</p> : null}
+            </>
+          )}
         </div>
       </div>
       <Link className={styles.tempLoanAction} href="/student/loan/apply">

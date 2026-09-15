@@ -568,6 +568,27 @@
   text-align: right;
 }
 
+.loanFormProgramValue {
+  overflow-wrap: anywhere;
+}
+
+.loanFormStudentDetails p:has(.loanFormProgramValue) {
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.7fr);
+}
+
+.loanFormFixedValue {
+  display: flex;
+  align-items: center;
+  min-height: 45px;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: #f8fafc;
+  color: var(--color-heading);
+  font-size: inherit;
+}
+
 .loanFormStudentDetails + .loanFormFields {
   padding-top: 6px;
 }
@@ -1548,6 +1569,25 @@
 
 .summaryProfileDetails {
   display: grid;
+}
+
+@media (max-width: 639px) {
+  .summaryThaiMobileOnly {
+    white-space: nowrap;
+  }
+
+  .summaryThaiMobileHidden,
+  .summaryThaiDesktopOnly {
+    display: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .summaryThaiMobileOnly,
+  .summaryThaiMobileLongOnly,
+  .summaryThaiMobileHidden {
+    display: none;
+  }
 }
 
 @media (min-width: 640px) {
@@ -3127,17 +3167,18 @@
 
 .loanDetailOverviewHeader h2 {
   min-width: 0;
-  font-size: 20px;
+  font-size: 17px;
 }
 
 :global(html[data-student-language="en"]) .loanDetailOverviewHeader h2 {
-  font-size: 18px;
+  font-size: 17px;
 }
 
 .loanDetailOverviewHeader .historyStatus {
   position: static;
   flex: 0 0 auto;
   max-width: 100%;
+  font-size: 13px;
   text-align: center;
 }
 
@@ -3168,7 +3209,11 @@
   color: var(--color-history-yellow);
 }
 
-.loanDetailSummary > .loanDetailAmountSummary span,
+.loanDetailSummary > .loanDetailAmountSummary span {
+  color: inherit;
+  font-size: 13px;
+}
+
 .loanDetailSummary > .loanDetailInstallmentSummary span {
   color: inherit;
   font-size: 14px;
@@ -3799,6 +3844,39 @@
   margin: 0;
   font-size: 14px;
   line-height: 1.45;
+}
+
+.emptyDashboardState {
+  display: grid;
+  min-height: 118px;
+  place-items: center;
+  align-content: center;
+  gap: 9px;
+  padding: 0 8px 16px;
+  color: var(--color-detail-muted);
+  text-align: center;
+}
+
+.emptyDashboardStateIcon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.emptyDashboardState p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.emptyDashboardState > span:last-child {
+  color: #9ca3af;
+  font-size: 14px;
 }
 
 .paymentHistoryCard {
