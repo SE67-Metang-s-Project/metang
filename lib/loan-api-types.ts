@@ -440,6 +440,7 @@ export type FundTransactionListResponse = {
   data: {
     balance: number;
     transactions: FundTransactionItem[];
+    pendingDisbursement: number;
   };
 };
 
