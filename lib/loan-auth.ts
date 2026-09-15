@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { getCmuDisplayName, getCmuSession, type CmuProfile, type CmuSession } from "@/lib/cmu-auth";
 import { getNurseAccessDecision } from "@/lib/nurse-auth";
 import {
-  getDevelopmentActiveUserId,
   isDevelopmentApiBypass,
   isDevelopmentEnvironment,
   isDevelopmentRoleEnabled,
@@ -128,7 +127,7 @@ async function getDevelopmentStudentContext(): Promise<LoanUserContext | null> {
   if (!isDevelopmentApiBypass()) return null;
 
   const user = await prisma.appUser.findUnique({
-    where: { id: getDevelopmentActiveUserId() ?? DEVELOPMENT_STUDENT_ID },
+    where: { id: DEVELOPMENT_STUDENT_ID },
     include: { roles: { select: { role: true } } },
   });
   if (!user || !user.studentCode || !user.roles.some(({ role }) => role === "student")) return null;
@@ -148,10 +147,7 @@ async function getDevelopmentLoanContext(
 
   const user = await prisma.appUser.findUnique({
     where: {
-      // DEV_ACTIVE_USER_ID lets a fixture that holds more than one role (e.g. exec@cmu.ac.th
-      // also holding "advisor") be reached through any of its roles' bypass, instead of always
-      // resolving to that role's own separate fixed fixture.
-      id: getDevelopmentActiveUserId() ?? DEVELOPMENT_USER_IDS[developmentRole],
+      id: DEVELOPMENT_USER_IDS[developmentRole],
     },
     include: { roles: { select: { role: true } } },
   });
