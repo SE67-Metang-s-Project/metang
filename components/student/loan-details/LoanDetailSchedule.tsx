@@ -33,12 +33,15 @@ export default function LoanDetailSchedule({ iconSize = 23, items = [] }: LoanDe
           ))}
         </div>
       ) : (
-        <div style={{ textAlign: "center", padding: "1.5rem 1rem", color: "#6b7280" }}>
-          <p style={{ margin: "0 0 0.25rem 0", fontSize: "14px", fontWeight: 500 }}>
+        <div className={styles.emptyDashboardState}>
+          <span aria-hidden="true" className={styles.emptyDashboardStateIcon}>
+            <CalendarDays size={24} strokeWidth={2} />
+          </span>
+          <p>
             {t("ยังไม่มีตารางการชำระเงิน", "No repayment schedule yet")}
           </p>
-          <span style={{ color: "#9ca3af", fontSize: "14px" }}>
-            {t("สถานะการพิจารณาจะแสดงที่นี่เมื่อมีการยื่นคำร้อง", "The schedule will appear after a request is submitted")}
+          <span>
+            {t("สถานะการพิจารณาจะแสดงที่นี่เมื่อมีการยื่นคำร้อง", "Schedule appears after submission")}
           </span>
         </div>
       )}

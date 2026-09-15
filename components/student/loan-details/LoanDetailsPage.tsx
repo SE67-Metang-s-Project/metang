@@ -57,6 +57,7 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
     details.statusCode === "disbursed" ||
     details.statusLabel.includes("อยู่ระหว่างการชำระ") ||
     details.statusLabel.includes("กำลังชำระ");
+  const shouldShowDownload = isWaitingForTransferConfirmation || isRepaymentInProgress;
   const displayedDetails = useMemo(() => {
     return isWaitingForTransferConfirmation && isTransferAccepted
       ? { ...details, statusCode: undefined, statusLabel: "กำลังชำระ" }
@@ -145,7 +146,7 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
       <LoanDetailOverview
         details={displayedDetails}
         profile={profile}
-        showDownload={displayedDetails.statusCode !== "draft"}
+        showDownload={shouldShowDownload}
         onDownloadClick={() => setIsPetitionModalOpen(true)}
       />
 

@@ -139,12 +139,15 @@ export default function LoanTimeline({
           ))}
         </ol>
       ) : (
-        <div style={{ textAlign: "center", padding: "1.5rem 1rem", color: "#6b7280" }}>
-          <p style={{ margin: "0 0 0.25rem 0", fontSize: "14px", fontWeight: 500 }}>
+        <div className={styles.emptyDashboardState}>
+          <span aria-hidden="true" className={styles.emptyDashboardStateIcon}>
+            <Clock3 size={24} strokeWidth={2} />
+          </span>
+          <p>
             {t("ไม่มีคำร้องขอกู้ยืมที่อยู่ระหว่างดำเนินการ", "No loan request is in progress")}
           </p>
-          <span style={{ color: "#9ca3af", fontSize: "14px" }}>
-            {t("การติดตามสถานะจะแสดงที่นี่เมื่อมีการยื่นคำร้อง", "Request tracking will appear here after submission")}
+          <span>
+            {t("การติดตามสถานะจะแสดงที่นี่เมื่อมีการยื่นคำร้อง", "Tracking appears after submission")}
           </span>
         </div>
       )}

@@ -97,10 +97,7 @@ export default function StudentDashboard({
   const { setDefaultLanguage, t } = useStudentLanguage();
   const activeTimeline = timeline ?? [];
   const dashboardTimeline = activeTimeline.filter((item) => !item.isUpcoming);
-  const defaultLanguage =
-    profile.programName?.includes("นานาชาติ") || /international/i.test(profile.programName ?? "")
-      ? "en"
-      : "th";
+  const defaultLanguage = profile.studentId.charAt(5) === "0" ? "th" : "en";
 
   useEffect(() => {
     setDefaultLanguage(defaultLanguage);
