@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { Check, CheckCircle2, Clock3, FileText } from "lucide-react";
+import { Check, CheckCircle2, Clock3, FileText, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { LoanTimelineItem } from "@/app/student/studentMockData";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
@@ -16,6 +16,9 @@ type LoanTimelineProps = {
   onConfirmTransfer?: () => void;
   onCancelRequest?: () => void;
   showCancelRequest?: boolean;
+  onEditRequest?: () => void;
+  showEditRequest?: boolean;
+  compactActions?: boolean;
 };
 
 export default function LoanTimeline({
@@ -26,6 +29,9 @@ export default function LoanTimeline({
   onConfirmTransfer,
   onCancelRequest,
   showCancelRequest = false,
+  onEditRequest,
+  showEditRequest = false,
+  compactActions = false,
 }: LoanTimelineProps) {
   const router = useRouter();
   const { language, t } = useStudentLanguage();
@@ -55,7 +61,9 @@ export default function LoanTimeline({
   return (
     <section
       aria-labelledby="loan-timeline-title"
-      className={`${styles.loanDetailSection} ${styles.detailDashboardCard}`}
+      className={`${styles.loanDetailSection} ${styles.detailDashboardCard} ${
+        compactActions ? styles.loanTimelineCompactActions : ""
+      }`}
     >
       <header className={styles.sectionCardHeading}>
         <h2 id="loan-timeline-title">
@@ -65,16 +73,21 @@ export default function LoanTimeline({
       </header>
       {hasItems ? (
         <ol className={styles.loanTimeline}>
-          {items.map((item, index) => (
-            <li className={styles.loanTimelineItem} key={item.title}>
+          {items.map((item, index) => {
+            const isRevisionItem = item.title.includes("แก้ไข");
+
+            return (
+              <li className={styles.loanTimelineItem} key={item.title}>
               <span
                 aria-hidden="true"
                 className={`${styles.timelineMarker} ${item.isPending ? styles.timelineMarkerPending : ""} ${
                   item.isUpcoming ? styles.timelineMarkerUpcoming : ""
                 } ${
                   item.isFailed ? styles.timelineMarkerFailed : ""
-                }`}
-              />
+                } ${isRevisionItem ? styles.timelineMarkerRevision : ""}`}
+              >
+                {isRevisionItem ? <Pencil size={13} strokeWidth={2.8} /> : null}
+              </span>
               <div className={styles.timelineContent}>
                 <strong>{localizeStudentContent(item.title, language)}</strong>
                 <p>
@@ -125,18 +138,24 @@ export default function LoanTimeline({
                     ) : null}
                   </>
                 ) : null}
-                {showCancelRequest && index === currentItemIndex ? (
-                  <button
-                    className={styles.loanTimelineCancelButton}
-                  onClick={onCancelRequest}
-                  type="button"
-                >
-                    {t("ยกเลิกคำร้อง", "Cancel request")}
-                  </button>
+                {(showEditRequest || showCancelRequest) && index === currentItemIndex ? (
+                  <div className={styles.loanTimelineRequestActions}>
+                    {showEditRequest ? (
+                      <button className={styles.loanTimelineEditButton} onClick={onEditRequest} type="button">
+                        {t("แก้ไขคำร้อง", "Edit request")}
+                      </button>
+                    ) : null}
+                    {showCancelRequest ? (
+                      <button className={styles.loanTimelineCancelButton} onClick={onCancelRequest} type="button">
+                        {t("ยกเลิกคำร้อง", "Cancel request")}
+                      </button>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             </li>
-          ))}
+            );
+          })}
         </ol>
       ) : (
         <div className={styles.emptyDashboardState}>

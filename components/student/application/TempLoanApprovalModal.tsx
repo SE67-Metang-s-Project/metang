@@ -341,7 +341,7 @@ export default function TempLoanApprovalModal({
             {isSubmitting
               ? t("กำลังส่งคำร้อง...", "Submitting request...")
               : isResubmit
-                ? t("ยืนยันการแก้ไขและยื่นคำร้อง", "Confirm edit and submit request")
+                ? t("ยืนยันแก้ไข", "Confirm edit")
                 : t("ยืนยัน", "Confirm")}
           </button>
         </div>

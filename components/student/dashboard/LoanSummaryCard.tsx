@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useRouter } from "next/navigation";
 import { activeLoan, studentProfile } from "@/app/student/studentMockData";
 import { useStudentEducationLevel } from "@/lib/student-education";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
@@ -61,7 +60,6 @@ export default function LoanSummaryCard({
   activeLoan: activeLoanProp,
   profile: profileProp,
 }: LoanSummaryCardProps) {
-  const router = useRouter();
   const { language, t } = useStudentLanguage();
   const currentLoan = activeLoanProp ?? activeLoan;
   const currentProfile: StudentProfileDisplay = profileProp ?? studentProfile;
@@ -81,9 +79,6 @@ export default function LoanSummaryCard({
   const paidAmount = Number(String(currentLoan.paidAmount).replace(/,/g, "")) || 0;
   const totalAmount = Number(String(currentLoan.totalAmount).replace(/,/g, "")) || 0;
   const transferPercent = totalAmount > 0 ? Math.min(100, (paidAmount / totalAmount) * 100) : 0;
-  const isReturned =
-    currentLoan.statusLabel.includes("แก้ไข") ||
-    ("status" in currentLoan && currentLoan.status === "returned");
 
   return (
     <section className={styles.loanSummary} aria-labelledby="loan-summary-title">
@@ -157,23 +152,6 @@ export default function LoanSummaryCard({
         <button onClick={onOpenDetails} type="button">
           {t("ดูรายละเอียดคำร้อง", "View request details")}
         </button>
-        {isReturned ? (
-          <button
-            onClick={() => router.push("/student/loan/apply")}
-            type="button"
-            style={{
-              backgroundColor: "#d97706",
-              color: "#ffffff",
-              borderRadius: "10px",
-              padding: "12px",
-              fontWeight: 600,
-              border: 0,
-              cursor: "pointer",
-            }}
-          >
-            {t("แก้ไขคำร้อง", "Edit request")}
-          </button>
-        ) : null}
       </div>
     </section>
   );

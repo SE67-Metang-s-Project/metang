@@ -440,6 +440,11 @@
   font-weight: 700;
 }
 
+.loanApplicationDashboardButtonEnglish {
+  font-size: 17px;
+  white-space: nowrap;
+}
+
 .loanApplicationHomeButton {
   display: inline-flex;
   align-items: center;
@@ -495,15 +500,19 @@
   font-size: 19px;
 }
 
+.loanFormCard > .existingLoanEnglishTitle {
+  white-space: nowrap;
+}
+
 .loanFormCard > .existingLoanTitle::before {
   display: none;
 }
 
 .existingLoanIconCircle {
   display: grid;
-  width: 108px;
-  height: 108px;
-  margin: 0 auto 38px;
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 28px;
   place-items: center;
   border-radius: 50%;
   background: var(--color-detail-orange-soft);
@@ -3204,9 +3213,9 @@
 }
 
 .loanDetailSummary > .loanDetailInstallmentSummary {
-  border-color: var(--color-history-yellow-border);
-  background: var(--color-history-yellow-soft);
-  color: var(--color-history-yellow);
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #b45309;
 }
 
 .loanDetailSummary > .loanDetailAmountSummary span {
@@ -3276,12 +3285,25 @@
   justify-self: end;
 }
 
-.loanTimelineCancelButton {
+.loanTimelineRequestActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.loanTimelineRequestActions:has(.loanTimelineCancelButton:only-child) .loanTimelineCancelButton {
+  grid-column: 2;
+}
+
+.loanTimelineCancelButton,
+.loanTimelineEditButton {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  width: fit-content;
-  margin: 16px 0 0 auto;
+  width: 100%;
+  margin: 0;
   padding: 7px 11px;
   border: 1px solid #dc2626;
   border-radius: 8px;
@@ -3298,6 +3320,17 @@
 .loanTimelineCancelButton:hover {
   background: #b91c1c;
   box-shadow: 0 4px 9px rgb(185 28 28 / 30%);
+}
+
+.loanTimelineEditButton {
+  border-color: #facc15;
+  background: #fffbea;
+  color: #ca8a04;
+  box-shadow: 0 3px 7px rgb(180 83 9 / 24%);
+}
+
+.loanTimelineEditButton:hover {
+  background: #fef9c3;
 }
 
 .loanDetailInfoList > .loanDetailAdditionalNoteLong {
@@ -3438,7 +3471,7 @@
   top: 23px;
   bottom: 0;
   left: 11px;
-  width: 2px;
+  width: 2px !important;
   background: var(--color-detail-line);
   content: "";
 }
@@ -3507,8 +3540,17 @@
   transform: rotate(-45deg);
 }
 
+.timelineMarkerRevision {
+  background: var(--color-detail-orange);
+  color: var(--color-surface);
+}
+
+.timelineMarkerRevision::after {
+  display: none;
+}
+
 .loanTimelineItem:has(+ .loanTimelineItem > .timelineMarkerPending)::before {
-  width: 3px;
+  width: 2px;
   background: var(--color-detail-orange);
 }
 
@@ -3583,6 +3625,10 @@
   font-size: 14px;
 }
 
+:global(html[data-student-language="en"]) .tempLoanDetailsSection .detailDashboardCard.timelineCommentCard .sectionCardHeading h2 {
+  font-size: 14px;
+}
+
 .detailDashboardCard.timelineCommentCard p {
   margin: 0;
   color: var(--color-heading);
@@ -3646,6 +3692,16 @@
   border-radius: 7px;
   font-size: 14px;
   font-weight: 700;
+}
+
+.loanTimelineCompactActions .loanTimelineActions .outlineOrangeButton,
+.loanTimelineCompactActions .loanTimelineActions .loanApplicationNext {
+  min-height: 38px;
+}
+
+.loanTimelineCompactActions .loanTimelineActions .loanApplicationNext {
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 
 .loanTimelineActions .outlineOrangeButton:hover {
