@@ -3,13 +3,15 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { isCmuAuthConfigured } from "@/lib/cmu-auth";
 
-// ... (ส่วน errorMessages และอื่นๆ คงเดิม)
+type LoginPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const resolvedParams = searchParams ? await searchParams : undefined;
   const errorParam = resolvedParams?.error;
   const errorCode = Array.isArray(errorParam) ? errorParam[0] : errorParam;
-  const errorMessage = errorCode ? errorMessages[errorCode] : undefined;
+  const errorMessage = errorCode || undefined;
   const isConfigured = isCmuAuthConfigured();
 
   return (
