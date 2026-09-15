@@ -100,14 +100,20 @@ test("Executive loan ID validation accepts both UUID and REQ formats (NAT-85)", 
   assert.equal(isLoanId("invalid-id"), false);
 });
 
-test("Executive UI hides return button and protects bank details (NAT-117, NAT-119)", () => {
+test("Executive UI shows return button (wired to Admin) and protects bank details (NAT-117, NAT-119)", () => {
   const requestsCard = read("components/shared/pending/RequestsCard.tsx");
 
-  // "ส่งกลับแก้ไข" button is hidden when userRole === "executive"
+  // "ส่งกลับแก้ไข" is available to every role that can take action, Executive included -
+  // decideExecutiveLoanRequest ("returned") routes it back to pending_admin server-side.
+  assert.doesNotMatch(
+    requestsCard,
+    /userRole !== "executive"[\s\S]{0,80}ส่งกลับแก้ไข/,
+    "RequestsCard must not hide the return button from the executive role",
+  );
   assert.match(
     requestsCard,
-    /userRole !== "executive"[\s\S]*?ส่งกลับแก้ไข/,
-    "RequestsCard must guard return button against executive role",
+    /setConfirmAction\("return"\)[\s\S]*?ส่งกลับแก้ไข/,
+    "RequestsCard must render the return button unconditionally",
   );
 
   // Bank details section is guarded by canViewSensitiveData

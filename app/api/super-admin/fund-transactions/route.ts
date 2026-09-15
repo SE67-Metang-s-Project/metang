@@ -4,6 +4,7 @@ import {
   getFundBalance,
   listFundTransactions,
 } from "@/db/queries/fund-transactions";
+import { getPendingDisbursementTotal } from "@/db/queries/loan-requests";
 import { apiError, apiOk } from "@/lib/api-response";
 import { getSuperAdminAccess } from "@/lib/loan-auth";
 import { parseFundTransactionInput } from "@/lib/loan-validation";
@@ -29,8 +30,12 @@ export async function GET() {
   }
 
   try {
-    const [balance, transactions] = await Promise.all([getFundBalance(), listFundTransactions()]);
-    return apiOk(serializeJson({ balance, transactions }));
+    const [balance, transactions, pendingDisbursement] = await Promise.all([
+      getFundBalance(),
+      listFundTransactions(),
+      getPendingDisbursementTotal(),
+    ]);
+    return apiOk(serializeJson({ balance, transactions, pendingDisbursement }));
   } catch (error) {
     console.error("Unable to list fund transactions", error);
     return apiError("INTERNAL_ERROR", "Unable to list fund transactions", 500);

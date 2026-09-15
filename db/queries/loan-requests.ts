@@ -810,6 +810,16 @@ export async function getDisbursementActionRequests(): Promise<ActionRequest[]> 
   });
 }
 
+// System-wide total, unlike the Admin queue above: no assignedAdminId filter, for SuperAdmin's
+// fund overview.
+export async function getPendingDisbursementTotal(): Promise<number> {
+  const result = await prisma.loanRequest.aggregate({
+    where: { status: "pending_disbursement" },
+    _sum: { approvedAmount: true },
+  });
+  return result._sum.approvedAmount ?? 0;
+}
+
 export const studentLoanDetailSelect = {
   ...studentLoanSelect,
   // At most one row, per fund_transaction_one_disbursement_per_loan. Only the id is exposed:
