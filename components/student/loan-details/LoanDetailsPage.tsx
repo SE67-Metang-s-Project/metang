@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useSyncExternalStore } from "react";
-import { Pencil, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { LoanDetails } from "@/app/student/studentMockData";
 import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
 import ContactFooter from "./ContactFooter";
@@ -20,6 +20,7 @@ import {
   subscribeToTransferConfirmation,
 } from "@/lib/student-transfer-confirmation";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
+import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
 
 type LoanDetailsPageProps = {
@@ -29,6 +30,7 @@ type LoanDetailsPageProps = {
 
 export default function LoanDetailsPage({ details, profile }: LoanDetailsPageProps) {
   const router = useRouter();
+  const { t } = useStudentLanguage();
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -81,14 +83,14 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
     try {
       const response = await fetch(`/api/student/loan-requests/${details.id}/cancel`, { method: "POST" });
       if (!response.ok) {
-        window.alert("ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง");
+        window.alert(t("ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง", "Unable to cancel the request. Please try again."));
         return;
       }
 
       setIsCancelDialogOpen(false);
       router.refresh();
     } catch {
-      window.alert("ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง");
+      window.alert(t("ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง", "Unable to cancel the request. Please try again."));
     } finally {
       setIsCancelling(false);
     }
@@ -114,32 +116,15 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
         >
           <div>
             <h3 id="returned-notice-title" style={{ color: "#92400e", fontSize: "1rem", fontWeight: 700, margin: "0 0 0.25rem 0" }}>
-              คำร้องนี้ถูกส่งกลับเพื่อแก้ไข
+              {t("คำร้องนี้ถูกส่งกลับเพื่อแก้ไข", "Request returned for revision")}
             </h3>
             <p style={{ color: "#b45309", fontSize: "0.875rem", margin: 0 }}>
-              กรุณาตรวจสอบเหตุผลจากผู้พิจารณาในขั้นตอนติดตามสถานะ แล้วกดแก้ไขข้อมูลเพื่อยื่นใหม่อีกครั้ง
+              {t(
+                "กรุณาตรวจสอบเหตุผลจากผู้พิจารณาในขั้นตอนติดตามสถานะ แล้วกดแก้ไขข้อมูลเพื่อยื่นใหม่อีกครั้ง",
+                "Please review the feedback in Request Status, update your information, and submit again.",
+              )}
             </p>
           </div>
-          <button
-            onClick={() => router.push("/student/loan/apply")}
-            type="button"
-            style={{
-              backgroundColor: "#d97706",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "0.5rem",
-              padding: "0.6rem 1.2rem",
-              fontWeight: 600,
-              fontSize: "0.875rem",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.5rem",
-            }}
-          >
-            <Pencil aria-hidden="true" size={16} />
-            แก้ไขและยื่นคำร้องใหม่
-          </button>
         </section>
       ) : null}
 
@@ -162,7 +147,9 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
         }
         onShowTransferSlip={hasAdminTransferredFunds ? () => setIsSlipModalOpen(true) : undefined}
         onCancelRequest={() => setIsCancelDialogOpen(true)}
+        onEditRequest={isReturned ? () => router.push("/student/loan/apply") : undefined}
         showCancelRequest={canCancelRequest}
+        showEditRequest={isReturned}
       />
       <TempDetailCard details={details} profile={profile} />
       <LoanDetailSchedule items={details.schedule} />
@@ -198,10 +185,13 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
               <X aria-hidden="true" size={28} strokeWidth={2.5} />
             </div>
             <h2 className="mt-4 text-center text-xl font-bold text-gray-900" id="cancel-request-title">
-              ยืนยันการยกเลิกคำร้อง
+              {t("ยืนยันการยกเลิกคำร้อง", "Confirm cancellation")}
             </h2>
             <p className="mt-2 text-center text-sm leading-6 text-gray-600">
-              เมื่อยกเลิกแล้ว คำร้องนี้จะไม่สามารถดำเนินการต่อได้
+              {t(
+                "เมื่อยกเลิกแล้ว คำร้องนี้จะไม่สามารถดำเนินการต่อได้",
+                "This request cannot be restored.",
+              )}
             </p>
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
@@ -210,7 +200,7 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
                 onClick={() => setIsCancelDialogOpen(false)}
                 type="button"
               >
-                กลับ
+                {t("กลับ", "Back")}
               </button>
               <button
                 className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
@@ -218,7 +208,7 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
                 onClick={handleCancelRequest}
                 type="button"
               >
-                {isCancelling ? "กำลังยกเลิก..." : "ยืนยันยกเลิก"}
+                {isCancelling ? t("กำลังยกเลิก...", "Cancelling...") : t("ยืนยันยกเลิก", "Cancel")}
               </button>
             </div>
           </section>

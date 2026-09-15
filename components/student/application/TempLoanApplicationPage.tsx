@@ -486,14 +486,18 @@ export default function TempLoanApplicationPage({
                 <FileClock
                   aria-hidden="true"
                   className={styles.existingLoanIcon}
-                  size={70}
+                  size={52}
                   strokeWidth={1.8}
                 />
               </span>
-              <h2 className={styles.existingLoanTitle}>
+              <h2
+                className={`${styles.existingLoanTitle} ${
+                  language === "en" ? styles.existingLoanEnglishTitle : ""
+                }`}
+              >
                 {t(
                   "คุณมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว",
-                  "You already have a loan request in progress",
+                  "Loan request in progress",
                 )}
               </h2>
               <p style={{ color: "#4b5563", marginBottom: "2rem" }}>
@@ -503,12 +507,14 @@ export default function TempLoanApplicationPage({
                 )}
               </p>
               <button
-                className={styles.loanApplicationDashboardButton}
+                className={`${styles.loanApplicationDashboardButton} ${
+                  language === "en" ? styles.loanApplicationDashboardButtonEnglish : ""
+                }`}
                 onClick={() => router.push("/student")}
                 type="button"
               >
                 <House aria-hidden="true" size={19} strokeWidth={2.2} />
-                {t("กลับหน้าหลักเพื่อดูสถานะคำร้อง", "Back to home to check the request status")}
+                {t("กลับหน้าหลัก", "Back to home")}
               </button>
             </section>
           </div>
@@ -637,8 +643,8 @@ export default function TempLoanApplicationPage({
                               ? t("เจ้าหน้าที่", "the staff")
                               : t("อาจารย์ที่ปรึกษา", "the advisor")}
                             :
-                          </strong>{" "}
-                          {existingLoan.returnComment}
+                          </strong>
+                          <span style={{ display: "block" }}>{existingLoan.returnComment}</span>
                         </div>
                       ) : null}
                       <p style={{ margin: 0, color: "#b45309", fontSize: "0.875rem" }}>
