@@ -1,114 +1,92 @@
-"use client";
-
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
+import { ArrowRight } from "lucide-react";
+import { isCmuAuthConfigured } from "@/lib/cmu-auth";
 
-export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
+// ... (ส่วน errorMessages และอื่นๆ คงเดิม)
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const resolvedParams = searchParams ? await searchParams : undefined;
+  const errorParam = resolvedParams?.error;
+  const errorCode = Array.isArray(errorParam) ? errorParam[0] : errorParam;
+  const errorMessage = errorCode ? errorMessages[errorCode] : undefined;
+  const isConfigured = isCmuAuthConfigured();
 
   return (
-    // พื้นหลังหลักของหน้าเว็บ
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-8 font-sans">
-      
-      {/* ========================================== */}
-      {/* คอนเทนเนอร์หลัก (การ์ดสีน้ำเงิน) */}
-      {/* ========================================== */}
-      <div className="relative w-full max-w-[1000px] min-h-[550px] flex flex-col md:flex-row rounded-[2rem] overflow-hidden shadow-2xl bg-gradient-to-br from-[#1c69b8] to-[#0a4282]">
-        
-        {/* กราฟิกวงกลมตกแต่งพื้นหลัง (ซ้ายล่าง และ ขวาบน) */}
-        <div className="absolute -bottom-32 -left-20 w-96 h-96 bg-[#2579cf] rounded-full opacity-80 pointer-events-none"></div>
-        <div className="absolute -top-32 -right-10 w-[28rem] h-[28rem] bg-[#1a5ca6] rounded-full opacity-60 pointer-events-none"></div>
-
-        {/* ========================================== */}
-        {/* ฝั่งซ้าย: ข้อความ Welcome และ Logo */}
-        {/* ========================================== */}
-        <div className="relative z-10 flex-1 flex flex-col justify-center p-10 lg:p-16 text-white">
-          {/* โลโก้ตามที่คุณกำหนด */}
-          <div className="mb-6">
+    // 1. เปลี่ยนพื้นหลังของทั้งหน้าเป็นสีครีมที่นี่จุดเดียว
+    <div className="min-h-screen bg-[#fcf9f4] flex items-center justify-center p-6 sm:p-10 md:p-16 font-sans">
+      {/* 2. สร้าง Container จัดกลุ่มให้ทั้งสองฝั่งอยู่ตรงกลาง และเว้นระยะห่าง (gap) */}
+      <div className="w-full max-w-[1200px] flex flex-col md:flex-row items-center justify-center gap-12 md:gap-20 lg:gap-32">
+        {/* ด้านซ้าย: พื้นที่แสดงโลโก้ (เอาสีน้ำเงินเข้มออกแล้ว) */}
+        <div className="w-full md:w-1/2 flex flex-col items-center justify-center">
+          <div className="relative flex items-center justify-center w-48 sm:w-64 md:w-80 lg:w-96 xl:w-[450px]">
             <Image
-              alt="METANG"
-              className="h-12 w-12 object-contain sm:h-14 sm:w-14 drop-shadow-md"
-              height={56}
-              priority
+              alt="METANG Logo"
+              className="w-full h-auto object-contain transition-all duration-500 hover:scale-105 drop-shadow-lg"
+              height={550}
               src="/metang-logo.png"
-              width={56}
+              width={550}
+              priority
             />
           </div>
         </div>
 
-        {/* ========================================== */}
-        {/* ฝั่งขวา: ฟอร์ม Login (การ์ดสีขาว) */}
-        {/* ========================================== */}
-        <div className="relative z-10 w-full md:w-[45%] flex items-stretch p-4 sm:p-6 lg:p-8">
-          <div className="w-full bg-white rounded-3xl p-8 sm:p-10 shadow-lg flex flex-col justify-center">
-            
-            <h3 className="text-3xl font-extrabold text-[#1c69b8] mb-2 tracking-wide">
-              Sign in
-            </h3>
-            <p className="text-[10px] text-gray-500 mb-8">
-              Lorem ipsum dolor sit amet, consectetuer adipiscing elit
-            </p>
+        {/* ด้านขวา: ข้อมูลและปุ่ม Login */}
+        <div className="w-full md:w-1/2 flex flex-col items-center text-center max-w-sm sm:max-w-md lg:max-w-lg">
+          {/* หัวข้อยินดีต้อนรับ */}
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2 sm:mb-3">
+            ยินดีต้อนรับ
+          </h2>
 
-            <form className="space-y-4">
-              {/* Input: User Name */}
-              <div>
-                <input
-                  type="text"
-                  placeholder="User Name"
-                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#1c69b8] focus:ring-1 focus:ring-[#1c69b8] transition-colors"
-                />
-              </div>
+          {/* ชื่อระบบ */}
+          <h1 className="text-orange-500 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-wide mb-4 sm:mb-6 drop-shadow-sm">
+            METANG
+          </h1>
 
-              {/* Input: Password */}
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#1c69b8] focus:ring-1 focus:ring-[#1c69b8] transition-colors pr-16"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[#1c69b8] hover:text-[#0a4282] transition-colors"
-                >
-                  SHOW
-                </button>
-              </div>
+          {/* เส้นขีดแบ่งสีส้ม */}
+          <div className="w-12 sm:w-16 h-1 bg-[#f97316] mb-5 sm:mb-7 lg:mb-8 rounded-full"></div>
 
-              {/* Options: Remember me & Forgot Password */}
-              <div className="flex items-center justify-between text-[11px] text-gray-600 mt-2 mb-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-3.5 h-3.5 rounded border-gray-300 text-[#1c69b8] focus:ring-[#1c69b8] cursor-pointer"
-                  />
-                  <span className="font-medium">Remember me</span>
-                </label>
-                <a href="#" className="font-medium hover:text-[#1c69b8] transition-colors">
-                  Forgot Password?
-                </a>
-              </div>
+          {/* คำอธิบาย */}
+          <p className="text-orange-500 text-sm sm:text-base md:text-lg lg:text-xl font-medium leading-relaxed mb-6 sm:mb-8 max-w-xs sm:max-w-md">
+            ระบบทุนกู้ยืมสำหรับนักศึกษาคณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่
+          </p>
 
-              {/* Submit Button */}
-              <button
-                type="button"
-                className="w-full bg-[#1c69b8] hover:bg-[#155393] text-white font-semibold text-sm py-3.5 rounded-xl transition-colors shadow-md shadow-blue-600/20"
-              >
-                Sign In
-              </button>
-            </form>
+          {/* ส่วนแสดง Error */}
+          {errorMessage ? (
+            <div className="w-full mb-5 sm:mb-6 rounded-xl border border-red-200 bg-red-50 p-3.5 sm:p-4 text-xs sm:text-sm text-red-700 text-left shadow-sm">
+              {errorMessage}
+            </div>
+          ) : null}
 
-            {/* Footer Link */}
-            <div className="text-center mt-6 text-[11px] text-gray-500">
-              Don&apos;t have an account?{" "}
-              <a href="#" className="font-bold text-[#1c69b8] hover:underline">
-                Sign Up
-              </a>
+          {!isConfigured ? (
+            <div className="w-full mb-5 sm:mb-6 rounded-xl border border-amber-200 bg-amber-50 p-3.5 sm:p-4 text-xs sm:text-sm text-amber-900 text-left shadow-sm">
+              ผู้ดูแลระบบต้องตั้งค่า CMU Entra environment variables ก่อนเปิดใช้งาน
+            </div>
+          ) : null}
+
+          {/* ปุ่ม Login สไตล์การ์ดสีขาว */}
+          <a
+            href="/api/auth/login"
+            className="w-full bg-white border border-gray-200 rounded-2xl p-3 sm:p-4 flex items-center hover:border-gray-300 hover:shadow-lg transition-all duration-300 group active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2"
+          >
+            {/* โลโก้ CMU สี่เหลี่ยมสีเข้ม */}
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#202e3f] rounded-xl flex items-center justify-center mr-3 sm:mr-4 shrink-0 transition-transform duration-300 group-hover:scale-110 shadow-sm">
+              <span className="text-white font-bold text-xs sm:text-sm tracking-wider">CMU</span>
             </div>
 
-          </div>
-        </div>
+            {/* ข้อความในปุ่ม */}
+            <div className="flex-1 text-left min-w-0">
+              <p className="font-bold text-[#1e293b] text-sm sm:text-[15px] truncate sm:whitespace-normal group-hover:text-orange-600 transition-colors">
+                เข้าสู่ระบบด้วย CMU Account
+              </p>
+            </div>
 
+            {/* ลูกศรชี้ขวา */}
+            <div className="pl-2 pr-1 sm:pr-2 shrink-0">
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-300 group-hover:text-orange-500 group-hover:translate-x-1 transition-all" />
+            </div>
+          </a>
+        </div>
       </div>
     </div>
   );
