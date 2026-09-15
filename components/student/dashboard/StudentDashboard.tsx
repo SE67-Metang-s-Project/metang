@@ -97,10 +97,7 @@ export default function StudentDashboard({
   const { setDefaultLanguage, t } = useStudentLanguage();
   const activeTimeline = timeline ?? [];
   const dashboardTimeline = activeTimeline.filter((item) => !item.isUpcoming);
-  const defaultLanguage =
-    profile.programName?.includes("นานาชาติ") || /international/i.test(profile.programName ?? "")
-      ? "en"
-      : "th";
+  const defaultLanguage = profile.studentId.charAt(5) === "0" ? "th" : "en";
 
   useEffect(() => {
     setDefaultLanguage(defaultLanguage);
@@ -209,14 +206,14 @@ export default function StudentDashboard({
         method: "POST",
       });
       if (!response.ok) {
-        window.alert("ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง");
+        window.alert(t("ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง", "Unable to cancel the request. Please try again."));
         return;
       }
 
       setIsCancelDialogOpen(false);
       setRefreshKey((key) => key + 1);
     } catch {
-      window.alert("ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง");
+      window.alert(t("ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง", "Unable to cancel the request. Please try again."));
     } finally {
       setIsCancelling(false);
     }
@@ -249,6 +246,9 @@ export default function StudentDashboard({
     isTransferAccepted && currentActiveLoan
       ? { ...currentActiveLoan, statusLabel: "กำลังชำระ" }
       : currentActiveLoan;
+  const isActiveLoanReturned =
+    Boolean(currentActiveLoan && "status" in currentActiveLoan && currentActiveLoan.status === "returned") ||
+    Boolean(currentActiveLoan?.statusLabel.includes("แก้ไข"));
   const displayedRequests = (historyRequests ?? defaultLoanRequestHistory).map((request) =>
     isTransferAccepted && request.requestNumber === currentActiveLoan?.requestNumber
       ? { ...request, statusLabel: "กำลังชำระ", statusType: "pending" as const }
@@ -318,9 +318,11 @@ export default function StudentDashboard({
           <PaymentBehaviorCard behavior={paymentBehaviorData} />
 
           <LoanTimeline
+            compactActions
             items={dashboardTimeline}
             isTransferAccepted={isTransferAccepted}
             onCancelRequest={() => setIsCancelDialogOpen(true)}
+            onEditRequest={isActiveLoanReturned ? () => router.push("/student/loan/apply") : undefined}
             onConfirmTransfer={
               hasAdminTransferredFunds
                 ? () => {
@@ -340,6 +342,7 @@ export default function StudentDashboard({
                 : undefined
             }
             showCancelRequest={Boolean(currentActiveLoan) && !hasAdminTransferredFunds}
+            showEditRequest={isActiveLoanReturned}
           />
 
           <LoanDetailSchedule items={schedule ?? []} />
@@ -426,10 +429,13 @@ export default function StudentDashboard({
               <X aria-hidden="true" size={28} strokeWidth={2.5} />
             </div>
             <h2 className="mt-4 text-center text-xl font-bold text-gray-900" id="dashboard-cancel-request-title">
-              ยืนยันการยกเลิกคำร้อง
+              {t("ยืนยันการยกเลิกคำร้อง", "Confirm cancellation")}
             </h2>
             <p className="mt-2 text-center text-sm leading-6 text-gray-600">
-              เมื่อยกเลิกแล้ว คำร้องนี้จะไม่สามารถดำเนินการต่อได้
+              {t(
+                "เมื่อยกเลิกแล้ว คำร้องนี้จะไม่สามารถดำเนินการต่อได้",
+                "This request cannot be restored.",
+              )}
             </p>
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
@@ -438,7 +444,7 @@ export default function StudentDashboard({
                 onClick={() => setIsCancelDialogOpen(false)}
                 type="button"
               >
-                กลับ
+                {t("กลับ", "Back")}
               </button>
               <button
                 className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
@@ -446,7 +452,7 @@ export default function StudentDashboard({
                 onClick={handleCancelRequest}
                 type="button"
               >
-                {isCancelling ? "กำลังยกเลิก..." : "ยืนยันยกเลิก"}
+                {isCancelling ? t("กำลังยกเลิก...", "Cancelling...") : t("ยืนยันยกเลิก", "Cancel")}
               </button>
             </div>
           </section>

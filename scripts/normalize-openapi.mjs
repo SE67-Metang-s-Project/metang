@@ -16,6 +16,8 @@ const requiredRequestBodies = {
   AdvisorDecisionBody: ["decision"],
   PhoneNumberBody: ["phoneNumber"],
   RoleMutationBody: ["action", "role"],
+  ReviewerNotificationBody: ["loanId"],
+  LoanReminderBody: ["loanId"],
 };
 // next-openapi-gen only emits application/json request bodies, so a file-upload route generates a
 // contract its own handler rejects. Restate those bodies as multipart/form-data here.

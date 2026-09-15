@@ -11,6 +11,7 @@ import {
   resolveStoredStudent,
 } from "@/lib/loan-auth";
 import { getStudentLoanList, studentLoanDetailSelect } from "@/db/queries/loan-requests";
+import { notifyLoanReviewer } from "@/db/queries/notification-recipients";
 
 const educationLevelByStudentCodeDigit: Record<string, string> = {
   "0": "ประกาศนียบัตรผู้ช่วยพยาบาล",
@@ -161,6 +162,8 @@ export async function POST(request: Request) {
       });
       return tx.loanRequest.findUniqueOrThrow({ where: { id: created.id }, select: studentLoanDetailSelect });
     });
+
+    await notifyLoanReviewer(loan.id);
 
     return apiOk(serializeJson(loan), 201);
   } catch (error) {

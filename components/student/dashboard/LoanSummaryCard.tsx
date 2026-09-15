@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useRouter } from "next/navigation";
 import { activeLoan, studentProfile } from "@/app/student/studentMockData";
 import { useStudentEducationLevel } from "@/lib/student-education";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
@@ -61,7 +60,6 @@ export default function LoanSummaryCard({
   activeLoan: activeLoanProp,
   profile: profileProp,
 }: LoanSummaryCardProps) {
-  const router = useRouter();
   const { language, t } = useStudentLanguage();
   const currentLoan = activeLoanProp ?? activeLoan;
   const currentProfile: StudentProfileDisplay = profileProp ?? studentProfile;
@@ -72,12 +70,15 @@ export default function LoanSummaryCard({
     .map((value) => (value ? localizeStudentContent(value, language) : value))
     .filter(Boolean)
     .join(" | ");
+  const thaiMobileProfileMeta = [educationLevel, currentProfile.studentId]
+    .map((value) => (value ? localizeStudentContent(value, language) : value))
+    .filter(Boolean)
+    .join(" | ");
+  const usesLongThaiDegree = educationLevel?.includes("ประกาศนียบัตรบัณฑิต") ?? false;
+  const thaiMobileSummaryLine = [programLabel, thaiMobileProfileMeta].filter(Boolean).join(" | ");
   const paidAmount = Number(String(currentLoan.paidAmount).replace(/,/g, "")) || 0;
   const totalAmount = Number(String(currentLoan.totalAmount).replace(/,/g, "")) || 0;
   const transferPercent = totalAmount > 0 ? Math.min(100, (paidAmount / totalAmount) * 100) : 0;
-  const isReturned =
-    currentLoan.statusLabel.includes("แก้ไข") ||
-    ("status" in currentLoan && currentLoan.status === "returned");
 
   return (
     <section className={styles.loanSummary} aria-labelledby="loan-summary-title">
@@ -87,8 +88,40 @@ export default function LoanSummaryCard({
             {t("สวัสดี", "HELLO")}, {language === "en" ? currentProfile.displayNameEn || currentProfile.displayName : currentProfile.displayName}
           </h1>
           <div className={styles.summaryProfileDetails}>
-            {programLabel ? <p>{programLabel}</p> : null}
-            {profileMeta ? <p>{profileMeta}</p> : null}
+            {language === "th" ? (
+              <>
+                {thaiMobileSummaryLine ? (
+                  <p
+                    className={
+                      usesLongThaiDegree
+                        ? styles.summaryThaiMobileHidden
+                        : styles.summaryThaiMobileOnly
+                    }
+                  >
+                    {thaiMobileSummaryLine}
+                  </p>
+                ) : null}
+                <div
+                  className={
+                    usesLongThaiDegree
+                      ? styles.summaryThaiMobileLongOnly
+                      : styles.summaryThaiMobileHidden
+                  }
+                >
+                  {programLabel ? <p>{programLabel}</p> : null}
+                  {thaiMobileProfileMeta ? <p>{thaiMobileProfileMeta}</p> : null}
+                </div>
+                <div className={styles.summaryThaiDesktopOnly}>
+                  {programLabel ? <p>{programLabel}</p> : null}
+                  {profileMeta ? <p>{profileMeta}</p> : null}
+                </div>
+              </>
+            ) : (
+              <>
+                {programLabel ? <p>{programLabel}</p> : null}
+                {profileMeta ? <p>{profileMeta}</p> : null}
+              </>
+            )}
           </div>
         </div>
         {/* {medicalBag} */}
@@ -119,23 +152,6 @@ export default function LoanSummaryCard({
         <button onClick={onOpenDetails} type="button">
           {t("ดูรายละเอียดคำร้อง", "View request details")}
         </button>
-        {isReturned ? (
-          <button
-            onClick={() => router.push("/student/loan/apply")}
-            type="button"
-            style={{
-              backgroundColor: "#d97706",
-              color: "#ffffff",
-              borderRadius: "10px",
-              padding: "12px",
-              fontWeight: 600,
-              border: 0,
-              cursor: "pointer",
-            }}
-          >
-            {t("แก้ไขคำร้อง", "Edit request")}
-          </button>
-        ) : null}
       </div>
     </section>
   );

@@ -1210,17 +1210,15 @@ export default function RequestsCard({
                     >
                       ไม่อนุมัติ
                     </button>
-                    {userRole !== "executive" && (
-                      <button
-                        onClick={() => {
-                          setConfirmAction("return");
-                          setErrorMessage(null);
-                        }}
-                        className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-bold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
-                      >
-                        ส่งกลับแก้ไข
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        setConfirmAction("return");
+                        setErrorMessage(null);
+                      }}
+                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-bold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
+                    >
+                      ส่งกลับแก้ไข
+                    </button>
                     <button
                       onClick={() => {
                         setConfirmAction("approve");

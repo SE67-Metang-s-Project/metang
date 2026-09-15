@@ -53,7 +53,7 @@ type RequiredFormField = Exclude<FormField, "additionalNote">;
 type FormErrors = Partial<Record<RequiredFormField, string>>;
 
 const educationLevelsByStudentIdDigit: Record<string, string> = {
-  "0": "ประกาศนียบัตรผู้ช่วยพยาบาล",
+  "0": "ประกาศนียบัตรบัณฑิต",
   "1": "ปริญญาตรี",
   "3": "ปริญญาโท",
   "5": "ปริญญาเอก",
@@ -174,7 +174,8 @@ export default function TempLoanApplicationPage({
   const [profile] = useState<StudentProfileDisplay & { phoneNumber?: string }>(
     initialProfile ?? tempStudentProfile,
   );
-  const educationLevel = getEducationLevelFromStudentId(profile.studentId);
+  const educationLevel = profile.educationLevel || getEducationLevelFromStudentId(profile.studentId);
+  const isGraduateDiploma = educationLevel === "ประกาศนียบัตรบัณฑิต";
   const studentName =
     language === "en"
       ? profile.displayNameEn || profile.displayName
@@ -214,7 +215,9 @@ export default function TempLoanApplicationPage({
         ...tempLoanFormDefaults,
         phoneNumber: initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
         educationLevel: educationLevel || tempLoanFormDefaults.educationLevel,
-        academicYear: String(existingLoan.studentYear ?? tempLoanFormDefaults.academicYear),
+        academicYear: isGraduateDiploma
+          ? "1"
+          : String(existingLoan.studentYear ?? tempLoanFormDefaults.academicYear),
         advisorName: existingLoan.advisorName || tempLoanFormDefaults.advisorName,
         bankName: existingLoan.bankName || tempLoanFormDefaults.bankName,
         accountNumber: existingLoan.bankAccountNo || tempLoanFormDefaults.accountNumber,
@@ -232,7 +235,9 @@ export default function TempLoanApplicationPage({
       ...tempLoanFormDefaults,
       phoneNumber: savedProfile.phoneNumber || tempLoanFormDefaults.phoneNumber,
       educationLevel: educationLevel || tempLoanFormDefaults.educationLevel,
-      academicYear: savedProfile.academicYear || tempLoanFormDefaults.academicYear,
+      academicYear: isGraduateDiploma
+        ? "1"
+        : savedProfile.academicYear || tempLoanFormDefaults.academicYear,
       advisorName: savedProfile.advisorName || tempLoanFormDefaults.advisorName,
     };
   });
@@ -481,14 +486,18 @@ export default function TempLoanApplicationPage({
                 <FileClock
                   aria-hidden="true"
                   className={styles.existingLoanIcon}
-                  size={70}
+                  size={52}
                   strokeWidth={1.8}
                 />
               </span>
-              <h2 className={styles.existingLoanTitle}>
+              <h2
+                className={`${styles.existingLoanTitle} ${
+                  language === "en" ? styles.existingLoanEnglishTitle : ""
+                }`}
+              >
                 {t(
                   "คุณมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว",
-                  "You already have a loan request in progress",
+                  "Loan request in progress",
                 )}
               </h2>
               <p style={{ color: "#4b5563", marginBottom: "2rem" }}>
@@ -498,12 +507,14 @@ export default function TempLoanApplicationPage({
                 )}
               </p>
               <button
-                className={styles.loanApplicationDashboardButton}
+                className={`${styles.loanApplicationDashboardButton} ${
+                  language === "en" ? styles.loanApplicationDashboardButtonEnglish : ""
+                }`}
                 onClick={() => router.push("/student")}
                 type="button"
               >
                 <House aria-hidden="true" size={19} strokeWidth={2.2} />
-                {t("กลับหน้าหลักเพื่อดูสถานะคำร้อง", "Back to home to check the request status")}
+                {t("กลับหน้าหลัก", "Back to home")}
               </button>
             </section>
           </div>
@@ -632,8 +643,8 @@ export default function TempLoanApplicationPage({
                               ? t("เจ้าหน้าที่", "the staff")
                               : t("อาจารย์ที่ปรึกษา", "the advisor")}
                             :
-                          </strong>{" "}
-                          {existingLoan.returnComment}
+                          </strong>
+                          <span style={{ display: "block" }}>{existingLoan.returnComment}</span>
                         </div>
                       ) : null}
                       <p style={{ margin: 0, color: "#b45309", fontSize: "0.875rem" }}>
@@ -665,7 +676,7 @@ export default function TempLoanApplicationPage({
                     </p>
                     <p>
                       <span>{t("หลักสูตร", "Program")}</span>
-                      <strong>
+                      <strong className={styles.loanFormProgramValue}>
                         {programLabel || t("พยาบาลศาสตรบัณฑิต", "Bachelor of Nursing Science")}
                       </strong>
                     </p>
@@ -687,14 +698,18 @@ export default function TempLoanApplicationPage({
                       }}
                     >
                       <span>{t("ชั้นปีการศึกษา", "Academic year")}</span>
-                      <LoanFormSelect
-                        error={formErrors.academicYear}
-                        onBlur={() => handleFieldBlur("academicYear")}
-                        onChange={(value) => updateFormField("academicYear", value)}
-                        options={tempLoanFormOptions.academicYears}
-                        placeholder={t("เลือกชั้นปีการศึกษา", "Select academic year")}
-                        value={formData.academicYear}
-                      />
+                      {isGraduateDiploma ? (
+                        <output className={styles.loanFormFixedValue}>1</output>
+                      ) : (
+                        <LoanFormSelect
+                          error={formErrors.academicYear}
+                          onBlur={() => handleFieldBlur("academicYear")}
+                          onChange={(value) => updateFormField("academicYear", value)}
+                          options={tempLoanFormOptions.academicYears}
+                          placeholder={t("เลือกชั้นปีการศึกษา", "Select academic year")}
+                          value={formData.academicYear}
+                        />
+                      )}
                       {formErrors.academicYear ? (
                         <small className={styles.loanFormFieldError}>
                           {formErrors.academicYear}

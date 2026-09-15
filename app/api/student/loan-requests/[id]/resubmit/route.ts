@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/serialization";
 import { validateJsonRequest } from "@/lib/request-security";
 import { studentLoanSelect } from "@/db/queries/loan-requests";
+import { notifyLoanReviewer } from "@/db/queries/notification-recipients";
 
 
 type Params = { params: Promise<{ id: string }> };
@@ -120,6 +121,9 @@ export async function POST(request: Request, { params }: Params) {
       });
       return final;
     });
+
+    await notifyLoanReviewer(loan.id);
+
     return apiOk(serializeJson(loan));
   } catch (error) {
     if (error instanceof Error && error.message === "STALE_RESUBMIT") {

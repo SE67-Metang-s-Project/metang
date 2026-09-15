@@ -440,6 +440,7 @@ export type FundTransactionListResponse = {
   data: {
     balance: number;
     transactions: FundTransactionItem[];
+    pendingDisbursement: number;
   };
 };
 
@@ -451,4 +452,31 @@ export type FundTransactionBody = {
 
 export type FundTransactionResponse = {
   data: FundTransactionItem;
+};
+
+export type ReviewerNotificationBody = {
+  loanId: string;
+};
+
+export type ReviewerNotificationResponse = {
+  data: {
+    loanId: string;
+    role: "advisor" | "admin" | "executive";
+    sent: number;
+    failed: number;
+  };
+};
+
+export type LoanReminderBody = {
+  loanId: string;
+};
+
+export type LoanReminderResponse = {
+  data: {
+    loanId: string;
+    installmentSeq: number;
+    amountDue: number;
+    dueDate: string;
+    sentTo: string;
+  };
 };

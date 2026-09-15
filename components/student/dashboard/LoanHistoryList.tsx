@@ -60,13 +60,12 @@ export default function LoanHistoryList({
             />
           ))
         ) : (
-          <div style={{ color: "#6b7280", padding: "1.5rem 0", textAlign: "center" }}>
-            <p style={{ fontSize: "14px", fontWeight: 500, margin: "0 0 0.25rem" }}>
-              ยังไม่มีประวัติคำร้องกู้ยืม
-            </p>
-            <span style={{ color: "#9ca3af", fontSize: "14px" }}>
-              ประวัติคำร้องจะแสดงที่นี่เมื่อมีการยื่นคำร้อง
+          <div className={styles.emptyDashboardState}>
+            <span aria-hidden="true" className={styles.emptyDashboardStateIcon}>
+              <History size={24} strokeWidth={2} />
             </span>
+            <p>{t("ยังไม่มีประวัติคำร้องกู้ยืม", "No loan history yet")}</p>
+            <span>{t("ประวัติคำร้องจะแสดงที่นี่เมื่อมีการยื่นคำร้อง", "History appears after submission")}</span>
           </div>
         )}
       </div>

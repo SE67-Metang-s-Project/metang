@@ -48,6 +48,10 @@ export default function TopNav({
   const displayCode = userId ?? displayRole;
   const displayEmail = userEmail ?? (userId ? `${userId.toLowerCase()}@cmu.ac.th` : "user@cmu.ac.th");
   const logoHref = dashboardHref ?? (role ? `/${role}` : userRole === "นักศึกษา" ? "/student" : "/");
+  const handleLanguageChange = (nextLanguage: StudentLanguage) => {
+    onLanguageChange?.(nextLanguage);
+    setIsProfileOpen(false);
+  };
 
   useEffect(() => {
     const closeProfileOnOutsideClick = (event: MouseEvent) => {
@@ -153,7 +157,7 @@ export default function TopNav({
                     <button
                       aria-pressed={language === "th"}
                       className={`rounded-md border px-2.5 py-1.5 transition-colors ${language === "th" ? "border-[#ffb58c] bg-[#fff4ed] text-[#ed7740]" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}
-                      onClick={() => onLanguageChange("th")}
+                      onClick={() => handleLanguageChange("th")}
                       type="button"
                     >
                       ไทย
@@ -161,7 +165,7 @@ export default function TopNav({
                     <button
                       aria-pressed={language === "en"}
                       className={`rounded-md border px-2.5 py-1.5 transition-colors ${language === "en" ? "border-[#ffb58c] bg-[#fff4ed] text-[#ed7740]" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}
-                      onClick={() => onLanguageChange("en")}
+                      onClick={() => handleLanguageChange("en")}
                       type="button"
                     >
                       EN

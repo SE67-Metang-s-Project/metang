@@ -1,4 +1,5 @@
 import { AdvisorDecisionError, decideLoanRequest } from "@/db/queries/loan-requests";
+import { notifyLoanReviewer } from "@/db/queries/notification-recipients";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { apiError, apiOk } from "@/lib/api-response";
 import { getAdvisorContext } from "@/lib/loan-auth";
@@ -47,6 +48,9 @@ export async function POST(request: Request, { params }: Params) {
       decision: input.decision,
       comment: input.comment,
     });
+
+    await notifyLoanReviewer(loan.id);
+
     return apiOk(serializeJson(loan));
   } catch (error) {
     if (error instanceof AdvisorDecisionError && error.code === "NOT_FOUND") {
