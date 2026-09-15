@@ -1,17 +1,14 @@
 import {
   getLoanNotificationContext,
   resolveReviewerRecipients,
+  sendReviewerNotifications,
 } from "@/db/queries/notification-recipients";
 import { apiError, apiOk } from "@/lib/api-response";
 import { getSignedInContext } from "@/lib/loan-auth";
 import { isLoanId } from "@/lib/loan-validation";
-import { LineNotificationError, sendLineNotification } from "@/lib/line-notification";
-import {
-  buildReviewerNotificationPayload,
-  REVIEWER_STEP_BY_STATUS,
-} from "@/lib/line-notification-template";
+import { LineNotificationError } from "@/lib/line-notification";
+import { REVIEWER_STEP_BY_STATUS } from "@/lib/line-notification-template";
 import { canTriggerReviewerNotification } from "@/lib/notification-access";
-import { buildRequestUrlForPath } from "@/lib/reviewer-deeplink";
 import { validateJsonRequest } from "@/lib/request-security";
 import { serializeJson } from "@/lib/serialization";
 
@@ -95,28 +92,7 @@ export async function POST(request: Request) {
     return apiError("CONFLICT", "No reviewer is available to notify for this loan", 409);
   }
 
-  const deepLinkUrl = buildRequestUrlForPath(
-    process.env.APP_BASE_URL ?? "http://localhost:8080",
-    step.path,
-    loan.id,
-  );
-
-  const results = await Promise.allSettled(
-    recipients.map((email) => {
-      const payload = buildReviewerNotificationPayload({
-        role: step.role,
-        recipientEmail: email,
-        requestId: loan.id,
-        studentName: loan.student.fullNameTh,
-        amount: loan.approvedAmount ?? loan.amount,
-        eventLabel: step.eventLabel,
-        deepLinkUrl,
-      });
-      return sendLineNotification(payload, {
-        idempotencyKey: `${step.role}:${loan.id}:${email}`,
-      });
-    }),
-  );
+  const results = await sendReviewerNotifications(step, loan, recipients);
 
   const sent = results.filter((r) => r.status === "fulfilled").length;
   const failed = results.length - sent;

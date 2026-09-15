@@ -165,8 +165,15 @@ async function sendLineNotificationRequest(
         ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
       },
       body: requestBody,
+      // Callers (e.g. notifyLoanReviewer) await this synchronously before responding to the
+      // request that triggered it - an unbounded fetch would let a hung provider stall that
+      // response indefinitely, even though the loan mutation it's announcing already committed.
+      signal: AbortSignal.timeout(10_000),
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === "TimeoutError") {
+      throw new LineNotificationError("Notification API did not respond in time");
+    }
     throw new LineNotificationError("Unable to connect to notification API");
   }
 

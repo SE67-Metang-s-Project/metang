@@ -1,6 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma, UserRoleName } from "@/lib/generated/prisma/client";
-import type { ReviewerRole } from "@/lib/reviewer-deeplink";
+import { type ReviewerRole, buildRequestUrlForPath } from "@/lib/reviewer-deeplink";
+import {
+  REVIEWER_STEP_BY_STATUS,
+  buildReviewerNotificationPayload,
+  type ReviewerNotificationStep,
+} from "@/lib/line-notification-template";
+import {
+  LineNotificationError,
+  sendLineNotification,
+  type LineNotificationResponse,
+} from "@/lib/line-notification";
 
 export async function getAdvisorRecipientEmail(advisorId: string): Promise<string> {
   const user = await prisma.appUser.findUniqueOrThrow({
@@ -130,4 +140,88 @@ export async function getNextDueInstallmentContext(
     orderBy: { seq: "asc" },
     select: installmentReminderSelect,
   });
+}
+
+type ReviewerNotificationLoan = {
+  id: string;
+  status: string;
+  amount: number;
+  approvedAmount: number | null;
+  student: { fullNameTh: string };
+};
+
+/**
+ * Builds the deep link + per-recipient payload and delivers to every recipient independently
+ * (one recipient's failure never blocks another's). Shared by notifyLoanReviewer (the automatic
+ * producer, below) and POST /api/notifications/fon (the manual on-demand trigger) so the two
+ * never drift apart on message shape, deep-link construction, or idempotency-key format.
+ */
+export async function sendReviewerNotifications(
+  step: ReviewerNotificationStep,
+  loan: ReviewerNotificationLoan,
+  recipients: string[],
+): Promise<PromiseSettledResult<LineNotificationResponse>[]> {
+  const deepLinkUrl = buildRequestUrlForPath(
+    process.env.APP_BASE_URL ?? "http://localhost:8080",
+    step.path,
+    loan.id,
+  );
+
+  return Promise.allSettled(
+    recipients.map((email) => {
+      const payload = buildReviewerNotificationPayload({
+        role: step.role,
+        recipientEmail: email,
+        requestId: loan.id,
+        studentName: loan.student.fullNameTh,
+        amount: loan.approvedAmount ?? loan.amount,
+        eventLabel: step.eventLabel,
+        deepLinkUrl,
+      });
+      return sendLineNotification(payload, {
+        idempotencyKey: `${step.role}:${loan.id}:${loan.status}:${email}`,
+      });
+    }),
+  );
+}
+
+/**
+ * Notify whichever reviewer is now waiting on `loanId`, based on its CURRENT status (re-fetched
+ * here, not passed in - the caller may be several steps removed from the status change). A no-op
+ * for any status with no reviewer step (REVIEWER_STEP_BY_STATUS), e.g. "rejected"/"returned".
+ *
+ * Call this AFTER the workflow mutation's transaction has committed, never from inside one -
+ * this makes network calls, and a stalled/failed FON delivery must never roll back or delay the
+ * loan decision it is announcing. Every failure is caught and logged here, never thrown, so a
+ * caller never needs its own try/catch around this call.
+ */
+export async function notifyLoanReviewer(loanId: string): Promise<void> {
+  try {
+    const loan = await getLoanNotificationContext(loanId);
+    if (!loan) return;
+
+    const step = REVIEWER_STEP_BY_STATUS[loan.status];
+    if (!step) return;
+
+    const recipients = await resolveReviewerRecipients(step.role, loan);
+    if (recipients.length === 0) {
+      console.error(`No reviewer recipient resolved for loan ${loanId} at status ${loan.status}`);
+      return;
+    }
+
+    const results = await sendReviewerNotifications(step, loan, recipients);
+
+    const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+    if (failures.length > 0) {
+      const messages = failures.map((f) =>
+        f.reason instanceof LineNotificationError ? f.reason.message : String(f.reason),
+      );
+      console.error(
+        `Unable to notify ${failures.length}/${recipients.length} reviewer(s) for loan ${loanId}`,
+        messages,
+      );
+    }
+  } catch (error) {
+    console.error(`Unable to notify reviewer for loan ${loanId}`, error);
+  }
 }
