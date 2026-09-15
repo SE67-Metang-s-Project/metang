@@ -3,7 +3,7 @@ import "server-only";
 import type { CmuProfile } from "@/lib/cmu-auth";
 
 export const NURSING_ORGANIZATION_CODE = "12";
-export const NURSING_STUDENT_ID_PATTERN = /^\d{2}1210\d{3}$/;
+export const NURSING_STUDENT_ID_PATTERN = /^\d{2}12\d{5}$/;
 
 export type NurseAccessDecision =
   | { allowed: true; userType: "student" | "employee" }
