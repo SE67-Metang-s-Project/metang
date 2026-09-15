@@ -452,3 +452,16 @@ export type FundTransactionBody = {
 export type FundTransactionResponse = {
   data: FundTransactionItem;
 };
+
+export type ReviewerNotificationBody = {
+  loanId: string;
+};
+
+export type ReviewerNotificationResponse = {
+  data: {
+    loanId: string;
+    role: "advisor" | "admin" | "executive";
+    sent: number;
+    failed: number;
+  };
+};

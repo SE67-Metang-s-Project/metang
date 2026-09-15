@@ -63,6 +63,21 @@ function validateIdempotencyKey(idempotencyKey: string) {
   }
 }
 
+// Pulls the provider's own error text out of a parsed JSON body, so a thrown LineNotificationError
+// carries what the real API said instead of a message we invented. The docs only specify the
+// success shape ({"data": "Success"}); on failure this checks the common fields providers use
+// (message/error, or a non-"Success" string in data) and falls back to null if none apply.
+function extractApiErrorMessage(result: unknown): string | null {
+  if (typeof result !== "object" || result === null) return null;
+  const record = result as Record<string, unknown>;
+  if (typeof record.message === "string" && record.message.trim()) return record.message;
+  if (typeof record.error === "string" && record.error.trim()) return record.error;
+  if (typeof record.data === "string" && record.data.trim() && record.data !== "Success") {
+    return record.data;
+  }
+  return null;
+}
+
 function getPayloadFingerprint(payload: LineNotificationPayload) {
   return JSON.stringify([
     payload.program,
@@ -165,7 +180,7 @@ async function sendLineNotificationRequest(
 
   if (!response.ok) {
     throw new LineNotificationError(
-      `Notification API returned HTTP ${response.status}`,
+      extractApiErrorMessage(result) ?? `Notification API returned HTTP ${response.status}`,
       response.status,
     );
   }
@@ -176,7 +191,10 @@ async function sendLineNotificationRequest(
     !("data" in result) ||
     result.data !== "Success"
   ) {
-    throw new LineNotificationError("Notification API returned an unexpected response");
+    throw new LineNotificationError(
+      extractApiErrorMessage(result) ?? "Notification API returned an unexpected response",
+      response.status,
+    );
   }
 
   return { data: "Success" };

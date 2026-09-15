@@ -37,6 +37,19 @@ export function buildReviewerRequestPath(role: ReviewerRole, requestId: string) 
   return `${REVIEWER_REQUEST_PATHS[role]}?requestId=${encodeURIComponent(requestId)}`;
 }
 
+/**
+ * Same validation and URL-building as buildReviewerRequestUrl, but takes the target path
+ * directly instead of deriving it from role - some statuses (pending_disbursement) need a
+ * different page than the role's default review queue (e.g. admin/disburse-debt, not
+ * admin/pending).
+ */
+export function buildRequestUrlForPath(baseUrl: string, path: string, requestId: string) {
+  validateRequestId(requestId);
+  validateBaseUrl(baseUrl);
+
+  return new URL(`${path}?requestId=${encodeURIComponent(requestId)}`, baseUrl).toString();
+}
+
 export function buildReviewerRequestUrl(
   baseUrl: string,
   role: ReviewerRole,

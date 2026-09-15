@@ -5153,6 +5153,54 @@
           "executive"
         ]
       },
+      "ReviewerNotificationBody": {
+        "type": "object",
+        "properties": {
+          "loanId": {
+            "type": "string",
+            "nullable": false
+          }
+        },
+        "required": [
+          "loanId"
+        ]
+      },
+      "ReviewerNotificationResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "loanId": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "advisor",
+                  "admin",
+                  "executive"
+                ]
+              },
+              "sent": {
+                "type": "number"
+              },
+              "failed": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "loanId",
+              "role",
+              "sent",
+              "failed"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "RoleMutationBody": {
         "type": "object",
         "properties": {
@@ -6502,6 +6550,114 @@
         }
       }
     },
+    "/notifications/fon": {
+      "post": {
+        "operationId": "post-notifications-fon",
+        "summary": "FON (LINE) notification to the reviewer currently holding a loan request - the recipient,",
+        "description": "",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewerNotificationBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewerNotificationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/openapi": {
       "get": {
         "operationId": "get-openapi",
@@ -7452,6 +7608,9 @@
     },
     {
       "name": "Loan requests"
+    },
+    {
+      "name": "Notifications"
     },
     {
       "name": "Openapi"
