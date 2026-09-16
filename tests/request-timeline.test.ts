@@ -40,13 +40,30 @@ test("RequestsCard, DisburseDebtCard, and VerifySlipCard all use RequestTimeline
   assert.doesNotMatch(verifySlipCard, /border-l-2 border-orange-200/, "VerifySlipCard must not use old border-l-2 timeline");
 });
 
-test("RequestsCard hides comments and bank details in RequestTimeline", () => {
+test("RequestsCard and DisburseDebtCard hide comments and bank details in RequestTimeline", () => {
   const requestsCard = read("components/shared/pending/RequestsCard.tsx");
+  const disburseDebtCard = read("components/shared/disburse-debt/DisburseDebtCard.tsx");
   const requestTimeline = read("components/shared/RequestTimeline.tsx");
 
   assert.match(requestTimeline, /hideComments\?: boolean/, "RequestTimeline must support hideComments prop");
   assert.match(requestTimeline, /hideBankDetails\?: boolean/, "RequestTimeline must support hideBankDetails prop");
   assert.match(requestsCard, /<RequestTimeline[\s\S]*?hideComments/, "RequestsCard must set hideComments");
   assert.match(requestsCard, /<RequestTimeline[\s\S]*?hideBankDetails/, "RequestsCard must set hideBankDetails");
+  assert.match(disburseDebtCard, /<RequestTimeline[\s\S]*?hideComments/, "DisburseDebtCard must set hideComments");
+  assert.match(disburseDebtCard, /<RequestTimeline[\s\S]*?hideBankDetails/, "DisburseDebtCard must set hideBankDetails");
+});
+
+test("DisburseDebtCard approval comments box wraps long comments and text properly", () => {
+  const disburseDebtCard = read("components/shared/disburse-debt/DisburseDebtCard.tsx");
+  assert.match(
+    disburseDebtCard,
+    /break-words\s+whitespace-pre-wrap[\s\S]*?approval\.comment/,
+    "DisburseDebtCard must use break-words and whitespace-pre-wrap on approval comment",
+  );
+  assert.match(
+    disburseDebtCard,
+    /approval\.actorName[\s\S]*?break-words/,
+    "DisburseDebtCard must use break-words on approval actorName",
+  );
 });
 

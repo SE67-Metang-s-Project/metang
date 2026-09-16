@@ -420,7 +420,6 @@ export default function RequestsCard({
   };
 
   // เปิด popup อัตโนมัติเมื่อมาจาก deep link พร้อมรหัสคำร้องที่ตรงกัน (render-phase sync, ไม่ใช้ useEffect)
-  // หมายเหตุ: มาร์คว่าเปิดแล้วเฉพาะตอนที่เจอคำร้องจริง เพื่อให้ลองใหม่ได้หาก requests ยังโหลดไม่ครบในตอนแรก
   if (initialSelectedRequestId && autoOpenedRequestId !== initialSelectedRequestId) {
     const match = requests.find((req) => req.id === initialSelectedRequestId);
     if (match) {
@@ -528,7 +527,8 @@ export default function RequestsCard({
         let msg = data?.error?.message || data?.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล";
         if (res.status === 401) msg = "กรุณาเข้าสู่ระบบใหม่ (Session หมดอายุ)";
         else if (res.status === 403) msg = "ไม่มีสิทธิ์ดำเนินการสำหรับบทบาทนี้";
-        else if (res.status === 409) msg = data?.error?.message || "คำร้องนี้ได้รับการพิจารณาไปแล้ว หรือเกิดข้อขัดแย้ง";
+        else if (res.status === 409)
+          msg = data?.error?.message || "คำร้องนี้ได้รับการพิจารณาไปแล้ว หรือเกิดข้อขัดแย้ง";
         else if (res.status === 404) msg = "ไม่พบข้อมูลคำร้องนี้ในระบบ";
         throw new Error(msg);
       }
@@ -544,9 +544,7 @@ export default function RequestsCard({
 
       router.refresh();
     } catch (err: unknown) {
-      setErrorMessage(
-        err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการส่งข้อมูล",
-      );
+      setErrorMessage(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการส่งข้อมูล");
     } finally {
       setIsSubmitting(false);
     }
@@ -554,7 +552,9 @@ export default function RequestsCard({
 
   const handleSaveAmount = () => {
     if (!selectedRequest) return;
-    const raw = String(editAmountValue || "").replace(/,/g, "").trim();
+    const raw = String(editAmountValue || "")
+      .replace(/,/g, "")
+      .trim();
     const num = parseInt(raw, 10);
 
     if (isNaN(num) || num <= 0) {
@@ -1083,22 +1083,23 @@ export default function RequestsCard({
 
                       return (
                         <div key={idx} className={`p-3.5 rounded-xl border ${boxBgClass}`}>
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
-                              <span className="font-bold text-gray-900 text-[13px]">
+                          <div className="flex justify-between items-start mb-2 gap-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
+                              <span className="font-bold text-gray-900 text-[13px] break-words">
                                 {approval.actorName}
                               </span>
                               <span
-                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${roleBadgeClass}`}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${roleBadgeClass}`}
                               >
                                 {getRoleDisplay(approval.step)}
                               </span>
                             </div>
-                            <span className="text-[11px] text-gray-500 shrink-0">
+                            <span className="text-[11px] text-gray-500 shrink-0 text-right">
                               {approval.date}
                             </span>
                           </div>
-                          <p className="text-[13px] text-gray-700 leading-relaxed italic">
+                          {/* // เพิ่ม break-words และ whitespace-pre-wrap เพื่อป้องกันข้อความล้นกรอบ */}
+                          <p className="text-[13px] text-gray-700 leading-relaxed italic break-words whitespace-pre-wrap">
                             &ldquo;{approval.comment}&rdquo;
                           </p>
                         </div>
@@ -1246,7 +1247,9 @@ export default function RequestsCard({
                             ? "ระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข (เช่น แนบเอกสารใหม่)"
                             : "ระบุเหตุผลเพื่อแจ้งกลับให้นักศึกษาทราบ"}
                       </span>
-                      <span className="text-red-500 font-bold" title="จำเป็น">*</span>
+                      <span className="text-red-500 font-bold" title="จำเป็น">
+                        *
+                      </span>
                     </h4>
 
                     {confirmAction === "approve" &&
@@ -1263,27 +1266,39 @@ export default function RequestsCard({
                         </div>
                       )}
 
-                    <textarea
-                      placeholder={
-                        confirmAction === "approve"
-                          ? "ระบุความเห็นประกอบการพิจารณา เช่น เห็นสมควรให้กู้ยืมเพื่อนำไปใช้จ่าย..."
-                          : confirmAction === "return"
-                            ? "เช่น ใบแจ้งหนี้ไม่ชัดเจน กรุณาถ่ายรูปและแนบไฟล์มาใหม่..."
-                            : "เช่น เอกสารหรือเหตุผลไม่เพียงพอต่อการกู้ยืม..."
-                      }
-                      className={`w-full border rounded-lg p-3 text-[13px] focus:outline-none resize-none h-20 mb-3 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors ${
-                        errorMessage
-                          ? "border-red-400 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-                          : "border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      }`}
-                      value={remark}
-                      onChange={(e) => {
-                        setRemark(e.target.value);
-                        if (errorMessage) setErrorMessage(null);
-                      }}
-                      disabled={isSubmitting}
-                      autoFocus
-                    />
+                    <div className="relative mb-3">
+                      <textarea
+                        maxLength={200}
+                        placeholder={
+                          confirmAction === "approve"
+                            ? "ระบุความเห็นประกอบการพิจารณา เช่น เห็นสมควรให้กู้ยืมเพื่อนำไปใช้จ่าย..."
+                            : confirmAction === "return"
+                              ? "เช่น ใบแจ้งหนี้ไม่ชัดเจน กรุณาถ่ายรูปและแนบไฟล์มาใหม่..."
+                              : "เช่น เอกสารหรือเหตุผลไม่เพียงพอต่อการกู้ยืม..."
+                        }
+                        className={`w-full border rounded-lg p-3 text-[13px] focus:outline-none resize-none h-20 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors ${
+                          errorMessage
+                            ? "border-red-400 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                            : "border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        }`}
+                        value={remark}
+                        onChange={(e) => {
+                          setRemark(e.target.value);
+                          if (errorMessage) setErrorMessage(null);
+                        }}
+                        disabled={isSubmitting}
+                        autoFocus
+                      />
+                      <div className="flex justify-end mt-1">
+                        <span
+                          className={`text-[11px] ${
+                            remark.length >= 200 ? "text-red-500 font-bold" : "text-gray-400"
+                          }`}
+                        >
+                          {remark.length}/200
+                        </span>
+                      </div>
+                    </div>
 
                     {errorMessage && (
                       <div className="text-[12px] text-red-600 mb-3 bg-red-50 p-2.5 rounded-lg border border-red-200 flex items-center gap-2">

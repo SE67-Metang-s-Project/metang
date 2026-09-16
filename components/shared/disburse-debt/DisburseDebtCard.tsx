@@ -21,6 +21,8 @@ import {
   SearchX,
   FileText,
   Download,
+  ZoomIn,
+  ExternalLink,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
 import { formatThaiBahtText } from "@/app/student/studentFormatters";
@@ -287,6 +289,8 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
   const [isCopied, setIsCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // State สำหรับพรีวิวสลิปขนาดเต็ม
+  const [previewSlipUrl, setPreviewSlipUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isCompleted =
     selectedRequest?.requestStatus === "disbursed" ||
@@ -305,16 +309,22 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
     setSlipFile(null);
     setIsCopied(false);
     setErrorMessage(null);
+    setPreviewSlipUrl(null);
   };
 
   const backdropDismiss = useModalDismiss({
     onClose: closeAllModals,
-    isOpen: Boolean(selectedRequest),
+    isOpen: Boolean(selectedRequest) && !previewSlipUrl && !viewDocumentReq,
   });
 
   const documentModalDismiss = useModalDismiss({
     onClose: () => setViewDocumentReq(null),
     isOpen: Boolean(viewDocumentReq),
+  });
+
+  const slipPreviewModalDismiss = useModalDismiss({
+    onClose: () => setPreviewSlipUrl(null),
+    isOpen: Boolean(previewSlipUrl),
   });
 
   const handleCopy = (text: string) => {
@@ -326,7 +336,10 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (uploadedSlip) URL.revokeObjectURL(uploadedSlip);
+      if (uploadedSlip) {
+        if (previewSlipUrl === uploadedSlip) setPreviewSlipUrl(null);
+        URL.revokeObjectURL(uploadedSlip);
+      }
       const imageUrl = URL.createObjectURL(file);
       setUploadedSlip(imageUrl);
       setSlipFile(file);
@@ -772,21 +785,43 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
 
               {/* สลิปหลักฐานการโอนเงิน / แนบสลิป */}
               <section className={styles.loanApprovalInfoCard}>
-                <CardHeader
-                  className={styles.sectionCardHeading}
-                  icon={<FileImage aria-hidden="true" size={20} strokeWidth={2.2} />}
-                  title={isCompleted ? "สลิปหลักฐานการโอนเงิน" : "แนบสลิปหลักฐานการโอนเงิน"}
-                />
+                <div className="flex items-center justify-between">
+                  <CardHeader
+                    className={styles.sectionCardHeading}
+                    icon={<FileImage aria-hidden="true" size={20} strokeWidth={2.2} />}
+                    title={isCompleted ? "สลิปหลักฐานการโอนเงิน" : "แนบสลิปหลักฐานการโอนเงิน"}
+                  />
+                  {isCompleted && selectedRequest.slipUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewSlipUrl(selectedRequest.slipUrl || null)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors cursor-pointer shadow-xs"
+                      title="เปิดดูรูปภาพสลิปขนาดเต็ม"
+                    >
+                      <ZoomIn size={14} /> ดูรูปขนาดเต็ม
+                    </button>
+                  )}
+                </div>
 
                 {isCompleted ? (
                   <div className="relative rounded-xl border border-gray-200 bg-gray-50/50 p-3 flex justify-center items-center min-h-[180px] mt-2">
                     {selectedRequest.slipUrl ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={selectedRequest.slipUrl}
-                        alt="slip proof"
-                        className="max-h-[45vh] rounded-lg shadow-sm object-contain"
-                      />
+                      <div
+                        onClick={() => setPreviewSlipUrl(selectedRequest.slipUrl || null)}
+                        className="relative group cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white hover:shadow-md transition-all flex justify-center items-center"
+                        title="คลิกเพื่อดูภาพขนาดเต็ม (Preview)"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={selectedRequest.slipUrl}
+                          alt="slip proof"
+                          className="max-h-[45vh] rounded-lg shadow-sm object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-xs sm:text-sm font-semibold rounded-lg">
+                          <ZoomIn size={22} className="drop-shadow" />
+                          <span className="drop-shadow">คลิกเพื่อดูภาพขนาดเต็ม</span>
+                        </div>
+                      </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center text-gray-400 py-8">
                         <FileImage size={36} className="mb-2 opacity-50" />
@@ -804,13 +839,24 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                           alt="slip preview"
                           className="max-h-full rounded-lg shadow-sm object-contain"
                         />
-                        <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => setPreviewSlipUrl(uploadedSlip)}
+                            className="bg-white text-emerald-700 px-3 py-1.5 rounded-lg text-sm font-bold shadow-md hover:bg-emerald-50 transition-colors cursor-pointer flex items-center gap-1.5"
+                            type="button"
+                          >
+                            <ZoomIn size={16} />
+                            ดูตัวอย่าง
+                          </button>
                           <button
                             onClick={() => {
-                              if (uploadedSlip) URL.revokeObjectURL(uploadedSlip);
+                              if (uploadedSlip) {
+                                if (previewSlipUrl === uploadedSlip) setPreviewSlipUrl(null);
+                                URL.revokeObjectURL(uploadedSlip);
+                              }
                               setUploadedSlip(null);
                             }}
-                            className="bg-white text-red-600 px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-red-50 transition-colors cursor-pointer"
+                            className="bg-white text-red-600 px-3 py-1.5 rounded-lg text-sm font-bold shadow-md hover:bg-red-50 transition-colors cursor-pointer"
                             type="button"
                           >
                             เปลี่ยนรูปภาพ
@@ -874,22 +920,23 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
 
                       return (
                         <div key={idx} className={`p-3.5 rounded-xl border ${boxBgClass}`}>
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
-                              <span className="font-bold text-gray-900 text-[13px]">
+                          <div className="flex justify-between items-start mb-2 gap-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
+                              <span className="font-bold text-gray-900 text-[13px] break-words">
                                 {approval.actorName}
                               </span>
                               <span
-                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${roleBadgeClass}`}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${roleBadgeClass}`}
                               >
                                 {getRoleDisplay(approval.step)}
                               </span>
                             </div>
-                            <span className="text-[11px] text-gray-500 shrink-0">
+                            <span className="text-[11px] text-gray-500 shrink-0 text-right">
                               {approval.date}
                             </span>
                           </div>
-                          <p className="text-[13px] text-gray-700 leading-relaxed italic">
+                          {/* // เพิ่ม break-words และ whitespace-pre-wrap เพื่อป้องกันข้อความล้นกรอบ */}
+                          <p className="text-[13px] text-gray-700 leading-relaxed italic break-words whitespace-pre-wrap">
                             &ldquo;{approval.comment}&rdquo;
                           </p>
                         </div>
@@ -955,12 +1002,12 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
               {/* ติดตามสถานะคำร้อง */}
               <RequestTimeline
                 history={selectedRequest.history}
-                approvals={selectedRequest.approvals}
                 requestStatus={selectedRequest.requestStatus}
-                bankDetails={selectedRequest.bankDetails}
                 advisorName={selectedRequest.advisorName}
                 studentName={selectedRequest.name}
                 submitDate={selectedRequest.submitDate}
+                hideComments
+                hideBankDetails
               />
 
               {/* ปุ่มดาวน์โหลดแบบคำร้อง (PDF) เหมือนหน้านักศึกษา - แสดงเฉพาะเมื่อ admin/super admin โอนเงินสำเร็จแล้ว */}
@@ -1131,6 +1178,101 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   type="button"
                 >
                   ปิดหน้าต่าง
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Modal พรีวิวสลิปหลักฐานการโอนเงิน (Image Preview Lightbox) */}
+      {previewSlipUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm animate-in fade-in duration-200"
+          {...slipPreviewModalDismiss}
+          role="presentation"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[92vh] overflow-hidden border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header ของ Modal พรีวิวสลิป */}
+            <div className="flex justify-between items-center px-5 sm:px-6 py-4 border-b border-gray-100 bg-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="bg-emerald-100 text-emerald-700 p-2 rounded-lg">
+                  <FileImage size={22} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 leading-tight">
+                    สลิปหลักฐานการโอนเงิน
+                  </h3>
+                  {selectedRequest && (
+                    <p className="text-[13px] text-gray-500 mt-0.5">
+                      คำร้อง: {selectedRequest.id} • {selectedRequest.name}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewSlipUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-500 hover:text-emerald-700 bg-gray-50 hover:bg-emerald-50 px-2.5 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 text-xs font-semibold"
+                  title="เปิดรูปภาพในแท็บใหม่"
+                >
+                  <ExternalLink size={15} />
+                  <span className="hidden sm:inline">เปิดในแท็บใหม่</span>
+                </a>
+                <button
+                  onClick={() => setPreviewSlipUrl(null)}
+                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
+                  aria-label="ปิดหน้าต่างพรีวิว"
+                  type="button"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* ส่วนแสดงภาพสลิป */}
+            <div className="p-4 sm:p-6 overflow-auto flex-1 flex items-center justify-center bg-gray-100/70 min-h-[300px]">
+              {previewSlipUrl.toLowerCase().includes(".pdf") ||
+              previewSlipUrl.startsWith("data:application/pdf") ? (
+                <iframe
+                  src={previewSlipUrl}
+                  className="w-full h-[70vh] rounded-xl border border-gray-300 shadow-sm bg-white"
+                  title="สลิปหลักฐานการโอนเงิน"
+                />
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={previewSlipUrl}
+                  alt="สลิปหลักฐานการโอนเงินขนาดเต็ม"
+                  className="max-h-[72vh] w-auto max-w-full rounded-xl shadow-md object-contain select-none bg-white"
+                />
+              )}
+            </div>
+
+            {/* Footer ของ Modal พรีวิวสลิป */}
+            <div className="p-3.5 sm:p-4 bg-white border-t border-gray-100 flex justify-between items-center shrink-0">
+              <span className="text-[12px] text-gray-500 hidden sm:inline">
+                กด Esc หรือคลิกพื้นที่ภายนอกเพื่อปิด
+              </span>
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <a
+                  href={previewSlipUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all cursor-pointer active:scale-[0.98]"
+                >
+                  <ExternalLink size={15} />
+                  <span>ดูภาพต้นฉบับ</span>
+                </a>
+                <button
+                  onClick={() => setPreviewSlipUrl(null)}
+                  className="px-5 py-2 rounded-xl text-[13px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer active:scale-[0.98]"
+                  type="button"
+                >
+                  ปิด
                 </button>
               </div>
             </div>

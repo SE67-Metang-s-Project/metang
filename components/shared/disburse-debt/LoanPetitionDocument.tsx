@@ -97,6 +97,7 @@ export function downloadLoanPetitionPdf(
             box-shadow: none !important;
             background: white !important;
             position: static !important;
+            transform: none !important;
           }
           table {
             border-collapse: collapse !important;
@@ -373,7 +374,8 @@ export default function LoanPetitionDocument({
   const returnDate = parseRepaymentDate();
 
   return (
-    <div className="w-full flex flex-col items-center">
+    // ครอบด้วย overflow-x-auto เพื่อให้เลื่อนซ้ายขวาได้ในจอเล็ก โดยเนื้อหาข้างในจะไม่ย่อตาม
+    <div className="w-full flex flex-col items-center overflow-x-auto">
       <style>{`
         @media print {
           @page {
@@ -403,6 +405,7 @@ export default function LoanPetitionDocument({
             border: none !important;
             box-shadow: none !important;
             background: white !important;
+            transform: none !important;
           }
           table {
             border-collapse: collapse !important;
@@ -414,7 +417,7 @@ export default function LoanPetitionDocument({
       `}</style>
 
       {showDownloadButton && (
-        <div className="w-full max-w-[800px] mb-3 flex justify-end print:hidden">
+        <div className="w-[794px] mb-3 flex justify-end print:hidden">
           <button
             type="button"
             onClick={() => downloadLoanPetitionPdf(request)}
@@ -426,17 +429,17 @@ export default function LoanPetitionDocument({
         </div>
       )}
 
-      {/* แผ่นเอกสารจำลอง A4 ตามแบบขอยืมเงินทุนสวัสดิการ.pdf */}
+      {/* แผ่นเอกสารจำลอง A4: กำหนดความกว้างตายตัวที่ 794px (ประมาณ A4 @ 96dpi) ไม่ให้ย่อขยาย */}
       <div
         id="loan-petition-document-paper"
-        className="w-full max-w-[800px] bg-white border border-gray-200 rounded-xl shadow-md p-6 sm:p-10 md:p-12 text-gray-900 font-sans text-[13.5px] sm:text-[14px] leading-[2.1] print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-full print:rounded-none"
+        className="w-[794px] min-w-[794px] bg-white border border-gray-200 rounded-xl shadow-md p-10 md:p-12 text-gray-900 font-sans text-[14px] leading-[2.1] shrink-0 print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-full print:rounded-none"
       >
         {/* หัวกระดาษ */}
         <div className="text-center mb-6 pb-2 border-b border-gray-100">
           <div className="text-[12px] font-medium text-gray-500 tracking-wider mb-1">
             คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่
           </div>
-          <h1 className="text-[17px] sm:text-[19px] font-bold text-gray-900 tracking-tight">
+          <h1 className="text-[19px] font-bold text-gray-900 tracking-tight">
             แบบขอยืมเงินทุนสวัสดิการนักศึกษาคณะพยาบาลศาสตร์
           </h1>
           <div className="flex justify-between items-center text-[11px] text-gray-500 mt-2">
@@ -529,7 +532,7 @@ export default function LoanPetitionDocument({
 
         {/* ตารางกำหนดการผ่อนชำระ */}
         <div className="mt-3.5 mb-3">
-          <div className="text-[13px] sm:text-[13.5px] font-bold text-gray-900 mb-1.5 flex items-center justify-between">
+          <div className="text-[13.5px] font-bold text-gray-900 mb-1.5 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <span>กำหนดการผ่อนชำระ</span>
               <span className="text-[12px] font-normal text-gray-600">
@@ -542,7 +545,7 @@ export default function LoanPetitionDocument({
           </div>
 
           <div className="overflow-hidden border border-gray-300 rounded-md">
-            <table className="w-full text-left border-collapse text-[12.5px] sm:text-[13px] leading-relaxed">
+            <table className="w-full text-left border-collapse text-[13px] leading-relaxed">
               <thead>
                 <tr className="bg-gray-50 text-gray-700 border-b border-gray-300 font-semibold text-center">
                   <th className="py-1.5 px-3 w-[20%] border-r border-gray-200">งวดที่</th>
@@ -570,7 +573,7 @@ export default function LoanPetitionDocument({
                 ))}
               </tbody>
               <tfoot>
-                <tr className="bg-gray-50 text-gray-900 border-t border-gray-300 font-semibold text-[12px] sm:text-[12.5px]">
+                <tr className="bg-gray-50 text-gray-900 border-t border-gray-300 font-semibold text-[12.5px]">
                   <td colSpan={2} className="py-1.5 px-4 text-right border-r border-gray-200">
                     รวมทั้งสิ้น ({formatThaiBahtText(String(request.amount))})
                   </td>
@@ -592,29 +595,29 @@ export default function LoanPetitionDocument({
 
         {/* ส่วนลายมือชื่อ (ใต้ข้อตกลง) */}
         <div className="mt-4 flex justify-end">
-          <div className="w-full sm:w-auto text-right sm:text-left sm:min-w-[280px] space-y-3">
+          <div className="text-left min-w-[280px] space-y-3">
             <div>
-              <div className="flex items-center justify-end sm:justify-start gap-1">
+              <div className="flex items-center justify-start gap-1">
                 <span>(ลงชื่อ)</span>
                 <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-3 min-w-[160px] text-center inline-block">
                   {request.name}
                 </span>
                 <span>ผู้ยืม</span>
               </div>
-              <div className="text-[12px] text-gray-500 pl-10 text-center sm:text-left">
+              <div className="text-[12px] text-gray-500 pl-10 text-left">
                 วันที่ {request.submitDate}
               </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-end sm:justify-start gap-1">
+              <div className="flex items-center justify-start gap-1">
                 <span>(ลงชื่อ)</span>
                 <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-3 min-w-[160px] text-center inline-block">
                   {adminName}
                 </span>
                 <span>พยาน</span>
               </div>
-              <div className="text-[12px] text-gray-500 pl-10 text-center sm:text-left">
+              <div className="text-[12px] text-gray-500 pl-10 text-left">
                 วันที่ {adminApproval?.date || request.submitDate}
               </div>
             </div>
@@ -625,7 +628,7 @@ export default function LoanPetitionDocument({
         <hr className="border-t-2 border-dotted border-gray-300 my-6" />
 
         {/* ส่วนล่าง: ความคิดเห็นการพิจารณา & หลักฐานการรับเงิน (ไม่ทำเป็นกล่อง) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-2 gap-8 items-start">
           {/* คอลัมน์ซ้าย: ความคิดเห็นอาจารย์ที่ปรึกษา & admin */}
           <div className="space-y-8">
             {/* 1. ความคิดเห็นของอาจารย์ที่ปรึกษา */}
@@ -633,7 +636,7 @@ export default function LoanPetitionDocument({
               <div className="font-bold text-gray-900 text-[14px]">
                 ความคิดเห็นของอาจารย์ที่ปรึกษา
               </div>
-              <p className="text-[13px] text-gray-800 italic min-h-[36px] py-1">
+              <p className="text-[13px] text-gray-800 italic min-h-[36px] py-1 break-words whitespace-pre-wrap">
                 &ldquo;{advisorApproval?.comment || "เห็นควรให้การสนับสนุนการขอยืมเงินทุนสวัสดิการเพื่อการศึกษา"}&rdquo;
               </p>
               <div className="text-center pt-1">
@@ -657,7 +660,7 @@ export default function LoanPetitionDocument({
               <div className="font-bold text-gray-900 text-[14px]">
                 ความคิดเห็นของ admin
               </div>
-              <p className="text-[13px] text-gray-800 italic min-h-[36px] py-1">
+              <p className="text-[13px] text-gray-800 italic min-h-[36px] py-1 break-words whitespace-pre-wrap">
                 &ldquo;{adminApproval?.comment || "ตรวจสอบเอกสารและคุณสมบัติครบถ้วน ถูกต้องตามระเบียบ"}&rdquo;
               </p>
               <div className="text-center pt-1">
@@ -684,7 +687,7 @@ export default function LoanPetitionDocument({
               <div className="font-bold text-gray-900 text-[14px]">
                 ความคิดเห็นของผู้บริหาร
               </div>
-              <p className="text-[13px] text-gray-800 italic min-h-[36px] py-1">
+              <p className="text-[13px] text-gray-800 italic min-h-[36px] py-1 break-words whitespace-pre-wrap">
                 &ldquo;{executiveApproval?.comment || "อนุมัติให้ขอยืมเงินทุนสวัสดิการนักศึกษาตามระเบียบ"}&rdquo;
               </p>
               <div className="text-center pt-1">
