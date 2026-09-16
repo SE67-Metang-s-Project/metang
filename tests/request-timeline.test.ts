@@ -22,10 +22,9 @@ test("RequestTimeline component is created and follows student LoanTimeline desi
   assert.match(content, /ติดตามสถานะคำร้อง/, "Must default title to ติดตามสถานะคำร้อง");
 });
 
-test("RequestsCard, DisburseDebtCard, and VerifySlipCard all use RequestTimeline", () => {
+test("RequestsCard and DisburseDebtCard use RequestTimeline", () => {
   const requestsCard = read("components/shared/pending/RequestsCard.tsx");
   const disburseDebtCard = read("components/shared/disburse-debt/DisburseDebtCard.tsx");
-  const verifySlipCard = read("components/shared/verify-slip/VerifySlipCard.tsx");
 
   // RequestsCard
   assert.match(requestsCard, /<RequestTimeline\s+history=\{selectedRequest\.history\}/, "RequestsCard must use RequestTimeline");
@@ -34,10 +33,36 @@ test("RequestsCard, DisburseDebtCard, and VerifySlipCard all use RequestTimeline
   // DisburseDebtCard
   assert.match(disburseDebtCard, /<RequestTimeline\s+history=\{selectedRequest\.history\}/, "DisburseDebtCard must use RequestTimeline");
   assert.doesNotMatch(disburseDebtCard, /border-l-2 border-orange-200/, "DisburseDebtCard must not use old border-l-2 timeline");
+});
 
-  // VerifySlipCard
-  assert.match(verifySlipCard, /<RequestTimeline\s+history=\{selectedRequest\.history\}/, "VerifySlipCard must use RequestTimeline");
-  assert.doesNotMatch(verifySlipCard, /border-l-2 border-orange-200/, "VerifySlipCard must not use old border-l-2 timeline");
+test("VerifySlipCard modal title is ตรวจสอบการชำระเงิน and contains only กำหนดการและประวัติการชำระเงิน", () => {
+  const verifySlipCard = read("components/shared/verify-slip/VerifySlipCard.tsx");
+
+  assert.match(
+    verifySlipCard,
+    /<h2[^>]*>\s*ตรวจสอบการชำระเงิน\s*<\/h2>/,
+    "VerifySlipCard main modal title must be ตรวจสอบการชำระเงิน",
+  );
+  assert.match(
+    verifySlipCard,
+    /title="กำหนดการและประวัติการชำระเงิน"/,
+    "VerifySlipCard must contain กำหนดการและประวัติการชำระเงิน box",
+  );
+  assert.doesNotMatch(
+    verifySlipCard,
+    /title="ข้อมูลธนาคาร"/,
+    "VerifySlipCard must not contain ข้อมูลธนาคาร box",
+  );
+  assert.doesNotMatch(
+    verifySlipCard,
+    /title="ข้อมูลการกู้ยืม"/,
+    "VerifySlipCard must not contain ข้อมูลการกู้ยืม box",
+  );
+  assert.doesNotMatch(
+    verifySlipCard,
+    /<RequestTimeline/,
+    "VerifySlipCard must not contain RequestTimeline in main modal",
+  );
 });
 
 test("RequestsCard and DisburseDebtCard hide comments and bank details in RequestTimeline", () => {

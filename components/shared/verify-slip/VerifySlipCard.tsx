@@ -5,20 +5,15 @@ import React, { useState } from "react";
 import {
   X,
   UserRound,
-  Landmark,
   HandCoins,
   CalendarDays,
-  CreditCard,
-  MessageSquare,
   CheckCircle2,
   Receipt,
-  ShieldAlert,
   SearchX,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
 import { formatThaiBahtText } from "@/app/student/studentFormatters";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
-import RequestTimeline from "@/components/shared/RequestTimeline";
 import styles from "@/app/student/student.module.css";
 
 // ==========================================
@@ -158,18 +153,6 @@ export const hasPendingSlip = (history?: PaymentEvidence[]) => {
   return history.some((ev) => ev.status === "pending");
 };
 
-const getRoleDisplay = (step: string) => {
-  switch (step) {
-    case "advisor":
-      return "อ.ที่ปรึกษา";
-    case "admin":
-      return "เจ้าหน้าที่";
-    case "executive":
-      return "ผู้บริหาร";
-    default:
-      return step;
-  }
-};
 
 function EmptySlipState() {
   return (
@@ -277,13 +260,11 @@ function calculateInstallments(
 // ==========================================
 // Main Component
 // ==========================================
-export default function VerifySlipCard({ requests, userRole = "admin" }: VerifySlipCardProps) {
+export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
   const [selectedEvidence, setSelectedEvidence] = useState<PaymentEvidence | null>(null);
   const [slipConfirmAction, setSlipConfirmAction] = useState<"approve" | "reject" | null>(null);
   const [slipRemark, setSlipRemark] = useState("");
-
-  const canViewSensitiveData = userRole === "admin" || userRole === "super_admin";
 
   const closeAllModals = () => {
     setSelectedRequest(null);
@@ -471,10 +452,10 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
             <div className="flex justify-between items-start px-5 sm:px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
               <div className="pr-2">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
-                  คำร้อง {selectedRequest.id}
+                  ตรวจสอบการชำระเงิน
                 </h2>
                 <p className="text-[13px] text-gray-500 mt-0.5">
-                  ยื่นเมื่อ {selectedRequest.submitDate}
+                  อ้างอิงคำร้อง: {selectedRequest.id} • {selectedRequest.name}
                 </p>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -494,122 +475,6 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                   มีรายการสลิปที่รอการตรวจสอบ กรุณาตรวจสอบสลิปการชำระเงินในตารางด้านล่าง
                 </div>
               )}
-
-              {/* ข้อมูลนักศึกษา */}
-              <section className={styles.loanApprovalInfoCard}>
-                <CardHeader
-                  className={styles.sectionCardHeading}
-                  icon={<UserRound aria-hidden="true" size={20} strokeWidth={2.2} />}
-                  title="ข้อมูลนักศึกษา"
-                />
-                <dl>
-                  <div>
-                    <dt>ชื่อ-นามสกุล</dt>
-                    <dd>{selectedRequest.name}</dd>
-                  </div>
-                  <div>
-                    <dt>รหัสนักศึกษา</dt>
-                    <dd>{selectedRequest.studentId}</dd>
-                  </div>
-                  <div>
-                    <dt>คณะ</dt>
-                    <dd>คณะพยาบาลศาสตร์</dd>
-                  </div>
-                  <div>
-                    <dt>หลักสูตร</dt>
-                    <dd>
-                      {selectedRequest.program || selectedRequest.major || "พยาบาลศาสตรบัณฑิต"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>วุฒิการศึกษา</dt>
-                    <dd>
-                      {selectedRequest.degree || selectedRequest.educationLevel || "ปริญญาตรี"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>ชั้นปีการศึกษา</dt>
-                    <dd>ชั้นปีที่ {selectedRequest.year}</dd>
-                  </div>
-                  <div>
-                    <dt>เบอร์โทรศัพท์</dt>
-                    <dd>{selectedRequest.phone || "-"}</dd>
-                  </div>
-                  {selectedRequest.advisorName && (
-                    <div>
-                      <dt>อาจารย์ที่ปรึกษา</dt>
-                      <dd>{selectedRequest.advisorName}</dd>
-                    </div>
-                  )}
-                </dl>
-              </section>
-
-              {/* ข้อมูลธนาคาร */}
-              <section className={styles.loanApprovalInfoCard}>
-                <CardHeader
-                  className={styles.sectionCardHeading}
-                  icon={<Landmark aria-hidden="true" size={20} strokeWidth={2.2} />}
-                  title="ข้อมูลธนาคาร"
-                />
-                {canViewSensitiveData ? (
-                  <dl>
-                    <div>
-                      <dt>ธนาคาร</dt>
-                      <dd>{selectedRequest.bankDetails?.bankName || "-"}</dd>
-                    </div>
-                    <div>
-                      <dt>เลขที่บัญชี</dt>
-                      <dd>{selectedRequest.bankDetails?.accountNumber || "-"}</dd>
-                    </div>
-                    <div>
-                      <dt>ชื่อบัญชี</dt>
-                      <dd>{selectedRequest.bankDetails?.accountName || "-"}</dd>
-                    </div>
-                  </dl>
-                ) : (
-                  <div className="flex items-center justify-center gap-2 py-6 text-gray-500 text-[13px] bg-gray-50/60 rounded-xl border border-dashed border-gray-200">
-                    <ShieldAlert size={18} className="text-amber-500 shrink-0" />
-                    <span>ข้อมูลบัญชีธนาคารสงวนสิทธิ์การเข้าถึงเฉพาะผู้ดูแลระบบ</span>
-                  </div>
-                )}
-              </section>
-
-              {/* ข้อมูลการกู้ยืม */}
-              <section className={styles.loanApprovalInfoCard}>
-                <CardHeader
-                  className={styles.sectionCardHeading}
-                  icon={<HandCoins aria-hidden="true" size={20} strokeWidth={2.2} />}
-                  title="ข้อมูลการกู้ยืม"
-                />
-                <dl>
-                  <div>
-                    <dt>วัตถุประสงค์การกู้ยืม</dt>
-                    <dd>{selectedRequest.objective || "-"}</dd>
-                  </div>
-                  {selectedRequest.additionalNote && (
-                    <div>
-                      <dt>หมายเหตุเพิ่มเติม</dt>
-                      <dd>{selectedRequest.additionalNote}</dd>
-                    </div>
-                  )}
-                  <div className={styles.loanAmountRow}>
-                    <dt>ยอดกู้ยืมรวม (บาท)</dt>
-                    <dd className="font-bold text-[#ea580c]">
-                      {formatAmount(selectedRequest.amount)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>จำนวนเงินตัวอักษร</dt>
-                    <dd className={styles.loanAmountText}>
-                      {formatThaiBahtText(String(selectedRequest.amount))}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>จำนวนงวดการชำระ</dt>
-                    <dd>{selectedRequest.term} งวด</dd>
-                  </div>
-                </dl>
-              </section>
 
               {/* ตารางกำหนดการและประวัติการชำระเงิน */}
               <section className={styles.loanApprovalInfoCard}>
@@ -725,119 +590,6 @@ export default function VerifySlipCard({ requests, userRole = "admin" }: VerifyS
                   </table>
                 </div>
               </section>
-
-              {/* ความเห็นประกอบการพิจารณา */}
-              {selectedRequest.approvals && selectedRequest.approvals.length > 0 && (
-                <section className={styles.loanApprovalInfoCard}>
-                  <CardHeader
-                    className={styles.sectionCardHeading}
-                    icon={<MessageSquare aria-hidden="true" size={20} strokeWidth={2.2} />}
-                    title="ความเห็นประกอบการพิจารณา"
-                  />
-                  <div className="space-y-3 pt-1">
-                    {selectedRequest.approvals.map((approval, idx) => {
-                      let roleBadgeClass = "bg-gray-100 text-gray-700 border-gray-200";
-                      let boxBgClass = "bg-gray-50 border-gray-100";
-
-                      if (approval.step === "advisor") {
-                        roleBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
-                        boxBgClass = "bg-emerald-50/40 border-emerald-100";
-                      } else if (approval.step === "admin") {
-                        roleBadgeClass = "bg-blue-100 text-blue-800 border-blue-200";
-                        boxBgClass = "bg-blue-50/40 border-blue-100";
-                      } else if (approval.step === "executive") {
-                        roleBadgeClass = "bg-purple-100 text-purple-800 border-purple-200";
-                        boxBgClass = "bg-purple-50/40 border-purple-100";
-                      }
-
-                      return (
-                        <div key={idx} className={`p-3.5 rounded-xl border ${boxBgClass}`}>
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
-                              <span className="font-bold text-gray-900 text-[13px]">
-                                {approval.actorName}
-                              </span>
-                              <span
-                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${roleBadgeClass}`}
-                              >
-                                {getRoleDisplay(approval.step)}
-                              </span>
-                            </div>
-                            <span className="text-[11px] text-gray-500 shrink-0">
-                              {approval.date}
-                            </span>
-                          </div>
-                          <p className="text-[13px] text-gray-700 leading-relaxed italic">
-                            &ldquo;{approval.comment}&rdquo;
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
-
-              {/* ประวัติการชำระคืนกองทุน */}
-              {selectedRequest.paymentBehavior && (
-                <section className={styles.loanApprovalInfoCard}>
-                  <div className="flex justify-between items-center pb-2.5 mb-3 border-b border-gray-200">
-                    <header className="flex items-center gap-2">
-                      <CreditCard
-                        aria-hidden="true"
-                        size={20}
-                        strokeWidth={2.2}
-                        className="text-gray-400"
-                      />
-                      <h3 className="m-0 text-gray-900 text-[17px] font-semibold">
-                        ประวัติการชำระคืนกองทุน
-                      </h3>
-                    </header>
-                    <span
-                      className={`text-[12px] font-bold px-2.5 py-0.5 rounded-full ${
-                        (selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          : "bg-red-50 text-red-700 border border-red-200"
-                      }`}
-                    >
-                      ●{" "}
-                      {(selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0
-                        ? "ชำระตรงเวลา"
-                        : "ชำระล่าช้า"}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
-                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                      <div className="text-[11px] text-gray-500">ประวัติกู้ยืม</div>
-                      <div className="font-bold text-[15px] text-gray-900 mt-0.5">
-                        {selectedRequest.paymentBehavior?.totalLoanRequests ?? 0} ครั้ง
-                      </div>
-                    </div>
-                    <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
-                      <div className="text-[11px] text-emerald-700 font-medium">ตรงเวลา</div>
-                      <div className="font-bold text-[15px] text-emerald-800 mt-0.5">
-                        {selectedRequest.paymentBehavior?.onTimeInstallments ?? 0} งวด
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                      <div className="text-[11px] text-gray-500">ล่าช้า</div>
-                      <div className="font-bold text-[15px] text-gray-900 mt-0.5">
-                        {selectedRequest.paymentBehavior?.lateInstallments ?? 0} งวด
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {/* ติดตามสถานะคำร้อง */}
-              <RequestTimeline
-                history={selectedRequest.history}
-                approvals={selectedRequest.approvals}
-                requestStatus={selectedRequest.requestStatus}
-                bankDetails={selectedRequest.bankDetails}
-                advisorName={selectedRequest.advisorName}
-                studentName={selectedRequest.name}
-                submitDate={selectedRequest.submitDate}
-              />
             </div>
 
             {/* Footer Modal 1 */}
