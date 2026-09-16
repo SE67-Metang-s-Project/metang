@@ -63,6 +63,9 @@ next-env.d.ts
 # OpenAPI generator cache
 /.openapi-gen/
 
+# Local API workspace
+methang-api/
+
 .VSCodeCounter
 .planning
 .hermes
