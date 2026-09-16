@@ -195,19 +195,24 @@ function calculateInstallments(
   paymentHistory?: PaymentEvidence[],
 ) {
   const termsCount = parseInt(termStr, 10) || 0;
-  const totalAmount = parseFloat(amountStr) || 0;
+  const totalAmount = parseFloat(String(amountStr).replace(/,/g, "")) || 0;
   if (termsCount === 0 || !startDateStr) return [];
 
-  const baseAmount = totalAmount / termsCount;
+  const baseAmount = Math.floor(totalAmount / termsCount);
 
   // 1. สร้างโครงสร้าง
-  const schedule = Array.from({ length: termsCount }, (_, i) => ({
-    installmentNumber: i + 1,
-    expectedAmount: baseAmount,
-    isPaid: false,
-    paidAmount: 0,
-    evidence: null as PaymentEvidence | null,
-  }));
+  const schedule = Array.from({ length: termsCount }, (_, i) => {
+    const isLast = i === termsCount - 1;
+    const initialExpected = isLast ? totalAmount - baseAmount * (termsCount - 1) : baseAmount;
+    return {
+      installmentNumber: i + 1,
+      expectedAmount: initialExpected,
+      baseAmount: initialExpected,
+      isPaid: false,
+      paidAmount: 0,
+      evidence: null as PaymentEvidence | null,
+    };
+  });
 
   // 2. ดึงประวัติสลิปมาผูกกับงวด
   if (paymentHistory && Array.isArray(paymentHistory)) {
@@ -225,8 +230,8 @@ function calculateInstallments(
     let totalExcess = 0;
     schedule.forEach((s) => {
       if (s.isPaid) {
-        if (s.paidAmount > baseAmount) {
-          totalExcess += s.paidAmount - baseAmount;
+        if (s.paidAmount > s.baseAmount) {
+          totalExcess += s.paidAmount - s.baseAmount;
         }
       }
     });

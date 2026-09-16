@@ -182,7 +182,7 @@ const formatAmount = (amountStr: string | number) => {
 // ==========================================
 // ฟังก์ชันคำนวณงวดการชำระเงิน (คำนวณยอดที่ต้องจ่าย & หักลบกรณีจ่ายเกิน)
 // ==========================================
-function calculateInstallments(
+export function calculateInstallments(
   startDateStr: string,
   termStr: string,
   amountStr: string,
@@ -192,15 +192,20 @@ function calculateInstallments(
   const totalAmount = parseFloat(String(amountStr).replace(/,/g, "")) || 0;
   if (termsCount === 0 || !startDateStr) return [];
 
-  const baseAmount = totalAmount / termsCount;
+  const baseAmount = Math.floor(totalAmount / termsCount);
 
-  // 1. สร้างโครงสร้างงวดการชำระเงินเริ่มต้น
-  const schedule = Array.from({ length: termsCount }, (_, i) => ({
-    installmentNumber: i + 1,
-    expectedAmount: baseAmount,
-    isPaid: false,
-    paidAmount: 0,
-  }));
+  // 1. สร้างโครงสร้างงวดการชำระเงินเริ่มต้น (หารปัดลง เศษเอาไปไว้งวดสุดท้าย)
+  const schedule = Array.from({ length: termsCount }, (_, i) => {
+    const isLast = i === termsCount - 1;
+    const initialExpected = isLast ? totalAmount - baseAmount * (termsCount - 1) : baseAmount;
+    return {
+      installmentNumber: i + 1,
+      expectedAmount: initialExpected,
+      baseAmount: initialExpected,
+      isPaid: false,
+      paidAmount: 0,
+    };
+  });
 
   // 2. ตรวจสอบประวัติการชำระเงิน และคำนวณยอดที่จ่ายเกิน
   if (paymentHistory && Array.isArray(paymentHistory)) {
@@ -218,11 +223,11 @@ function calculateInstallments(
     let totalExcess = 0;
     schedule.forEach((s) => {
       if (s.isPaid) {
-        if (s.paidAmount > baseAmount) {
+        if (s.paidAmount > s.baseAmount) {
           // หากจ่ายเกิน นำยอดที่เกินไปสะสมไว้หักงวดท้ายสุด
-          totalExcess += s.paidAmount - baseAmount;
+          totalExcess += s.paidAmount - s.baseAmount;
           s.expectedAmount = s.paidAmount; // อัปเดตยอดของงวดนี้ให้ตรงกับที่จ่ายจริง
-        } else if (s.paidAmount < baseAmount) {
+        } else if (s.paidAmount < s.baseAmount) {
           s.expectedAmount = s.paidAmount; // กรณีจ่ายขาด (ถ้ามี)
         }
       }

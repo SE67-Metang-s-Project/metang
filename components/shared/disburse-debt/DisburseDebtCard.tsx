@@ -164,16 +164,21 @@ function calculateInstallments(
   paymentHistory?: PaymentHistoryRecord[],
 ) {
   const termsCount = parseInt(termStr, 10) || 0;
-  const totalAmount = parseFloat(amountStr) || 0;
+  const totalAmount = parseFloat(String(amountStr).replace(/,/g, "")) || 0;
   if (termsCount === 0 || !startDateStr) return [];
 
-  const baseAmount = totalAmount / termsCount;
-  const schedule = Array.from({ length: termsCount }, (_, i) => ({
-    installmentNumber: i + 1,
-    expectedAmount: baseAmount,
-    isPaid: false,
-    paidAmount: 0,
-  }));
+  const baseAmount = Math.floor(totalAmount / termsCount);
+  const schedule = Array.from({ length: termsCount }, (_, i) => {
+    const isLast = i === termsCount - 1;
+    const initialExpected = isLast ? totalAmount - baseAmount * (termsCount - 1) : baseAmount;
+    return {
+      installmentNumber: i + 1,
+      expectedAmount: initialExpected,
+      baseAmount: initialExpected,
+      isPaid: false,
+      paidAmount: 0,
+    };
+  });
 
   if (paymentHistory && Array.isArray(paymentHistory)) {
     paymentHistory.forEach((p) => {
@@ -189,10 +194,10 @@ function calculateInstallments(
     let totalExcess = 0;
     schedule.forEach((s) => {
       if (s.isPaid) {
-        if (s.paidAmount > baseAmount) {
-          totalExcess += s.paidAmount - baseAmount;
+        if (s.paidAmount > s.baseAmount) {
+          totalExcess += s.paidAmount - s.baseAmount;
           s.expectedAmount = s.paidAmount;
-        } else if (s.paidAmount < baseAmount) {
+        } else if (s.paidAmount < s.baseAmount) {
           s.expectedAmount = s.paidAmount;
         }
       }
