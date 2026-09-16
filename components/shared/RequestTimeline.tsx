@@ -44,7 +44,18 @@ export interface RequestTimelineProps {
   title?: string;
   className?: string;
   onShowTransferSlip?: () => void;
+  hideComments?: boolean;
+  hideBankDetails?: boolean;
 }
+
+const isBankDetail = (detail: string) => {
+  const d = detail.trim();
+  return (
+    d.startsWith("ธนาคาร") ||
+    d.startsWith("เลขที่บัญชี") ||
+    d.startsWith("ชื่อบัญชี")
+  );
+};
 
 export default function RequestTimeline({
   history = [],
@@ -57,6 +68,8 @@ export default function RequestTimeline({
   title = "ติดตามสถานะคำร้อง",
   className = "",
   onShowTransferSlip,
+  hideComments = false,
+  hideBankDetails = false,
 }: RequestTimelineProps) {
   const timelineItems: ActionHistory[] = [];
 
@@ -73,11 +86,11 @@ export default function RequestTimeline({
           action.includes("ไม่เห็นชอบ") ||
           action.includes("ยกเลิก"));
 
-      let comment = h.comment;
-      let commentTitle = h.commentTitle;
+      let comment = hideComments ? undefined : h.comment;
+      let commentTitle = hideComments ? undefined : h.commentTitle;
 
       // If comment is not explicitly on history item, match with approvals
-      if (!comment && approvals && approvals.length > 0) {
+      if (!hideComments && !comment && approvals && approvals.length > 0) {
         if (
           action.includes("อาจารย์") ||
           h.actor.includes("อาจารย์") ||
@@ -122,7 +135,13 @@ export default function RequestTimeline({
       }
 
       let transferDetails = h.transferDetails;
-      if (
+      if (hideBankDetails && transferDetails) {
+        transferDetails = transferDetails.filter((d) => !isBankDetail(d));
+        if (transferDetails.length === 0) {
+          transferDetails = undefined;
+        }
+      } else if (
+        !hideBankDetails &&
         (!transferDetails || transferDetails.length === 0) &&
         action.includes("โอนเงิน") &&
         bankDetails &&
@@ -201,15 +220,6 @@ export default function RequestTimeline({
         action: "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว",
         date: "โอนเงินสำเร็จ",
         actor: "เจ้าหน้าที่การเงิน",
-        transferDetails:
-          bankDetails &&
-          (bankDetails.bankName || bankDetails.accountNumber || bankDetails.accountName)
-            ? [
-                `ธนาคาร: ${bankDetails.bankName || "-"}`,
-                `เลขที่บัญชี: ${bankDetails.accountNumber || "-"}`,
-                `ชื่อบัญชี: ${bankDetails.accountName || "-"}`,
-              ]
-            : undefined,
       });
     }
   }
@@ -249,7 +259,7 @@ export default function RequestTimeline({
                     {item.date}
                     {item.actor ? ` · โดย ${item.actor}` : ""}
                   </p>
-                  {item.commentTitle && item.comment ? (
+                  {!hideComments && item.commentTitle && item.comment ? (
                     <section
                       className={`${styles.detailDashboardCard} ${styles.timelineCommentCard} ${
                         isFailed ? styles.timelineCommentCardRejected : ""
@@ -261,43 +271,55 @@ export default function RequestTimeline({
                       <p>{item.comment}</p>
                     </section>
                   ) : null}
-                  {item.transferDetails && item.transferDetails.length > 0 ? (
-                    <>
-                      <dl className={styles.transferDetails}>
-                        {item.transferDetails.map((detail, dIdx) => {
-                          const colonIndex = detail.indexOf(":");
-                          if (colonIndex === -1) {
-                            return (
-                              <Fragment key={dIdx}>
-                                <dt>{detail}</dt>
-                                <dd></dd>
-                              </Fragment>
-                            );
-                          }
-                          return (
-                            <Fragment key={dIdx}>
-                              <dt>{detail.slice(0, colonIndex)}</dt>
-                              <dd>{detail.slice(colonIndex + 1).trim()}</dd>
-                            </Fragment>
-                          );
-                        })}
-                      </dl>
-                      {onShowTransferSlip ? (
-                        <div
-                          className={`${styles.loanTimelineActions} ${styles.loanTimelineActionsSingle}`}
-                        >
-                          <button
-                            className={styles.outlineOrangeButton}
-                            onClick={onShowTransferSlip}
-                            type="button"
+                  {(() => {
+                    const filteredDetails = (item.transferDetails || []).filter(
+                      (detail) => !hideBankDetails || !isBankDetail(detail),
+                    );
+                    const hasDetails = filteredDetails.length > 0;
+                    const hasSlipButton = Boolean(onShowTransferSlip);
+
+                    if (!hasDetails && !hasSlipButton) return null;
+
+                    return (
+                      <>
+                        {hasDetails ? (
+                          <dl className={styles.transferDetails}>
+                            {filteredDetails.map((detail, dIdx) => {
+                              const colonIndex = detail.indexOf(":");
+                              if (colonIndex === -1) {
+                                return (
+                                  <Fragment key={dIdx}>
+                                    <dt>{detail}</dt>
+                                    <dd></dd>
+                                  </Fragment>
+                                );
+                              }
+                              return (
+                                <Fragment key={dIdx}>
+                                  <dt>{detail.slice(0, colonIndex)}</dt>
+                                  <dd>{detail.slice(colonIndex + 1).trim()}</dd>
+                                </Fragment>
+                              );
+                            })}
+                          </dl>
+                        ) : null}
+                        {hasSlipButton ? (
+                          <div
+                            className={`${styles.loanTimelineActions} ${styles.loanTimelineActionsSingle}`}
                           >
-                            <FileText aria-hidden="true" size={18} />
-                            ดูหลักฐาน
-                          </button>
-                        </div>
-                      ) : null}
-                    </>
-                  ) : null}
+                            <button
+                              className={styles.outlineOrangeButton}
+                              onClick={onShowTransferSlip}
+                              type="button"
+                            >
+                              <FileText aria-hidden="true" size={18} />
+                              ดูหลักฐาน
+                            </button>
+                          </div>
+                        ) : null}
+                      </>
+                    );
+                  })()}
                 </div>
               </li>
             );

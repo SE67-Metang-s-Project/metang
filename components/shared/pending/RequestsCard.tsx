@@ -1159,12 +1159,12 @@ export default function RequestsCard({
               {/* ติดตามสถานะคำร้อง */}
               <RequestTimeline
                 history={selectedRequest.history}
-                approvals={selectedRequest.approvals}
                 requestStatus={selectedRequest.requestStatus}
-                bankDetails={selectedRequest.bankDetails}
                 advisorName={selectedRequest.advisorName}
                 studentName={selectedRequest.name}
                 submitDate={selectedRequest.submitDate}
+                hideComments
+                hideBankDetails
               />
 
               {/* ปุ่มดาวน์โหลดแบบคำร้อง (PDF) เหมือนหน้านักศึกษา - แสดงเฉพาะเมื่อ admin/super admin โอนเงินสำเร็จแล้ว */}

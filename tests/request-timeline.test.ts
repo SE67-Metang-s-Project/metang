@@ -39,3 +39,14 @@ test("RequestsCard, DisburseDebtCard, and VerifySlipCard all use RequestTimeline
   assert.match(verifySlipCard, /<RequestTimeline\s+history=\{selectedRequest\.history\}/, "VerifySlipCard must use RequestTimeline");
   assert.doesNotMatch(verifySlipCard, /border-l-2 border-orange-200/, "VerifySlipCard must not use old border-l-2 timeline");
 });
+
+test("RequestsCard hides comments and bank details in RequestTimeline", () => {
+  const requestsCard = read("components/shared/pending/RequestsCard.tsx");
+  const requestTimeline = read("components/shared/RequestTimeline.tsx");
+
+  assert.match(requestTimeline, /hideComments\?: boolean/, "RequestTimeline must support hideComments prop");
+  assert.match(requestTimeline, /hideBankDetails\?: boolean/, "RequestTimeline must support hideBankDetails prop");
+  assert.match(requestsCard, /<RequestTimeline[\s\S]*?hideComments/, "RequestsCard must set hideComments");
+  assert.match(requestsCard, /<RequestTimeline[\s\S]*?hideBankDetails/, "RequestsCard must set hideBankDetails");
+});
+
