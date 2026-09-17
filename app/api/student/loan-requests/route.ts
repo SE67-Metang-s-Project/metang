@@ -11,7 +11,7 @@ import {
   resolveStoredStudent,
 } from "@/lib/loan-auth";
 import { getStudentLoanList, studentLoanDetailSelect } from "@/db/queries/loan-requests";
-import { notifyLoanReviewer } from "@/db/queries/notification-recipients";
+import { enqueueReviewerNotifications } from "@/db/queries/notification-recipients";
 
 const educationLevelByStudentCodeDigit: Record<string, string> = {
   "0": "ประกาศนียบัตรผู้ช่วยพยาบาล",
@@ -151,7 +151,7 @@ export async function POST(request: Request) {
       });
       await tx.loanApproval.create({ data: { loanId: created.id, step: "advisor", attempt: 1 } });
 
-      await tx.auditLog.create({
+      const audit = await tx.auditLog.create({
         data: {
           actorId: student.id,
           action: "loan_request.created",
@@ -160,10 +160,9 @@ export async function POST(request: Request) {
           after: serializeJson(created),
         },
       });
+      await enqueueReviewerNotifications(tx, { loanId: created.id, auditLogId: audit.id });
       return tx.loanRequest.findUniqueOrThrow({ where: { id: created.id }, select: studentLoanDetailSelect });
     });
-
-    await notifyLoanReviewer(loan.id);
 
     return apiOk(serializeJson(loan), 201);
   } catch (error) {

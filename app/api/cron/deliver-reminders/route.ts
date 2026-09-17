@@ -1,6 +1,7 @@
 import { checkCronAuth } from "@/lib/notifications/cron-auth";
 import { apiOk, apiError } from "@/lib/api-response";
 import {
+  INSTALLMENT_REMINDER_EVENT,
   claimDueNotifications,
   markDelivered,
   markFailed,
@@ -29,7 +30,7 @@ async function handle(request: Request) {
   }
 
   // Smaller batch to ensure completion within maxDuration
-  const rows = await claimDueNotifications(20);
+  const rows = await claimDueNotifications(20, INSTALLMENT_REMINDER_EVENT);
   let processed = 0;
   let delivered = 0;
   let skipped = 0;

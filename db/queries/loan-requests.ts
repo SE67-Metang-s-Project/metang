@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma, type ApprovalStep as LoanApprovalStep, type Decision } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
 import { computeInstallmentSchedule, type ExecutiveDecision, type LoanDecision } from "@/lib/loan-validation";
+import { enqueueReviewerNotifications } from "@/db/queries/notification-recipients";
 import type {
   ActionRequest,
   ActionHistory,
@@ -294,7 +295,7 @@ export async function decideLoanRequest({
       where: { id },
       select: advisorLoanSelect,
     });
-    await tx.auditLog.create({
+    const audit = await tx.auditLog.create({
       data: {
         actorId: advisorId,
         action: `loan_request.advisor_${decision}`,
@@ -304,6 +305,7 @@ export async function decideLoanRequest({
         after: serializeJson(final),
       },
     });
+    await enqueueReviewerNotifications(tx, { loanId: id, auditLogId: audit.id });
     return final;
   });
 }
@@ -398,7 +400,7 @@ export async function decideAdminLoanRequest({
       where: { id },
       select: adminLoanDetailSelect,
     });
-    await tx.auditLog.create({
+    const audit = await tx.auditLog.create({
       data: {
         actorId: adminId,
         action: `loan_request.admin_${decision}`,
@@ -408,6 +410,7 @@ export async function decideAdminLoanRequest({
         after: serializeJson(final),
       },
     });
+    await enqueueReviewerNotifications(tx, { loanId: id, auditLogId: audit.id });
     return final;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
 }
@@ -499,7 +502,7 @@ export async function disburseLoanRequest({
       where: { id },
       select: adminLoanDetailSelect,
     });
-    await tx.auditLog.create({
+    const audit = await tx.auditLog.create({
       data: {
         actorId: adminId,
         action: "loan_request.disbursed",
@@ -509,6 +512,9 @@ export async function disburseLoanRequest({
         after: serializeJson(final),
       },
     });
+    // No-op today: "disbursed" has no reviewer step, so nothing is enqueued. Kept so a future
+    // status gains coverage without another audit of every transition site.
+    await enqueueReviewerNotifications(tx, { loanId: id, auditLogId: audit.id });
     return final;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
 }
@@ -965,7 +971,7 @@ export async function decideExecutiveLoanRequest({
       where: { id },
       select: executiveLoanSelect,
     });
-    await tx.auditLog.create({
+    const audit = await tx.auditLog.create({
       data: {
         actorId: executiveId,
         action: `loan_request.executive_${decision}`,
@@ -975,6 +981,9 @@ export async function decideExecutiveLoanRequest({
         after: serializeJson(final),
       },
     });
+    // New coverage: the executive path never notified anyone before, so pending_disbursement
+    // starts being announced to admins from here.
+    await enqueueReviewerNotifications(tx, { loanId: id, auditLogId: audit.id });
     return final;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
 }

@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/deliver-reminders",
       "schedule": "*/3 * * * *"
+    },
+    {
+      "path": "/api/cron/deliver-fon",
+      "schedule": "* * * * *"
     }
   ]
 }

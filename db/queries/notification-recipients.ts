@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma, UserRoleName } from "@/lib/generated/prisma/client";
+import {
+  REVIEWER_NOTIFICATION_EVENT,
+  enqueueNotification,
+  type TxClient,
+} from "@/db/queries/notifications";
 import { type ReviewerRole, buildRequestUrlForPath } from "@/lib/reviewer-deeplink";
 import {
   REVIEWER_STEP_BY_STATUS,
@@ -7,10 +12,13 @@ import {
   type ReviewerNotificationStep,
 } from "@/lib/line-notification-template";
 import {
-  LineNotificationError,
   sendLineNotification,
   type LineNotificationResponse,
 } from "@/lib/line-notification";
+
+/** Either the shared client or an open transaction's client, so a reader can run inside the
+ *  transaction that is writing the rows it needs to see. */
+type DbClient = TxClient;
 
 export async function getAdvisorRecipientEmail(advisorId: string): Promise<string> {
   const user = await prisma.appUser.findUniqueOrThrow({
@@ -20,9 +28,12 @@ export async function getAdvisorRecipientEmail(advisorId: string): Promise<strin
   return user.email;
 }
 
-export async function getAdminRecipientEmails(assignedAdminId: string | null): Promise<string[]> {
+export async function getAdminRecipientEmails(
+  assignedAdminId: string | null,
+  db: DbClient = prisma,
+): Promise<string[]> {
   if (assignedAdminId) {
-    const user = await prisma.appUser.findUniqueOrThrow({
+    const user = await db.appUser.findUniqueOrThrow({
       where: { id: assignedAdminId },
       select: {
         email: true,
@@ -35,7 +46,7 @@ export async function getAdminRecipientEmails(assignedAdminId: string | null): P
     if (stillAdmin) return [user.email];
   }
 
-  const users = await prisma.appUser.findMany({
+  const users = await db.appUser.findMany({
     where: {
       roles: {
         some: {
@@ -48,8 +59,10 @@ export async function getAdminRecipientEmails(assignedAdminId: string | null): P
   return users.map((u) => u.email);
 }
 
-export async function getExecutiveRecipientEmail(): Promise<string | null> {
-  const user = await prisma.appUser.findFirst({
+export async function getExecutiveRecipientEmail(
+  db: DbClient = prisma,
+): Promise<string | null> {
+  const user = await db.appUser.findFirst({
     where: {
       roles: {
         some: { role: UserRoleName.executive },
@@ -106,15 +119,16 @@ export async function resolveReviewerRecipients(
     advisor: { email: string; roles: { role: UserRoleName }[] };
     assignedAdminId: string | null;
   },
+  db: DbClient = prisma,
 ): Promise<string[]> {
   if (role === "advisor") {
     const stillAdvisor = loan.advisor.roles.some(({ role }) => role === UserRoleName.advisor);
     return stillAdvisor ? [loan.advisor.email] : [];
   }
   if (role === "admin" || role === "super_admin") {
-    return getAdminRecipientEmails(loan.assignedAdminId);
+    return getAdminRecipientEmails(loan.assignedAdminId, db);
   }
-  const executiveEmail = await getExecutiveRecipientEmail();
+  const executiveEmail = await getExecutiveRecipientEmail(db);
   return executiveEmail ? [executiveEmail] : [];
 }
 
@@ -169,6 +183,59 @@ export async function getInstallmentReminderContextById(
   });
 }
 
+/**
+ * Enqueues one durable outbox row per reviewer recipient for a workflow transition. Call this
+ * INSIDE the transaction that performed the transition, passing that transaction's client: the
+ * rows then commit or roll back with the loan mutation, so a reviewer is never told about a
+ * decision that did not happen, and never missed one that did.
+ *
+ * One row per recipient rather than one per event, because a partial failure must only retry the
+ * recipients it failed for - retrying a whole event would re-notify everyone who already received
+ * it. The dedupe key carries the audit-log row id, which is unique per transition, so a loan
+ * legitimately re-entering a status enqueues afresh instead of colliding with the earlier one.
+ *
+ * A status with no reviewer step (disbursed, closed, rejected, cancelled, draft, returned) enqueues
+ * nothing. Callers do not need to check first.
+ */
+export async function enqueueReviewerNotifications(
+  tx: TxClient,
+  input: { loanId: string; auditLogId: bigint },
+): Promise<number> {
+  const loan = await tx.loanRequest.findUnique({
+    where: { id: input.loanId },
+    select: loanNotificationSelect,
+  });
+  if (!loan) return 0;
+
+  // Read on tx, so this is the status the enclosing transaction just wrote, not whatever a later
+  // read outside it would observe.
+  const step = REVIEWER_STEP_BY_STATUS[loan.status];
+  if (!step) return 0;
+
+  const recipients = await resolveReviewerRecipients(step.role, loan, tx);
+  if (recipients.length === 0) {
+    console.error(
+      `No reviewer recipient resolved for loan ${input.loanId} at status ${loan.status}`,
+    );
+    return 0;
+  }
+
+  for (const recipientEmail of recipients) {
+    await enqueueNotification(tx, {
+      dedupeKey: `reviewer-notification:${input.auditLogId}:${recipientEmail}`,
+      eventType: REVIEWER_NOTIFICATION_EVENT,
+      payload: {
+        loanId: input.loanId,
+        status: loan.status,
+        role: step.role,
+        recipientEmail,
+      },
+    });
+  }
+
+  return recipients.length;
+}
+
 type ReviewerNotificationLoan = {
   id: string;
   status: string;
@@ -179,9 +246,10 @@ type ReviewerNotificationLoan = {
 
 /**
  * Builds the deep link + per-recipient payload and delivers to every recipient independently
- * (one recipient's failure never blocks another's). Shared by notifyLoanReviewer (the automatic
- * producer, below) and POST /api/notifications/fon (the manual on-demand trigger) so the two
- * never drift apart on message shape, deep-link construction, or idempotency-key format.
+ * (one recipient's failure never blocks another's). Used by POST /api/notifications/fon, the
+ * manual on-demand trigger, which sends inline so the operator sees a real result. The automatic
+ * path does not come through here - it enqueues via enqueueReviewerNotifications and the
+ * deliver-fon cron worker sends one claimed row at a time.
  */
 export async function sendReviewerNotifications(
   step: ReviewerNotificationStep,
@@ -212,46 +280,3 @@ export async function sendReviewerNotifications(
   );
 }
 
-/**
- * Notify whichever reviewer is now waiting on `loanId`, based on its CURRENT status (re-fetched
- * here, not passed in - the caller may be several steps removed from the status change). A no-op
- * for any status with no reviewer step (REVIEWER_STEP_BY_STATUS), e.g. "rejected"/"returned".
- *
- * Call this AFTER the workflow mutation's transaction has committed, never from inside one -
- * this makes network calls, and a stalled/failed FON delivery must never roll back or delay the
- * loan decision it is announcing. Every failure is caught and logged here, never thrown, so a
- * caller never needs its own try/catch around this call.
- */
-export async function notifyLoanReviewer(loanId: string): Promise<void> {
-  try {
-    const loan = await getLoanNotificationContext(loanId);
-    if (!loan) return;
-
-    const step = REVIEWER_STEP_BY_STATUS[loan.status];
-    if (!step) return;
-
-    const recipients = await resolveReviewerRecipients(step.role, loan);
-    if (recipients.length === 0) {
-      console.error(`No reviewer recipient resolved for loan ${loanId} at status ${loan.status}`);
-      return;
-    }
-
-    const results = await sendReviewerNotifications(step, loan, recipients);
-
-    const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
-    if (failures.length > 0) {
-      const messages = failures.map((f) =>
-        f.reason instanceof LineNotificationError ? f.reason.message : String(f.reason),
-      );
-      console.error(
-        `Unable to notify ${failures.length}/${recipients.length} reviewer(s) for loan ${loanId}`,
-        messages,
-      );
-    }
-  } catch (error) {
-    console.error(
-      `Unable to notify reviewer for loan ${loanId}`,
-      error instanceof Error ? error.message : String(error),
-    );
-  }
-}

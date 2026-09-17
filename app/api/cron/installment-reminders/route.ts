@@ -2,7 +2,6 @@ import { checkCronAuth } from "@/lib/notifications/cron-auth";
 import { apiOk } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { bangkokDatePlusDays } from "@/lib/date";
-import type { Prisma } from "@/lib/generated/prisma/client";
 import { enqueueNotification } from "@/db/queries/notifications";
 import {
   INSTALLMENT_REMINDER_EVENT,
@@ -46,7 +45,7 @@ async function handle(request: Request) {
             offset as 0 | 3,
           );
 
-          await enqueueNotification(tx as Prisma.TransactionClient, {
+          await enqueueNotification(tx, {
             dedupeKey,
             eventType: INSTALLMENT_REMINDER_EVENT,
             payload: { loanId: installment.loanId, installmentId: String(installment.id) },

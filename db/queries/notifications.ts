@@ -1,5 +1,6 @@
-import type { Prisma } from "@/lib/generated/prisma/client";
+import type { LoanStatus } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import type { ReviewerRole } from "@/lib/reviewer-deeplink";
 
 export const INSTALLMENT_REMINDER_EVENT = "installment_reminder" as const;
 
@@ -13,17 +14,43 @@ export type InstallmentReminderPayload = {
   installmentId: string;
 };
 
-export type EnqueueNotificationInput = {
-  dedupeKey: InstallmentReminderDedupeKey;
-  eventType: typeof INSTALLMENT_REMINDER_EVENT;
-  payload: InstallmentReminderPayload;
+export const REVIEWER_NOTIFICATION_EVENT = "reviewer_notification" as const;
+
+/** Keyed on the audit-log row id, which is one per workflow transition, so a loan legitimately
+ *  re-entering a status enqueues a new notification instead of colliding with the earlier one. */
+export type ReviewerNotificationDedupeKey = `reviewer-notification:${string}:${string}`;
+
+export type ReviewerNotificationPayload = {
+  loanId: string;
+  status: LoanStatus;
+  role: ReviewerRole;
+  recipientEmail: string;
 };
 
+export type EnqueueNotificationInput =
+  | {
+      dedupeKey: InstallmentReminderDedupeKey;
+      eventType: typeof INSTALLMENT_REMINDER_EVENT;
+      payload: InstallmentReminderPayload;
+    }
+  | {
+      dedupeKey: ReviewerNotificationDedupeKey;
+      eventType: typeof REVIEWER_NOTIFICATION_EVENT;
+      payload: ReviewerNotificationPayload;
+    };
+
+/**
+ * A transaction client of the EXTENDED client lib/prisma exports. `Prisma.TransactionClient`
+ * describes the base client and an extended one is not assignable to it, which is why callers
+ * were casting. `prisma` itself satisfies this too, so a helper can take either.
+ */
+export type TxClient = Omit<
+  typeof prisma,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
+
 /** Idempotent enqueue: a repeat call with the same dedupeKey is a no-op. */
-export function enqueueNotification(
-  tx: Prisma.TransactionClient,
-  input: EnqueueNotificationInput,
-) {
+export function enqueueNotification(tx: TxClient, input: EnqueueNotificationInput) {
   return tx.notificationOutbox.upsert({
     where: { dedupeKey: input.dedupeKey },
     create: input,
@@ -47,12 +74,20 @@ const CLAIM_LEASE_MINUTES = 15;
  *
  * attempt_count increments here rather than only in markFailed: a row that reliably kills its
  * worker would otherwise loop claim -> crash -> reclaim forever and never reach MAX_ATTEMPTS.
+ *
+ * eventType is required, not optional: every worker handles exactly one event type and marks any
+ * row it does not recognise as permanently failed, so a worker that claimed indiscriminately would
+ * silently destroy another worker's rows. An optional filter invites a caller to omit it and
+ * reintroduce that. The (status, available_at) index does not cover event_type, so it is filtered
+ * after the index scan - fine at this volume, and not worth a migration to widen the index.
  */
-export async function claimDueNotifications(limit: number) {
+export async function claimDueNotifications(limit: number, eventType: string) {
   return prisma.$transaction(async (tx) => {
     const claimable = await tx.$queryRaw<{ id: string }[]>`
       SELECT id FROM notification_outbox
-      WHERE status IN ('pending', 'retry', 'processing') AND available_at <= now()
+      WHERE event_type = ${eventType}
+        AND status IN ('pending', 'retry', 'processing')
+        AND available_at <= now()
       ORDER BY available_at
       LIMIT ${limit}
       FOR UPDATE SKIP LOCKED

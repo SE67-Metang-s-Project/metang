@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/serialization";
 import { validateJsonRequest } from "@/lib/request-security";
 import { studentLoanSelect } from "@/db/queries/loan-requests";
-import { notifyLoanReviewer } from "@/db/queries/notification-recipients";
+import { enqueueReviewerNotifications } from "@/db/queries/notification-recipients";
 
 
 type Params = { params: Promise<{ id: string }> };
@@ -109,7 +109,7 @@ export async function POST(request: Request, { params }: Params) {
         where: { id },
         select: studentLoanSelect,
       });
-      await tx.auditLog.create({
+      const audit = await tx.auditLog.create({
         data: {
           actorId: context.user.id,
           action: "loan_request.resubmitted",
@@ -119,10 +119,9 @@ export async function POST(request: Request, { params }: Params) {
           after: serializeJson(final),
         },
       });
+      await enqueueReviewerNotifications(tx, { loanId: id, auditLogId: audit.id });
       return final;
     });
-
-    await notifyLoanReviewer(loan.id);
 
     return apiOk(serializeJson(loan));
   } catch (error) {

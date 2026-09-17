@@ -2,7 +2,6 @@ import {
   AdminDecisionError,
   decideAdminLoanRequest,
 } from "@/db/queries/loan-requests";
-import { notifyLoanReviewer } from "@/db/queries/notification-recipients";
 import { apiError, apiOk } from "@/lib/api-response";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { getAdminAccess } from "@/lib/loan-auth";
@@ -60,8 +59,6 @@ export async function POST(request: Request, { params }: Params) {
       approvedAmount: input.approvedAmount,
       comment: input.comment,
     });
-
-    await notifyLoanReviewer(loan.id);
 
     return apiOk(serializeJson(loan));
   } catch (error) {
