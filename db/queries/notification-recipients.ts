@@ -142,6 +142,21 @@ export async function getNextDueInstallmentContext(
   });
 }
 
+/**
+ * The specific installment a claimed outbox reminder was enqueued for - unlike
+ * getNextDueInstallmentContext, this does not recompute "whichever is next due now", since that
+ * can drift from what was actually claimed if the loan's installment state changed between
+ * enqueue and delivery (e.g. an earlier installment got settled in between).
+ */
+export async function getInstallmentReminderContextById(
+  installmentId: bigint,
+): Promise<InstallmentReminderContext | null> {
+  return prisma.installment.findUnique({
+    where: { id: installmentId },
+    select: installmentReminderSelect,
+  });
+}
+
 type ReviewerNotificationLoan = {
   id: string;
   status: string;
