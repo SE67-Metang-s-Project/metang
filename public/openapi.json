@@ -3181,11 +3181,15 @@
                     "createdAt"
                   ]
                 }
+              },
+              "pendingDisbursement": {
+                "type": "number"
               }
             },
             "required": [
               "balance",
-              "transactions"
+              "transactions",
+              "pendingDisbursement"
             ]
           }
         },
