@@ -29,6 +29,7 @@ export function isInstallmentReminderPayload(value: unknown): value is Installme
     "loanId" in value &&
     typeof (value as Record<string, unknown>).loanId === "string" &&
     "installmentId" in value &&
-    typeof (value as Record<string, unknown>).installmentId === "string"
+    typeof (value as Record<string, unknown>).installmentId === "string" &&
+    /^\d+$/.test((value as Record<string, unknown>).installmentId as string)
   );
 }

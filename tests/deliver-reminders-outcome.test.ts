@@ -6,10 +6,12 @@ import { EmailApiError } from "../lib/email-api/types";
 // These tests are for the pure branch-selection/dedupe logic.
 // Full integration coverage would require a live DB and email API sandbox.
 
-test('classifyDeliveryFailure returns "retryable" for EmailApiError with status undefined or >= 500', () => {
+test('classifyDeliveryFailure returns "retryable" for EmailApiError with status undefined or >= 500 or 408/429', () => {
   assert.equal(classifyDeliveryFailure(new EmailApiError("Network issue", undefined)), "retryable");
   assert.equal(classifyDeliveryFailure(new EmailApiError("Server error", 502)), "retryable");
   assert.equal(classifyDeliveryFailure(new EmailApiError("Internal Server Error", 500)), "retryable");
+  assert.equal(classifyDeliveryFailure(new EmailApiError("Request Timeout", 408)), "retryable");
+  assert.equal(classifyDeliveryFailure(new EmailApiError("Too Many Requests", 429)), "retryable");
 });
 
 test('classifyDeliveryFailure returns "permanent" for EmailApiError with status 4xx', () => {

@@ -20,8 +20,9 @@ test("buildInstallmentReminderDedupeKey produces correct strings", () => {
 });
 
 test("isInstallmentReminderPayload validates payload objects", () => {
-  assert.equal(isInstallmentReminderPayload({ loanId: "L1", installmentId: "I1" }), true);
-  
+  assert.equal(isInstallmentReminderPayload({ loanId: "L1", installmentId: "123" }), true);
+  assert.equal(isInstallmentReminderPayload({ loanId: "L1", installmentId: "I1" }), false);
+
   assert.equal(isInstallmentReminderPayload(null), false);
   assert.equal(isInstallmentReminderPayload("string"), false);
   assert.equal(isInstallmentReminderPayload({ loanId: "L1" }), false);
