@@ -1,8 +1,16 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getCmuSession } from "@/lib/cmu-auth";
 import { FonReviewerDemoForm } from "@/app/fon-reviewer-demo/FonReviewerDemoForm";
+import { isDevelopmentEnvironment } from "@/lib/development-access";
+import { requireAdminAccess } from "@/lib/loan-auth";
 
 export default async function FonReviewerDemoPage() {
+  if (!isDevelopmentEnvironment()) {
+    notFound();
+  }
+  await requireAdminAccess();
+
   const session = await getCmuSession();
 
   return (

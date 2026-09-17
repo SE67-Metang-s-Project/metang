@@ -24,9 +24,15 @@ export async function getAdminRecipientEmails(assignedAdminId: string | null): P
   if (assignedAdminId) {
     const user = await prisma.appUser.findUniqueOrThrow({
       where: { id: assignedAdminId },
-      select: { email: true },
+      select: {
+        email: true,
+        roles: { select: { role: true } },
+      },
     });
-    return [user.email];
+    const stillAdmin = user.roles.some(
+      ({ role }) => role === UserRoleName.admin || role === UserRoleName.super_admin,
+    );
+    if (stillAdmin) return [user.email];
   }
 
   const users = await prisma.appUser.findMany({
@@ -72,7 +78,7 @@ const loanNotificationSelect = {
   advisorId: true,
   assignedAdminId: true,
   student: { select: { fullNameTh: true } },
-  advisor: { select: { email: true } },
+  advisor: { select: { email: true, roles: { select: { role: true } } } },
 } satisfies Prisma.LoanRequestSelect;
 
 export type LoanNotificationContext = Prisma.LoanRequestGetPayload<{
@@ -96,9 +102,15 @@ export async function getLoanNotificationContext(
  */
 export async function resolveReviewerRecipients(
   role: ReviewerRole,
-  loan: { advisor: { email: string }; assignedAdminId: string | null },
+  loan: {
+    advisor: { email: string; roles: { role: UserRoleName }[] };
+    assignedAdminId: string | null;
+  },
 ): Promise<string[]> {
-  if (role === "advisor") return [loan.advisor.email];
+  if (role === "advisor") {
+    const stillAdvisor = loan.advisor.roles.some(({ role }) => role === UserRoleName.advisor);
+    return stillAdvisor ? [loan.advisor.email] : [];
+  }
   if (role === "admin" || role === "super_admin") {
     return getAdminRecipientEmails(loan.assignedAdminId);
   }
@@ -237,6 +249,9 @@ export async function notifyLoanReviewer(loanId: string): Promise<void> {
       );
     }
   } catch (error) {
-    console.error(`Unable to notify reviewer for loan ${loanId}`, error);
+    console.error(
+      `Unable to notify reviewer for loan ${loanId}`,
+      error instanceof Error ? error.message : String(error),
+    );
   }
 }

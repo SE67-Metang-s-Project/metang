@@ -1,8 +1,16 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { LoanReminderDemoForm } from "@/app/email-reminder-demo/LoanReminderDemoForm";
 import { getCmuSession, getProfileEmail } from "@/lib/cmu-auth";
+import { isDevelopmentEnvironment } from "@/lib/development-access";
+import { requireAdminAccess } from "@/lib/loan-auth";
 
 export default async function EmailReminderDemoPage() {
+  if (!isDevelopmentEnvironment()) {
+    notFound();
+  }
+  await requireAdminAccess();
+
   const session = await getCmuSession();
   const email = session ? getProfileEmail(session.profile) : null;
 

@@ -1,5 +1,7 @@
 "use server";
 
+import { isDevelopmentEnvironment } from "@/lib/development-access";
+import { getAdminAccess } from "@/lib/loan-auth";
 import { getCmuSession } from "@/lib/cmu-auth";
 import { sendLineNotification, LineNotificationError } from "@/lib/line-notification";
 import { buildReviewerNotificationPayload } from "@/lib/line-notification-template";
@@ -25,6 +27,14 @@ export async function sendDemoReviewerNotification(
   _previousState: FonReviewerDemoState,
   formData: FormData,
 ): Promise<FonReviewerDemoState> {
+  if (!isDevelopmentEnvironment()) {
+    return { status: "error", message: "ไม่พร้อมใช้งานในระบบนี้" };
+  }
+  const access = await getAdminAccess();
+  if (access.status !== "authorized") {
+    return { status: "error", message: "ต้องเป็นผู้ดูแลระบบจึงจะส่งการแจ้งเตือนทดสอบได้" };
+  }
+
   const session = await getCmuSession();
 
   if (!session) {
@@ -113,8 +123,8 @@ export async function sendDemoReviewerNotification(
 
   if (dryRun) {
     console.log(
-      "[fon-reviewer-demo] dry run, not sending:",
-      JSON.stringify(payloads, null, 2),
+      "[fon-reviewer-demo] dry run, not sending. Recipient count:",
+      payloads.length,
     );
     return {
       status: "success",

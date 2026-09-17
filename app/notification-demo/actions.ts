@@ -1,5 +1,7 @@
 "use server";
 
+import { isDevelopmentEnvironment } from "@/lib/development-access";
+import { getAdminAccess } from "@/lib/loan-auth";
 import { getCmuSession } from "@/lib/cmu-auth";
 import {
   LineNotificationError,
@@ -35,6 +37,14 @@ export async function sendDemoNotification(
   _previousState: NotificationDemoState,
   formData: FormData,
 ): Promise<NotificationDemoState> {
+  if (!isDevelopmentEnvironment()) {
+    return { status: "error", message: "ไม่พร้อมใช้งานในระบบนี้" };
+  }
+  const access = await getAdminAccess();
+  if (access.status !== "authorized") {
+    return { status: "error", message: "ต้องเป็นผู้ดูแลระบบจึงจะส่งการแจ้งเตือนทดสอบได้" };
+  }
+
   const session = await getCmuSession();
 
   if (!session) {

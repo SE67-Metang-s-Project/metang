@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { NotificationDemoForm } from "@/app/notification-demo/NotificationDemoForm";
 import { getCmuSession } from "@/lib/cmu-auth";
+import { isDevelopmentEnvironment } from "@/lib/development-access";
+import { requireAdminAccess } from "@/lib/loan-auth";
 
 function getProfileEmail(profile: Record<string, unknown>) {
   const emailKeys = ["cmuitaccount", "email", "mail", "userPrincipalName"];
@@ -17,6 +20,11 @@ function getProfileEmail(profile: Record<string, unknown>) {
 }
 
 export default async function NotificationDemoPage() {
+  if (!isDevelopmentEnvironment()) {
+    notFound();
+  }
+  await requireAdminAccess();
+
   const session = await getCmuSession();
   const email = session ? getProfileEmail(session.profile) : null;
 
