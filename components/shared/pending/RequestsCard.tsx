@@ -26,6 +26,7 @@ import LoanPetitionDocument, {
 } from "@/components/shared/disburse-debt/LoanPetitionDocument";
 import type { ActionRequest as DisburseActionRequest } from "@/components/shared/disburse-debt/DisburseDebtCard";
 import { formatThaiBahtText } from "@/app/student/studentFormatters";
+import { tempLoanApplicationLimit } from "@/app/student/temp/tempMockData";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import RequestTimeline from "@/components/shared/RequestTimeline";
 import styles from "@/app/student/student.module.css";
@@ -407,6 +408,35 @@ export default function RequestsCard({
   const canViewSensitiveData = userRole === "admin" || userRole === "super_admin";
   const canEditAmount = userRole === "admin" || userRole === "super_admin";
 
+  const maxAllowedAmount =
+    originalRequestedAmount > 0
+      ? Math.min(originalRequestedAmount, tempLoanApplicationLimit)
+      : tempLoanApplicationLimit;
+
+  const handleEditAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (!val) {
+      setEditAmountValue("");
+      if (amountError) setAmountError(null);
+      return;
+    }
+    const clean = val.replace(/\D/g, "");
+    if (!clean) {
+      setEditAmountValue("");
+      e.target.value = "";
+      if (amountError) setAmountError(null);
+      return;
+    }
+    const num = parseInt(clean, 10);
+    if (num > maxAllowedAmount) {
+      e.target.value = editAmountValue;
+      return;
+    }
+    const normalized = clean.length > 1 && clean.startsWith("0") ? String(num) : clean;
+    setEditAmountValue(normalized);
+    if (amountError) setAmountError(null);
+  };
+
   const openRequestModal = (req: ActionRequest) => {
     const parsedAmount = parseInt(String(req.amount || "").replace(/,/g, ""), 10) || 0;
     setSelectedRequest(req);
@@ -510,6 +540,13 @@ export default function RequestsCard({
           setIsSubmitting(false);
           return;
         }
+        if (parsed > tempLoanApplicationLimit) {
+          setErrorMessage(
+            `ไม่สามารถระบุวงเงินเกินวงเงินระบบ (สูงสุด ${tempLoanApplicationLimit.toLocaleString("th-TH")})`,
+          );
+          setIsSubmitting(false);
+          return;
+        }
         payload.approvedAmount = parsed;
       }
 
@@ -565,6 +602,13 @@ export default function RequestsCard({
     if (originalRequestedAmount > 0 && num > originalRequestedAmount) {
       setAmountError(
         `ไม่สามารถปรับวงเงินมากกว่าที่ขอได้ (สูงสุด ${originalRequestedAmount.toLocaleString("th-TH")})`,
+      );
+      return;
+    }
+
+    if (num > tempLoanApplicationLimit) {
+      setAmountError(
+        `ไม่สามารถระบุวงเงินเกินวงเงินระบบ (สูงสุด ${tempLoanApplicationLimit.toLocaleString("th-TH")})`,
       );
       return;
     }
@@ -800,10 +844,10 @@ export default function RequestsCard({
             <div className="flex justify-between items-start px-5 sm:px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
               <div className="pr-2">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
-                  คำร้อง {selectedRequest.id}
+                  คำร้องรอพิจารณา
                 </h2>
                 <p className="text-[13px] text-gray-500 mt-0.5">
-                  ยื่นเมื่อ {selectedRequest.submitDate}
+                  อ้างอิงคำร้อง: {selectedRequest.id}
                 </p>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -920,7 +964,9 @@ export default function RequestsCard({
                         <button
                           type="button"
                           onClick={() => {
-                            setEditAmountValue(selectedRequest.amount);
+                            setEditAmountValue(
+                              String(selectedRequest.amount || "").replace(/,/g, ""),
+                            );
                             setAmountError(null);
                             setIsEditingAmount(true);
                           }}
@@ -937,12 +983,9 @@ export default function RequestsCard({
                             <input
                               type="number"
                               min={1}
-                              max={originalRequestedAmount || undefined}
+                              max={originalRequestedAmount ? Math.min(originalRequestedAmount, tempLoanApplicationLimit) : tempLoanApplicationLimit}
                               value={editAmountValue}
-                              onChange={(e) => {
-                                setEditAmountValue(e.target.value);
-                                if (amountError) setAmountError(null);
-                              }}
+                              onChange={handleEditAmountChange}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault();
@@ -950,6 +993,8 @@ export default function RequestsCard({
                                 } else if (e.key === "Escape") {
                                   e.preventDefault();
                                   handleCancelEditAmount();
+                                } else if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                  e.preventDefault();
                                 }
                               }}
                               className={`w-28 border rounded px-2 py-0.5 text-sm font-bold text-[#ea580c] focus:outline-none text-right ${
@@ -980,7 +1025,7 @@ export default function RequestsCard({
                             <p className="text-[11px] text-red-500 text-right">{amountError}</p>
                           ) : (
                             <p className="text-[11px] text-gray-400 text-right">
-                              (ปรับลดได้สูงสุด {originalRequestedAmount.toLocaleString("th-TH")})
+                              (ปรับลดได้สูงสุด {maxAllowedAmount.toLocaleString("th-TH")})
                             </p>
                           )}
                         </div>
@@ -1000,7 +1045,11 @@ export default function RequestsCard({
                   <div>
                     <dt>จำนวนเงินตัวอักษร</dt>
                     <dd className={styles.loanAmountText}>
-                      {formatThaiBahtText(selectedRequest.amount)}
+                      {formatThaiBahtText(
+                        isEditingAmount && editAmountValue
+                          ? editAmountValue
+                          : selectedRequest.amount,
+                      )}
                     </dd>
                   </div>
                   <div>
@@ -1292,7 +1341,7 @@ export default function RequestsCard({
                       <div className="flex justify-end mt-1">
                         <span
                           className={`text-[11px] ${
-                            remark.length >= 200 ? "text-red-500 font-bold" : "text-gray-400"
+                            remark.length >= 200 ? "text-gray-500" : "text-gray-500"
                           }`}
                         >
                           {remark.length}/200

@@ -93,3 +93,41 @@ test("Backend loan-requests query enforces approvedAmount <= current.amount and 
     "Backend must require comment when amount is reduced",
   );
 });
+
+test("RequestsCard enforces system loan limit and prevents typing beyond limits (like student)", () => {
+  const requestsCard = read("components/shared/pending/RequestsCard.tsx");
+
+  // Imports system loan limit from student temp mock data
+  assert.match(
+    requestsCard,
+    /import\s*\{[^}]*tempLoanApplicationLimit[^}]*\}\s*from\s*["']@\/app\/student\/temp\/tempMockData["']/,
+    "Must import tempLoanApplicationLimit from student tempMockData",
+  );
+
+  // Calculates maxAllowedAmount taking the minimum of originalRequestedAmount and tempLoanApplicationLimit
+  assert.match(
+    requestsCard,
+    /Math\.min\(originalRequestedAmount,\s*tempLoanApplicationLimit\)/,
+    "Must limit amount by both original requested amount and system loan limit",
+  );
+
+  // handleEditAmountChange prevents typing beyond limit (cannot enter amount exceeding limit)
+  assert.match(
+    requestsCard,
+    /num\s*>\s*maxAllowedAmount/,
+    "handleEditAmountChange must check num > maxAllowedAmount to prevent typing over the limit",
+  );
+
+  // Rejects saving or approving if amount exceeds system loan limit
+  assert.match(
+    requestsCard,
+    /num\s*>\s*tempLoanApplicationLimit/,
+    "handleSaveAmount must validate num > tempLoanApplicationLimit",
+  );
+  assert.match(
+    requestsCard,
+    /parsed\s*>\s*tempLoanApplicationLimit/,
+    "handleConfirmDecision must validate parsed > tempLoanApplicationLimit",
+  );
+});
+
