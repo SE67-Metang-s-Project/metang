@@ -65,6 +65,7 @@ next-env.d.ts
 
 # Local API workspace
 methang-api/
+metang-api/
 
 .VSCodeCounter
 .planning
