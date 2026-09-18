@@ -35,11 +35,16 @@ export async function GET() {
   const context = await getStudentSessionContext();
   if (!context) return apiError("UNAUTHORIZED", "Authentication required", 401);
 
-  const user = await resolveStoredStudent(context.identity);
-  if (!user) return apiOk([]);
+  try {
+    const user = await resolveStoredStudent(context.identity);
+    if (!user) return apiOk([]);
 
-  const loans = await getStudentLoanList(user.id);
-  return apiOk(loans);
+    const loans = await getStudentLoanList(user.id);
+    return apiOk(loans);
+  } catch (error) {
+    console.error("Unable to list student loan requests", error);
+    return apiError("INTERNAL_ERROR", "Unable to list loan requests", 500);
+  }
 }
 
 /**
