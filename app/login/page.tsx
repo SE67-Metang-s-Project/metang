@@ -123,16 +123,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-300 group-hover:text-orange-500 group-hover:translate-x-1 transition-all" />
               </div>
             </a>
-
-            {/* ลิงก์ CMU SSO สำหรับคณะพยาบาลศาสตร์ */}
-            <div className="mt-4">
-              <a
-                href="/api/auth/nurse/login"
-                className="text-xs sm:text-sm text-gray-600 hover:text-orange-600 transition-colors underline underline-offset-4"
-              >
-                เข้าสู่ระบบด้วย CMU SSO สำหรับคณะพยาบาลศาสตร์
-              </a>
-            </div>
           </div>
         </div>
       </div>
