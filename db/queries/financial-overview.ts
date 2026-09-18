@@ -97,12 +97,13 @@ export async function getExecutiveFinancialOverviewData(
         _sum: { amount: true },
       }),
 
-      // 3. Approved loans metric
-      prisma.loanRequest.aggregate({
-        where: {
-          status: { in: ["pending_disbursement", "disbursed", "closed"] },
-        },
-        _sum: { approvedAmount: true },
+      // 3. Approved loans metric - money actually disbursed. Read straight from the fund
+      // ledger (same source SystemBudgetTab's "เบิกจ่ายแล้ว" uses) instead of re-deriving it
+      // from loanRequest.status, so this can't drift from the ledger the way it could when it
+      // was a separate status-based aggregate.
+      prisma.fundTransaction.aggregate({
+        where: { kind: "disbursement" },
+        _sum: { amount: true },
         _count: { id: true },
       }),
 
@@ -138,7 +139,7 @@ export async function getExecutiveFinancialOverviewData(
     (total, row) => total + (row._sum.amount ?? 0) * row.direction,
     0,
   );
-  const approvedAmount = approvedLoansAggregate._sum.approvedAmount ?? 0;
+  const approvedAmount = approvedLoansAggregate._sum.amount ?? 0;
   const approvedCount = approvedLoansAggregate._count.id;
 
   // Initialize 12 monthly slots
