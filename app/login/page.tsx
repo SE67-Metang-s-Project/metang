@@ -1,18 +1,38 @@
 import React from "react";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
-import { isCmuAuthConfigured } from "@/lib/cmu-auth";
+import { getCmuSession, isCmuAuthConfigured } from "@/lib/cmu-auth";
+import { getUserHomePath } from "@/lib/loan-auth";
 import Grainient from "@/components/ui/Grainient";
+
+const errorMessages: Record<string, string> = {
+  configuration: "ยังไม่ได้ตั้งค่า CMU Entra สำหรับแอปนี้",
+  access_denied: "การเข้าสู่ระบบถูกยกเลิก",
+  invalid_callback: "ข้อมูลตอบกลับจาก CMU ไม่ครบถ้วน กรุณาลองใหม่",
+  invalid_state: "คำขอเข้าสู่ระบบหมดอายุหรือไม่ถูกต้อง กรุณาลองใหม่",
+  token_exchange_failed: "ไม่สามารถยืนยันการเข้าสู่ระบบกับ CMU ได้",
+  profile_failed: "เข้าสู่ระบบสำเร็จ แต่ไม่สามารถอ่านข้อมูลบัญชี CMU ได้",
+  not_eligible:
+    "ระบบนี้อนุญาตให้นักศึกษาปริญญาตรี ภาคปกติ คณะพยาบาลศาสตร์ หรือบุคลากรคณะพยาบาลศาสตร์เท่านั้น",
+  login_failed: "เกิดข้อผิดพลาดระหว่างเข้าสู่ระบบ กรุณาลองใหม่",
+};
 
 type LoginPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const session = await getCmuSession();
+  if (session) {
+    const homePath = await getUserHomePath(session.profile);
+    redirect(homePath);
+  }
+
   const resolvedParams = searchParams ? await searchParams : undefined;
   const errorParam = resolvedParams?.error;
   const errorCode = Array.isArray(errorParam) ? errorParam[0] : errorParam;
-  const errorMessage = errorCode || undefined;
+  const errorMessage = errorCode ? (errorMessages[errorCode] ?? errorCode) : undefined;
   const isConfigured = isCmuAuthConfigured();
 
   return (
@@ -20,9 +40,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       {/* Background Grainient */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <Grainient
-          color1="#f7a266"
+          color1="#F97316"
           color2="#f4c5c5"
-          color3="#f7a266"
+          color3="#F97316"
           timeSpeed={0.45}
           colorBalance={-0.18}
           warpStrength={2.3}
@@ -103,6 +123,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-300 group-hover:text-orange-500 group-hover:translate-x-1 transition-all" />
               </div>
             </a>
+
+            {/* ลิงก์ CMU SSO สำหรับคณะพยาบาลศาสตร์ */}
+            <div className="mt-4">
+              <a
+                href="/api/auth/nurse/login"
+                className="text-xs sm:text-sm text-gray-600 hover:text-orange-600 transition-colors underline underline-offset-4"
+              >
+                เข้าสู่ระบบด้วย CMU SSO สำหรับคณะพยาบาลศาสตร์
+              </a>
+            </div>
           </div>
         </div>
       </div>

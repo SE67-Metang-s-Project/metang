@@ -13,14 +13,15 @@ import {
 } from "@/lib/cmu-auth";
 import { getNurseAccessDecision } from "@/lib/nurse-auth";
 import { syncUserFromCmuProfile } from "@/db/queries/users";
+import { getUserHomePath } from "@/lib/loan-auth";
 
 type TokenResponse = {
   access_token?: string;
   error?: string;
 };
 
-function redirectHome(request: NextRequest, error?: string) {
-  const url = new URL("/", request.nextUrl.origin);
+function redirectCallback(request: NextRequest, destination: string, error?: string) {
+  const url = new URL(destination, request.nextUrl.origin);
 
   if (error) {
     url.searchParams.set("error", error);
@@ -45,11 +46,11 @@ export async function GET(request: NextRequest) {
   const transactionCookie = request.cookies.get(CMU_OAUTH_COOKIE)?.value;
 
   if (providerError) {
-    return redirectHome(request, "access_denied");
+    return redirectCallback(request, "/login", "access_denied");
   }
 
   if (!code || !state || !transactionCookie) {
-    return redirectHome(request, "invalid_callback");
+    return redirectCallback(request, "/login", "invalid_callback");
   }
 
   const transaction = unseal<OAuthTransaction>(transactionCookie);
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
     transaction.expiresAt <= Date.now() ||
     !valuesMatch(state, transaction.state)
   ) {
-    return redirectHome(request, "invalid_state");
+    return redirectCallback(request, "/login", "invalid_state");
   }
 
   try {
@@ -82,7 +83,7 @@ export async function GET(request: NextRequest) {
 
     if (!tokenResponse.ok || !token?.access_token) {
       console.error("CMU token exchange failed", tokenResponse.status, token?.error);
-      return redirectHome(request, "token_exchange_failed");
+      return redirectCallback(request, "/login", "token_exchange_failed");
     }
 
     const basicInfoResponse = await fetch(config.basicInfoUrl, {
@@ -94,7 +95,7 @@ export async function GET(request: NextRequest) {
 
     if (!basicInfoResponse.ok || !profile) {
       console.error("CMU BasicInfo request failed", basicInfoResponse.status);
-      return redirectHome(request, "profile_failed");
+      return redirectCallback(request, "/login", "profile_failed");
     }
 
     if (transaction.mode === "nurse") {
@@ -105,7 +106,7 @@ export async function GET(request: NextRequest) {
           userType: accessDecision.userType,
           reason: accessDecision.reason,
         });
-        const response = redirectHome(request, "not_eligible");
+        const response = redirectCallback(request, "/login", "not_eligible");
         response.cookies.set(CMU_SESSION_COOKIE, "", {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
@@ -124,13 +125,15 @@ export async function GET(request: NextRequest) {
       expiresAt: Date.now() + SESSION_MAX_AGE * 1000,
     };
 
+    let destinationPath = "/student";
     try {
       await syncUserFromCmuProfile(profile);
+      destinationPath = await getUserHomePath(profile);
     } catch (dbError) {
       console.error("Failed to sync user to database during CMU login callback", dbError);
     }
 
-    const response = redirectHome(request);
+    const response = redirectCallback(request, destinationPath);
     response.cookies.set(CMU_SESSION_COOKIE, seal(session), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -142,6 +145,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("CMU login callback failed", error);
-    return redirectHome(request, "login_failed");
+    return redirectCallback(request, "/login", "login_failed");
   }
 }

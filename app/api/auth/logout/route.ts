@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     redirectUrl = new URL(getCmuAuthConfig().logoutUrl);
   } catch (error) {
     console.error("Unable to create CMU logout URL", error);
-    redirectUrl = new URL("/", request.url);
+    redirectUrl = new URL("/login", request.url);
   }
 
   const response = NextResponse.redirect(redirectUrl, 303);

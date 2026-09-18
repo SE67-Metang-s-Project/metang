@@ -366,6 +366,50 @@ export async function getSignedInContext(): Promise<LoanUserContext | null> {
   return { session, profile: session.profile, identity, user };
 }
 
+export function resolveUserHomePath(
+  roles: (UserRoleName | string)[],
+  profile?: CmuProfile,
+): string {
+  const roleSet = new Set(roles.map((r) => String(r)));
+  if (roleSet.has("super_admin")) return "/superadmin";
+  if (roleSet.has("executive")) return "/executive";
+  if (roleSet.has("admin")) return "/admin";
+  if (roleSet.has("advisor")) return "/advisor";
+  if (roleSet.has("student")) return "/student";
+
+  if (profile) {
+    const studentCode = profile.student_id || profile.studentId || profile.student_code;
+    const isStudent = Boolean(
+      studentCode ||
+        profile.itaccounttype_id === "StdAcc" ||
+        (typeof profile.itaccounttype_TH === "string" && profile.itaccounttype_TH.includes("นักศึกษา")),
+    );
+    if (isStudent) return "/student";
+  }
+
+  return "/error?type=forbidden";
+}
+
+export async function getUserHomePath(profile: CmuProfile): Promise<string> {
+  if (isDevelopmentApiBypass() || DEVELOPMENT_API_ROLES.some((r) => isDevelopmentRoleEnabled(r))) {
+    if (isDevelopmentRoleEnabled("super_admin")) return "/superadmin";
+    if (isDevelopmentRoleEnabled("executive")) return "/executive";
+    if (isDevelopmentRoleEnabled("admin")) return "/admin";
+    if (isDevelopmentRoleEnabled("advisor")) return "/advisor";
+    return "/student";
+  }
+
+  try {
+    const identity = normalizeLoanIdentity(profile);
+    const user = await resolveStudentIdentity(identity);
+    const roles = user?.roles.map((r) => r.role) ?? [];
+    return resolveUserHomePath(roles, profile);
+  } catch (error) {
+    console.error("Unable to resolve user home path", error);
+    return resolveUserHomePath([], profile);
+  }
+}
+
 export async function getStudentAccess(): Promise<RoleAccess> {
   const session = await getCmuSession();
   if (!session) return { status: "unauthenticated" };
@@ -396,21 +440,21 @@ async function requireRoleAccess(
 
 export async function requireExecutiveAccess(
   errorRedirectUrl = "/error?type=forbidden",
-  loginRedirectUrl = "/error?type=unauthenticated",
+  loginRedirectUrl = "/login",
 ): Promise<LoanUserContext> {
   return requireRoleAccess(getExecutiveAccess(), errorRedirectUrl, loginRedirectUrl);
 }
 
 export async function requireAdminAccess(
   errorRedirectUrl = "/error?type=forbidden",
-  loginRedirectUrl = "/error?type=unauthenticated",
+  loginRedirectUrl = "/login",
 ): Promise<LoanUserContext> {
   return requireRoleAccess(getAdminAccess(), errorRedirectUrl, loginRedirectUrl);
 }
 
 export async function requireSuperAdminAccess(
   errorRedirectUrl = "/error?type=forbidden",
-  loginRedirectUrl = "/error?type=unauthenticated",
+  loginRedirectUrl = "/login",
 ): Promise<LoanUserContext> {
   return requireRoleAccess(getSuperAdminAccess(), errorRedirectUrl, loginRedirectUrl);
 }
@@ -418,14 +462,14 @@ export async function requireSuperAdminAccess(
 export async function requireAdvisorAccess(
   advisorName?: string,
   errorRedirectUrl = "/error?type=forbidden",
-  loginRedirectUrl = "/error?type=unauthenticated",
+  loginRedirectUrl = "/login",
 ): Promise<LoanUserContext> {
   return requireRoleAccess(getAdvisorAccess(advisorName), errorRedirectUrl, loginRedirectUrl);
 }
 
 export async function requireStudentAccess(
   errorRedirectUrl = "/error?type=forbidden",
-  loginRedirectUrl = "/error?type=unauthenticated",
+  loginRedirectUrl = "/login",
 ): Promise<LoanUserContext> {
   return requireRoleAccess(getStudentAccess(), errorRedirectUrl, loginRedirectUrl);
 }

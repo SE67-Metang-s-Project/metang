@@ -65,7 +65,7 @@ export default async function AuthErrorPage({ searchParams }: ErrorPageProps) {
 
           {isUnauthenticated && (
             <Link
-              href="/"
+              href="/login"
               className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors"
             >
               กลับสู่หน้าหลัก

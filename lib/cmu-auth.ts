@@ -213,7 +213,7 @@ export function startCmuLogin(request: Request, mode: CmuLoginMode) {
     return response;
   } catch (error) {
     console.error("Unable to start CMU login", error);
-    return NextResponse.redirect(new URL("/?error=configuration", request.url));
+    return NextResponse.redirect(new URL("/login?error=configuration", request.url));
   }
 }
 
