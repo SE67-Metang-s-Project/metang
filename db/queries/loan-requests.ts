@@ -779,6 +779,7 @@ export async function getActionRequests(
       objective: loan.purpose,
       additionalNote: loan.additionalNote ?? undefined,
       amount: String(loan.amount),
+      approvedAmount: loan.approvedAmount,
       term: String(loan.installmentCount),
       submitDate: formatThaiDate(submitDateObj),
       requestStatus: loan.status,

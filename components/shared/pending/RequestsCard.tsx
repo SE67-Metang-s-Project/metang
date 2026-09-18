@@ -55,6 +55,7 @@ export type BankDetails = {
 export type LoanDetails = {
   objective: string;
   amount: string;
+  approvedAmount?: number | null;
   term: string;
   expectedReturnDate?: string;
   bankDetails?: BankDetails;

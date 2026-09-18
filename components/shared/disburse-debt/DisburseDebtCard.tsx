@@ -55,6 +55,7 @@ export type BankDetails = {
 export type LoanDetails = {
   objective: string;
   amount: string;
+  approvedAmount?: number | null;
   term: string;
   expectedReturnDate?: string;
   bankDetails?: BankDetails;
@@ -419,8 +420,8 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
               <div className="flex justify-between items-end border-t border-gray-100 pt-3 mt-1">
                 <div className="flex gap-4">
                   <div>
-                    <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่ขอ</div>
-                    <div className="font-bold text-[#ea580c]">{formatAmount(req.amount)}</div>
+                    <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่อนุมัติ</div>
+                    <div className="font-bold text-[#ea580c]">{formatAmount(req.approvedAmount ?? req.amount)}</div>
                   </div>
                   <div>
                     <div className="text-[11px] text-gray-500 mb-0.5">จำนวนงวด</div>
@@ -518,7 +519,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     <div className="line-clamp-2">{req.objective}</div>
                   </td>
                   <td className="py-4 px-4 text-center font-normal text-gray-900 border-r border-gray-200 whitespace-nowrap">
-                    {formatAmount(req.amount)}
+                    {formatAmount(req.approvedAmount ?? req.amount)}
                   </td>
                   <td className="py-4 px-4 text-center font-normal text-gray-700 border-r border-gray-200 whitespace-nowrap">
                     {req.term} งวด
@@ -715,18 +716,18 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   )}
                   <div className={styles.loanAmountRow}>
                     <dt>
-                      {isCompleted ? "ยอดเงินที่โอนแล้ว (บาท)" : "จำนวนเงินที่ขอกู้ยืม (บาท)"}
+                      {isCompleted ? "ยอดเงินที่โอนแล้ว (บาท)" : "จำนวนเงินที่อนุมัติ (บาท)"}
                     </dt>
                     <dd
                       className={`font-bold ${isCompleted ? "text-green-600" : "text-[#ea580c]"}`}
                     >
-                      {formatAmount(selectedRequest.amount)}
+                      {formatAmount(selectedRequest.approvedAmount ?? selectedRequest.amount)}
                     </dd>
                   </div>
                   <div>
                     <dt>จำนวนเงินตัวอักษร</dt>
                     <dd className={styles.loanAmountText}>
-                      {formatThaiBahtText(String(selectedRequest.amount))}
+                      {formatThaiBahtText(String(selectedRequest.approvedAmount ?? selectedRequest.amount))}
                     </dd>
                   </div>
                   <div>
@@ -747,7 +748,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   {calculateInstallments(
                     selectedRequest.submitDate,
                     selectedRequest.term,
-                    selectedRequest.amount,
+                    String(selectedRequest.approvedAmount ?? selectedRequest.amount),
                     selectedRequest.paymentHistory,
                   ).map((inst) => (
                     <div className={styles.loanScheduleRow} key={inst.installmentNumber}>
