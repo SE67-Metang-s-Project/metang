@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { computeFundBudgetTotals } from "@/lib/fund-budget";
 import type {
   ExecutiveFinancialOverviewData,
   FinancialOverviewPoint,
@@ -83,12 +84,13 @@ export async function getExecutiveFinancialOverviewData(
   const yearStart = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0));
   const yearEnd = new Date(Date.UTC(currentYear + 1, 0, 1, 0, 0, 0));
 
-  const [topUpAggregate, fundTotals, approvedLoansAggregate, yearLoans, yearPayments] =
+  const [capitalTransactions, fundTotals, approvedLoansAggregate, yearLoans, yearPayments] =
     await Promise.all([
-      // 1. Total capital injected into system
-      prisma.fundTransaction.aggregate({
-        where: { kind: "top_up" },
-        _sum: { amount: true },
+      // 1. Total capital in system - same figure and same computeFundBudgetTotals() logic
+      // SystemBudgetTab's "วงเงินรวม" uses (top_up + credit_adjustment - withdrawal - debit_adjustment),
+      // not just top_up, so this stays in sync with that instead of only counting initial funding.
+      prisma.fundTransaction.findMany({
+        select: { kind: true, amount: true },
       }),
 
       // 2. Current balance, summed per direction by Postgres (two rows at most)
@@ -134,7 +136,11 @@ export async function getExecutiveFinancialOverviewData(
       }),
     ]);
 
-  const totalSystem = topUpAggregate._sum.amount ?? 0;
+  const totalSystem = computeFundBudgetTotals({
+    transactions: capitalTransactions,
+    balance: 0,
+    pendingDisbursement: 0,
+  }).currentTotal;
   const fundBalance = fundTotals.reduce(
     (total, row) => total + (row._sum.amount ?? 0) * row.direction,
     0,
