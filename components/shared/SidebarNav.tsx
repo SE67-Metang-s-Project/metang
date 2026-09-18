@@ -40,11 +40,8 @@ const ALL_MENU_ITEMS: MenuItem[] = [
     title: "หน้าหลัก",
     icon: LayoutDashboard,
     href: (role) => `/${role}`,
-    roles: ["student",'advisor', "admin", "executive", "superadmin"],
+    roles: ["student", "advisor", "admin", "executive", "superadmin"],
   },
-  { title: "ยื่นคำร้องขอกู้ยืม", icon: FileText, href: "/student/request", roles: ["student"] },
-  { title: "ชำระเงินคืน (e-Slip)", icon: Wallet, href: "/student/payment", roles: ["student"] },
-  { title: "ประวัติคำร้อง", icon: History, href: "/student/history", roles: ["student"] },
 
   // ==========================================
   // เมนูของ Advisor และ Executive

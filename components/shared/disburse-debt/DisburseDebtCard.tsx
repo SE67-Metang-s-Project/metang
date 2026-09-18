@@ -792,16 +792,6 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     icon={<FileImage aria-hidden="true" size={20} strokeWidth={2.2} />}
                     title={isCompleted ? "สลิปหลักฐานการโอนเงิน" : "แนบสลิปหลักฐานการโอนเงิน"}
                   />
-                  {isCompleted && selectedRequest.slipUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setPreviewSlipUrl(selectedRequest.slipUrl || null)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors cursor-pointer shadow-xs"
-                      title="เปิดดูรูปภาพสลิปขนาดเต็ม"
-                    >
-                      <ZoomIn size={14} /> ดูรูปขนาดเต็ม
-                    </button>
-                  )}
                 </div>
 
                 {isCompleted ? (
