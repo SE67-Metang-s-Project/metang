@@ -1,7 +1,7 @@
 import { AdvisorDecisionError, decideLoanRequest } from "@/db/queries/loan-requests";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { apiError, apiOk } from "@/lib/api-response";
-import { getAdvisorContext } from "@/lib/loan-auth";
+import { getAdvisorAccess } from "@/lib/loan-auth";
 import { isLoanId, parseLoanDecisionInput } from "@/lib/loan-validation";
 import { serializeJson } from "@/lib/serialization";
 import { validateJsonRequest } from "@/lib/request-security";
@@ -24,8 +24,14 @@ type Params = { params: Promise<{ id: string }> };
 export async function POST(request: Request, { params }: Params) {
   const requestError = validateJsonRequest(request);
   if (requestError) return requestError;
-  const context = await getAdvisorContext();
-  if (!context) return apiError("NOT_FOUND", "Loan request not found", 404);
+  const access = await getAdvisorAccess();
+  if (access.status === "unauthenticated") {
+    return apiError("UNAUTHORIZED", "Authentication required", 401);
+  }
+  if (access.status === "forbidden") {
+    return apiError("FORBIDDEN", "Advisor access required", 403);
+  }
+  const context = access.context;
 
   let input;
   try {
