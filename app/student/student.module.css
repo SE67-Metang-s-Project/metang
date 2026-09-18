@@ -3709,6 +3709,10 @@
   color: var(--color-surface);
 }
 
+.loanTimelineActions .loanApplicationNext:not(:disabled):hover {
+  background: var(--color-detail-orange-dark);
+}
+
 .transferSlipModalBackdrop {
   position: fixed;
   z-index: 30;

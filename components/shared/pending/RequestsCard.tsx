@@ -1478,7 +1478,13 @@ export default function RequestsCard({
             <button
               type="button"
               onClick={closeCompletionModal}
-              className="mt-6 w-full rounded-xl bg-[#ea580c] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#c2410c]"
+              className={`mt-6 w-full rounded-xl py-2.5 text-sm font-bold text-white transition-colors ${
+                completedDecision.action === "approve"
+                  ? "bg-emerald-600 hover:bg-emerald-700"
+                  : completedDecision.action === "return"
+                    ? "bg-amber-500 hover:bg-amber-600"
+                    : "bg-red-600 hover:bg-red-700"
+              }`}
             >
               เสร็จสิ้น
             </button>
