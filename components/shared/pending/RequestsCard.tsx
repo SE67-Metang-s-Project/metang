@@ -181,6 +181,11 @@ const formatAmount = (amountStr: string | number) => {
   return num.toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
 
+const formatStudentDetails = (request: StudentInfo) =>
+  [request.studentId, request.major, request.degree, `ปี ${request.year}`]
+    .filter(Boolean)
+    .join(" • ");
+
 // ==========================================
 // ฟังก์ชันคำนวณงวดการชำระเงิน (คำนวณยอดที่ต้องจ่าย & หักลบกรณีจ่ายเกิน)
 // ==========================================
@@ -384,6 +389,10 @@ export default function RequestsCard({
   const router = useRouter();
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
   const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | "return" | null>(null);
+  const [completedDecision, setCompletedDecision] = useState<{
+    requestId: string;
+    action: "approve" | "reject" | "return";
+  } | null>(null);
   const [remark, setRemark] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -478,6 +487,16 @@ export default function RequestsCard({
   const documentModalDismiss = useModalDismiss({
     onClose: () => setViewDocumentReq(null),
     isOpen: Boolean(viewDocumentReq),
+  });
+
+  const closeCompletionModal = () => {
+    setCompletedDecision(null);
+    router.refresh();
+  };
+
+  const completionModalDismiss = useModalDismiss({
+    onClose: closeCompletionModal,
+    isOpen: Boolean(completedDecision),
   });
 
   const handleConfirmDecision = async () => {
@@ -580,7 +599,10 @@ export default function RequestsCard({
         onRequestDecided(targetId, targetDecision);
       }
 
-      router.refresh();
+      setCompletedDecision({
+        requestId: targetId,
+        action: confirmAction,
+      });
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการส่งข้อมูล");
     } finally {
@@ -630,7 +652,7 @@ export default function RequestsCard({
     const textSize = isExecutiveTable ? "text-[14px]" : "text-[13px]";
     const baseClasses = isMobile
       ? `w-fit max-w-full px-4 py-2 ${textSize} rounded-lg transition-colors border text-center`
-      : `w-fit max-w-full px-3 py-1.5 ${textSize} rounded-lg transition-colors border text-center`;
+      : `w-fit whitespace-nowrap px-3 py-1.5 ${textSize} rounded-lg transition-colors border text-center`;
 
     const isActionable = checkCanTakeAction(userRole, req.requestStatus);
     const statusLabel = getStatusDisplay(req.requestStatus);
@@ -642,7 +664,7 @@ export default function RequestsCard({
           onClick={() => openRequestModal(req)}
           className={`${baseClasses} text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200`}
         >
-          <span className="block truncate">ตรวจสอบ</span>
+          <span className="block whitespace-nowrap">ตรวจสอบ</span>
         </button>
       );
     }
@@ -675,7 +697,7 @@ export default function RequestsCard({
         onClick={() => openRequestModal(req)}
         className={`${baseClasses} font-normal ${colorClass}`}
       >
-        <span className="block truncate">{statusLabel}</span>
+        <span className="block whitespace-nowrap">{statusLabel}</span>
       </button>
     );
   };
@@ -698,7 +720,7 @@ export default function RequestsCard({
                     {req.name}
                   </div>
                   <div className="text-[13px] text-gray-500 mt-1">
-                    {req.studentId} • {req.major} • ปี {req.year}
+                    {formatStudentDetails(req)}
                   </div>
                 </div>
                 <span className="text-[11px] text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md shrink-0 border border-gray-200">
@@ -731,19 +753,19 @@ export default function RequestsCard({
 
       {/* 2. มุมมองสำหรับ Desktop/Tablet (แสดงเป็นตาราง) */}
       <div className="hidden md:block overflow-x-auto relative rounded-xl border border-gray-300 shadow-sm">
-        <table className="w-full table-fixed text-left border-collapse min-w-[1050px] max-[1299px]:min-w-[1300px] bg-white">
+        <table className="w-full table-auto text-left border-collapse min-w-[1050px] max-[1299px]:min-w-[1300px] bg-white">
           <colgroup>
+            <col className="w-[140px]" />
+            <col className="w-[25%]" />
             <col className="w-[130px]" />
-            <col className="w-[28%]" />
-            <col className="w-[12%]" />
-            <col className="w-[21%]" />
-            <col className="w-[7.5%]" />
-            <col className="w-[7.5%]" />
-            <col className="w-[14%]" />
+            <col className="w-[25%]" />
+            <col className="w-[100px]" />
+            <col className="w-[100px]" />
+            <col className="w-px" />
           </colgroup>
           <thead>
             <tr className="bg-gray-100/70 border-b border-gray-300 text-gray-700 text-[14px]">
-              <th className="min-w-[130px] py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
+              <th className="min-w-[140px] py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 <span className="lg:hidden">
                   รหัส
                   <br />
@@ -751,25 +773,18 @@ export default function RequestsCard({
                 </span>
                 <span className="hidden lg:inline">รหัสคำร้อง</span>
               </th>
-              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 min-w-[200px]">
+              <th className="w-[25%] py-3.5 px-4 text-center font-semibold border-r border-gray-300">
                 ชื่อ - ข้อมูลนักศึกษา
               </th>
-              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300">
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 {isExecutiveTable ? (
-                  <>
-                    <span className="lg:hidden">
-                      วันที่-เวลา
-                      <br />
-                      ยื่นคำร้อง
-                    </span>
-                    <span className="hidden lg:inline">วันที่-เวลายื่นคำร้อง</span>
-                  </>
+                  "วันที่-เวลายื่นคำร้อง"
                 ) : (
                   "วันที่ยื่น"
                 )}
               </th>
-              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 min-w-[200px]">
-                รายละเอียดเพื่อนำไปใช้
+              <th className="w-[25%] py-3.5 px-4 text-center font-semibold border-r border-gray-300">
+                วัตถุประสงค์การกู้ยืม
               </th>
               <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 จำนวนเงิน
@@ -777,7 +792,7 @@ export default function RequestsCard({
               <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 จำนวนงวด
               </th>
-              <th className="py-3.5 px-4 text-center font-bold whitespace-nowrap">จัดการ</th>
+              <th className="w-px py-3.5 px-4 text-center font-bold whitespace-nowrap">จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -793,15 +808,15 @@ export default function RequestsCard({
                   key={idx}
                   className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
                 >
-                  <td className="min-w-[130px] py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                  <td className="w-[140px] min-w-[140px] py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
                     {req.id}
                   </td>
-                  <td className="py-4 px-4 border-r border-gray-200">
-                    <div className="font-bold text-gray-900 max-[1201px]:line-clamp-1">
+                  <td className="w-[25%] py-4 px-4 border-r border-gray-200">
+                    <div className="font-bold text-gray-900">
                       {req.name}
                     </div>
-                    <div className="mt-0.5 text-[13px] text-gray-500 max-[1201px]:truncate">
-                      {req.studentId} • {req.major} • ปี {req.year}
+                    <div className="mt-0.5 text-[13px] text-gray-500">
+                      {formatStudentDetails(req)}
                     </div>
                   </td>
                   <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
@@ -814,7 +829,7 @@ export default function RequestsCard({
                       req.submitDate
                     )}
                   </td>
-                  <td className="py-4 px-4 text-left font-normal text-gray-700 border-r border-gray-200">
+                  <td className="w-[25%] py-4 px-4 text-left font-normal text-gray-700 border-r border-gray-200">
                     <div className="line-clamp-2">{req.objective}</div>
                   </td>
                   <td className="py-4 px-4 text-center font-normal text-gray-900 border-r border-gray-200 whitespace-nowrap">
@@ -823,7 +838,7 @@ export default function RequestsCard({
                   <td className="py-4 px-4 text-center font-normal text-gray-700 border-r border-gray-200 whitespace-nowrap">
                     {req.term} งวด
                   </td>
-                  <td className="py-4 px-4 align-middle">
+                  <td className="w-px py-4 px-4 align-middle whitespace-nowrap">
                     <div className="flex justify-center">{renderActionButton(req, false)}</div>
                   </td>
                 </tr>
@@ -1408,6 +1423,65 @@ export default function RequestsCard({
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {completedDecision && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
+          {...completionModalDismiss}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="completion-modal-title"
+          >
+            <div
+              className={`mx-auto flex size-14 items-center justify-center rounded-full ${
+                completedDecision.action === "approve"
+                  ? "bg-emerald-100 text-emerald-600"
+                  : completedDecision.action === "return"
+                    ? "bg-amber-100 text-amber-600"
+                    : "bg-red-100 text-red-600"
+              }`}
+            >
+              {completedDecision.action === "approve" ? (
+                <CheckCircle2 size={30} />
+              ) : completedDecision.action === "return" ? (
+                <ShieldAlert size={30} />
+              ) : (
+                <XCircle size={30} />
+              )}
+            </div>
+            <h2 id="completion-modal-title" className="mt-4 text-xl font-bold text-gray-900">
+              ดำเนินการคำร้องเสร็จสิ้น
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              {completedDecision.action === "approve"
+                ? "อนุมัติ"
+                : completedDecision.action === "return"
+                  ? "ส่งกลับแก้ไข"
+                  : "ไม่อนุมัติ"}{" "}
+              คำร้อง {completedDecision.requestId} เรียบร้อยแล้ว
+            </p>
+            <p className="mt-1 text-sm text-gray-500">
+              คำร้องนี้เสร็จสิ้นในขั้นตอนของ
+              {userRole === "advisor"
+                ? "อาจารย์ที่ปรึกษา"
+                : userRole === "executive"
+                  ? "ผู้บริหาร"
+                  : "เจ้าหน้าที่"}
+            </p>
+            <button
+              type="button"
+              onClick={closeCompletionModal}
+              className="mt-6 w-full rounded-xl bg-[#ea580c] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#c2410c]"
+            >
+              เสร็จสิ้น
+            </button>
           </div>
         </div>
       )}

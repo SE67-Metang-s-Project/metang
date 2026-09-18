@@ -527,6 +527,10 @@ function TransferredRequestsChart({
     }),
     { totalRequestCount: 0, transferredCount: 0, rejectedCount: 0, cancelledCount: 0 },
   );
+  const otherRequestCount = Math.max(
+    0,
+    totals.totalRequestCount - totals.transferredCount - totals.rejectedCount - totals.cancelledCount,
+  );
   const active = hoveredIndex === null ? null : points[hoveredIndex];
   const tooltipLeft = `${(((hoveredIndex ?? 0) + 0.5) / points.length) * 100}%`;
 
@@ -662,7 +666,7 @@ function TransferredRequestsChart({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3 border-t border-[#eee8e2] pt-5 text-center sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid gap-3 border-t border-[#eee8e2] pt-5 text-center sm:grid-cols-2 lg:grid-cols-5">
         <Summary label="รวมคำร้องทั้งหมด" value={`${totals.totalRequestCount} คำร้อง`} />
         <Summary label="รวมคำร้องที่โอนเงินแล้ว" value={`${totals.transferredCount} คำร้อง`} />
         <Summary label="รวมคำร้องที่ไม่ผ่านการอนุมัติ" value={`${totals.rejectedCount} คำร้อง`} />
@@ -670,6 +674,7 @@ function TransferredRequestsChart({
           label="รวมคำร้องที่ถูกยกเลิกโดยนักศึกษา"
           value={`${totals.cancelledCount} คำร้อง`}
         />
+        <Summary label="คำร้องอื่นๆ" value={`${otherRequestCount} คำร้อง`} />
       </div>
     </article>
   );
