@@ -1,8 +1,5 @@
 "use server";
 
-import { isDevelopmentEnvironment } from "@/lib/development-access";
-import { getAdminAccess } from "@/lib/loan-auth";
-import { getCmuSession } from "@/lib/cmu-auth";
 import { sendLineNotification, LineNotificationError } from "@/lib/line-notification";
 import { buildReviewerNotificationPayload } from "@/lib/line-notification-template";
 import {
@@ -12,34 +9,22 @@ import {
   getExecutiveRecipientEmail,
 } from "@/db/queries/notification-recipients";
 import { buildReviewerRequestUrl, type ReviewerRole } from "@/lib/reviewer-deeplink";
+import { requireDemoAdminSession, readField } from "@/lib/demo-admin-session";
 
 export type FonReviewerDemoState = {
   status: "idle" | "success" | "error";
   message: string;
 };
 
-function readField(formData: FormData, name: string) {
-  const value = formData.get(name);
-  return typeof value === "string" ? value.trim() : "";
-}
-
 export async function sendDemoReviewerNotification(
   _previousState: FonReviewerDemoState,
   formData: FormData,
 ): Promise<FonReviewerDemoState> {
-  if (!isDevelopmentEnvironment()) {
-    return { status: "error", message: "ไม่พร้อมใช้งานในระบบนี้" };
+  const gate = await requireDemoAdminSession();
+  if (!gate.ok) {
+    return { status: "error", message: gate.message };
   }
-  const access = await getAdminAccess();
-  if (access.status !== "authorized") {
-    return { status: "error", message: "ต้องเป็นผู้ดูแลระบบจึงจะส่งการแจ้งเตือนทดสอบได้" };
-  }
-
-  const session = await getCmuSession();
-
-  if (!session) {
-    return { status: "error", message: "กรุณาเข้าสู่ระบบก่อนส่งการแจ้งเตือน" };
-  }
+  const context = gate.context;
 
   const role = readField(formData, "role") as ReviewerRole;
   const loanId = readField(formData, "loanId");
