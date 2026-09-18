@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { isCmuAuthConfigured } from "@/lib/cmu-auth";
+import Grainient from "@/components/ui/Grainient";
 
 type LoginPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -15,16 +16,29 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const isConfigured = isCmuAuthConfigured();
 
   return (
-    // 1. เปลี่ยนพื้นหลังของทั้งหน้าเป็นสีครีมที่นี่จุดเดียว
-    <div className="min-h-screen bg-[#fcf9f4] flex items-center justify-center p-6 sm:p-10 md:p-16 font-sans">
+    <div className="relative min-h-screen bg-[#fcf9f4] flex items-center justify-center p-6 sm:p-10 md:p-16 font-sans overflow-hidden">
+      {/* Background Grainient */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <Grainient
+          color1="#f7a266"
+          color2="#f4c5c5"
+          color3="#f7a266"
+          timeSpeed={0.45}
+          colorBalance={-0.18}
+          warpStrength={2.3}
+          grainScale={1.5}
+          zoom={0.7}
+        />
+      </div>
+
       {/* 2. สร้าง Container จัดกลุ่มให้ทั้งสองฝั่งอยู่ตรงกลาง และเว้นระยะห่าง (gap) */}
-      <div className="w-full max-w-[1200px] flex flex-col md:flex-row items-center justify-center gap-12 md:gap-20 lg:gap-32">
+      <div className="relative z-10 w-full max-w-[1200px] flex flex-col md:flex-row items-center justify-center gap-12 md:gap-20 lg:gap-32">
         {/* ด้านซ้าย: พื้นที่แสดงโลโก้ */}
         <div className="w-full md:w-1/2 flex flex-col items-center justify-center">
           <div className="relative flex items-center justify-center w-48 sm:w-64 md:w-80 lg:w-96 xl:w-[450px]">
             <Image
               alt="METANG Logo"
-              className="w-full h-auto object-contain transition-all duration-500 hover:scale-105 drop-shadow-lg"
+              className="w-full h-auto object-contain transition-all duration-500 drop-shadow-lg"
               height={550}
               src="/metang-logo.png"
               width={550}
