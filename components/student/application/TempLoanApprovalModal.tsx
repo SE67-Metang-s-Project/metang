@@ -246,7 +246,7 @@ export default function TempLoanApprovalModal({
               <dd>{programLabel || t("พยาบาลศาสตรบัณฑิต", "Bachelor of Nursing Science")}</dd>
             </div>
             <div>
-              <dt>{t("วุฒิการศึกษา", "Education level")}</dt>
+              <dt>{t("ระดับการศึกษา", "Education level")}</dt>
               <dd>{educationLevel}</dd>
             </div>
             <div>

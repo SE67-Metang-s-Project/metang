@@ -18,7 +18,11 @@ export async function GET() {
   const loans = await prisma.loanRequest.findMany({
     where: { advisorId: context.user.id, status: "pending_advisor" },
     select: advisorLoanSelect,
-    orderBy: { submittedAt: "asc" },
+    orderBy: [
+      { submittedAt: { sort: "desc", nulls: "last" } },
+      { createdAt: "desc" },
+      { id: "desc" },
+    ],
   });
   return apiOk(serializeJson(loans));
 }

@@ -3,7 +3,11 @@
 
 import React, { useState } from "react";
 import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
-import RequestsCard, { ActionRequest, UserRole } from "@/components/shared/pending/RequestsCard";
+import RequestsCard, {
+  ActionRequest,
+  UserRole,
+  sortRequestsBySubmissionDateDesc,
+} from "@/components/shared/pending/RequestsCard";
 
 interface SharedRequestsListProps {
   userRole: UserRole; // <--- รับ Role เข้ามาเพื่อตัดสินใจว่าจะ filter สถานะไหน
@@ -84,54 +88,58 @@ export default function SharedRequestsList({
   const targetPendingStatus = getTargetPendingStatus(userRole);
   const pendingCount = requests.filter((req) => req.requestStatus === targetPendingStatus).length;
 
-  const filteredRequests = requests.filter((req) => {
-    // โหมด Dashboard ดูเฉพาะที่รออนุมัติ
-    if (dashboardMode === "pending") return req.requestStatus === targetPendingStatus;
+  const filteredRequests = React.useMemo(() => {
+    const list = requests.filter((req) => {
+      // โหมด Dashboard ดูเฉพาะที่รออนุมัติ
+      if (dashboardMode === "pending") return req.requestStatus === targetPendingStatus;
 
-    let isStatusMatch = false;
+      let isStatusMatch = false;
 
-    // โหมด All ดูตาม Filter
-    if (filter === "all") {
-      isStatusMatch = true;
-    } else if (filter === "pending") {
-      isStatusMatch = req.requestStatus === targetPendingStatus;
-    } else if (filter === "approved") {
-      // ถ้าอนุมัติแล้ว สถานะจะขยับไปด่านถัดไป
-      if (userRole === "admin" || userRole === "super_admin") {
-        isStatusMatch = [
-          "pending_executive",
-          "pending_disbursement",
-          "disbursed",
-          "closed",
-        ].includes(req.requestStatus);
-      } else if (userRole === "advisor") {
-        isStatusMatch = [
-          "pending_admin",
-          "pending_executive",
-          "pending_disbursement",
-          "disbursed",
-          "closed",
-        ].includes(req.requestStatus);
-      } else if (userRole === "executive") {
-        isStatusMatch = ["pending_disbursement", "disbursed", "closed"].includes(req.requestStatus);
+      // โหมด All ดูตาม Filter
+      if (filter === "all") {
+        isStatusMatch = true;
+      } else if (filter === "pending") {
+        isStatusMatch = req.requestStatus === targetPendingStatus;
+      } else if (filter === "approved") {
+        // ถ้าอนุมัติแล้ว สถานะจะขยับไปด่านถัดไป
+        if (userRole === "admin" || userRole === "super_admin") {
+          isStatusMatch = [
+            "pending_executive",
+            "pending_disbursement",
+            "disbursed",
+            "closed",
+          ].includes(req.requestStatus);
+        } else if (userRole === "advisor") {
+          isStatusMatch = [
+            "pending_admin",
+            "pending_executive",
+            "pending_disbursement",
+            "disbursed",
+            "closed",
+          ].includes(req.requestStatus);
+        } else if (userRole === "executive") {
+          isStatusMatch = ["pending_disbursement", "disbursed", "closed"].includes(req.requestStatus);
+        }
+      } else if (filter === "rejected") {
+        isStatusMatch = ["returned", "rejected"].includes(req.requestStatus);
+      } else if (filter === "cancelled") {
+        isStatusMatch = req.requestStatus === "cancelled";
+      } else {
+        isStatusMatch = req.requestStatus === filter;
       }
-    } else if (filter === "rejected") {
-      isStatusMatch = ["returned", "rejected"].includes(req.requestStatus);
-    } else if (filter === "cancelled") {
-      isStatusMatch = req.requestStatus === "cancelled";
-    } else {
-      isStatusMatch = req.requestStatus === filter;
-    }
 
-    const lowerQuery = searchQuery.toLowerCase().trim();
-    const isSearchMatch =
-      !lowerQuery ||
-      req.name.toLowerCase().includes(lowerQuery) ||
-      req.studentId.toLowerCase().includes(lowerQuery) ||
-      req.id.toLowerCase().includes(lowerQuery);
+      const lowerQuery = searchQuery.toLowerCase().trim();
+      const isSearchMatch =
+        !lowerQuery ||
+        req.name.toLowerCase().includes(lowerQuery) ||
+        req.studentId.toLowerCase().includes(lowerQuery) ||
+        req.id.toLowerCase().includes(lowerQuery);
 
-    return isStatusMatch && isSearchMatch;
-  });
+      return isStatusMatch && isSearchMatch;
+    });
+
+    return sortRequestsBySubmissionDateDesc(list);
+  }, [requests, dashboardMode, targetPendingStatus, filter, userRole, searchQuery]);
 
   const advisorStatusOptions = [
     { id: "approved" as const, label: "อนุมัติแล้ว" },

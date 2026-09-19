@@ -62,11 +62,16 @@ export default function StudentListTable({ students }: StudentListTableProps) {
     <div className="w-full">
       {/* 1. มุมมองสำหรับ Mobile */}
       <div className="md:hidden space-y-4">
-        {students.map((student, idx) => (
-          <div
-            key={idx}
-            className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow"
-          >
+        {students.length === 0 ? (
+          <div className="bg-white border border-gray-100 rounded-xl p-8 text-center text-gray-500 text-sm">
+            ไม่พบข้อมูลนักศึกษา
+          </div>
+        ) : (
+          students.map((student, idx) => (
+            <div
+              key={idx}
+              className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow"
+            >
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-[10px] bg-[#fff7ed] flex items-center justify-center font-bold text-[#ea580c] text-[18px] shrink-0 border border-[#ffedd5]">
                 {student.initial}
@@ -123,7 +128,8 @@ export default function StudentListTable({ students }: StudentListTableProps) {
               )}
             </div>
           </div>
-        ))}
+        ))
+      )}
       </div>
 
       {/* 2. มุมมองสำหรับ Desktop/Tablet */}
@@ -150,69 +156,77 @@ export default function StudentListTable({ students }: StudentListTableProps) {
             </tr>
           </thead>
           <tbody>
-            {students.map((student, idx) => (
-              <tr
-                key={idx}
-                className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
-              >
-                {/* ข้อมูลชื่อและรหัสนักศึกษา */}
-                <td className="py-3 px-4 border-r border-gray-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-[10px] bg-[#fff7ed] flex items-center justify-center font-bold text-[#ea580c] text-[16px] shrink-0 border border-[#ffedd5]">
-                      {student.initial}
-                    </div>
-                    <div>
-                      <div className="font-bold text-gray-900">{student.name}</div>
-                      <div className="text-[13px] text-gray-500 mt-0.5">
-                        {student.studentId} • {student.major} • {student.degree} • ปี {student.year}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-
-                {/* คอลัมน์สถานะคำร้องปัจจุบัน */}
-                <td className="py-3 px-4 border-r border-gray-200 whitespace-nowrap text-center">
-                  <span
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border ${getBadgeStyles(student.requestStatusColor)}`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${getBadgeDotColor(student.requestStatusColor)}`}
-                    ></span>
-                    {student.requestStatusLabel}
-                  </span>
-                </td>
-
-                {/* คอลัมน์พฤติกรรมชำระเงิน */}
-                <td className="py-3 px-4 border-r border-gray-200 whitespace-nowrap text-center">
-                  {student.paymentStatusType === "good" ? (
-                    <span className="bg-[#dcfce7] text-[#16a34a] px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border border-[#bbf7d0]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
-                      {student.paymentStatus}
-                    </span>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center gap-1">
-                      <span className="bg-[#fee2e2] text-[#dc2626] px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border border-[#fecaca]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>
-                        {student.paymentStatus}
-                      </span>
-                      <span className="text-[11px] text-red-500 font-medium">
-                        (ช้า {student.delayDays} วัน)
-                      </span>
-                    </div>
-                  )}
-                </td>
-
-                {/* คอลัมน์การกู้ยืมทั้งหมด */}
-                <td className="py-3 px-4 text-gray-700 font-medium border-r border-gray-200 whitespace-nowrap text-center">
-                  {student.totalBorrowed}
-                </td>
-
-                {/* คอลัมน์หนี้คงเหลือ */}
-                <td className="py-3 px-4 text-[#dc2626] font-bold whitespace-nowrap text-center">
-                  {student.balance}
+            {students.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-gray-500 text-[14px]">
+                  ไม่พบข้อมูลนักศึกษา
                 </td>
               </tr>
-            ))}
+            ) : (
+              students.map((student, idx) => (
+                <tr
+                  key={idx}
+                  className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
+                >
+                  {/* ข้อมูลชื่อและรหัสนักศึกษา */}
+                  <td className="py-3 px-4 border-r border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-[10px] bg-[#fff7ed] flex items-center justify-center font-bold text-[#ea580c] text-[16px] shrink-0 border border-[#ffedd5]">
+                        {student.initial}
+                      </div>
+                      <div>
+                        <div className="font-bold text-gray-900">{student.name}</div>
+                        <div className="text-[13px] text-gray-500 mt-0.5">
+                          {student.studentId} • {student.major} • {student.degree} • ปี {student.year}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* คอลัมน์สถานะคำร้องปัจจุบัน */}
+                  <td className="py-3 px-4 border-r border-gray-200 whitespace-nowrap text-center">
+                    <span
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border ${getBadgeStyles(student.requestStatusColor)}`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${getBadgeDotColor(student.requestStatusColor)}`}
+                      ></span>
+                      {student.requestStatusLabel}
+                    </span>
+                  </td>
+
+                  {/* คอลัมน์พฤติกรรมชำระเงิน */}
+                  <td className="py-3 px-4 border-r border-gray-200 whitespace-nowrap text-center">
+                    {student.paymentStatusType === "good" ? (
+                      <span className="bg-[#dcfce7] text-[#16a34a] px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border border-[#bbf7d0]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
+                        {student.paymentStatus}
+                      </span>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <span className="bg-[#fee2e2] text-[#dc2626] px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border border-[#fecaca]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>
+                          {student.paymentStatus}
+                        </span>
+                        <span className="text-[11px] text-red-500 font-medium">
+                          (ช้า {student.delayDays} วัน)
+                        </span>
+                      </div>
+                    )}
+                  </td>
+
+                  {/* คอลัมน์การกู้ยืมทั้งหมด */}
+                  <td className="py-3 px-4 text-gray-700 font-medium border-r border-gray-200 whitespace-nowrap text-center">
+                    {student.totalBorrowed}
+                  </td>
+
+                  {/* คอลัมน์หนี้คงเหลือ */}
+                  <td className="py-3 px-4 text-[#dc2626] font-bold whitespace-nowrap text-center">
+                    {student.balance}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

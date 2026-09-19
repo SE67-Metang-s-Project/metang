@@ -624,7 +624,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     </dd>
                   </div>
                   <div>
-                    <dt>วุฒิการศึกษา</dt>
+                    <dt>ระดับการศึกษา</dt>
                     <dd>
                       {selectedRequest.degree || selectedRequest.educationLevel || "ปริญญาตรี"}
                     </dd>
@@ -993,6 +993,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
               {/* ติดตามสถานะคำร้อง */}
               <RequestTimeline
                 history={selectedRequest.history}
+                approvals={selectedRequest.approvals}
                 requestStatus={selectedRequest.requestStatus}
                 advisorName={selectedRequest.advisorName}
                 studentName={selectedRequest.name}

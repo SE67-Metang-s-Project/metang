@@ -3,7 +3,10 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import WelcomeCard from "@/components/shared/WelcomeCard";
-import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
+import RequestsCard, {
+  ActionRequest,
+  sortRequestsBySubmissionDateDesc,
+} from "@/components/shared/pending/RequestsCard";
 import StudentListTable, { Student } from "@/components/shared/students/StudentListItem";
 import {
   ChevronRight,
@@ -68,16 +71,30 @@ export default function AdvisorDashboard({
 
   // คำร้องรออาจารย์ที่ปรึกษาพิจารณา
   const pendingRequests = useMemo(
-    () => requests.filter((req) => req.requestStatus === "pending_advisor"),
+    () => sortRequestsBySubmissionDateDesc(requests.filter((req) => req.requestStatus === "pending_advisor")),
     [requests],
   );
 
-  // แปลงรายการคำร้องเป็นรายชื่อนักศึกษาในความดูแล (ไม่ซ้ำ)
+  // แปลงรายการคำร้องเป็นรายชื่อนักศึกษาในความดูแล (ไม่ซ้ำ) เฉพาะที่โอนเงินแล้วและยังชำระหนี้ไม่ครบ
   const studentsList: Student[] = useMemo(() => {
     const seen = new Set<string>();
     const uniqueReqs: ActionRequest[] = [];
 
-    for (const req of requests) {
+    const activeRequests = requests.filter((req) => {
+      if (req.requestStatus !== "disbursed") return false;
+      const totalDue =
+        req.installments && req.installments.length > 0
+          ? req.installments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0)
+          : Number(req.approvedAmount ?? req.amount ?? 0);
+      const totalPaid =
+        req.installments && req.installments.length > 0
+          ? req.installments.reduce((sum, inst) => sum + Number(inst.paidAmount || 0), 0)
+          : 0;
+      const remainingBalance = Math.max(0, totalDue - totalPaid);
+      return remainingBalance > 0;
+    });
+
+    for (const req of activeRequests) {
       if (!seen.has(req.studentId)) {
         seen.add(req.studentId);
         uniqueReqs.push(req);
@@ -88,9 +105,24 @@ export default function AdvisorDashboard({
       const isLate = (req.paymentBehavior?.lateInstallments ?? 0) > 0;
       const paymentStatus = isLate ? "ชำระล่าช้า" : "ชำระตรงเวลา";
       const paymentStatusType: "good" | "bad" = isLate ? "bad" : "good";
-      const formattedAmount = Number(req.amount).toLocaleString();
-      const mockBalance =
-        req.requestStatus === "disbursed" || req.requestStatus === "closed" ? formattedAmount : "0";
+
+      const totalDue =
+        req.installments && req.installments.length > 0
+          ? req.installments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0)
+          : Number(req.approvedAmount ?? req.amount ?? 0);
+      const totalPaid =
+        req.installments && req.installments.length > 0
+          ? req.installments.reduce((sum, inst) => sum + Number(inst.paidAmount || 0), 0)
+          : 0;
+      const remainingBalance =
+        req.requestStatus === "closed"
+          ? 0
+          : req.requestStatus === "disbursed"
+            ? Math.max(0, totalDue - totalPaid)
+            : 0;
+
+      const formattedAmount = totalDue.toLocaleString();
+      const balance = remainingBalance.toLocaleString();
 
       // 2. เรียกใช้ฟังก์ชันแปลสถานะ
       const { label: requestLabel, colorTheme: requestColor } = getTranslateStatus(
@@ -110,7 +142,7 @@ export default function AdvisorDashboard({
         paymentStatus,
         paymentStatusType,
         totalBorrowed: formattedAmount,
-        balance: mockBalance,
+        balance,
         delayDays: req.isOverdue ? String(req.waitDays ?? 0) : "0",
       };
     });

@@ -6,10 +6,11 @@ import StudentFilters from "@/components/shared/filter/StudentFilters";
 import StudentListTable, { Student } from "./StudentListItem";
 import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
-const filterTabs = ["ทั้งหมด", "มีคำร้องดำเนินการ", "มีหนี้คงเหลือ", "ชำระครบ", "เคยชำระล่าช้า"];
+const defaultFilterTabs = ["ทั้งหมด", "มีคำร้องดำเนินการ", "มีหนี้คงเหลือ", "ชำระครบ", "เคยชำระล่าช้า"];
 
 interface SharedStudentListProps {
   rawRequests: ActionRequest[];
+  filterTabs?: string[];
 }
 
 // ----------------------------------------------------
@@ -32,7 +33,10 @@ const getTranslateStatus = (status: string) => {
   return { label: "สถานะไม่ระบุ", colorTheme: "gray" as const };
 };
 
-export default function SharedStudentList({ rawRequests }: SharedStudentListProps) {
+export default function SharedStudentList({
+  rawRequests,
+  filterTabs = defaultFilterTabs,
+}: SharedStudentListProps) {
   const [activeTab, setActiveTab] = useState("ทั้งหมด");
   const [searchQuery, setSearchQuery] = useState("");
   const [degreeFilter, setDegreeFilter] = useState("ทั้งหมด");
@@ -42,9 +46,23 @@ export default function SharedStudentList({ rawRequests }: SharedStudentListProp
     const paymentStatus = isLate ? "ชำระล่าช้า" : "ชำระตรงเวลา";
     const paymentStatusType = isLate ? "bad" : "good";
 
-    const formattedAmount = Number(req.amount).toLocaleString();
-    const mockBalance =
-      req.requestStatus === "disbursed" || req.requestStatus === "closed" ? formattedAmount : "0";
+    const totalDue =
+      req.installments && req.installments.length > 0
+        ? req.installments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0)
+        : Number(req.approvedAmount ?? req.amount ?? 0);
+    const totalPaid =
+      req.installments && req.installments.length > 0
+        ? req.installments.reduce((sum, inst) => sum + Number(inst.paidAmount || 0), 0)
+        : 0;
+    const remainingBalance =
+      req.requestStatus === "closed"
+        ? 0
+        : req.requestStatus === "disbursed"
+          ? Math.max(0, totalDue - totalPaid)
+          : 0;
+
+    const formattedAmount = totalDue.toLocaleString();
+    const balance = remainingBalance.toLocaleString();
 
     // ดึงค่า label และสีจากฟังก์ชันที่เราสร้างไว้
     const { label: requestLabel, colorTheme: requestColor } = getTranslateStatus(req.requestStatus);
@@ -62,7 +80,7 @@ export default function SharedStudentList({ rawRequests }: SharedStudentListProp
       paymentStatus: paymentStatus,
       paymentStatusType: paymentStatusType,
       totalBorrowed: formattedAmount,
-      balance: mockBalance,
+      balance: balance,
       delayDays: req.isOverdue ? String(req.waitDays) : "0",
     };
   });
@@ -85,6 +103,8 @@ export default function SharedStudentList({ rawRequests }: SharedStudentListProp
       matchesTab = student.rawStatus.includes("pending");
     } else if (activeTab === "เคยชำระล่าช้า") {
       matchesTab = student.paymentStatusType === "bad";
+    } else if (activeTab === "ชำระตรงเวลา") {
+      matchesTab = student.paymentStatusType === "good";
     } else if (activeTab === "มีหนี้คงเหลือ") {
       matchesTab = Number(student.balance.replace(/,/g, "")) > 0;
     } else if (activeTab === "ชำระครบ") {

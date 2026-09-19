@@ -2,7 +2,10 @@
 
 import React, { useState } from "react";
 import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
-import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
+import RequestsCard, {
+  ActionRequest,
+  sortRequestsBySubmissionDateDesc,
+} from "@/components/shared/pending/RequestsCard";
 
 interface SuperAdminRequestsListProps {
   hideFilters?: boolean;
@@ -47,20 +50,32 @@ export default function SuperAdminRequestsList({
 
   const pendingCount = requests.filter((req) => req.requestStatus === "pending_admin").length;
 
-  const filteredRequests = requests.filter((req) => {
-    if (dashboardMode === "pending") return req.requestStatus === "pending_admin";
+  const filteredRequests = React.useMemo(() => {
+    const list = requests.filter((req) => {
+      if (dashboardMode === "pending") return req.requestStatus === "pending_admin";
 
-    let isStatusMatch = false;
-    if (filter === "all") isStatusMatch = true;
-    else if (filter === "pending") isStatusMatch = req.requestStatus === "pending_admin";
-    else if (filter === "approved") isStatusMatch = ["pending_executive", "pending_disbursement", "disbursed", "closed"].includes(req.requestStatus);
-    else if (filter === "rejected") isStatusMatch = ["returned", "rejected", "cancelled"].includes(req.requestStatus);
+      let isStatusMatch = false;
+      if (filter === "all") isStatusMatch = true;
+      else if (filter === "pending") isStatusMatch = req.requestStatus === "pending_admin";
+      else if (filter === "approved")
+        isStatusMatch = [
+          "pending_executive",
+          "pending_disbursement",
+          "disbursed",
+          "closed",
+        ].includes(req.requestStatus);
+      else if (filter === "rejected")
+        isStatusMatch = ["returned", "rejected", "cancelled"].includes(req.requestStatus);
 
-    const lowerQuery = searchQuery.toLowerCase();
-    const isSearchMatch = req.name.toLowerCase().includes(lowerQuery) || req.studentId.includes(lowerQuery);
+      const lowerQuery = searchQuery.toLowerCase();
+      const isSearchMatch =
+        req.name.toLowerCase().includes(lowerQuery) || req.studentId.includes(lowerQuery);
 
-    return isStatusMatch && isSearchMatch;
-  });
+      return isStatusMatch && isSearchMatch;
+    });
+
+    return sortRequestsBySubmissionDateDesc(list);
+  }, [requests, dashboardMode, filter, searchQuery]);
 
   return (
     <div className="w-full">

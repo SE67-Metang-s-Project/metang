@@ -94,7 +94,7 @@ export default function SystemAddressTab() {
             openingTimeTh: data.openingHours?.split(" เวลา ")[1] || "",
             openingDaysEn: translateDays(data.openingHours?.split(" เวลา ")[0] || ""),
             openingTimeEn: translateTime(data.openingHours?.split(" เวลา ")[1] || ""),
-            submissionLocationEn: (data as any).submissionLocationEn || "",
+            submissionLocationEn: (data as unknown as { submissionLocationEn?: string }).submissionLocationEn || "",
           };
           setInitialData(extendedData);
           setFormData(extendedData);
@@ -125,7 +125,7 @@ export default function SystemAddressTab() {
         openingTimeTh: data.openingHours?.split(" เวลา ")[1] || "",
         openingDaysEn: translateDays(data.openingHours?.split(" เวลา ")[0] || ""),
         openingTimeEn: translateTime(data.openingHours?.split(" เวลา ")[1] || ""),
-        submissionLocationEn: (data as any).submissionLocationEn || "",
+        submissionLocationEn: (data as unknown as { submissionLocationEn?: string }).submissionLocationEn || "",
       };
       setInitialData(extendedData);
       setFormData(extendedData);
@@ -145,7 +145,7 @@ export default function SystemAddressTab() {
   const handleFieldChange = (field: keyof ExtendedSystemAddressData, value: string) => {
     if (!formData) return;
 
-    let newFormData = { ...formData, [field]: value };
+    const newFormData = { ...formData, [field]: value };
 
     if (field === "openingDaysTh") {
       newFormData.openingDaysEn = translateDays(value);

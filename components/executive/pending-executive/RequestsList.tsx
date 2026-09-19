@@ -2,7 +2,10 @@
 
 import React, { useState } from "react";
 import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
-import RequestsCard, { ActionRequest } from "@/components/shared/pending/RequestsCard";
+import RequestsCard, {
+  ActionRequest,
+  sortRequestsBySubmissionDateDesc,
+} from "@/components/shared/pending/RequestsCard";
 
 interface RequestsListExecutiveProps {
   initialRequests?: ActionRequest[];
@@ -45,40 +48,44 @@ export default function RequestsListExecutive({
   const pendingCount = requests.filter((req) => req.requestStatus === "pending_executive").length;
 
   // กรองข้อมูลตามสถานะและคำค้นหา
-  const filteredRequests = requests.filter((req) => {
-    let isStatusMatch = false;
+  const filteredRequests = React.useMemo(() => {
+    const list = requests.filter((req) => {
+      let isStatusMatch = false;
 
-    // === ลอจิกการกรอง (Filter) ของ Executive โดยอิงจาก Enum ===
-    if (filter === "all") {
-      isStatusMatch = true;
-    } else if (filter === "pending") {
-      isStatusMatch = req.requestStatus === "pending_executive";
-    } else if (filter === "approved") {
-      // สำหรับผู้บริหาร ถ้าอนุมัติแล้วจะไปรอโอนเงิน หรือโอนเสร็จแล้ว
-      isStatusMatch = ["pending_disbursement", "disbursed", "closed"].includes(req.requestStatus);
-    } else if (filter === "rejected") {
-      isStatusMatch = ["returned", "rejected", "cancelled"].includes(req.requestStatus);
-    } else if (filter === "cancelled") {
-      isStatusMatch = req.requestStatus === "cancelled";
-    } else if (filter === "pending_admin") {
-      isStatusMatch = req.requestStatus === "pending_admin";
-    }
+      // === ลอจิกการกรอง (Filter) ของ Executive โดยอิงจาก Enum ===
+      if (filter === "all") {
+        isStatusMatch = true;
+      } else if (filter === "pending") {
+        isStatusMatch = req.requestStatus === "pending_executive";
+      } else if (filter === "approved") {
+        // สำหรับผู้บริหาร ถ้าอนุมัติแล้วจะไปรอโอนเงิน หรือโอนเสร็จแล้ว
+        isStatusMatch = ["pending_disbursement", "disbursed", "closed"].includes(req.requestStatus);
+      } else if (filter === "rejected") {
+        isStatusMatch = ["returned", "rejected", "cancelled"].includes(req.requestStatus);
+      } else if (filter === "cancelled") {
+        isStatusMatch = req.requestStatus === "cancelled";
+      } else if (filter === "pending_admin") {
+        isStatusMatch = req.requestStatus === "pending_admin";
+      }
 
-    const lowerQuery = searchQuery.toLowerCase();
-    const formattedAmount = Number(req.amount.replace(/[^\d.-]/g, "")).toLocaleString("en-US");
-    const isSearchMatch = [
-      req.id,
-      req.studentId,
-      req.amount,
-      formattedAmount,
-      req.name,
-      req.objective,
-      req.submitDate,
-      ...(req.history?.map((entry) => entry.date) ?? []),
-    ].some((value) => value.toLowerCase().includes(lowerQuery));
+      const lowerQuery = searchQuery.toLowerCase();
+      const formattedAmount = Number(req.amount.replace(/[^\d.-]/g, "")).toLocaleString("en-US");
+      const isSearchMatch = [
+        req.id,
+        req.studentId,
+        req.amount,
+        formattedAmount,
+        req.name,
+        req.objective,
+        req.submitDate,
+        ...(req.history?.map((entry) => entry.date) ?? []),
+      ].some((value) => value.toLowerCase().includes(lowerQuery));
 
-    return isStatusMatch && isSearchMatch;
-  });
+      return isStatusMatch && isSearchMatch;
+    });
+
+    return sortRequestsBySubmissionDateDesc(list);
+  }, [requests, filter, searchQuery]);
 
   return (
     <div className="w-full">

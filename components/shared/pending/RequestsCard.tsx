@@ -25,7 +25,6 @@ import LoanPetitionDocument, {
   downloadLoanPetitionPdf,
 } from "@/components/shared/disburse-debt/LoanPetitionDocument";
 import type { ActionRequest as DisburseActionRequest } from "@/components/shared/disburse-debt/DisburseDebtCard";
-import { formatThaiBahtText } from "@/app/student/studentFormatters";
 import { tempLoanApplicationLimit } from "@/app/student/temp/tempMockData";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import RequestTimeline from "@/components/shared/RequestTimeline";
@@ -65,6 +64,7 @@ export type LoanDetails = {
 export type RequestStatus = {
   submitDate: string;
   submitTime?: string;
+  submittedAt?: string;
   waitDays?: number;
   isOverdue?: boolean;
   history?: ActionHistory[];
@@ -294,11 +294,18 @@ function EmptyRequestsState() {
   );
 }
 
-const getSubmittedTime = (req: ActionRequest) => {
-  const submittedAt = req.history?.[0]?.date;
-  const time = submittedAt?.match(/\d{1,2}:\d{2}/)?.[0];
+import {
+  parseThaiDateTimeToMs,
+  getRequestSubmissionTimestamp,
+  sortRequestsBySubmissionDateDesc,
+  getSubmittedTime,
+} from "@/lib/pending-requests-sorting";
 
-  return time ? `${time} น.` : null;
+export {
+  parseThaiDateTimeToMs,
+  getRequestSubmissionTimestamp,
+  sortRequestsBySubmissionDateDesc,
+  getSubmittedTime,
 };
 
 const getStatusDisplay = (status: LoanStatus) => {
@@ -387,6 +394,9 @@ export default function RequestsCard({
   initialSelectedRequestId,
 }: RequestsCardProps) {
   const router = useRouter();
+  const sortedRequests = React.useMemo(() => {
+    return sortRequestsBySubmissionDateDesc(requests);
+  }, [requests]);
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
   const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | "return" | null>(null);
   const [completedDecision, setCompletedDecision] = useState<{
@@ -706,10 +716,10 @@ export default function RequestsCard({
     <div className="w-full">
       {/* 1. มุมมองสำหรับ Mobile (แสดงเป็นการ์ด) */}
       <div className="md:hidden space-y-4">
-        {requests.length === 0 ? (
+        {sortedRequests.length === 0 ? (
           <EmptyRequestsState />
         ) : (
-          requests.map((req, idx) => (
+          sortedRequests.map((req, idx) => (
             <div
               key={idx}
               className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md"
@@ -719,13 +729,14 @@ export default function RequestsCard({
                   <div className="font-bold text-gray-900 text-[15px] leading-tight">
                     {req.name}
                   </div>
-                  <div className="text-[13px] text-gray-500 mt-1">
-                    {formatStudentDetails(req)}
-                  </div>
+                  <div className="text-[13px] text-gray-500 mt-1">{formatStudentDetails(req)}</div>
                 </div>
-                <span className="text-[11px] text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md shrink-0 border border-gray-200">
-                  {req.submitDate}
-                </span>
+                <div className="text-[11px] text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md shrink-0 border border-gray-200 flex flex-col items-end leading-tight">
+                  <span>{req.submitDate}</span>
+                  {getSubmittedTime(req) && (
+                    <span className="text-gray-400 text-[10px]">{getSubmittedTime(req)}</span>
+                  )}
+                </div>
               </div>
 
               <div className="text-[13px] text-gray-700 bg-orange-50/40 p-3 rounded-xl border border-orange-100/60 line-clamp-2">
@@ -777,11 +788,7 @@ export default function RequestsCard({
                 ชื่อ - ข้อมูลนักศึกษา
               </th>
               <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
-                {isExecutiveTable ? (
-                  "วันที่-เวลายื่นคำร้อง"
-                ) : (
-                  "วันที่ยื่น"
-                )}
+                วันที่-เวลายื่นคำร้อง
               </th>
               <th className="w-[25%] py-3.5 px-4 text-center font-semibold border-r border-gray-300">
                 วัตถุประสงค์การกู้ยืม
@@ -796,14 +803,14 @@ export default function RequestsCard({
             </tr>
           </thead>
           <tbody>
-            {requests.length === 0 ? (
+            {sortedRequests.length === 0 ? (
               <tr>
                 <td colSpan={7}>
                   <EmptyRequestsState />
                 </td>
               </tr>
             ) : (
-              requests.map((req, idx) => (
+              sortedRequests.map((req, idx) => (
                 <tr
                   key={idx}
                   className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
@@ -812,22 +819,16 @@ export default function RequestsCard({
                     {req.id}
                   </td>
                   <td className="w-[25%] py-4 px-4 border-r border-gray-200">
-                    <div className="font-bold text-gray-900">
-                      {req.name}
-                    </div>
+                    <div className="font-bold text-gray-900">{req.name}</div>
                     <div className="mt-0.5 text-[13px] text-gray-500">
                       {formatStudentDetails(req)}
                     </div>
                   </td>
                   <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
-                    {isExecutiveTable ? (
-                      <div className="flex flex-col items-center leading-relaxed">
-                        <span>{req.submitDate}</span>
-                        {getSubmittedTime(req) && <span>{getSubmittedTime(req)}</span>}
-                      </div>
-                    ) : (
-                      req.submitDate
-                    )}
+                    <div className="flex flex-col items-center leading-relaxed">
+                      <span>{req.submitDate}</span>
+                      {getSubmittedTime(req) && <span>{getSubmittedTime(req)}</span>}
+                    </div>
                   </td>
                   <td className="w-[25%] py-4 px-4 text-left font-normal text-gray-700 border-r border-gray-200">
                     <div className="line-clamp-2">{req.objective}</div>
@@ -910,7 +911,7 @@ export default function RequestsCard({
                     <dd>{selectedRequest.program || "พยาบาลศาสตรบัณฑิต"}</dd>
                   </div>
                   <div>
-                    <dt>วุฒิการศึกษา</dt>
+                    <dt>ระดับการศึกษา</dt>
                     <dd>
                       {selectedRequest.degree || selectedRequest.educationLevel || "ปริญญาตรี"}
                     </dd>
@@ -975,7 +976,7 @@ export default function RequestsCard({
                   </div>
                   <div className={styles.loanAmountRow}>
                     <dt className="flex items-center gap-2">
-                      <span>จำนวนเงินที่ขอกู้ยืม (บาท)</span>
+                      <span>จำนวนเงินที่ขอกู้ยืม</span>
                       {canEditAmount && !isEditingAmount && (
                         <button
                           type="button"
@@ -999,7 +1000,11 @@ export default function RequestsCard({
                             <input
                               type="number"
                               min={1}
-                              max={originalRequestedAmount ? Math.min(originalRequestedAmount, tempLoanApplicationLimit) : tempLoanApplicationLimit}
+                              max={
+                                originalRequestedAmount
+                                  ? Math.min(originalRequestedAmount, tempLoanApplicationLimit)
+                                  : tempLoanApplicationLimit
+                              }
                               value={editAmountValue}
                               onChange={handleEditAmountChange}
                               onKeyDown={(e) => {
@@ -1055,16 +1060,6 @@ export default function RequestsCard({
                             )}
                           <span>{formatAmount(selectedRequest.amount)}</span>
                         </div>
-                      )}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>จำนวนเงินตัวอักษร</dt>
-                    <dd className={styles.loanAmountText}>
-                      {formatThaiBahtText(
-                        isEditingAmount && editAmountValue
-                          ? editAmountValue
-                          : selectedRequest.amount,
                       )}
                     </dd>
                   </div>
@@ -1230,6 +1225,7 @@ export default function RequestsCard({
               {/* ติดตามสถานะคำร้อง */}
               <RequestTimeline
                 history={selectedRequest.history}
+                approvals={selectedRequest.approvals}
                 requestStatus={selectedRequest.requestStatus}
                 advisorName={selectedRequest.advisorName}
                 studentName={selectedRequest.name}

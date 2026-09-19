@@ -48,7 +48,7 @@ export default function TempDetailCard({ details, profile }: TempDetailCardProps
             <dd>{localizeStudentContent(programName, language)}</dd>
           </div>
           <div>
-            <dt>{t("วุฒิการศึกษา", "Education level")}</dt>
+            <dt>{t("ระดับการศึกษา", "Education level")}</dt>
             <dd>{localizeStudentContent(educationLevel, language)}</dd>
           </div>
           <div>

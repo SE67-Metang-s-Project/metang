@@ -183,7 +183,7 @@ export default function TempLoanApplicationPage({
   const programLabel = getProgramLabel(profile.programName, language);
   const educationLevelLabel = educationLevel
     ? localizeStudentContent(educationLevel, language)
-    : t("ไม่พบข้อมูลวุฒิการศึกษา", "Education level not found");
+    : t("ไม่พบข้อมูลระดับการศึกษา", "Education level not found");
 
   const [advisors, setAdvisors] = useState<string[]>(advisorOptions ?? []);
 
@@ -681,7 +681,7 @@ export default function TempLoanApplicationPage({
                       </strong>
                     </p>
                     <p>
-                      <span>{t("วุฒิการศึกษา", "Education level")}</span>
+                      <span>{t("ระดับการศึกษา", "Education level")}</span>
                       <strong>{educationLevelLabel}</strong>
                     </p>
                   </div>

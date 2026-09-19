@@ -22,7 +22,11 @@ export async function GET() {
     const loans = await prisma.loanRequest.findMany({
       where: { status: "pending_executive" },
       select: executiveLoanSelect,
-      orderBy: [{ submittedAt: "asc" }, { id: "asc" }],
+      orderBy: [
+        { submittedAt: { sort: "desc", nulls: "last" } },
+        { createdAt: "desc" },
+        { id: "desc" },
+      ],
     });
     return apiOk(serializeJson(loans));
   } catch (error) {

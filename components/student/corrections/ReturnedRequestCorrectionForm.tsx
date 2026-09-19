@@ -301,7 +301,7 @@ export default function ReturnedRequestCorrectionForm({
                 fieldRefs.current.educationLevel = element ?? undefined;
               }}
             >
-              <span>{t("วุฒิการศึกษา", "Education level")}</span>
+              <span>{t("ระดับการศึกษา", "Education level")}</span>
               <LoanFormSelect
                 error={errors.educationLevel}
                 onBlur={() => handleBlur("educationLevel")}
@@ -310,7 +310,7 @@ export default function ReturnedRequestCorrectionForm({
                   label: value,
                   value,
                 }))}
-                placeholder={t("เลือกวุฒิการศึกษา", "Select education level")}
+                placeholder={t("เลือกระดับการศึกษา", "Select education level")}
                 value={values.educationLevel}
               />
               {renderError("educationLevel")}

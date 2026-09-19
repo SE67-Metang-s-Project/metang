@@ -205,13 +205,21 @@ export async function getLoanRequests(visibility: LoanRequestVisibility) {
     return prisma.loanRequest.findMany({
       where: { advisorId: visibility.advisorId },
       select: advisorLoanSelect,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      orderBy: [
+        { submittedAt: { sort: "desc", nulls: "last" } },
+        { createdAt: "desc" },
+        { id: "desc" },
+      ],
     });
   }
 
   return prisma.loanRequest.findMany({
     select: globalLoanSelect,
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    orderBy: [
+      { submittedAt: { sort: "desc", nulls: "last" } },
+      { createdAt: "desc" },
+      { id: "desc" },
+    ],
   });
 }
 
@@ -542,6 +550,12 @@ function formatThaiDate(date: Date): string {
   return `${day} ${month} ${year}`;
 }
 
+function formatThaiTime(date: Date): string {
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes} น.`;
+}
+
 function formatThaiDateTime(date: Date): string {
   const dateStr = formatThaiDate(date);
   const hours = String(date.getHours()).padStart(2, "0");
@@ -617,7 +631,21 @@ export async function getActionRequests(
         select: { id: true },
       },
     },
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    orderBy: [
+      { submittedAt: { sort: "desc", nulls: "last" } },
+      { createdAt: "desc" },
+      { id: "desc" },
+    ],
+  });
+
+  // Sort descending by effective submission date-time (submittedAt ?? createdAt), newest first
+  loans.sort((a, b) => {
+    const timeA = (a.submittedAt ?? a.createdAt).getTime();
+    const timeB = (b.submittedAt ?? b.createdAt).getTime();
+    if (timeB !== timeA) {
+      return timeB - timeA;
+    }
+    return b.id.localeCompare(a.id);
   });
 
   return loans.map((loan) => {
@@ -782,6 +810,8 @@ export async function getActionRequests(
       approvedAmount: loan.approvedAmount,
       term: String(loan.installmentCount),
       submitDate: formatThaiDate(submitDateObj),
+      submitTime: formatThaiTime(submitDateObj),
+      submittedAt: submitDateObj.toISOString(),
       requestStatus: loan.status,
       waitDays,
       isOverdue: waitDays > 7,
@@ -798,6 +828,29 @@ export async function getActionRequests(
 
 export async function getAdvisorActionRequests(advisorId: string): Promise<ActionRequest[]> {
   return getActionRequests({ advisorId }, { hideBankDetails: true });
+}
+
+export async function getAdvisorStudentRequests(advisorId: string): Promise<ActionRequest[]> {
+  const requests = await getActionRequests(
+    {
+      advisorId,
+      status: "disbursed",
+    },
+    { hideBankDetails: true },
+  );
+
+  return requests.filter((req) => {
+    const totalDue =
+      req.installments && req.installments.length > 0
+        ? req.installments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0)
+        : Number(req.approvedAmount ?? req.amount ?? 0);
+    const totalPaid =
+      req.installments && req.installments.length > 0
+        ? req.installments.reduce((sum, inst) => sum + Number(inst.paidAmount || 0), 0)
+        : 0;
+    const remainingBalance = Math.max(0, totalDue - totalPaid);
+    return remainingBalance > 0;
+  });
 }
 
 export async function getAdminActionRequests(): Promise<ActionRequest[]> {
