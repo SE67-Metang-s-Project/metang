@@ -2,16 +2,16 @@
 
 import { useActionState } from "react";
 import {
-  sendDemoLoanReminder,
-  type LoanReminderDemoState,
-} from "@/app/email-reminder-demo/actions";
+  sendDemoNotification,
+  type NotificationDemoState,
+} from "@/app/demo/line-notification/actions";
 
-const initialState: LoanReminderDemoState = {
+const initialState: NotificationDemoState = {
   status: "idle",
   message: "",
 };
 
-type LoanReminderDemoFormProps = {
+type NotificationDemoFormProps = {
   email: string;
 };
 
@@ -19,29 +19,20 @@ const inputClassName =
   "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm " +
   "outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100";
 
-function getDefaultDueDate() {
-  const date = new Date();
-  date.setDate(date.getDate() + 14);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-export function LoanReminderDemoForm({ email }: LoanReminderDemoFormProps) {
+export function NotificationDemoForm({ email }: NotificationDemoFormProps) {
   const [state, formAction, isPending] = useActionState(
-    sendDemoLoanReminder,
+    sendDemoNotification,
     initialState,
   );
 
   return (
     <form action={formAction} className="mt-6 space-y-4">
       <label className="block text-sm font-medium text-zinc-800">
-        Student Name
+        Program
         <input
           className={inputClassName}
-          defaultValue="สมชาย ใจดี"
-          name="studentName"
+          defaultValue="Me Tang Demo"
+          name="program"
           required
         />
       </label>
@@ -57,47 +48,35 @@ export function LoanReminderDemoForm({ email }: LoanReminderDemoFormProps) {
       </label>
 
       <label className="block text-sm font-medium text-zinc-800">
-        Installment Sequence
-        <input
+        Message
+        <textarea
           className={inputClassName}
-          defaultValue={1}
-          min={1}
-          name="installmentSeq"
+          defaultValue="ทดสอบส่งการแจ้งเตือนจาก Next.js 16"
+          name="message"
           required
-          type="number"
+          rows={3}
         />
       </label>
 
       <label className="block text-sm font-medium text-zinc-800">
-        Amount Due
+        Web link
         <input
           className={inputClassName}
-          defaultValue={5000}
-          min={0}
-          name="amountDue"
+          defaultValue="https://www.cmu.ac.th"
+          name="weblink"
           required
-          type="number"
+          type="url"
         />
       </label>
 
       <label className="block text-sm font-medium text-zinc-800">
-        Due Date
+        Color
         <input
-          className={inputClassName}
-          defaultValue={getDefaultDueDate()}
-          name="dueDate"
+          className="mt-1 h-10 w-full rounded-lg border border-zinc-300 bg-white p-1"
+          defaultValue="#1CD2A3"
+          name="color"
           required
-          type="date"
-        />
-      </label>
-
-      <label className="block text-sm font-medium text-zinc-800">
-        Loan ID
-        <input
-          className={inputClassName}
-          defaultValue="REQ202609060001"
-          name="loanId"
-          required
+          type="color"
         />
       </label>
 
@@ -106,7 +85,7 @@ export function LoanReminderDemoForm({ email }: LoanReminderDemoFormProps) {
         disabled={isPending}
         type="submit"
       >
-        {isPending ? "กำลังส่ง..." : "ส่งอีเมลแจ้งเตือน"}
+        {isPending ? "กำลังส่ง..." : "ส่ง LINE notification"}
       </button>
 
       {state.status !== "idle" ? (

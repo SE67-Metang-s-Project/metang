@@ -2,16 +2,16 @@
 
 import { useActionState } from "react";
 import {
-  sendDemoNotification,
-  type NotificationDemoState,
-} from "@/app/notification-demo/actions";
+  sendDemoLoanReminder,
+  type LoanReminderDemoState,
+} from "@/app/demo/email-reminder/actions";
 
-const initialState: NotificationDemoState = {
+const initialState: LoanReminderDemoState = {
   status: "idle",
   message: "",
 };
 
-type NotificationDemoFormProps = {
+type LoanReminderDemoFormProps = {
   email: string;
 };
 
@@ -19,20 +19,29 @@ const inputClassName =
   "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm " +
   "outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100";
 
-export function NotificationDemoForm({ email }: NotificationDemoFormProps) {
+function getDefaultDueDate() {
+  const date = new Date();
+  date.setDate(date.getDate() + 14);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function LoanReminderDemoForm({ email }: LoanReminderDemoFormProps) {
   const [state, formAction, isPending] = useActionState(
-    sendDemoNotification,
+    sendDemoLoanReminder,
     initialState,
   );
 
   return (
     <form action={formAction} className="mt-6 space-y-4">
       <label className="block text-sm font-medium text-zinc-800">
-        Program
+        Student Name
         <input
           className={inputClassName}
-          defaultValue="Me Tang Demo"
-          name="program"
+          defaultValue="สมชาย ใจดี"
+          name="studentName"
           required
         />
       </label>
@@ -48,35 +57,47 @@ export function NotificationDemoForm({ email }: NotificationDemoFormProps) {
       </label>
 
       <label className="block text-sm font-medium text-zinc-800">
-        Message
-        <textarea
+        Installment Sequence
+        <input
           className={inputClassName}
-          defaultValue="ทดสอบส่งการแจ้งเตือนจาก Next.js 16"
-          name="message"
+          defaultValue={1}
+          min={1}
+          name="installmentSeq"
           required
-          rows={3}
+          type="number"
         />
       </label>
 
       <label className="block text-sm font-medium text-zinc-800">
-        Web link
+        Amount Due
         <input
           className={inputClassName}
-          defaultValue="https://www.cmu.ac.th"
-          name="weblink"
+          defaultValue={5000}
+          min={0}
+          name="amountDue"
           required
-          type="url"
+          type="number"
         />
       </label>
 
       <label className="block text-sm font-medium text-zinc-800">
-        Color
+        Due Date
         <input
-          className="mt-1 h-10 w-full rounded-lg border border-zinc-300 bg-white p-1"
-          defaultValue="#1CD2A3"
-          name="color"
+          className={inputClassName}
+          defaultValue={getDefaultDueDate()}
+          name="dueDate"
           required
-          type="color"
+          type="date"
+        />
+      </label>
+
+      <label className="block text-sm font-medium text-zinc-800">
+        Loan ID
+        <input
+          className={inputClassName}
+          defaultValue="REQ202609060001"
+          name="loanId"
+          required
         />
       </label>
 
@@ -85,7 +106,7 @@ export function NotificationDemoForm({ email }: NotificationDemoFormProps) {
         disabled={isPending}
         type="submit"
       >
-        {isPending ? "กำลังส่ง..." : "ส่ง LINE notification"}
+        {isPending ? "กำลังส่ง..." : "ส่งอีเมลแจ้งเตือน"}
       </button>
 
       {state.status !== "idle" ? (
