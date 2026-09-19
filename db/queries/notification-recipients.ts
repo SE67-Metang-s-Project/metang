@@ -59,6 +59,25 @@ export async function getAdminRecipientEmails(
   return users.map((u) => u.email);
 }
 
+const ROLE_FILTER_BY_REVIEWER_ROLE: Readonly<Record<ReviewerRole, UserRoleName>> = {
+  advisor: UserRoleName.advisor,
+  admin: UserRoleName.admin,
+  super_admin: UserRoleName.super_admin,
+  executive: UserRoleName.executive,
+};
+
+/** All emails currently holding the given reviewer role, for a manual recipient picker. */
+export async function getRecipientEmailsByRole(
+  role: ReviewerRole,
+  db: DbClient = prisma,
+): Promise<string[]> {
+  const users = await db.appUser.findMany({
+    where: { roles: { some: { role: ROLE_FILTER_BY_REVIEWER_ROLE[role] } } },
+    select: { email: true },
+  });
+  return users.map((u) => u.email);
+}
+
 export async function getExecutiveRecipientEmail(
   db: DbClient = prisma,
 ): Promise<string | null> {

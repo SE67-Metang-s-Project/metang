@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCmuSession } from "@/lib/cmu-auth";
-import { FonReviewerDemoForm } from "@/app/fon-reviewer-demo/FonReviewerDemoForm";
+import { FonReviewerDemoForm } from "@/app/demo/fon-reviewer/FonReviewerDemoForm";
 import { isDevelopmentEnvironment } from "@/lib/development-access";
 import { requireAdminAccess } from "@/lib/loan-auth";
+import { getRecipientEmailsByRole } from "@/db/queries/notification-recipients";
+import type { ReviewerRole } from "@/lib/reviewer-deeplink";
+
+const REVIEWER_ROLES: ReviewerRole[] = ["advisor", "admin", "super_admin", "executive"];
 
 export default async function FonReviewerDemoPage() {
   if (!isDevelopmentEnvironment()) {
@@ -12,6 +16,12 @@ export default async function FonReviewerDemoPage() {
   await requireAdminAccess();
 
   const session = await getCmuSession();
+
+  const recipientsByRole = Object.fromEntries(
+    await Promise.all(
+      REVIEWER_ROLES.map(async (role) => [role, await getRecipientEmailsByRole(role)] as const),
+    ),
+  ) as Record<ReviewerRole, string[]>;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-50 p-4">
@@ -23,7 +33,7 @@ export default async function FonReviewerDemoPage() {
           FON reviewer notification (demo)
         </h1>
         <p className="mt-2 text-sm text-zinc-600">
-          ส่งการแจ้งเตือนผ่าน Server Action โดยดึงข้อมูลผู้รับ (Advisor, Admin, Executive)
+          ส่งการแจ้งเตือนผ่าน Server Action โดยเลือกผู้รับ (Advisor, Admin, Super Admin, Executive)
           จากฐานข้อมูล ไม่ได้ส่งเข้าบัญชีผู้ใช้ที่กำลังเข้าสู่ระบบ
         </p>
 
@@ -35,11 +45,11 @@ export default async function FonReviewerDemoPage() {
             เข้าสู่ระบบด้วย CMU Account
           </a>
         ) : (
-          <FonReviewerDemoForm />
+          <FonReviewerDemoForm recipientsByRole={recipientsByRole} />
         )}
 
-        <Link className="mt-6 block text-center text-sm text-zinc-500 hover:text-zinc-900" href="/">
-          กลับหน้าหลัก
+        <Link className="mt-6 block text-center text-sm text-zinc-500 hover:text-zinc-900" href="/demo">
+          กลับหน้า Demo
         </Link>
       </section>
     </main>

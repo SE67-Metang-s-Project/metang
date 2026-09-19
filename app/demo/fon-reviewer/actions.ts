@@ -2,14 +2,11 @@
 
 import { sendLineNotification, LineNotificationError } from "@/lib/line-notification";
 import { buildReviewerNotificationPayload } from "@/lib/line-notification-template";
-import {
-  getLoanRoutingIds,
-  getAdvisorRecipientEmail,
-  getAdminRecipientEmails,
-  getExecutiveRecipientEmail,
-} from "@/db/queries/notification-recipients";
+import { getRecipientEmailsByRole } from "@/db/queries/notification-recipients";
 import { buildReviewerRequestUrl, type ReviewerRole } from "@/lib/reviewer-deeplink";
 import { requireDemoAdminSession, readField } from "@/lib/demo-admin-session";
+
+const REVIEWER_ROLES: ReviewerRole[] = ["advisor", "admin", "super_admin", "executive"];
 
 export type FonReviewerDemoState = {
   status: "idle" | "success" | "error";
@@ -27,6 +24,15 @@ export async function sendDemoReviewerNotification(
   const context = gate.context;
 
   const role = readField(formData, "role") as ReviewerRole;
+  if (!REVIEWER_ROLES.includes(role)) {
+    return { status: "error", message: "ระบุบทบาทผู้ตรวจสอบไม่ถูกต้อง" };
+  }
+
+  const recipientEmail = readField(formData, "recipientEmail");
+  if (!recipientEmail) {
+    return { status: "error", message: "กรุณาเลือกอีเมลผู้รับ" };
+  }
+
   const loanId = readField(formData, "loanId");
   const studentName = readField(formData, "studentName");
 
@@ -40,45 +46,11 @@ export async function sendDemoReviewerNotification(
 
   let payloads;
   try {
-    let recipientEmails: string[] = [];
-    if (role === "advisor") {
-      if (!loanId) {
-        return { status: "error", message: "กรุณาระบุเลขที่คำร้อง" };
-      }
-      const routing = await getLoanRoutingIds(loanId);
-      if (!routing) {
-        return { status: "error", message: "ไม่พบคำร้องนี้" };
-      }
-      if (!routing.advisorId) {
-        return { status: "error", message: "ไม่พบข้อมูลอาจารย์ที่ปรึกษาสำหรับคำร้องนี้" };
-      }
-      const advisorEmail = await getAdvisorRecipientEmail(routing.advisorId);
-      if (!advisorEmail) {
-        return { status: "error", message: "ไม่พบข้อมูลติดต่ออาจารย์ที่ปรึกษา" };
-      }
-      recipientEmails = [advisorEmail];
-    } else if (role === "admin") {
-      if (!loanId) {
-        return { status: "error", message: "กรุณาระบุเลขที่คำร้อง" };
-      }
-      const routing = await getLoanRoutingIds(loanId);
-      if (!routing) {
-        return { status: "error", message: "ไม่พบคำร้องนี้" };
-      }
-      const adminEmails = await getAdminRecipientEmails(routing.assignedAdminId);
-      if (!adminEmails || adminEmails.length === 0) {
-        return { status: "error", message: "ไม่พบผู้ดูแลระบบที่สามารถแจ้งเตือนได้" };
-      }
-      recipientEmails = adminEmails;
-    } else if (role === "executive") {
-      const execEmail = await getExecutiveRecipientEmail();
-      if (!execEmail) {
-        return { status: "error", message: "ยังไม่มีผู้บริหารที่ได้รับมอบหมาย" };
-      }
-      recipientEmails = [execEmail];
-    } else {
-      return { status: "error", message: "ระบุบทบาทผู้ตรวจสอบไม่ถูกต้อง" };
+    const roleRecipientEmails = await getRecipientEmailsByRole(role);
+    if (!roleRecipientEmails.includes(recipientEmail)) {
+      return { status: "error", message: "อีเมลผู้รับไม่ตรงกับบทบาทที่เลือก" };
     }
+    const recipientEmails = [recipientEmail];
 
     const deepLinkUrl = buildReviewerRequestUrl(
       process.env.APP_BASE_URL ?? "http://localhost:8080",
