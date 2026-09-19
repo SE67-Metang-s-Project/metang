@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { CmuProfile } from "@/lib/cmu-auth";
+import { getProfileText, type CmuProfile } from "@/lib/cmu-auth";
 
 export const NURSING_ORGANIZATION_CODE = "12";
 export const NURSING_STUDENT_ID_PATTERN = /^\d{2}12\d{5}$/;
@@ -12,16 +12,6 @@ export type NurseAccessDecision =
       userType: "student" | "employee" | "unknown";
       reason: "student_id_not_eligible" | "employee_not_nursing" | "profile_not_eligible";
     };
-
-function getProfileText(profile: CmuProfile, key: string) {
-  const value = profile[key];
-
-  if (typeof value === "string" || typeof value === "number") {
-    return String(value).trim();
-  }
-
-  return "";
-}
 
 export function isEligibleNursingStudentId(studentId: string) {
   return NURSING_STUDENT_ID_PATTERN.test(studentId.trim());

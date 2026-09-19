@@ -274,6 +274,33 @@ export async function getCmuSession(): Promise<CmuSession | null> {
   return session;
 }
 
+export function getProfileText(profile: CmuProfile, key: string): string {
+  const value = profile[key];
+
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value).trim();
+  }
+
+  return "";
+}
+
+export type CmuUserType = "student" | "professor" | "employee" | "unknown";
+
+/**
+ * "Professor" is a placeholder itaccounttype_id until the real CMU Entra value for
+ * professors is confirmed.
+ */
+export function getCmuUserType(profile: CmuProfile): CmuUserType {
+  if (getProfileText(profile, "student_id")) return "student";
+
+  const accountType = getProfileText(profile, "itaccounttype_id");
+
+  if (accountType === "Professor") return "professor";
+  if (accountType === "MISEmpAcc") return "employee";
+
+  return "unknown";
+}
+
 export function getCmuDisplayName(profile: CmuProfile) {
   const fullNameKeys = ["full_name_TH", "full_name_EN", "display_name", "name"];
 

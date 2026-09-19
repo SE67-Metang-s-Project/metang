@@ -1,7 +1,13 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
-import { getCmuDisplayName, getCmuSession, type CmuProfile, type CmuSession } from "@/lib/cmu-auth";
+import {
+  getCmuDisplayName,
+  getCmuSession,
+  getProfileText,
+  type CmuProfile,
+  type CmuSession,
+} from "@/lib/cmu-auth";
 import { getNurseAccessDecision } from "@/lib/nurse-auth";
 import {
   getDevelopmentRoleUserId,
@@ -48,11 +54,8 @@ export type LoanSessionContext = {
 
 function profileText(profile: CmuProfile, keys: string[]) {
   for (const key of keys) {
-    const value = profile[key];
-    if (typeof value === "string" || typeof value === "number") {
-      const text = String(value).trim();
-      if (text) return text;
-    }
+    const text = getProfileText(profile, key);
+    if (text) return text;
   }
 
   return "";
