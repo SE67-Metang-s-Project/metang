@@ -1,0 +1,180 @@
+info:
+  name: Cancel the current student's active loan request
+  type: http
+  seq: 6
+  tags:
+    - Student_loans
+
+http:
+  method: POST
+  url: "{{baseUrl}}/student/loan-requests/:id/cancel"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  params:
+    - name: id
+      value: REQ202609060000
+      type: path
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+examples:
+  - name: 200 Response
+    description: Successful response
+    request:
+      url: "{{baseUrl}}/student/loan-requests/:id/cancel"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: REQ202609060000
+          type: path
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "id": "",
+              "studentId": "",
+              "advisorId": "",
+              "amount": 0,
+              "approvedAmount": 0,
+              "studentYear": 0,
+              "purpose": "",
+              "additionalNote": "",
+              "bankName": "",
+              "bankAccountNo": "",
+              "bankAccountName": "",
+              "installmentCount": 0,
+              "firstDueDate": "",
+              "status": "draft",
+              "submittedAt": "",
+              "cancelledAt": "",
+              "cancelledBy": "",
+              "disbursedAt": "",
+              "closedAt": "",
+              "createdAt": "",
+              "updatedAt": "",
+              "advisor": {
+                "id": "",
+                "fullNameTh": "",
+                "fullNameEn": ""
+              },
+              "approvals": [
+                {
+                  "id": "",
+                  "loanId": "",
+                  "step": "advisor",
+                  "attempt": 0,
+                  "decision": "pending",
+                  "decidedBy": "",
+                  "decidedAt": "",
+                  "comment": ""
+                }
+              ],
+              "fundTransactions": [
+                {
+                  "id": ""
+                }
+              ]
+            }
+          }
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/student/loan-requests/:id/cancel"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: REQ202609060000
+          type: path
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 404 Response
+    description: Not Found
+    request:
+      url: "{{baseUrl}}/student/loan-requests/:id/cancel"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: REQ202609060000
+          type: path
+    response:
+      status: 404
+      statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 409 Response
+    description: Conflict
+    request:
+      url: "{{baseUrl}}/student/loan-requests/:id/cancel"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: REQ202609060000
+          type: path
+    response:
+      status: 409
+      statusText: Conflict
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }

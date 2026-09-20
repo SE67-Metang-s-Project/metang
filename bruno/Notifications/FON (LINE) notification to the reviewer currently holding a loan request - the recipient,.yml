@@ -1,0 +1,267 @@
+info:
+  name: FON (LINE) notification to the reviewer currently holding a loan request - the recipient,
+  type: http
+  seq: 1
+  tags:
+    - Notifications
+
+http:
+  method: POST
+  url: "{{baseUrl}}/notifications/fon"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  body:
+    type: json
+    data: |-
+      {
+        "loanId": ""
+      }
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+examples:
+  - name: 200 Response
+    description: Successful response
+    request:
+      url: "{{baseUrl}}/notifications/fon"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "loanId": ""
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "loanId": "",
+              "role": "advisor",
+              "sent": 0,
+              "failed": 0
+            }
+          }
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/notifications/fon"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "loanId": ""
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 403 Response
+    description: Forbidden
+    request:
+      url: "{{baseUrl}}/notifications/fon"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "loanId": ""
+          }
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 404 Response
+    description: Not Found
+    request:
+      url: "{{baseUrl}}/notifications/fon"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "loanId": ""
+          }
+    response:
+      status: 404
+      statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 409 Response
+    description: Conflict
+    request:
+      url: "{{baseUrl}}/notifications/fon"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "loanId": ""
+          }
+    response:
+      status: 409
+      statusText: Conflict
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 422 Response
+    description: Unprocessable Entity
+    request:
+      url: "{{baseUrl}}/notifications/fon"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "loanId": ""
+          }
+    response:
+      status: 422
+      statusText: Unprocessable Entity
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 429 Response
+    description: Too Many Requests
+    request:
+      url: "{{baseUrl}}/notifications/fon"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "loanId": ""
+          }
+    response:
+      status: 429
+      statusText: Too Many Requests
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 500 Response
+    description: Internal Server Error
+    request:
+      url: "{{baseUrl}}/notifications/fon"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "loanId": ""
+          }
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }

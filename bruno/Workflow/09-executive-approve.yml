@@ -1,0 +1,36 @@
+info:
+  name: 09 executive approves
+  type: http
+  seq: 9
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/executive/loan-requests/{{walkLoanId}}/decision"
+  body:
+    type: json
+    data: |-
+      {
+        "decision": "approved"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.status
+      operator: eq
+      value: "pending_disbursement"
+  scripts:
+    - type: before-request
+      code: |-
+        // The walk degrades instead of cascading when an earlier step failed to produce an id.
+        if (!bru.getVar("walkLoanId")) bru.runner.skipRequest();
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0

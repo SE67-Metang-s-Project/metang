@@ -1,0 +1,6 @@
+info:
+  name: Advisor_loans
+  type: folder
+
+request:
+  auth: inherit

@@ -1,0 +1,32 @@
+info:
+  name: Financial summary and activity for the executive dashboard
+  type: http
+  seq: 1
+  tags:
+    - Executive
+
+http:
+  method: GET
+  url: "{{baseUrl}}/executive/financial-overview"
+  params:
+    - name: year
+      value: example
+      type: query
+  auth: inherit
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data
+      operator: isDefined
+    - expression: res.body.error
+      operator: isUndefined
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

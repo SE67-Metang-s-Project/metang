@@ -1,0 +1,44 @@
+info:
+  name: 08 admin approves a reduced amount
+  type: http
+  seq: 8
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/loan-requests/{{walkLoanId}}/decision"
+  body:
+    type: json
+    data: |-
+      {
+        "decision": "approved",
+        "approvedAmount": 20000,
+        "comment": "ปรับลดตามงบประมาณคงเหลือ"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.status
+      operator: eq
+      value: "pending_executive"
+    - expression: res.body.data.approvedAmount
+      operator: eq
+      value: "20000"
+  scripts:
+    - type: before-request
+      code: |-
+        // The walk degrades instead of cascading when an earlier step failed to produce an id.
+        if (!bru.getVar("walkLoanId")) bru.runner.skipRequest();
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  A comment is required only because this reduces the amount.

@@ -1,0 +1,6 @@
+info:
+  name: Loan_requests
+  type: folder
+
+request:
+  auth: inherit

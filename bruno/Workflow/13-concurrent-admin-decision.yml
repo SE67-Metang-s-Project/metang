@@ -1,0 +1,58 @@
+info:
+  name: 13 concurrent admin decisions - one wins, one conflicts
+  type: http
+  seq: 13
+  tags:
+    - Workflow
+
+http:
+  method: GET
+  url: "{{baseUrl}}/admin/loan-requests/REQ202609060004"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.status
+      operator: eq
+      value: "pending_admin"
+  scripts:
+    - type: tests
+      code: |-
+        // Fires two decisions at the same loan simultaneously. decideAdminLoanRequest re-reads
+        // the row inside a Serializable transaction and guards the update with the expected
+        // status, so exactly one must win and the other must map to 409 CONFLICT. This is the
+        // only check in the repo that exercises that guard at runtime.
+        const url = bru.interpolate("{{baseUrl}}") + "/admin/loan-requests/REQ202609060004/decision";
+        const payload = { decision: "approved", approvedAmount: 3000 };
+
+        const statusOf = (result) =>
+          result?.status ?? result?.response?.status ?? result?.res?.status ?? 0;
+
+        const decide = () =>
+          bru
+            .sendRequest({
+              method: "POST",
+              url,
+              headers: { "Content-Type": "application/json" },
+              data: payload,
+            })
+            .then(statusOf)
+            .catch((error) => statusOf(error));
+
+        const codes = (await Promise.all([decide(), decide()])).sort();
+
+        test("exactly one decision wins", function () {
+          expect(codes).to.eql([200, 409]);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  Runs against the seeded pending_admin loan, whose amount is 3000 - approving the exact
+  requested amount needs no comment.

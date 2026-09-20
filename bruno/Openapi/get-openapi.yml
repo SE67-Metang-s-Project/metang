@@ -1,0 +1,36 @@
+info:
+  name: get-openapi
+  type: http
+  seq: 1
+  tags:
+    - Openapi
+
+http:
+  method: GET
+  url: "{{baseUrl}}/openapi"
+  auth: inherit
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "302"
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+examples:
+  - name: 307 Response
+    description: Redirect response
+    request:
+      url: "{{baseUrl}}/openapi"
+      method: GET
+    response:
+      status: 307
+      statusText: Temporary Redirect
+      body:
+        type: text
+        data: ""

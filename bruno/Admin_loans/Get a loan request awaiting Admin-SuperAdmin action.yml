@@ -1,0 +1,238 @@
+info:
+  name: Get a loan request awaiting Admin/SuperAdmin action
+  type: http
+  seq: 2
+  tags:
+    - Admin_loans
+
+http:
+  method: GET
+  url: "{{baseUrl}}/admin/loan-requests/:id"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  params:
+    - name: id
+      value: "{{adminLoanId}}"
+      type: path
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data
+      operator: isDefined
+    - expression: res.body.error
+      operator: isUndefined
+    - expression: res.body.data.id
+      operator: isString
+    - expression: res.body.data.bankAccountNo
+      operator: isDefined
+  scripts:
+    - type: before-request
+      code: |-
+        // Nothing to fetch when the list above came back empty.
+        if (!bru.getVar("adminLoanId")) bru.runner.skipRequest();
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+examples:
+  - name: 200 Response
+    description: Successful response
+    request:
+      url: "{{baseUrl}}/admin/loan-requests/:id"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: REQ202609060000
+          type: path
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "id": "",
+              "studentId": "",
+              "advisorId": "",
+              "amount": 0,
+              "approvedAmount": 0,
+              "studentYear": 0,
+              "purpose": "",
+              "additionalNote": "",
+              "bankName": "",
+              "bankAccountNo": "",
+              "bankAccountName": "",
+              "installmentCount": 0,
+              "firstDueDate": "",
+              "status": "draft",
+              "submittedAt": "",
+              "cancelledAt": "",
+              "cancelledBy": "",
+              "disbursedAt": "",
+              "closedAt": "",
+              "createdAt": "",
+              "updatedAt": "",
+              "student": {
+                "id": "",
+                "studentCode": "",
+                "fullNameTh": "",
+                "fullNameEn": "",
+                "phone": ""
+              },
+              "advisor": {
+                "id": "",
+                "fullNameTh": "",
+                "fullNameEn": ""
+              },
+              "approvals": [
+                {
+                  "id": "",
+                  "loanId": "",
+                  "step": "advisor",
+                  "attempt": 0,
+                  "decision": "pending",
+                  "decidedBy": "",
+                  "decidedAt": "",
+                  "comment": "",
+                  "createdAt": "",
+                  "decider": {
+                    "id": "",
+                    "fullNameTh": "",
+                    "fullNameEn": ""
+                  }
+                }
+              ],
+              "fundTransactions": [
+                {
+                  "id": ""
+                }
+              ]
+            }
+          }
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/admin/loan-requests/:id"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: REQ202609060000
+          type: path
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 403 Response
+    description: Forbidden
+    request:
+      url: "{{baseUrl}}/admin/loan-requests/:id"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: REQ202609060000
+          type: path
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 404 Response
+    description: Not Found
+    request:
+      url: "{{baseUrl}}/admin/loan-requests/:id"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: REQ202609060000
+          type: path
+    response:
+      status: 404
+      statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 500 Response
+    description: Internal Server Error
+    request:
+      url: "{{baseUrl}}/admin/loan-requests/:id"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: REQ202609060000
+          type: path
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }

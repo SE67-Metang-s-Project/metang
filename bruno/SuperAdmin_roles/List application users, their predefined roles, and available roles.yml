@@ -1,0 +1,150 @@
+info:
+  name: List application users, their predefined roles, and available roles
+  type: http
+  seq: 1
+  tags:
+    - SuperAdmin_roles
+
+http:
+  method: GET
+  url: "{{baseUrl}}/super-admin/users"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data
+      operator: isDefined
+    - expression: res.body.error
+      operator: isUndefined
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+examples:
+  - name: 200 Response
+    description: Successful response
+    request:
+      url: "{{baseUrl}}/super-admin/users"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "users": [
+                {
+                  "id": "",
+                  "email": "",
+                  "cmuAccount": "",
+                  "studentCode": "",
+                  "fullNameTh": "",
+                  "fullNameEn": "",
+                  "phone": "",
+                  "createdAt": "",
+                  "updatedAt": "",
+                  "roles": [
+                    {
+                      "role": "student",
+                      "grantedBy": "",
+                      "grantedAt": ""
+                    }
+                  ]
+                }
+              ],
+              "availableRoles": [
+                "student"
+              ]
+            }
+          }
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/super-admin/users"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 403 Response
+    description: Forbidden
+    request:
+      url: "{{baseUrl}}/super-admin/users"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 500 Response
+    description: Internal Server Error
+    request:
+      url: "{{baseUrl}}/super-admin/users"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }

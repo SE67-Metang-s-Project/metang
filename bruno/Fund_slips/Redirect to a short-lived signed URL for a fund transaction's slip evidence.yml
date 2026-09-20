@@ -1,0 +1,171 @@
+info:
+  name: Redirect to a short-lived signed URL for a fund transaction's slip evidence
+  type: http
+  seq: 1
+  tags:
+    - Fund_slips
+
+http:
+  method: GET
+  url: "{{baseUrl}}/fund-transactions/:id/slip"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  params:
+    - name: id
+      value: "{{fundTxId}}"
+      type: path
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "302"
+  scripts:
+    - type: before-request
+      code: |-
+        // This folder sorts before SuperAdmin_fund, so pull a slip-bearing
+        // transaction id ourselves instead of relying on run order.
+        await bru.runRequest("SuperAdmin_fund/List fund ledger transactions and the current fund balance.yml");
+        if (!bru.getVar("fundTxId")) bru.runner.skipRequest();
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+examples:
+  - name: 302 Response
+    description: Successful response
+    request:
+      url: "{{baseUrl}}/fund-transactions/:id/slip"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: "123"
+          type: path
+    response:
+      status: 302
+      statusText: Found
+      body:
+        type: text
+        data: ""
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/fund-transactions/:id/slip"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: "123"
+          type: path
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 403 Response
+    description: Forbidden
+    request:
+      url: "{{baseUrl}}/fund-transactions/:id/slip"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: "123"
+          type: path
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 404 Response
+    description: Not Found
+    request:
+      url: "{{baseUrl}}/fund-transactions/:id/slip"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: "123"
+          type: path
+    response:
+      status: 404
+      statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 500 Response
+    description: Internal Server Error
+    request:
+      url: "{{baseUrl}}/fund-transactions/:id/slip"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: "123"
+          type: path
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+
+docs: 'Use it as an image source - `<img src="/api/fund-transactions/{id}/slip">`. Testing it from this page fails with "Failed to fetch": the 302 target is cross-origin and Supabase answers `Access-Control-Allow-Origin: `, which a credentialed fetch rejects. An `<img>` load is not a credentialed CORS request, so it is unaffected.'

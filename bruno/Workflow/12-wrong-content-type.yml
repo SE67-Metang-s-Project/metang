@@ -1,0 +1,36 @@
+info:
+  name: 12 a non-JSON content type is rejected
+  type: http
+  seq: 12
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/advisor/loan-requests/REQ202609060003/decision"
+  headers:
+    - name: Content-Type
+      value: text/plain
+  body:
+    type: text
+    data: |-
+      {"decision":"approved"}
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+    - expression: res.body.error.code
+      operator: eq
+      value: "FORBIDDEN"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  validateJsonRequest runs before any lookup, so this is 403 regardless of the loan's
+  state.

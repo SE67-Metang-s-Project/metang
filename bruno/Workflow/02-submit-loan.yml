@@ -1,0 +1,51 @@
+info:
+  name: 02 submit a new loan
+  type: http
+  seq: 2
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/student/loan-requests"
+  body:
+    type: json
+    data: |-
+      {
+        "advisorName": "อาจารย์ที่ปรึกษา ทดสอบ",
+        "amount": 30000,
+        "studentYear": 2,
+        "purpose": "ค่าเทอม 1/2569",
+        "bankName": "ไทยพาณิชย์",
+        "bankAccountNo": "1234567890",
+        "bankAccountName": "นักศึกษา ทดสอบ 1",
+        "installmentCount": 3
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+    - expression: res.body.data.status
+      operator: eq
+      value: "pending_advisor"
+    - expression: res.body.data.amount
+      operator: eq
+      value: "30000"
+    - expression: res.body.data.id
+      operator: isDefined
+  scripts:
+    - type: after-response
+      code: |-
+        bru.setVar("walkLoanId", res.body.data?.id ?? "");
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  advisorName is matched on an exact fullNameTh equality that must resolve to exactly
+  one advisor, so it has to be a literal seeded name.

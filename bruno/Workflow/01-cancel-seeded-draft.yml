@@ -1,0 +1,30 @@
+info:
+  name: 01 cancel the seeded draft
+  type: http
+  seq: 1
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/student/loan-requests/REQ202609060001/cancel"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.status
+      operator: eq
+      value: "cancelled"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  The dev-bypass student is pinned to …0101, who holds REQ202609060001 in `draft`.
+  Because `draft` is non-terminal, `one_open_loan_per_student` blocks a new submission
+  until this is cancelled. This endpoint takes no body and skips validateJsonRequest.

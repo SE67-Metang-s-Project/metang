@@ -1,0 +1,47 @@
+info:
+  name: 05 student resubmits
+  type: http
+  seq: 5
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/student/loan-requests/{{walkLoanId}}/resubmit"
+  body:
+    type: json
+    data: |-
+      {
+        "advisorName": "อาจารย์ที่ปรึกษา ทดสอบ",
+        "amount": 30000,
+        "studentYear": 2,
+        "purpose": "ค่าเทอม 1/2569",
+        "bankName": "ไทยพาณิชย์",
+        "bankAccountNo": "1234567890",
+        "bankAccountName": "นักศึกษา ทดสอบ 1",
+        "installmentCount": 3
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.status
+      operator: eq
+      value: "pending_advisor"
+  scripts:
+    - type: before-request
+      code: |-
+        // The walk degrades instead of cascading when an earlier step failed to produce an id.
+        if (!bru.getVar("walkLoanId")) bru.runner.skipRequest();
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  Resubmit re-enters at the step that returned it - advisor here - and opens a new
+  LoanApproval at attempt + 1.

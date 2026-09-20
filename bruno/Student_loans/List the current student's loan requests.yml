@@ -1,0 +1,116 @@
+info:
+  name: List the current student's loan requests
+  type: http
+  seq: 2
+  tags:
+    - Student_loans
+
+http:
+  method: GET
+  url: "{{baseUrl}}/student/loan-requests"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+examples:
+  - name: 200 Response
+    description: Successful response
+    request:
+      url: "{{baseUrl}}/student/loan-requests"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": [
+              {
+                "id": "",
+                "studentId": "",
+                "advisorId": "",
+                "amount": 0,
+                "approvedAmount": 0,
+                "studentYear": 0,
+                "purpose": "",
+                "additionalNote": "",
+                "bankName": "",
+                "bankAccountNo": "",
+                "bankAccountName": "",
+                "installmentCount": 0,
+                "firstDueDate": "",
+                "status": "draft",
+                "submittedAt": "",
+                "cancelledAt": "",
+                "cancelledBy": "",
+                "disbursedAt": "",
+                "closedAt": "",
+                "createdAt": "",
+                "updatedAt": "",
+                "advisor": {
+                  "id": "",
+                  "fullNameTh": "",
+                  "fullNameEn": ""
+                },
+                "approvals": [
+                  {
+                    "id": "",
+                    "loanId": "",
+                    "step": "advisor",
+                    "attempt": 0,
+                    "decision": "pending",
+                    "decidedBy": "",
+                    "decidedAt": "",
+                    "comment": ""
+                  }
+                ],
+                "fundTransactions": [
+                  {
+                    "id": ""
+                  }
+                ]
+              }
+            ]
+          }
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/student/loan-requests"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }

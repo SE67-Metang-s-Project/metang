@@ -1,0 +1,40 @@
+info:
+  name: 10 replaying the advisor decision conflicts
+  type: http
+  seq: 10
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/advisor/loan-requests/{{walkLoanId}}/decision"
+  body:
+    type: json
+    data: |-
+      {
+        "decision": "approved"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+    - expression: res.body.error.code
+      operator: eq
+      value: "CONFLICT"
+  scripts:
+    - type: before-request
+      code: |-
+        // The walk degrades instead of cascading when an earlier step failed to produce an id.
+        if (!bru.getVar("walkLoanId")) bru.runner.skipRequest();
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  The CAS guard: the loan is no longer pending_advisor, so the guarded updateMany
+  matches zero rows.

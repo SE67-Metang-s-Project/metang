@@ -1,0 +1,150 @@
+info:
+  name: List fund ledger transactions and the current fund balance
+  type: http
+  seq: 1
+  tags:
+    - SuperAdmin_fund
+
+http:
+  method: GET
+  url: "{{baseUrl}}/super-admin/fund-transactions"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data
+      operator: isDefined
+    - expression: res.body.error
+      operator: isUndefined
+    # Seeded ledger: 100000 top_up - 4500 - 3000 disbursed + 3000 repaid + 250 adjust.
+    - expression: res.body.data.balance
+      operator: eq
+      value: "95750"
+  scripts:
+    - type: after-response
+      code: |-
+        // Chained into the detail request below (seq 2) as a path param.
+        bru.setVar("fundTxId", String(res.body.data?.transactions?.find((t) => t.slipPath)?.id ?? ""));
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+examples:
+  - name: 200 Response
+    description: Successful response
+    request:
+      url: "{{baseUrl}}/super-admin/fund-transactions"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "balance": 0,
+              "transactions": [
+                {
+                  "id": "",
+                  "kind": "top_up",
+                  "amount": 0,
+                  "direction": 1,
+                  "loanId": "",
+                  "performedBy": "",
+                  "slipPath": "",
+                  "note": "",
+                  "createdAt": ""
+                }
+              ],
+              "pendingDisbursement": 0
+            }
+          }
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/super-admin/fund-transactions"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 403 Response
+    description: Forbidden
+    request:
+      url: "{{baseUrl}}/super-admin/fund-transactions"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 500 Response
+    description: Internal Server Error
+    request:
+      url: "{{baseUrl}}/super-admin/fund-transactions"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }

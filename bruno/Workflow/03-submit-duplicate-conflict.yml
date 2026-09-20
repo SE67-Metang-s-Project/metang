@@ -1,0 +1,41 @@
+info:
+  name: 03 submitting again conflicts
+  type: http
+  seq: 3
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/student/loan-requests"
+  body:
+    type: json
+    data: |-
+      {
+        "advisorName": "อาจารย์ที่ปรึกษา ทดสอบ",
+        "amount": 30000,
+        "studentYear": 2,
+        "purpose": "ค่าเทอม 1/2569",
+        "bankName": "ไทยพาณิชย์",
+        "bankAccountNo": "1234567890",
+        "bankAccountName": "นักศึกษา ทดสอบ 1",
+        "installmentCount": 3
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+    - expression: res.body.error.code
+      operator: eq
+      value: "CONFLICT"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  one_open_loan_per_student: the loan created in step 02 is still open.

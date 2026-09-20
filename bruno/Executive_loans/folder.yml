@@ -1,0 +1,6 @@
+info:
+  name: Executive_loans
+  type: folder
+
+request:
+  auth: inherit

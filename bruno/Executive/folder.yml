@@ -1,0 +1,6 @@
+info:
+  name: Executive
+  type: folder
+
+request:
+  auth: inherit

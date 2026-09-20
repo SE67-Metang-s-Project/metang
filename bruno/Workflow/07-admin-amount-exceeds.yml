@@ -1,0 +1,41 @@
+info:
+  name: 07 admin cannot approve above the requested amount
+  type: http
+  seq: 7
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/loan-requests/{{walkLoanId}}/decision"
+  body:
+    type: json
+    data: |-
+      {
+        "decision": "approved",
+        "approvedAmount": 999999,
+        "comment": "เกินวงเงินที่ขอ"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "422"
+    - expression: res.body.error.code
+      operator: eq
+      value: "VALIDATION_ERROR"
+  scripts:
+    - type: before-request
+      code: |-
+        // The walk degrades instead of cascading when an earlier step failed to produce an id.
+        if (!bru.getVar("walkLoanId")) bru.runner.skipRequest();
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  AMOUNT_EXCEEDS_REQUEST. The loan must stay at pending_admin for step 08.

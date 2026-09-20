@@ -73,3 +73,7 @@ metang-api/
 
 # Contains real API credentials, marked "ห้ามเผยแพร่" (do not distribute)
 docs/Email_API_Manual.pdf
+
+# Bruno API collection: local secrets and generated reports
+bruno/.env
+bruno/reports/

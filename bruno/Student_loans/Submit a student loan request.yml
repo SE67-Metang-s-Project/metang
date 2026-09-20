@@ -1,0 +1,304 @@
+info:
+  name: Submit a student loan request
+  type: http
+  seq: 3
+  tags:
+    - Student_loans
+
+http:
+  method: POST
+  url: "{{baseUrl}}/student/loan-requests"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  body:
+    type: json
+    data: |-
+      {
+        "advisorName": "อาจารย์ที่ปรึกษา ทดสอบ",
+        "amount": 5000,
+        "studentYear": 2,
+        "purpose": "ค่าใช้จ่ายฉุกเฉิน",
+        "additionalNote": "ค่าใช้จ่ายสำหรับอุปกรณ์การเรียน",
+        "bankName": "ธนาคารกรุงไทย",
+        "bankAccountNo": "1234567890",
+        "bankAccountName": "นักศึกษาทดสอบ",
+        "installmentCount": 1
+      }
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+examples:
+  - name: 201 Response
+    description: Successful response
+    request:
+      url: "{{baseUrl}}/student/loan-requests"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "advisorName": "อาจารย์ทดสอบ",
+            "amount": 5000,
+            "studentYear": 2,
+            "purpose": "ค่าใช้จ่ายฉุกเฉิน",
+            "additionalNote": "ค่าใช้จ่ายสำหรับอุปกรณ์การเรียน",
+            "bankName": "ธนาคารกรุงไทย",
+            "bankAccountNo": "1234567890",
+            "bankAccountName": "นักศึกษาทดสอบ",
+            "installmentCount": 1
+          }
+    response:
+      status: 201
+      statusText: Created
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "id": "",
+              "studentId": "",
+              "advisorId": "",
+              "amount": 0,
+              "approvedAmount": 0,
+              "studentYear": 0,
+              "purpose": "",
+              "additionalNote": "",
+              "bankName": "",
+              "bankAccountNo": "",
+              "bankAccountName": "",
+              "installmentCount": 0,
+              "firstDueDate": "",
+              "status": "draft",
+              "submittedAt": "",
+              "cancelledAt": "",
+              "cancelledBy": "",
+              "disbursedAt": "",
+              "closedAt": "",
+              "createdAt": "",
+              "updatedAt": "",
+              "advisor": {
+                "id": "",
+                "fullNameTh": "",
+                "fullNameEn": ""
+              },
+              "approvals": [
+                {
+                  "id": "",
+                  "loanId": "",
+                  "step": "advisor",
+                  "attempt": 0,
+                  "decision": "pending",
+                  "decidedBy": "",
+                  "decidedAt": "",
+                  "comment": ""
+                }
+              ],
+              "fundTransactions": [
+                {
+                  "id": ""
+                }
+              ]
+            }
+          }
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/student/loan-requests"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "advisorName": "อาจารย์ทดสอบ",
+            "amount": 5000,
+            "studentYear": 2,
+            "purpose": "ค่าใช้จ่ายฉุกเฉิน",
+            "additionalNote": "ค่าใช้จ่ายสำหรับอุปกรณ์การเรียน",
+            "bankName": "ธนาคารกรุงไทย",
+            "bankAccountNo": "1234567890",
+            "bankAccountName": "นักศึกษาทดสอบ",
+            "installmentCount": 1
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 403 Response
+    description: Forbidden
+    request:
+      url: "{{baseUrl}}/student/loan-requests"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "advisorName": "อาจารย์ทดสอบ",
+            "amount": 5000,
+            "studentYear": 2,
+            "purpose": "ค่าใช้จ่ายฉุกเฉิน",
+            "additionalNote": "ค่าใช้จ่ายสำหรับอุปกรณ์การเรียน",
+            "bankName": "ธนาคารกรุงไทย",
+            "bankAccountNo": "1234567890",
+            "bankAccountName": "นักศึกษาทดสอบ",
+            "installmentCount": 1
+          }
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 409 Response
+    description: Conflict
+    request:
+      url: "{{baseUrl}}/student/loan-requests"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "advisorName": "อาจารย์ทดสอบ",
+            "amount": 5000,
+            "studentYear": 2,
+            "purpose": "ค่าใช้จ่ายฉุกเฉิน",
+            "additionalNote": "ค่าใช้จ่ายสำหรับอุปกรณ์การเรียน",
+            "bankName": "ธนาคารกรุงไทย",
+            "bankAccountNo": "1234567890",
+            "bankAccountName": "นักศึกษาทดสอบ",
+            "installmentCount": 1
+          }
+    response:
+      status: 409
+      statusText: Conflict
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 422 Response
+    description: Unprocessable Entity
+    request:
+      url: "{{baseUrl}}/student/loan-requests"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "advisorName": "อาจารย์ทดสอบ",
+            "amount": 5000,
+            "studentYear": 2,
+            "purpose": "ค่าใช้จ่ายฉุกเฉิน",
+            "additionalNote": "ค่าใช้จ่ายสำหรับอุปกรณ์การเรียน",
+            "bankName": "ธนาคารกรุงไทย",
+            "bankAccountNo": "1234567890",
+            "bankAccountName": "นักศึกษาทดสอบ",
+            "installmentCount": 1
+          }
+    response:
+      status: 422
+      statusText: Unprocessable Entity
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 500 Response
+    description: Internal Server Error
+    request:
+      url: "{{baseUrl}}/student/loan-requests"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "advisorName": "อาจารย์ทดสอบ",
+            "amount": 5000,
+            "studentYear": 2,
+            "purpose": "ค่าใช้จ่ายฉุกเฉิน",
+            "additionalNote": "ค่าใช้จ่ายสำหรับอุปกรณ์การเรียน",
+            "bankName": "ธนาคารกรุงไทย",
+            "bankAccountNo": "1234567890",
+            "bankAccountName": "นักศึกษาทดสอบ",
+            "installmentCount": 1
+          }
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }

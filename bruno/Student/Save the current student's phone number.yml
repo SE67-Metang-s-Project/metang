@@ -1,0 +1,187 @@
+info:
+  name: Save the current student's phone number
+  type: http
+  seq: 2
+  tags:
+    - Student
+
+http:
+  method: POST
+  url: "{{baseUrl}}/student/phone-number"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  body:
+    type: json
+    data: |-
+      {
+        "phoneNumber": "0812345678"
+      }
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    # eq coerces a numeric-looking string, so 0812345678 would compare as 812345678.
+    - expression: res.body.data.phone
+      operator: matches
+      value: "^0812345678$"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+examples:
+  - name: 200 Response
+    description: Successful response
+    request:
+      url: "{{baseUrl}}/student/phone-number"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "phoneNumber": ""
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "phone": ""
+            }
+          }
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/student/phone-number"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "phoneNumber": ""
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 403 Response
+    description: Forbidden
+    request:
+      url: "{{baseUrl}}/student/phone-number"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "phoneNumber": ""
+          }
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 422 Response
+    description: Unprocessable Entity
+    request:
+      url: "{{baseUrl}}/student/phone-number"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "phoneNumber": ""
+          }
+    response:
+      status: 422
+      statusText: Unprocessable Entity
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 500 Response
+    description: Internal Server Error
+    request:
+      url: "{{baseUrl}}/student/phone-number"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "phoneNumber": ""
+          }
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }

@@ -1,0 +1,9 @@
+name: local
+variables:
+  - name: baseUrl
+    value: http://localhost:8080/api
+  # Inert: the app reads the session from an HTTP-only cookie, never this header.
+  # Imported requests carry a `cmu_session` header from the spec's security scheme;
+  # leaving it empty keeps them valid. Local access comes from DEV_AS_* in .env.
+  - name: apiKey
+    value: ""

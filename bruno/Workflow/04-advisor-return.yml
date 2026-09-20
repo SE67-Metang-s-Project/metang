@@ -1,0 +1,40 @@
+info:
+  name: 04 advisor returns it
+  type: http
+  seq: 4
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/advisor/loan-requests/{{walkLoanId}}/decision"
+  body:
+    type: json
+    data: |-
+      {
+        "decision": "returned",
+        "comment": "แนบเอกสารไม่ครบ"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.status
+      operator: eq
+      value: "returned"
+  scripts:
+    - type: before-request
+      code: |-
+        // The walk degrades instead of cascading when an earlier step failed to produce an id.
+        if (!bru.getVar("walkLoanId")) bru.runner.skipRequest();
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  A comment is mandatory for `returned` and `rejected`.

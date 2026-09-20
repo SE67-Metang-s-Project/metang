@@ -1,0 +1,6 @@
+info:
+  name: SuperAdmin_roles
+  type: folder
+
+request:
+  auth: inherit

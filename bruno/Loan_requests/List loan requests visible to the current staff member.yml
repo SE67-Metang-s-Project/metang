@@ -1,0 +1,176 @@
+info:
+  name: List loan requests visible to the current staff member
+  type: http
+  seq: 1
+  tags:
+    - Loan_requests
+
+http:
+  method: GET
+  url: "{{baseUrl}}/loan-requests"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+examples:
+  - name: 200 Response
+    description: Successful response
+    request:
+      url: "{{baseUrl}}/loan-requests"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": [
+              {
+                "id": "",
+                "studentId": "",
+                "advisorId": "",
+                "amount": 0,
+                "approvedAmount": 0,
+                "studentYear": 0,
+                "purpose": "",
+                "additionalNote": "",
+                "installmentCount": 0,
+                "firstDueDate": "",
+                "status": "draft",
+                "submittedAt": "",
+                "cancelledAt": "",
+                "cancelledBy": "",
+                "disbursedAt": "",
+                "closedAt": "",
+                "createdAt": "",
+                "updatedAt": "",
+                "student": {
+                  "id": "",
+                  "fullNameTh": "",
+                  "fullNameEn": "",
+                  "studentCode": "",
+                  "phone": ""
+                },
+                "advisor": {
+                  "id": "",
+                  "fullNameTh": "",
+                  "fullNameEn": ""
+                },
+                "cancelledByUser": {
+                  "id": "",
+                  "fullNameTh": "",
+                  "fullNameEn": ""
+                },
+                "approvals": [
+                  {
+                    "id": "",
+                    "loanId": "",
+                    "step": "advisor",
+                    "attempt": 0,
+                    "decision": "pending",
+                    "decidedBy": "",
+                    "decidedAt": "",
+                    "comment": "",
+                    "decider": {
+                      "id": "",
+                      "fullNameTh": "",
+                      "fullNameEn": ""
+                    }
+                  }
+                ],
+                "installments": [
+                  {
+                    "id": "",
+                    "loanId": "",
+                    "seq": 0,
+                    "dueDate": "",
+                    "amountDue": 0,
+                    "amountPaid": 0,
+                    "settledAt": ""
+                  }
+                ],
+                "payments": [
+                  {
+                    "id": "",
+                    "loanId": "",
+                    "installmentId": "",
+                    "amount": 0,
+                    "slipPath": "",
+                    "slipRef": "",
+                    "status": "",
+                    "confirmedBy": "",
+                    "confirmedAt": "",
+                    "paidAt": "",
+                    "createdAt": ""
+                  }
+                ]
+              }
+            ]
+          }
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/loan-requests"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 403 Response
+    description: Forbidden
+    request:
+      url: "{{baseUrl}}/loan-requests"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+
+docs: Returns every request for global staff roles and assigned requests for advisors.

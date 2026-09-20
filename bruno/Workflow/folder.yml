@@ -1,0 +1,12 @@
+info:
+  name: Workflow
+  type: folder
+  seq: 1
+
+request:
+  auth: inherit
+
+docs: |-
+  An ordered walk through the loan state machine, run as its own `bru run` invocation by
+  scripts/api-test-isolated.mjs. Requires a freshly seeded database: step 01 cancels the draft
+  that the dev-bypass student already owns, which is what frees them to submit a new one.

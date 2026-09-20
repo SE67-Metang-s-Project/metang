@@ -1,0 +1,242 @@
+info:
+  name: Record a manual fund transaction (top-up, withdrawal, or adjustment)
+  type: http
+  seq: 2
+  tags:
+    - SuperAdmin_fund
+
+http:
+  method: POST
+  url: "{{baseUrl}}/super-admin/fund-transactions"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  body:
+    type: json
+    data: |-
+      {
+        "kind": "top_up",
+        "amount": 1000
+      }
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.kind
+      operator: eq
+      value: "top_up"
+    - expression: res.body.data.amount
+      operator: eq
+      value: "1000"
+    - expression: res.body.data.direction
+      operator: eq
+      value: "1"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+examples:
+  - name: 200 Response
+    description: Successful response
+    request:
+      url: "{{baseUrl}}/super-admin/fund-transactions"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "kind": "top_up",
+            "amount": 0,
+            "note": ""
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "id": "",
+              "kind": "top_up",
+              "amount": 0,
+              "direction": 1,
+              "loanId": "",
+              "performedBy": "",
+              "slipPath": "",
+              "note": "",
+              "createdAt": ""
+            }
+          }
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/super-admin/fund-transactions"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "kind": "top_up",
+            "amount": 0,
+            "note": ""
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 403 Response
+    description: Forbidden
+    request:
+      url: "{{baseUrl}}/super-admin/fund-transactions"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "kind": "top_up",
+            "amount": 0,
+            "note": ""
+          }
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 409 Response
+    description: Conflict
+    request:
+      url: "{{baseUrl}}/super-admin/fund-transactions"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "kind": "top_up",
+            "amount": 0,
+            "note": ""
+          }
+    response:
+      status: 409
+      statusText: Conflict
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 422 Response
+    description: Unprocessable Entity
+    request:
+      url: "{{baseUrl}}/super-admin/fund-transactions"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "kind": "top_up",
+            "amount": 0,
+            "note": ""
+          }
+    response:
+      status: 422
+      statusText: Unprocessable Entity
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
+  - name: 500 Response
+    description: Internal Server Error
+    request:
+      url: "{{baseUrl}}/super-admin/fund-transactions"
+      method: POST
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "kind": "top_up",
+            "amount": 0,
+            "note": ""
+          }
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }

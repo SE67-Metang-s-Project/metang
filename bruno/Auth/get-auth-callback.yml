@@ -1,0 +1,28 @@
+info:
+  name: get-auth-callback
+  type: http
+  seq: 1
+  tags:
+    - Auth
+
+http:
+  method: GET
+  url: "{{baseUrl}}/auth/callback"
+  params:
+    - name: error
+      value: example
+      type: query
+    - name: code
+      value: example
+      type: query
+    - name: state
+      value: example
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

@@ -20,7 +20,8 @@
     "db:pull": "node scripts/with-infisical.mjs prisma db pull",
     "db:studio": "node scripts/with-infisical.mjs prisma studio",
     "db:seed": "node scripts/with-infisical.mjs prisma db seed",
-    "db:reset": "node scripts/with-infisical.mjs tsx db/seed.ts --reset"
+    "db:reset": "node scripts/with-infisical.mjs tsx db/seed.ts --reset",
+    "api:test": "node scripts/api-test-isolated.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
@@ -41,6 +42,7 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@usebruno/cli": "^4.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "next-openapi-gen": "^1.7.3",

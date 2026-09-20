@@ -1,0 +1,6 @@
+info:
+  name: Openapi
+  type: folder
+
+request:
+  auth: inherit

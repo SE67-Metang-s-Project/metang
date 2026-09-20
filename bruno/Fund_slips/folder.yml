@@ -1,0 +1,6 @@
+info:
+  name: Fund_slips
+  type: folder
+
+request:
+  auth: inherit

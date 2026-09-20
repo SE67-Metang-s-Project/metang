@@ -1,0 +1,15 @@
+opencollection: 1.0.0
+
+info:
+  name: Me_Tang API
+  version: "1"
+
+docs:
+  content: API for the CMU student emergency loan workflow.
+  type: text/markdown
+bundled: false
+extensions:
+  bruno:
+    ignore:
+      - node_modules
+      - .git

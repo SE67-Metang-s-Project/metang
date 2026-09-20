@@ -1,0 +1,9 @@
+name: isolated
+variables:
+  # Port 8081, not the dev server's 8080, so a running `npm run dev` can never be mistaken for
+  # the throwaway instance that scripts/api-test-isolated.mjs starts.
+  - name: baseUrl
+    value: http://localhost:8081/api
+  # Inert: the app reads the session from an HTTP-only cookie, never this header.
+  - name: apiKey
+    value: ""

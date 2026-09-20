@@ -1,0 +1,6 @@
+info:
+  name: SuperAdmin_fund
+  type: folder
+
+request:
+  auth: inherit

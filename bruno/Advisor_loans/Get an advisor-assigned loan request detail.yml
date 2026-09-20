@@ -1,0 +1,151 @@
+info:
+  name: Get an advisor-assigned loan request detail
+  type: http
+  seq: 2
+  tags:
+    - Advisor_loans
+
+http:
+  method: GET
+  url: "{{baseUrl}}/advisor/loan-requests/:id"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  params:
+    - name: id
+      value: "{{advisorLoanId}}"
+      type: path
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data
+      operator: isDefined
+    - expression: res.body.error
+      operator: isUndefined
+    - expression: res.body.data.id
+      operator: isString
+    - expression: res.body.data.bankAccountNo
+      operator: isUndefined
+    - expression: res.body.data.bankName
+      operator: isUndefined
+    - expression: res.body.data.bankAccountName
+      operator: isUndefined
+  scripts:
+    - type: before-request
+      code: |-
+        // Nothing to fetch when the list above came back empty.
+        if (!bru.getVar("advisorLoanId")) bru.runner.skipRequest();
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+examples:
+  - name: 200 Response
+    description: Successful response
+    request:
+      url: "{{baseUrl}}/advisor/loan-requests/:id"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: REQ202609060000
+          type: path
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "id": "",
+              "studentId": "",
+              "advisorId": "",
+              "amount": 0,
+              "approvedAmount": 0,
+              "studentYear": 0,
+              "purpose": "",
+              "additionalNote": "",
+              "installmentCount": 0,
+              "firstDueDate": "",
+              "status": "draft",
+              "submittedAt": "",
+              "cancelledAt": "",
+              "cancelledBy": "",
+              "disbursedAt": "",
+              "closedAt": "",
+              "createdAt": "",
+              "updatedAt": "",
+              "student": {
+                "id": "",
+                "studentCode": "",
+                "fullNameTh": "",
+                "fullNameEn": ""
+              },
+              "advisor": {
+                "id": "",
+                "fullNameTh": "",
+                "fullNameEn": ""
+              },
+              "approvals": [
+                {
+                  "id": "",
+                  "loanId": "",
+                  "step": "advisor",
+                  "attempt": 0,
+                  "decision": "pending",
+                  "decidedBy": "",
+                  "decidedAt": "",
+                  "comment": "",
+                  "decider": {
+                    "id": "",
+                    "fullNameTh": "",
+                    "fullNameEn": ""
+                  }
+                }
+              ]
+            }
+          }
+  - name: 404 Response
+    description: Not Found
+    request:
+      url: "{{baseUrl}}/advisor/loan-requests/:id"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: REQ202609060000
+          type: path
+    response:
+      status: 404
+      statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "",
+              "message": ""
+            }
+          }
