@@ -208,7 +208,7 @@ export default function RequestTimeline({
                       <header className={styles.sectionCardHeading}>
                         <h2>{item.commentTitle}</h2>
                       </header>
-                      <p>{item.comment}</p>
+                      <p className="break-words whitespace-pre-wrap">{item.comment}</p>
                     </section>
                   ) : null}
                   {(() => {

@@ -65,30 +65,37 @@ test("VerifySlipCard modal title is ตรวจสอบการชำระ�
   );
 });
 
-test("RequestsCard and DisburseDebtCard hide comments and bank details in RequestTimeline", () => {
+test("RequestsCard and DisburseDebtCard remove separate ความเห็นประกอบการพิจารณา box and show comments on RequestTimeline", () => {
   const requestsCard = read("components/shared/pending/RequestsCard.tsx");
   const disburseDebtCard = read("components/shared/disburse-debt/DisburseDebtCard.tsx");
   const requestTimeline = read("components/shared/RequestTimeline.tsx");
 
   assert.match(requestTimeline, /hideComments\?: boolean/, "RequestTimeline must support hideComments prop");
   assert.match(requestTimeline, /hideBankDetails\?: boolean/, "RequestTimeline must support hideBankDetails prop");
-  assert.match(requestsCard, /<RequestTimeline[\s\S]*?hideComments/, "RequestsCard must set hideComments");
-  assert.match(requestsCard, /<RequestTimeline[\s\S]*?hideBankDetails/, "RequestsCard must set hideBankDetails");
-  assert.match(disburseDebtCard, /<RequestTimeline[\s\S]*?hideComments/, "DisburseDebtCard must set hideComments");
-  assert.match(disburseDebtCard, /<RequestTimeline[\s\S]*?hideBankDetails/, "DisburseDebtCard must set hideBankDetails");
-});
-
-test("DisburseDebtCard approval comments box wraps long comments and text properly", () => {
-  const disburseDebtCard = read("components/shared/disburse-debt/DisburseDebtCard.tsx");
-  assert.match(
+  assert.doesNotMatch(
+    requestsCard,
+    /title="ความเห็นประกอบการพิจารณา"/,
+    "RequestsCard must remove separate ความเห็นประกอบการพิจารณา box",
+  );
+  assert.doesNotMatch(
     disburseDebtCard,
-    /break-words\s+whitespace-pre-wrap[\s\S]*?approval\.comment/,
-    "DisburseDebtCard must use break-words and whitespace-pre-wrap on approval comment",
+    /title="ความเห็นประกอบการพิจารณา"/,
+    "DisburseDebtCard must remove separate ความเห็นประกอบการพิจารณา box",
+  );
+  assert.doesNotMatch(
+    requestsCard,
+    /<RequestTimeline[\s\S]*?hideComments/,
+    "RequestsCard must not set hideComments so role comments show on timeline",
+  );
+  assert.doesNotMatch(
+    disburseDebtCard,
+    /<RequestTimeline[\s\S]*?hideComments/,
+    "DisburseDebtCard must not set hideComments so role comments show on timeline",
   );
   assert.match(
-    disburseDebtCard,
-    /approval\.actorName[\s\S]*?break-words/,
-    "DisburseDebtCard must use break-words on approval actorName",
+    requestTimeline,
+    /timelineCommentCard/,
+    "RequestTimeline must include timelineCommentCard under actor/date",
   );
 });
 
@@ -250,6 +257,43 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepDisbursed[2].isCompleted, true);
   assert.equal(stepDisbursed[3].isCompleted, true);
   assert.equal(stepDisbursed[4].isCompleted, true);
+
+  // Case 8: Comments from various roles like student page
+  const stepWithComments = buildFiveStepTimeline({
+    requestStatus: "pending_disbursement",
+    studentName: "นายสมชาย ใจดี",
+    advisorName: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+    submitDate: "14 ต.ค. 2567",
+    approvals: [
+      {
+        step: "advisor",
+        actorName: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+        comment: "เห็นชอบตามที่ร้องขอ",
+        decision: "approved",
+        date: "15 ต.ค. 2567",
+      },
+      {
+        step: "admin",
+        actorName: "เจ้าหน้าที่ สมชาย",
+        comment: "เอกสารครบถ้วนสมบูรณ์",
+        decision: "approved",
+        date: "16 ต.ค. 2567",
+      },
+      {
+        step: "executive",
+        actorName: "ผู้บริหาร สมควร",
+        comment: "อนุมัติเงินกู้ยืม",
+        decision: "approved",
+        date: "17 ต.ค. 2567",
+      },
+    ],
+  });
+  assert.equal(stepWithComments[1].commentTitle, "ความคิดเห็นของอาจารย์ที่ปรึกษา");
+  assert.equal(stepWithComments[1].comment, "เห็นชอบตามที่ร้องขอ");
+  assert.equal(stepWithComments[2].commentTitle, "ความคิดเห็นของเจ้าหน้าที่");
+  assert.equal(stepWithComments[2].comment, "เอกสารครบถ้วนสมบูรณ์");
+  assert.equal(stepWithComments[3].commentTitle, "ความคิดเห็นของผู้บริหาร");
+  assert.equal(stepWithComments[3].comment, "อนุมัติเงินกู้ยืม");
 });
 
 test("RequestTimeline has header action button to view full action history and modal", () => {

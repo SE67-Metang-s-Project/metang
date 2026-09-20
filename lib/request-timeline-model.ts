@@ -220,7 +220,8 @@ export function buildFiveStepTimeline({
         "อาจารย์ที่ปรึกษา",
       isUpcoming: true,
       comment: hideComments ? undefined : advisorApproval?.comment || advHistReturned?.comment,
-      commentTitle: hideComments ? undefined : "ข้อความจากอาจารย์ที่ปรึกษา",
+      commentTitle:
+        hideComments ? undefined : advHistReturned?.commentTitle || "ความคิดเห็นของอาจารย์ที่ปรึกษา",
     };
   } else if (isStep2Rejected) {
     const rejDate = advHistRejected?.date || advisorApproval?.date;
@@ -284,7 +285,8 @@ export function buildFiveStepTimeline({
       actor: adminApproval?.actorName || admHistReturned?.actor || "เจ้าหน้าที่",
       isUpcoming: true,
       comment: hideComments ? undefined : adminApproval?.comment || admHistReturned?.comment,
-      commentTitle: hideComments ? undefined : "ข้อความจากเจ้าหน้าที่",
+      commentTitle:
+        hideComments ? undefined : admHistReturned?.commentTitle || "ความคิดเห็นของเจ้าหน้าที่",
     };
   } else if (isStep3Rejected) {
     const rejDate = admHistRejected?.date || adminApproval?.date;
@@ -343,7 +345,8 @@ export function buildFiveStepTimeline({
       actor: execApproval?.actorName || execHistReturned?.actor || "ผู้บริหาร",
       isUpcoming: true,
       comment: hideComments ? undefined : execApproval?.comment || execHistReturned?.comment,
-      commentTitle: hideComments ? undefined : "ข้อความจากผู้บริหาร",
+      commentTitle:
+        hideComments ? undefined : execHistReturned?.commentTitle || "ความคิดเห็นของผู้บริหาร",
     };
   } else if (isStep4Rejected) {
     const rejDate = execHistRejected?.date || execApproval?.date;
@@ -394,6 +397,9 @@ export function buildFiveStepTimeline({
       date: disburseHist?.date || "โอนเงินสำเร็จ",
       actor: disburseHist?.actor || "เจ้าหน้าที่การเงิน",
       isCompleted: true,
+      comment: hideComments ? undefined : disburseHist?.comment,
+      commentTitle:
+        hideComments ? undefined : disburseHist?.commentTitle || "ความคิดเห็นของเจ้าหน้าที่การเงิน",
       transferDetails:
         transferDetails && transferDetails.length > 0 ? transferDetails : undefined,
     };
@@ -403,6 +409,9 @@ export function buildFiveStepTimeline({
       date: "กำลังดำเนินการ",
       actor: "เจ้าหน้าที่การเงิน",
       isPending: true,
+      comment: hideComments ? undefined : disburseHist?.comment,
+      commentTitle:
+        hideComments ? undefined : disburseHist?.commentTitle || "ความคิดเห็นของเจ้าหน้าที่การเงิน",
       transferDetails:
         transferDetails && transferDetails.length > 0 ? transferDetails : undefined,
     };
@@ -421,6 +430,8 @@ export function buildFiveStepTimeline({
       date: step1Date,
       actor: step1Actor,
       isCompleted: true,
+      comment: hideComments ? undefined : subHist?.comment,
+      commentTitle: hideComments ? undefined : subHist?.commentTitle,
     },
     step2Item,
     step3Item,
