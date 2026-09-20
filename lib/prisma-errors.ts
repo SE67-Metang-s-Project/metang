@@ -9,5 +9,10 @@ export function isUniqueConstraintOnField(
   }
 
   const target = error.meta?.target;
-  return Array.isArray(target) ? target.includes(field) : target === field;
+  if (Array.isArray(target)) return target.includes(field);
+  if (typeof target === "string") return target === field;
+  const fields = /Unique constraint failed on the fields?: \(([^)]*)\)/.exec(error.message)?.[1];
+  return fields
+    ? fields.split(",").some((name) => name.trim().replace(/^`|`$/g, "") === field)
+    : false;
 }
