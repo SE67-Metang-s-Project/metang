@@ -49,6 +49,9 @@ export default function SuperAdminRequestsList({
   };
 
   const pendingCount = requests.filter((req) => req.requestStatus === "pending_admin").length;
+  const pendingExecutiveCount = requests.filter(
+    (req) => req.requestStatus === "pending_executive",
+  ).length;
 
   const filteredRequests = React.useMemo(() => {
     const list = requests.filter((req) => {
@@ -57,6 +60,8 @@ export default function SuperAdminRequestsList({
       let isStatusMatch = false;
       if (filter === "all") isStatusMatch = true;
       else if (filter === "pending") isStatusMatch = req.requestStatus === "pending_admin";
+      else if (filter === "pending_executive")
+        isStatusMatch = req.requestStatus === "pending_executive";
       else if (filter === "approved")
         isStatusMatch = [
           "pending_executive",
@@ -65,7 +70,11 @@ export default function SuperAdminRequestsList({
           "closed",
         ].includes(req.requestStatus);
       else if (filter === "rejected")
-        isStatusMatch = ["returned", "rejected", "cancelled"].includes(req.requestStatus);
+        isStatusMatch = ["returned", "rejected"].includes(req.requestStatus);
+      else if (filter === "cancelled")
+        isStatusMatch = req.requestStatus === "cancelled";
+      else
+        isStatusMatch = req.requestStatus === filter;
 
       const lowerQuery = searchQuery.toLowerCase();
       const isSearchMatch =
@@ -77,6 +86,12 @@ export default function SuperAdminRequestsList({
     return sortRequestsBySubmissionDateDesc(list);
   }, [requests, dashboardMode, filter, searchQuery]);
 
+  const statusOptions = [
+    { id: "approved" as const, label: "อนุมัติแล้ว" },
+    { id: "rejected" as const, label: "ไม่อนุมัติ / ส่งกลับแก้ไข" },
+    { id: "cancelled" as const, label: "นักศึกษายกเลิกคำร้อง" },
+  ];
+
   return (
     <div className="w-full">
       {!hideFilters && (
@@ -87,7 +102,10 @@ export default function SuperAdminRequestsList({
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             pendingCount={pendingCount}
+            pendingExecutiveCount={pendingExecutiveCount}
+            showExecutivePending={true}
             pendingLabel="รอตรวจสอบ (Admin)"
+            statusOptions={statusOptions}
           />
         </div>
       )}

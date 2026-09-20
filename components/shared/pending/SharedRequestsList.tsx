@@ -43,7 +43,7 @@ export default function SharedRequestsList({
           newStatus =
             userRole === "advisor"
               ? "pending_admin"
-              : userRole === "admin"
+              : userRole === "admin" || userRole === "super_admin"
                 ? "pending_executive"
                 : "pending_disbursement";
         } else if (decision === "rejected") {
@@ -87,6 +87,10 @@ export default function SharedRequestsList({
 
   const targetPendingStatus = getTargetPendingStatus(userRole);
   const pendingCount = requests.filter((req) => req.requestStatus === targetPendingStatus).length;
+  const pendingExecutiveCount = requests.filter(
+    (req) => req.requestStatus === "pending_executive",
+  ).length;
+  const showExecutivePending = userRole === "admin" || userRole === "super_admin";
 
   const filteredRequests = React.useMemo(() => {
     const list = requests.filter((req) => {
@@ -100,6 +104,8 @@ export default function SharedRequestsList({
         isStatusMatch = true;
       } else if (filter === "pending") {
         isStatusMatch = req.requestStatus === targetPendingStatus;
+      } else if (filter === "pending_executive") {
+        isStatusMatch = req.requestStatus === "pending_executive";
       } else if (filter === "approved") {
         // ถ้าอนุมัติแล้ว สถานะจะขยับไปด่านถัดไป
         if (userRole === "admin" || userRole === "super_admin") {
@@ -147,6 +153,12 @@ export default function SharedRequestsList({
     { id: "cancelled" as const, label: "นักศึกษายกเลิกคำร้อง" },
   ];
 
+  const adminStatusOptions = [
+    { id: "approved" as const, label: "อนุมัติแล้ว" },
+    { id: "rejected" as const, label: "ไม่อนุมัติ / ส่งกลับแก้ไข" },
+    { id: "cancelled" as const, label: "นักศึกษายกเลิกคำร้อง" },
+  ];
+
   return (
     <div className="w-full">
       {!hideFilters && (
@@ -157,9 +169,17 @@ export default function SharedRequestsList({
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             pendingCount={pendingCount}
+            pendingExecutiveCount={pendingExecutiveCount}
+            showExecutivePending={showExecutivePending}
             // เปลี่ยน Label ให้ตรงกับ Role แบบอัตโนมัติ
             pendingLabel={getPendingLabel(userRole)}
-            statusOptions={userRole === "advisor" ? advisorStatusOptions : undefined}
+            statusOptions={
+              userRole === "advisor"
+                ? advisorStatusOptions
+                : userRole === "admin" || userRole === "super_admin"
+                  ? adminStatusOptions
+                  : undefined
+            }
           />
         </div>
       )}

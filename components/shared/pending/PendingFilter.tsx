@@ -22,6 +22,8 @@ interface PendingFilterProps {
   currentFilter: FilterStatus;
   onFilterChange: (status: FilterStatus) => void;
   pendingCount?: number;
+  pendingExecutiveCount?: number;
+  showExecutivePending?: boolean;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   searchPlaceholder?: string;
@@ -33,6 +35,8 @@ export default function PendingFilter({
   currentFilter,
   onFilterChange,
   pendingCount = 0,
+  pendingExecutiveCount,
+  showExecutivePending = false,
   searchQuery = "",
   onSearchChange,
   searchPlaceholder = "ค้นหารหัสคำร้อง ชื่อ วันที่...",
@@ -61,19 +65,39 @@ export default function PendingFilter({
     setIsDropdownOpen(false);
   };
 
-  const mainFilterOptions: { id: FilterStatus; label: string }[] = [
+  const isExecutivePendingEnabled = Boolean(
+    showExecutivePending || pendingExecutiveCount !== undefined,
+  );
+
+  const mainFilterOptions: { id: FilterStatus; label: string; count?: number }[] = [
     { id: "all", label: "ทั้งหมด" },
-    { id: "pending", label: pendingLabel }, // ใช้ Label ตามที่ส่งเข้ามา
+    { id: "pending", label: pendingLabel, count: pendingCount },
+    ...(isExecutivePendingEnabled
+      ? [
+          {
+            id: "pending_executive" as FilterStatus,
+            label: "รอผู้บริหารอนุมัติ",
+            count: pendingExecutiveCount,
+          },
+        ]
+      : []),
   ];
 
   const defaultStatusOptions: DropdownStatusOption[] = [
     { id: "approved", label: "อนุมัติแล้ว" },
     { id: "rejected", label: "ไม่อนุมัติ" },
-    { id: "pending_admin", label: "รอเจ้าหน้าที่ตรวจสอบ" },
+    ...(!isExecutivePendingEnabled
+      ? [{ id: "pending_admin" as const, label: "รอเจ้าหน้าที่ตรวจสอบ" }]
+      : []),
     { id: "cancelled", label: "นักศึกษายกเลิกคำร้อง" },
-    { id: "pending_executive", label: "รอผู้บริหารอนุมัติ" },
+    ...(!isExecutivePendingEnabled
+      ? [{ id: "pending_executive" as const, label: "รอผู้บริหารอนุมัติ" }]
+      : []),
   ];
-  const statusOptions = customStatusOptions ?? defaultStatusOptions;
+  const rawStatusOptions = customStatusOptions ?? defaultStatusOptions;
+  const statusOptions = isExecutivePendingEnabled
+    ? rawStatusOptions.filter((option) => option.id !== "pending_executive")
+    : rawStatusOptions;
   const selectedStatus = statusOptions.find((option) => option.id === currentFilter);
   const isDropdownActive = selectedStatus !== undefined;
 
@@ -99,13 +123,19 @@ export default function PendingFilter({
             >
               {option.label}
 
-              {option.id === "pending" && pendingCount > 0 && (
+              {option.count !== undefined && option.count > 0 && (
                 <span
-                  className={`ml-2 inline-flex items-center justify-center w-5 h-5 text-[11px] font-bold rounded-full 
-                    ${isActive ? "bg-[#ea580c] text-white" : "bg-[#fee2e2] text-[#dc2626]"}
+                  className={`ml-2 inline-flex items-center justify-center px-1.5 min-w-[20px] h-5 text-[11px] font-bold rounded-full 
+                    ${
+                      isActive
+                        ? "bg-[#ea580c] text-white"
+                        : option.id === "pending_executive"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-[#fee2e2] text-[#dc2626]"
+                    }
                   `}
                 >
-                  {pendingCount}
+                  {option.count}
                 </span>
               )}
             </button>
