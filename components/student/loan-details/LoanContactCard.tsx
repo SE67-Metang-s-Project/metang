@@ -14,7 +14,9 @@ export default function LoanContactCard({ contact }: LoanContactCardProps) {
         <h3>ติดต่อเจ้าหน้าที่</h3>
         <p>
           <span aria-hidden="true">⌕</span>
-          {contact.phone}
+          <a aria-label={`Call ${contact.phone}`} href={`tel:${contact.phone}`}>
+            {contact.phone}
+          </a>
         </p>
         <p>
           <span aria-hidden="true">✉</span>

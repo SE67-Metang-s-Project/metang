@@ -284,6 +284,11 @@ export default function StudentDashboard({
     ) ||
     Boolean(currentActiveLoan && "status" in currentActiveLoan && currentActiveLoan.status === "closed") ||
     dashboardTimeline.some((item) => Boolean(item.transferDetails));
+  const hasExecutiveApproved = Boolean(
+    currentActiveLoan &&
+      "status" in currentActiveLoan &&
+      ["pending_disbursement", "disbursed", "closed"].includes(currentActiveLoan.status ?? ""),
+  );
   const currentLoanKey =
     currentActiveLoan && "id" in currentActiveLoan && currentActiveLoan.id
       ? currentActiveLoan.id
@@ -396,7 +401,7 @@ export default function StudentDashboard({
                   }
                 : undefined
             }
-            showCancelRequest={Boolean(currentActiveLoan) && !hasAdminTransferredFunds}
+            showCancelRequest={Boolean(currentActiveLoan) && !hasExecutiveApproved}
             showEditRequest={isActiveLoanReturned}
           />
 

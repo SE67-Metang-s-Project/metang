@@ -952,13 +952,9 @@ export default function RequestsCard({
                   title="ข้อมูลการกู้ยืม"
                 />
                 <dl>
-                  <div>
+                  <div className={styles.loanApprovalPurposeRow}>
                     <dt>วัตถุประสงค์การกู้ยืม</dt>
                     <dd>{selectedRequest.objective || "-"}</dd>
-                  </div>
-                  <div>
-                    <dt>หมายเหตุเพิ่มเติม</dt>
-                    <dd>{selectedRequest.additionalNote || "-"}</dd>
                   </div>
                   <div className={styles.loanAmountRow}>
                     <dt className="flex items-center gap-2">

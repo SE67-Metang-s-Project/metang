@@ -19,7 +19,6 @@ import {
   XCircle,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
-import { formatThaiBahtText } from "@/app/student/studentFormatters";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import styles from "@/app/student/student.module.css";
 
@@ -793,12 +792,6 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                         <dt>ยอดเงินที่โอนมา (บาท)</dt>
                         <dd className="font-bold text-[#ea580c]">
                           {formatAmount(selectedEvidence.amount)}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>จำนวนเงินตัวอักษร</dt>
-                        <dd className={styles.loanAmountText}>
-                          {formatThaiBahtText(String(selectedEvidence.amount))}
                         </dd>
                       </div>
                       <div>

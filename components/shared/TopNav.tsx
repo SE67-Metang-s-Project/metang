@@ -86,7 +86,7 @@ export default function TopNav({
             className="h-12 w-12 object-contain sm:h-14 sm:w-14"
             height={56}
             priority
-            src="/metang-logo.png"
+            src="/metang-logo7.png"
             width={56}
           />
         </Link>
@@ -123,7 +123,7 @@ export default function TopNav({
               >
                 {userName}
               </span>
-              <span className="text-sm text-gray-500">{displayCode}</span>
+              <span className="text-sm font-normal text-gray-500">{displayCode}</span>
             </span>
             <ChevronDown
               className={`h-4 w-4 text-gray-400 transition-transform ${isProfileOpen ? "rotate-180" : ""}`}
@@ -149,14 +149,14 @@ export default function TopNav({
               </div>
               {language && onLanguageChange ? (
                 <div className="flex items-center justify-between gap-4 border-t border-gray-100 px-4 py-3">
-                  <span className="text-[14px] font-medium text-gray-600">Language</span>
+                  <span className="text-[14px] font-normal text-gray-600">Language</span>
                   <div
                     aria-label="Language selector"
-                    className="flex gap-1 text-sm font-semibold"
+                    className="flex gap-1 text-sm font-normal"
                   >
                     <button
                       aria-pressed={language === "th"}
-                      className={`rounded-md border px-2.5 py-1.5 transition-colors ${language === "th" ? "border-[#ffb58c] bg-[#fff4ed] text-[#ed7740]" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}
+                      className={`rounded-md border px-2.5 py-1.5 font-light transition-colors ${language === "th" ? "border-[#ffb58c] bg-[#fff4ed] text-[#ed7740]" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}
                       onClick={() => handleLanguageChange("th")}
                       type="button"
                     >
@@ -164,7 +164,7 @@ export default function TopNav({
                     </button>
                     <button
                       aria-pressed={language === "en"}
-                      className={`rounded-md border px-2.5 py-1.5 transition-colors ${language === "en" ? "border-[#ffb58c] bg-[#fff4ed] text-[#ed7740]" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}
+                      className={`rounded-md border px-2.5 py-1.5 font-light transition-colors ${language === "en" ? "border-[#ffb58c] bg-[#fff4ed] text-[#ed7740]" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}
                       onClick={() => handleLanguageChange("en")}
                       type="button"
                     >
@@ -177,7 +177,7 @@ export default function TopNav({
                 <button
                   type="submit"
                   role="menuitem"
-                  className="flex w-full items-center gap-3 px-4 py-3 text-[14px] font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-700"
+                  className="flex w-full items-center gap-3 px-4 py-3 text-[14px] font-normal text-gray-600 transition-colors hover:bg-red-50 hover:text-red-700"
                 >
                   <LogOut className="h-4 w-4" aria-hidden="true" />
                   {logoutLabel}

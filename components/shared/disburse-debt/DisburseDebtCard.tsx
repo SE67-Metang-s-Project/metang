@@ -24,7 +24,6 @@ import {
   ExternalLink,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
-import { formatThaiBahtText } from "@/app/student/studentFormatters";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import RequestTimeline from "@/components/shared/RequestTimeline";
 import styles from "@/app/student/student.module.css";
@@ -694,12 +693,6 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     <dt>วัตถุประสงค์การกู้ยืม</dt>
                     <dd>{selectedRequest.objective || "-"}</dd>
                   </div>
-                  {selectedRequest.additionalNote && (
-                    <div>
-                      <dt>หมายเหตุเพิ่มเติม</dt>
-                      <dd>{selectedRequest.additionalNote}</dd>
-                    </div>
-                  )}
                   <div className={styles.loanAmountRow}>
                     <dt>
                       {isCompleted ? "ยอดเงินที่โอนแล้ว (บาท)" : "จำนวนเงินที่อนุมัติ (บาท)"}
@@ -708,12 +701,6 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                       className={`font-bold ${isCompleted ? "text-green-600" : "text-[#ea580c]"}`}
                     >
                       {formatAmount(selectedRequest.approvedAmount ?? selectedRequest.amount)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>จำนวนเงินตัวอักษร</dt>
-                    <dd className={styles.loanAmountText}>
-                      {formatThaiBahtText(String(selectedRequest.approvedAmount ?? selectedRequest.amount))}
                     </dd>
                   </div>
                   <div>

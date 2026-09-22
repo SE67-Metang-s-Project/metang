@@ -1,11 +1,12 @@
 "use client";
 
-import { Fragment, useState } from "react";
-import { Check, CheckCircle2, Clock3, FileText, Pencil } from "lucide-react";
+import { useState } from "react";
+import { Check, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { LoanTimelineItem } from "@/app/student/studentMockData";
+import RequestTimeline, { type ActionHistory } from "@/components/shared/RequestTimeline";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
-import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
+import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
 
 type LoanTimelineProps = {
@@ -20,6 +21,23 @@ type LoanTimelineProps = {
   showEditRequest?: boolean;
   compactActions?: boolean;
 };
+
+function getRequestStatus(items: LoanTimelineItem[]) {
+  const pendingItem = items.find((item) => item.isPending);
+  const pendingTitle = pendingItem?.title ?? "";
+
+  if (items.some((item) => item.title.includes("โอนเงิน") && !item.isPending)) {
+    return "disbursed";
+  }
+  if (items.some((item) => item.isFailed)) return "rejected";
+  if (pendingTitle.includes("เจ้าหน้าที่การเงิน") || pendingTitle.includes("โอนเงิน")) {
+    return "pending_disbursement";
+  }
+  if (pendingTitle.includes("ผู้บริหาร")) return "pending_executive";
+  if (pendingTitle.includes("เจ้าหน้าที่")) return "pending_admin";
+
+  return "pending_advisor";
+}
 
 export default function LoanTimeline({
   items = [],
@@ -37,7 +55,6 @@ export default function LoanTimeline({
   const { language, t } = useStudentLanguage();
   const [isTransferConfirmed, setIsTransferConfirmed] = useState(false);
   const [isConfirmationSuccessOpen, setIsConfirmationSuccessOpen] = useState(false);
-
   const successDismiss = useModalDismiss({
     onClose: () => router.replace("/student"),
     isOpen: isConfirmationSuccessOpen,
@@ -45,6 +62,27 @@ export default function LoanTimeline({
   const hasAcceptedTransfer = isTransferAccepted || isTransferConfirmed;
   const shouldShowConfirmation = !hasAcceptedTransfer && Boolean(confirmTransferLabel || onConfirmTransfer);
   const confirmationLabel = confirmTransferLabel ?? t("ยืนยันการรับเงิน", "Confirm receipt");
+  const advisorName = items.find((item) => item.title.includes("อาจารย์"))?.actor;
+  const hasExecutiveReturnForRevision = items.some(
+    (item) => item.title.includes("ผู้บริหาร") && item.title.includes("ส่งกลับแก้ไข"),
+  );
+  const history: ActionHistory[] = items.map((item) => ({
+    action: item.title,
+    date: item.dateTime,
+    actor: item.actor,
+    commentTitle: item.commentTitle,
+    comment: item.comment,
+    isCompleted: item.isCompleted,
+    isPending: item.isPending,
+    isUpcoming: item.isUpcoming,
+    isFailed: item.isFailed,
+    transferDetails: item.transferDetails,
+  }));
+  const timelineHistory = hasExecutiveReturnForRevision
+    ? history.filter(
+        (item) => !(item.action.includes("ผู้บริหาร") && item.action.includes("ส่งกลับแก้ไข")),
+      )
+    : history;
 
   const handleConfirmTransfer = () => {
     setIsTransferConfirmed(true);
@@ -52,124 +90,45 @@ export default function LoanTimeline({
     onConfirmTransfer?.();
   };
 
-  const hasItems = items && items.length > 0;
-  const currentItemIndex = items.reduce(
-    (currentIndex, item, index) => (item.isUpcoming ? currentIndex : index),
-    -1,
-  );
+  const requestActions =
+    showEditRequest || showCancelRequest || shouldShowConfirmation ? (
+      <div className={styles.loanTimelineRequestActions}>
+        {showEditRequest ? (
+          <button className={styles.loanTimelineEditButton} onClick={onEditRequest} type="button">
+            {t("แก้ไขคำร้อง", "Edit request")}
+          </button>
+        ) : null}
+        {showCancelRequest ? (
+          <button className={styles.loanTimelineCancelButton} onClick={onCancelRequest} type="button">
+            {t("ยกเลิกคำร้อง", "Cancel request")}
+          </button>
+        ) : null}
+        {shouldShowConfirmation ? (
+          <button className={styles.loanApplicationNext} onClick={handleConfirmTransfer} type="button">
+            <Check aria-hidden="true" size={18} strokeWidth={3} />
+            {confirmationLabel}
+          </button>
+        ) : null}
+      </div>
+    ) : null;
 
   return (
-    <section
-      aria-labelledby="loan-timeline-title"
-      className={`${styles.loanDetailSection} ${styles.detailDashboardCard} ${
-        compactActions ? styles.loanTimelineCompactActions : ""
-      }`}
-    >
-      <header className={styles.sectionCardHeading}>
-        <h2 id="loan-timeline-title">
-          <Clock3 aria-hidden="true" size={23} strokeWidth={2.2} />
-          {t("ติดตามสถานะคำร้อง", "Request Status")}
-        </h2>
-      </header>
-      {hasItems ? (
-        <ol className={styles.loanTimeline}>
-          {items.map((item, index) => {
-            const isRevisionItem = item.title.includes("แก้ไข");
+    <>
+      <RequestTimeline
+        advisorName={advisorName}
+        className={`${styles.studentRequestTimeline} ${
+          compactActions ? styles.loanTimelineCompactActions : ""
+        }`}
+        footer={requestActions}
+        history={history}
+        language={language}
+        onShowTransferSlip={onShowTransferSlip}
+        requestStatus={items.length ? getRequestStatus(items) : undefined}
+        showEmptyWhenNoHistory
+        title={t("ติดตามสถานะคำร้อง", "Request Status")}
+        timelineHistory={timelineHistory}
+      />
 
-            return (
-              <li className={styles.loanTimelineItem} key={item.title}>
-              <span
-                aria-hidden="true"
-                className={`${styles.timelineMarker} ${item.isPending ? styles.timelineMarkerPending : ""} ${
-                  item.isUpcoming ? styles.timelineMarkerUpcoming : ""
-                } ${
-                  item.isFailed ? styles.timelineMarkerFailed : ""
-                } ${isRevisionItem ? styles.timelineMarkerRevision : ""}`}
-              >
-                {isRevisionItem ? <Pencil size={13} strokeWidth={2.8} /> : null}
-              </span>
-              <div className={styles.timelineContent}>
-                <strong>{localizeStudentContent(item.title, language)}</strong>
-                <p>
-                  {localizeStudentContent(item.dateTime, language)} · {t("โดย", "by")} {" "}
-                  {localizeStudentContent(item.actor, language)}
-                </p>
-                {item.commentTitle && item.comment ? (
-                  <section
-                    className={`${styles.detailDashboardCard} ${styles.timelineCommentCard} ${
-                      item.isFailed ? styles.timelineCommentCardRejected : ""
-                    }`}
-                  >
-                    <header className={styles.sectionCardHeading}>
-                      <h2>{localizeStudentContent(item.commentTitle, language)}</h2>
-                    </header>
-                    <p>{localizeStudentContent(item.comment, language)}</p>
-                  </section>
-                ) : null}
-                {item.transferDetails ? (
-                  <>
-                    <dl className={styles.transferDetails}>
-                      {item.transferDetails.map((detail) => (
-                        <Fragment key={detail}>
-                          <dt>{localizeStudentContent(detail.slice(0, detail.indexOf(":")), language)}</dt>
-                          <dd>{localizeStudentContent(detail.slice(detail.indexOf(":") + 1).trim(), language)}</dd>
-                        </Fragment>
-                      ))}
-                    </dl>
-                    {onShowTransferSlip || shouldShowConfirmation ? (
-                      <div
-                        className={`${styles.loanTimelineActions} ${
-                          !shouldShowConfirmation ? styles.loanTimelineActionsSingle : ""
-                        }`}
-                      >
-                        {onShowTransferSlip ? (
-                          <button className={styles.outlineOrangeButton} onClick={onShowTransferSlip} type="button">
-                            <FileText aria-hidden="true" size={18} />
-                            {t("ดูหลักฐาน", "View proof")}
-                          </button>
-                        ) : null}
-                        {shouldShowConfirmation ? (
-                          <button className={styles.loanApplicationNext} onClick={handleConfirmTransfer} type="button">
-                            <Check aria-hidden="true" size={18} strokeWidth={3} />
-                            {confirmationLabel}
-                          </button>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </>
-                ) : null}
-                {(showEditRequest || showCancelRequest) && index === currentItemIndex ? (
-                  <div className={styles.loanTimelineRequestActions}>
-                    {showEditRequest ? (
-                      <button className={styles.loanTimelineEditButton} onClick={onEditRequest} type="button">
-                        {t("แก้ไขคำร้อง", "Edit request")}
-                      </button>
-                    ) : null}
-                    {showCancelRequest ? (
-                      <button className={styles.loanTimelineCancelButton} onClick={onCancelRequest} type="button">
-                        {t("ยกเลิกคำร้อง", "Cancel request")}
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            </li>
-            );
-          })}
-        </ol>
-      ) : (
-        <div className={styles.emptyDashboardState}>
-          <span aria-hidden="true" className={styles.emptyDashboardStateIcon}>
-            <Clock3 size={24} strokeWidth={2} />
-          </span>
-          <p>
-            {t("ไม่มีคำร้องขอกู้ยืมที่อยู่ระหว่างดำเนินการ", "No loan request is in progress")}
-          </p>
-          <span>
-            {t("การติดตามสถานะจะแสดงที่นี่เมื่อมีการยื่นคำร้อง", "Tracking appears after submission")}
-          </span>
-        </div>
-      )}
       {isConfirmationSuccessOpen ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
@@ -182,7 +141,12 @@ export default function LoanTimeline({
             className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl"
             role="alertdialog"
           >
-            <CheckCircle2 aria-hidden="true" className="mx-auto text-green-500" size={64} strokeWidth={1.5} />
+            <CheckCircle2
+              aria-hidden="true"
+              className="mx-auto text-green-500"
+              size={64}
+              strokeWidth={1.5}
+            />
             <h2 className="mt-4 text-xl font-bold text-gray-900" id="transfer-confirmation-success-title">
               {t("ยืนยันการรับเงินสำเร็จ", "Receipt confirmed")}
             </h2>
@@ -202,6 +166,6 @@ export default function LoanTimeline({
           </section>
         </div>
       ) : null}
-    </section>
+    </>
   );
 }

@@ -810,11 +810,6 @@
   color: #dc2626 !important;
 }
 
-.loanAmountText {
-  margin: 0;
-  color: var(--color-detail-muted);
-}
-
 .loanFormField small {
   color: var(--color-detail-muted);
   font-size: 14px;
@@ -930,6 +925,10 @@
   gap: 14px;
 }
 
+.loanStepActions {
+  margin-bottom: 50px;
+}
+
 .loanStepActions button {
   box-shadow: 0 2px 4px rgb(15 23 42 / 12%);
   transition: background-color 160ms ease, border-color 160ms ease;
@@ -1040,6 +1039,10 @@
   font-size: 17px;
 }
 
+.studentRequestTimeline .sectionCardHeading h3 {
+  font-size: 20px;
+}
+
 .loanApprovalInfoCard dl {
   display: grid;
   gap: 0;
@@ -1087,8 +1090,22 @@
   white-space: nowrap;
 }
 
-.loanApprovalInfoCard .loanAmountText {
-  color: var(--color-text);
+.loanApprovalLoanInfoCard dl > div {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+
+.loanApprovalLoanInfoCard dd {
+  text-align: left;
+}
+
+.loanApprovalInfoCard dl > .loanApprovalPurposeRow {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+
+.loanApprovalInfoCard .loanApprovalPurposeRow dd {
+  text-align: left;
 }
 
 .loanApprovalSchedule {
@@ -1442,8 +1459,23 @@
   grid-template-columns: max-content minmax(0, 1fr);
 }
 
+.tempDetailDefinitionList > .loanPurposeRow {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+
 .loanAmountRow dt {
   white-space: nowrap;
+}
+
+.loanApprovalLoanInfoCard dl > .loanAmountRow,
+.loanApprovalLoanInfoCard dl > .loanInstallmentRow {
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.loanApprovalLoanInfoCard .loanAmountRow dd,
+.loanApprovalLoanInfoCard .loanInstallmentRow dd {
+  text-align: right;
 }
 
 .tempDetailDefinitionList dt,
@@ -1462,6 +1494,10 @@
   color: var(--color-heading);
   overflow-wrap: anywhere;
   text-align: right;
+}
+
+.tempDetailDefinitionList > .loanPurposeRow dd {
+  text-align: left;
 }
 
 .loanDetailDefinitionList {
@@ -1605,6 +1641,12 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 0;
+  }
+
+  .summaryThaiDesktopOnly {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
   }
 
   .summaryProfileDetails p + p::before {
@@ -2944,6 +2986,7 @@
   grid-column: 1 / -1;
   display: grid;
   gap: 16px;
+  margin-bottom: 50px;
   padding: 16px;
   border: 2px solid var(--color-contact-footer-border);
   border-radius: 24px;
@@ -3333,22 +3376,16 @@
   background: #fef9c3;
 }
 
-.loanDetailInfoList > .loanDetailAdditionalNoteLong {
-  display: block;
-}
-
 .loanDetailInfoList > .loanDetailPurposeLong {
   display: block;
 }
 
-.loanDetailPurposeLong dt,
-.loanDetailAdditionalNoteLong dt {
+.loanDetailPurposeLong dt {
   display: block;
   margin-bottom: 4px;
 }
 
-.loanDetailPurposeLong dd,
-.loanDetailAdditionalNoteLong dd {
+.loanDetailPurposeLong dd {
   text-align: left;
 }
 
@@ -3820,6 +3857,7 @@
 
 .loanFormSection .loanScheduleSection {
   box-shadow: none;
+  border-radius: 8px;
 }
 
 .loanFormSection .loanScheduleRow,
@@ -4052,6 +4090,15 @@
 
 .contactCard p:first-of-type {
   color: var(--color-detail-green-text);
+}
+
+.contactCard a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.contactCard a:hover {
+  text-decoration: underline;
 }
 
 .contactCard p > span:first-child {

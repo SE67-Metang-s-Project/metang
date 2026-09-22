@@ -1,10 +1,6 @@
 import type { TempLoanFormData } from "@/app/student/temp/tempMockData";
 import { tempLoanFormOptions, tempStudentProfile } from "@/app/student/temp/tempMockData";
-import {
-  formatEnglishBahtText,
-  formatThaiBahtText,
-  parseLoanAmount,
-} from "@/app/student/studentFormatters";
+import { parseLoanAmount } from "@/app/student/studentFormatters";
 import { AlertCircle, Landmark, UserRound, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
@@ -297,21 +293,9 @@ export default function TempLoanApprovalModal({
               <dt>{t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}</dt>
               <dd>{formData.purpose || "-"}</dd>
             </div>
-            <div>
-              <dt>{t("หมายเหตุเพิ่มเติม", "Additional note")}</dt>
-              <dd>{formData.additionalNote || "-"}</dd>
-            </div>
             <div className={styles.loanAmountRow}>
-              <dt>{t("จำนวนเงินที่ขอกู้ยืม (บาท)", "Requested loan amount (baht)")}</dt>
+              <dt>{t("จำนวนเงินที่ขอกู้ยืม", "Requested loan amount")}</dt>
               <dd>{formData.loanAmount || "0"}</dd>
-            </div>
-            <div>
-              <dt>{t("จำนวนเงินตัวอักษร", "Amount in words")}</dt>
-              <dd className={styles.loanAmountText}>
-                {language === "en"
-                  ? formatEnglishBahtText(formData.loanAmount || "0")
-                  : formatThaiBahtText(formData.loanAmount || "0")}
-              </dd>
             </div>
             <div className={styles.loanInstallmentRow}>
               <dt>{t("จำนวนงวดการชำระ", "Number of installments")}</dt>

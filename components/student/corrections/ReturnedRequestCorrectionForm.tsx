@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, UserRound, X } from "lucide-react";
 import type { LoanInput } from "@/lib/loan-validation";
 import LoanFormSelect from "@/components/student/application/LoanFormSelect";
-import { formatThaiBahtText } from "@/app/student/studentFormatters";
 import { studentProfile } from "@/app/student/studentMockData";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import LoanDetailSchedule from "@/components/student/loan-details/LoanDetailSchedule";
@@ -461,15 +460,6 @@ export default function ReturnedRequestCorrectionForm({
               {renderError("purpose")}
             </label>
 
-            <label className={styles.loanFormField}>
-              <span>{t("หมายเหตุเพิ่มเติม", "Additional note")}</span>
-              <textarea
-                maxLength={2000}
-                onChange={(event) => updateField("additionalNote", event.target.value)}
-                value={values.additionalNote}
-              />
-            </label>
-
             <label
               className={[styles.loanFormField, errors.amount ? styles.loanFormFieldInvalid : ""]
                 .filter(Boolean)
@@ -488,7 +478,6 @@ export default function ReturnedRequestCorrectionForm({
                 type="text"
                 value={values.amount}
               />
-              {values.amount ? <p className={styles.loanAmountText}>{formatThaiBahtText(values.amount)}</p> : null}
               {renderError("amount")}
             </label>
 

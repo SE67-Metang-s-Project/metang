@@ -15,6 +15,10 @@ import {
   HandCoins,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
+import {
+  localizeStudentContent,
+  type StudentLanguage,
+} from "@/app/student/StudentLanguageProvider";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import styles from "@/app/student/student.module.css";
 
@@ -31,53 +35,83 @@ import {
 export type { ActionHistory, ApprovalStep, BankDetails, FullActionHistoryItem };
 export { buildFiveStepTimeline, buildFullActionHistory };
 
-function getStatusBadgeConfig(statusType: FullActionHistoryItem["statusType"]) {
+const timelineEnglishText: Record<string, string> = {
+  "ยื่นคำร้องขอกู้ยืม": "Loan request submitted",
+  "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ": "Advisor review and approval",
+  "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน": "Admin document review",
+  "ผู้บริหารอนุมัติคำร้อง": "Executive approval",
+  "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว": "Funds transferred by admin",
+  "ยื่นคำร้องสำเร็จ": "Request submitted",
+  "กำลังดำเนินการ": "In progress",
+  "ขั้นตอนถัดไป": "Next step",
+  "เห็นชอบแล้ว": "Approved",
+  "ตรวจสอบเรียบร้อย": "Verified",
+  "อนุมัติเรียบร้อย": "Approved",
+  "โอนเงินสำเร็จ": "Funds transferred",
+  "เจ้าหน้าที่การเงิน": "Finance officer",
+  "ความคิดเห็นของเจ้าหน้าที่การเงิน": "Finance officer's comment",
+};
+
+function localizeTimelineText(value: string, language: StudentLanguage) {
+  if (language === "th") return value;
+
+  const directTranslation = timelineEnglishText[value] ?? localizeStudentContent(value, language);
+
+  return directTranslation
+    .replaceAll("ส่งกลับมาแก้ไข", "Returned for revision")
+    .replaceAll("ไม่อนุมัติ", "Rejected")
+    .replaceAll("โดย", "by");
+}
+
+function getStatusBadgeConfig(statusType: FullActionHistoryItem["statusType"], language: StudentLanguage) {
+  const label = (thai: string, english: string) => (language === "en" ? english : thai);
+
   switch (statusType) {
     case "submitted":
       return {
-        label: "ยื่นคำร้อง",
+        label: label("ยื่นคำร้อง", "Submitted"),
         badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
         icon: <FileText size={13} className="shrink-0" />,
         dotClass: "bg-blue-500",
       };
     case "resubmitted":
       return {
-        label: "ส่งการแก้ไข",
+        label: label("ส่งการแก้ไข", "Resubmitted"),
         badgeClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
         icon: <Pencil size={13} className="shrink-0" />,
         dotClass: "bg-indigo-500",
       };
     case "returned":
       return {
-        label: "ส่งกลับแก้ไข",
+        label: label("ส่งกลับแก้ไข", "Returned for revision"),
         badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
         icon: <RotateCcw size={13} className="shrink-0" />,
         dotClass: "bg-amber-500",
       };
     case "approved":
       return {
-        label: "เห็นชอบ/อนุมัติ",
+        label: label("เห็นชอบ/อนุมัติ", "Approved"),
         badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
         icon: <CheckCircle2 size={13} className="shrink-0" />,
         dotClass: "bg-emerald-500",
       };
     case "rejected":
       return {
-        label: "ไม่อนุมัติ",
+        label: label("ไม่อนุมัติ", "Rejected"),
         badgeClass: "bg-red-50 text-red-700 border-red-200",
         icon: <XCircle size={13} className="shrink-0" />,
         dotClass: "bg-red-500",
       };
     case "disbursed":
       return {
-        label: "โอนเงินเรียบร้อย",
+        label: label("โอนเงินเรียบร้อย", "Funds transferred"),
         badgeClass: "bg-teal-50 text-teal-700 border-teal-200",
         icon: <HandCoins size={13} className="shrink-0" />,
         dotClass: "bg-teal-500",
       };
     case "cancelled":
       return {
-        label: "ยกเลิกคำร้อง",
+        label: label("ยกเลิกคำร้อง", "Cancelled"),
         badgeClass: "bg-gray-100 text-gray-700 border-gray-200",
         icon: <Ban size={13} className="shrink-0" />,
         dotClass: "bg-gray-500",
@@ -85,7 +119,7 @@ function getStatusBadgeConfig(statusType: FullActionHistoryItem["statusType"]) {
     case "pending":
     default:
       return {
-        label: "กำลังดำเนินการ",
+        label: label("กำลังดำเนินการ", "In progress"),
         badgeClass: "bg-orange-50 text-orange-700 border-orange-200",
         icon: <Clock size={13} className="shrink-0" />,
         dotClass: "bg-orange-400",
@@ -95,6 +129,7 @@ function getStatusBadgeConfig(statusType: FullActionHistoryItem["statusType"]) {
 
 export interface RequestTimelineProps {
   history?: ActionHistory[];
+  timelineHistory?: ActionHistory[];
   approvals?: ApprovalStep[];
   requestStatus?: string;
   bankDetails?: BankDetails;
@@ -106,10 +141,14 @@ export interface RequestTimelineProps {
   onShowTransferSlip?: () => void;
   hideComments?: boolean;
   hideBankDetails?: boolean;
+  footer?: React.ReactNode;
+  showEmptyWhenNoHistory?: boolean;
+  language?: StudentLanguage;
 }
 
 export default function RequestTimeline({
   history = [],
+  timelineHistory,
   approvals = [],
   requestStatus,
   bankDetails,
@@ -121,6 +160,9 @@ export default function RequestTimeline({
   onShowTransferSlip,
   hideComments = false,
   hideBankDetails = false,
+  footer,
+  showEmptyWhenNoHistory = false,
+  language = "th",
 }: RequestTimelineProps) {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
@@ -130,7 +172,7 @@ export default function RequestTimeline({
   });
 
   const timelineItems = buildFiveStepTimeline({
-    history,
+    history: timelineHistory ?? history,
     approvals,
     requestStatus,
     bankDetails,
@@ -151,7 +193,10 @@ export default function RequestTimeline({
     submitDate,
   });
 
-  const hasItems = timelineItems.length > 0;
+  const hasSourceHistory =
+    history.length > 0 || approvals.length > 0 || Boolean(requestStatus || submitDate);
+  const hasItems = showEmptyWhenNoHistory ? hasSourceHistory : timelineItems.length > 0;
+  const t = (thai: string, english: string) => (language === "en" ? english : thai);
 
   return (
     <section className={`${styles.loanApprovalInfoCard} ${className}`}>
@@ -164,12 +209,12 @@ export default function RequestTimeline({
             type="button"
             onClick={() => setIsHistoryModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 active:bg-orange-200 border border-orange-200 rounded-lg transition-colors cursor-pointer shadow-xs"
-            title="ดูประวัติการดำเนินการทั้งหมด"
-            aria-label="ดูประวัติการดำเนินการทั้งหมด"
+            title={t("ดูประวัติการดำเนินการทั้งหมด", "Show full log")}
+            aria-label={t("ดูประวัติการดำเนินการทั้งหมด", "Show full log")}
           >
             <History aria-hidden="true" size={14} strokeWidth={2.2} />
-            <span className="hidden sm:inline">ดูประวัติการดำเนินการทั้งหมด</span>
-            <span className="sm:hidden">ดูประวัติทั้งหมด</span>
+            <span className="hidden sm:inline">{t("ดูประวัติการดำเนินการทั้งหมด", "Show full log")}</span>
+            <span className="sm:hidden">{t("ดูประวัติทั้งหมด", "Show log")}</span>
           </button>
         }
       />
@@ -194,10 +239,12 @@ export default function RequestTimeline({
                   {isRevisionItem ? <Pencil size={13} strokeWidth={2.8} /> : null}
                 </span>
                 <div className={styles.timelineContent}>
-                  <strong>{item.action}</strong>
+                  <strong>{localizeTimelineText(item.action, language)}</strong>
                   <p>
-                    {item.date}
-                    {item.actor ? ` · โดย ${item.actor}` : ""}
+                    {localizeTimelineText(item.date, language)}
+                    {item.actor
+                      ? ` · ${t("โดย", "by")} ${localizeTimelineText(item.actor, language)}`
+                      : ""}
                   </p>
                   {!hideComments && item.commentTitle && item.comment ? (
                     <section
@@ -206,9 +253,11 @@ export default function RequestTimeline({
                       }`}
                     >
                       <header className={styles.sectionCardHeading}>
-                        <h2>{item.commentTitle}</h2>
+                        <h2>{localizeTimelineText(item.commentTitle, language)}</h2>
                       </header>
-                      <p className="break-words whitespace-pre-wrap">{item.comment}</p>
+                      <p className="break-words whitespace-pre-wrap">
+                        {localizeTimelineText(item.comment, language)}
+                      </p>
                     </section>
                   ) : null}
                   {(() => {
@@ -229,15 +278,15 @@ export default function RequestTimeline({
                               if (colonIndex === -1) {
                                 return (
                                   <Fragment key={dIdx}>
-                                    <dt>{detail}</dt>
+                                    <dt>{localizeTimelineText(detail, language)}</dt>
                                     <dd></dd>
                                   </Fragment>
                                 );
                               }
                               return (
                                 <Fragment key={dIdx}>
-                                  <dt>{detail.slice(0, colonIndex)}</dt>
-                                  <dd>{detail.slice(colonIndex + 1).trim()}</dd>
+                                  <dt>{localizeTimelineText(detail.slice(0, colonIndex), language)}</dt>
+                                  <dd>{localizeTimelineText(detail.slice(colonIndex + 1).trim(), language)}</dd>
                                 </Fragment>
                               );
                             })}
@@ -253,7 +302,7 @@ export default function RequestTimeline({
                               type="button"
                             >
                               <FileText aria-hidden="true" size={18} />
-                              ดูหลักฐาน
+                              {t("ดูหลักฐาน", "View proof")}
                             </button>
                           </div>
                         ) : null}
@@ -267,9 +316,11 @@ export default function RequestTimeline({
         </ol>
       ) : (
         <div className="text-center py-4 bg-gray-50/50 rounded-xl border border-dashed border-gray-200 mt-2">
-          <p className="text-[13px] text-gray-500">ยังไม่มีประวัติการดำเนินการ</p>
+          <p className="text-[13px] text-gray-500">{t("ยังไม่มีประวัติการดำเนินการ", "No activity yet")}</p>
         </div>
       )}
+
+      {footer}
 
       {/* Modal ดูประวัติการดำเนินการทั้งหมด */}
       {isHistoryModalOpen && (
@@ -295,12 +346,15 @@ export default function RequestTimeline({
                     id="history-modal-title"
                     className="text-base sm:text-lg font-bold text-gray-900 leading-tight"
                   >
-                    ประวัติการดำเนินการทั้งหมด
+                    {t("ประวัติการดำเนินการทั้งหมด", "Full activity log")}
                   </h2>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="mt-0.5 text-sm text-gray-500">
                     {studentName
-                      ? `นักศึกษา: ${studentName}`
-                      : "บันทึกการยื่นคำร้อง การส่งแก้ไข และการพิจารณา"}
+                      ? `${t("นักศึกษา", "Student")}: ${localizeTimelineText(studentName, language)}`
+                      : t(
+                          "บันทึกการยื่นคำร้อง การส่งแก้ไข และการพิจารณา",
+                          "Request submissions, revisions, and reviews",
+                        )}
                   </p>
                 </div>
               </div>
@@ -308,7 +362,7 @@ export default function RequestTimeline({
                 type="button"
                 onClick={() => setIsHistoryModalOpen(false)}
                 className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors cursor-pointer"
-                aria-label="ปิด"
+                aria-label={t("ปิด", "Close")}
               >
                 <X size={20} />
               </button>
@@ -319,7 +373,7 @@ export default function RequestTimeline({
               {fullHistory.length > 0 ? (
                 <div className="space-y-4">
                   {fullHistory.map((item, index) => {
-                    const badge = getStatusBadgeConfig(item.statusType);
+                    const badge = getStatusBadgeConfig(item.statusType, language);
 
                     return (
                       <div
@@ -336,29 +390,30 @@ export default function RequestTimeline({
                           <div className="flex items-start justify-between gap-2 flex-wrap">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold border ${badge.badgeClass}`}
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm font-semibold border ${badge.badgeClass}`}
                               >
                                 {badge.icon}
                                 {badge.label}
                               </span>
                               <strong className="text-sm text-gray-900 font-bold">
-                                {item.action}
+                                {localizeTimelineText(item.action, language)}
                               </strong>
                             </div>
-                            <span className="text-xs text-gray-500 whitespace-nowrap">
-                              {item.date}
+                            <span className="text-sm text-gray-500 whitespace-nowrap">
+                              {localizeTimelineText(item.date, language)}
                             </span>
                           </div>
 
                           {item.actor && (
-                            <p className="text-xs text-gray-600">
-                              <span className="text-gray-400">ดำเนินการโดย:</span> {item.actor}
+                            <p className="text-sm text-gray-600">
+                              <span className="text-gray-400">{t("ดำเนินการโดย:", "Handled by:")}</span>{" "}
+                              {localizeTimelineText(item.actor, language)}
                             </p>
                           )}
 
                           {item.comment && (
                             <div
-                              className={`p-3 rounded-lg text-xs leading-relaxed break-words whitespace-pre-wrap ${
+                              className={`p-3 rounded-lg text-sm leading-relaxed break-words whitespace-pre-wrap ${
                                 item.statusType === "rejected"
                                   ? "bg-red-50 border border-red-200 text-red-800"
                                   : item.statusType === "returned"
@@ -367,22 +422,22 @@ export default function RequestTimeline({
                               }`}
                             >
                               {item.commentTitle && (
-                                <div className="font-semibold mb-1 text-[11px] uppercase tracking-wider opacity-80">
+                                <div className="mb-1 text-sm font-semibold uppercase tracking-wider opacity-80">
                                   {item.commentTitle}
                                 </div>
                               )}
-                              <p>{item.comment}</p>
+                              <p>{localizeTimelineText(item.comment, language)}</p>
                             </div>
                           )}
 
                           {item.transferDetails && item.transferDetails.length > 0 && (
-                            <div className="bg-white border border-gray-200 rounded-lg p-2.5 text-xs text-gray-600 space-y-1">
+                            <div className="space-y-1 rounded-lg border border-gray-200 bg-white p-2.5 text-sm text-gray-600">
                               <div className="font-semibold text-gray-700 mb-1">
-                                รายละเอียดการโอนเงิน:
+                                {t("รายละเอียดการโอนเงิน:", "Transfer details:")}
                               </div>
                               {item.transferDetails.map((detail, dIdx) => (
-                                <div key={dIdx} className="text-[11px] text-gray-600">
-                                  {detail}
+                                <div key={dIdx} className="text-sm text-gray-600">
+                                  {localizeTimelineText(detail, language)}
                                 </div>
                               ))}
                             </div>
@@ -394,7 +449,7 @@ export default function RequestTimeline({
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500 text-sm">
-                  ยังไม่มีประวัติการดำเนินการ
+                  {t("ยังไม่มีประวัติการดำเนินการ", "No activity yet")}
                 </div>
               )}
             </div>
@@ -406,7 +461,7 @@ export default function RequestTimeline({
                 onClick={() => setIsHistoryModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-xs cursor-pointer"
               >
-                ปิด
+                {t("ปิด", "Close")}
               </button>
             </div>
           </div>

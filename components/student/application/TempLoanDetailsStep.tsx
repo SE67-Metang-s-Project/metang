@@ -12,11 +12,7 @@ import { Landmark, UserRound, X } from "lucide-react";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
 import BahtCoinIcon from "@/components/shared/BahtCoinIcon";
-import {
-  formatEnglishBahtText,
-  formatThaiBahtText,
-  parseLoanAmount,
-} from "@/app/student/studentFormatters";
+import { parseLoanAmount } from "@/app/student/studentFormatters";
 import CardHeader from "@/components/shared/CardHeader";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import LoanDetailOverview from "../loan-details/LoanDetailOverview";
@@ -113,8 +109,11 @@ export default function TempLoanDetailsStep({
   const schedule = mappedLoanDetails?.schedule?.length ? mappedLoanDetails.schedule : fallbackSchedule;
   const fullTimeline = mappedLoanDetails?.timeline?.length ? mappedLoanDetails.timeline : initialTimeline;
   const hasAdminFinishedTransfer = createdLoan?.status === "disbursed" || Boolean(createdLoan?.disbursedAt);
+  const hasExecutiveApproved = ["pending_disbursement", "disbursed", "closed"].includes(
+    createdLoan?.status ?? "",
+  );
   const timelineItems = fullTimeline.filter((item) => !item.isUpcoming);
-  const canCancelRequest = Boolean(createdLoan?.id) && !hasAdminFinishedTransfer;
+  const canCancelRequest = Boolean(createdLoan?.id) && !hasExecutiveApproved;
 
   const handleCancelRequest = async () => {
     if (!createdLoan?.id) return;
@@ -230,25 +229,13 @@ export default function TempLoanDetailsStep({
           title={t("ข้อมูลการกู้ยืม", "Loan Information")}
         />
         <dl className={styles.tempDetailDefinitionList}>
-          <div>
+          <div className={styles.loanPurposeRow}>
             <dt>{t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}</dt>
             <dd>{formData.purpose || t("จ่ายค่าเทอม", "Pay tuition fee")}</dd>
-          </div>
-          <div>
-            <dt>{t("หมายเหตุเพิ่มเติม", "Additional note")}</dt>
-            <dd>{formData.additionalNote || "-"}</dd>
           </div>
           <div className={styles.loanAmountRow}>
             <dt>{t("จำนวนเงินที่ขอกู้ยืม (บาท)", "Requested loan amount (baht)")}</dt>
             <dd>{formData.loanAmount || "0"}</dd>
-          </div>
-          <div>
-            <dt>{t("จำนวนเงินตัวอักษร", "Amount in words")}</dt>
-            <dd>
-              {language === "en"
-                ? formatEnglishBahtText(formData.loanAmount || "0")
-                : formatThaiBahtText(formData.loanAmount || "0")}
-            </dd>
           </div>
           <div>
             <dt>{t("จำนวนงวดการชำระ", "Number of installments")}</dt>

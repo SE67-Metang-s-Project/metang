@@ -73,7 +73,7 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
   );
 
   const isReturned = details.statusCode === "returned" || details.statusLabel.includes("แก้ไข");
-  const canCancelRequest = !["disbursed", "closed", "rejected", "cancelled"].includes(
+  const canCancelRequest = !["pending_disbursement", "disbursed", "closed", "rejected", "cancelled"].includes(
     details.statusCode ?? "",
   );
 

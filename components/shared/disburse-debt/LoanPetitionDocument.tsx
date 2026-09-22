@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Download } from "lucide-react";
-import { formatThaiBahtText } from "@/app/student/studentFormatters";
 import type { ActionRequest } from "./DisburseDebtCard";
 
 export interface LoanPetitionDocumentProps {
@@ -471,14 +470,9 @@ export default function LoanPetitionDocument({
             <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[100px] inline-block text-center">
               {formatAmount(request.amount)}
             </span>
-            <span> บาท (</span>
-            <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[180px] inline-block text-center">
-              {formatThaiBahtText(String(request.amount))}
-            </span>
-            <span>) เพื่อนำไปใช้ </span>
+            <span> บาท เพื่อนำไปใช้ </span>
             <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[280px] inline-block text-left">
               {request.objective}
-              {request.additionalNote ? ` (${request.additionalNote})` : ""}
             </span>
           </p>
 
@@ -508,11 +502,7 @@ export default function LoanPetitionDocument({
             <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[90px] inline-block text-center">
               {formatAmount(request.amount)}
             </span>{" "}
-            บาท (
-            <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[160px] inline-block text-center">
-              {formatThaiBahtText(String(request.amount))}
-            </span>
-            ) มาใช้คืนแก่กองทุนสวัสดิการนักศึกษาคณะพยาบาลศาสตร์ ภายในวันที่{" "}
+            บาท มาใช้คืนแก่กองทุนสวัสดิการนักศึกษาคณะพยาบาลศาสตร์ ภายในวันที่{" "}
             <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[35px] inline-block text-center">
               {returnDate.day}
             </span>{" "}
@@ -574,9 +564,7 @@ export default function LoanPetitionDocument({
               </tbody>
               <tfoot>
                 <tr className="bg-gray-50 text-gray-900 border-t border-gray-300 font-semibold text-[12.5px]">
-                  <td colSpan={2} className="py-1.5 px-4 text-right border-r border-gray-200">
-                    รวมทั้งสิ้น ({formatThaiBahtText(String(request.amount))})
-                  </td>
+                  <td colSpan={2} className="py-1.5 px-4 text-right border-r border-gray-200">รวมทั้งสิ้น</td>
                   <td className="py-1.5 px-4 text-right font-bold text-gray-900">
                     {formatAmount(request.amount)}
                   </td>

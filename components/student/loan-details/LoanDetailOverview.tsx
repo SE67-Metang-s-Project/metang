@@ -78,8 +78,6 @@ export default function LoanDetailOverview({
 }: LoanDetailOverviewProps) {
   const { language, t } = useStudentLanguage();
   const [isInternalModalOpen, setIsInternalModalOpen] = useState(false);
-  const isAdditionalReasonLong = details.additionalReason.length > 30;
-  const isPurposeLong = details.purpose.length > 30;
 
   const handleDownloadClick = () => {
     if (onDownloadClick) {
@@ -119,13 +117,9 @@ export default function LoanDetailOverview({
               {localizeStudentContent(details.submittedAt.replace(/^ยื่นเมื่อ\s*/, ""), language)}
             </dd>
           </div>
-          <div className={isPurposeLong ? styles.loanDetailPurposeLong : undefined}>
+          <div className={styles.loanDetailPurposeLong}>
             <dt>{t(details.purposeLabel, "Loan purpose")}</dt>
             <dd>{localizeStudentContent(details.purpose, language)}</dd>
-          </div>
-          <div className={isAdditionalReasonLong ? styles.loanDetailAdditionalNoteLong : undefined}>
-            <dt>{t(details.additionalReasonLabel, "Additional note")}</dt>
-            <dd>{localizeStudentContent(details.additionalReason, language)}</dd>
           </div>
         </dl>
         {showDownload && details.downloadLabel ? (
