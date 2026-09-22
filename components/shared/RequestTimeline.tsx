@@ -3,6 +3,7 @@
 import React, { Fragment, useState } from "react";
 import {
   Clock3,
+  Download,
   FileText,
   Pencil,
   History,
@@ -48,6 +49,8 @@ const timelineEnglishText: Record<string, string> = {
   "ตรวจสอบเรียบร้อย": "Verified",
   "อนุมัติเรียบร้อย": "Approved",
   "โอนเงินสำเร็จ": "Funds transferred",
+  "รอยืนยันการโอนเงิน": "Waiting for transfer confirmation",
+  "กรุณายืนยันการรับเงิน": "Please confirm receipt of funds",
   "เจ้าหน้าที่การเงิน": "Finance officer",
   "ความคิดเห็นของเจ้าหน้าที่การเงิน": "Finance officer's comment",
 };
@@ -139,6 +142,7 @@ export interface RequestTimelineProps {
   title?: string;
   className?: string;
   onShowTransferSlip?: () => void;
+  onDownloadRequest?: () => void;
   hideComments?: boolean;
   hideBankDetails?: boolean;
   footer?: React.ReactNode;
@@ -158,6 +162,7 @@ export default function RequestTimeline({
   title = "ติดตามสถานะคำร้อง",
   className = "",
   onShowTransferSlip,
+  onDownloadRequest,
   hideComments = false,
   hideBankDetails = false,
   footer,
@@ -265,9 +270,11 @@ export default function RequestTimeline({
                       (detail) => !hideBankDetails || !isBankDetail(detail),
                     );
                     const hasDetails = filteredDetails.length > 0;
-                    const hasSlipButton = Boolean(onShowTransferSlip);
+                    const isTransferStatus = item.action.includes("โอนเงิน");
+                    const hasSlipButton = isTransferStatus && Boolean(onShowTransferSlip);
+                    const hasDownloadButton = isTransferStatus && Boolean(onDownloadRequest);
 
-                    if (!hasDetails && !hasSlipButton) return null;
+                    if (!hasDetails && !hasSlipButton && !hasDownloadButton) return null;
 
                     return (
                       <>
@@ -292,18 +299,32 @@ export default function RequestTimeline({
                             })}
                           </dl>
                         ) : null}
-                        {hasSlipButton ? (
+                        {hasSlipButton || hasDownloadButton ? (
                           <div
-                            className={`${styles.loanTimelineActions} ${styles.loanTimelineActionsSingle}`}
+                            className={`${styles.loanTimelineActions} ${
+                              hasSlipButton && hasDownloadButton ? "" : styles.loanTimelineActionsSingle
+                            }`}
                           >
-                            <button
-                              className={styles.outlineOrangeButton}
-                              onClick={onShowTransferSlip}
-                              type="button"
-                            >
-                              <FileText aria-hidden="true" size={18} />
-                              {t("ดูหลักฐาน", "View proof")}
-                            </button>
+                            {hasSlipButton ? (
+                              <button
+                                className={styles.outlineOrangeButton}
+                                onClick={onShowTransferSlip}
+                                type="button"
+                              >
+                                <FileText aria-hidden="true" size={18} />
+                                {t("ดูหลักฐาน", "View proof")}
+                              </button>
+                            ) : null}
+                            {hasDownloadButton ? (
+                              <button
+                                className={styles.loanApplicationNext}
+                                onClick={onDownloadRequest}
+                                type="button"
+                              >
+                                <Download aria-hidden="true" size={18} />
+                                {t("ดาวน์โหลดแบบคำร้อง", "Download request")}
+                              </button>
+                            ) : null}
                           </div>
                         ) : null}
                       </>

@@ -12,6 +12,7 @@ import {
 } from "@/lib/loan-auth";
 import { getStudentLoanList, studentLoanDetailSelect } from "@/db/queries/loan-requests";
 import { enqueueReviewerNotifications } from "@/db/queries/notification-recipients";
+import { normalizeBankName } from "@/lib/bank-name";
 
 const educationLevelByStudentCodeDigit: Record<string, string> = {
   "0": "ประกาศนียบัตรผู้ช่วยพยาบาล",
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
   let input;
   try {
     input = parseLoanInput(await request.json());
+    input = { ...input, bankName: normalizeBankName(input.bankName) };
   } catch (error) {
     return apiError("VALIDATION_ERROR", error instanceof Error ? error.message : "Invalid request", 422);
   }

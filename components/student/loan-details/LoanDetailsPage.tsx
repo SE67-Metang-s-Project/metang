@@ -60,7 +60,10 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
     details.statusCode === "disbursed" ||
     details.statusLabel.includes("อยู่ระหว่างการชำระ") ||
     details.statusLabel.includes("กำลังชำระ");
-  const shouldShowDownload = hasAdminTransferredFunds;
+  const shouldShowDownload =
+    isWaitingForTransferConfirmation ||
+    ["disbursed", "closed"].includes(details.statusCode ?? "") ||
+    hasAdminTransferredFunds;
   const displayedDetails = useMemo(() => {
     return isWaitingForTransferConfirmation && isTransferAccepted
       ? { ...details, statusCode: undefined, statusLabel: "กำลังชำระ" }
@@ -132,11 +135,22 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
       <LoanDetailOverview
         details={displayedDetails}
         profile={profile}
-        showDownload={shouldShowDownload}
+        showDownload={false}
         onDownloadClick={() => setIsPetitionModalOpen(true)}
       />
 
       <LoanTimeline
+        bankDetails={{
+          bankName: details.bankName,
+          accountNumber: details.bankAccountNo,
+          accountName: details.bankAccountName,
+        }}
+        hideBankDetails
+        confirmTransferLabel={
+          isWaitingForTransferConfirmation && hasAdminTransferredFunds
+            ? t("ยืนยันการรับเงิน", "Accept money")
+            : undefined
+        }
         items={displayedTimeline}
         isTransferAccepted={isTransferAccepted}
         onConfirmTransfer={
@@ -147,10 +161,12 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
             : undefined
         }
         onShowTransferSlip={hasAdminTransferredFunds ? () => setIsSlipModalOpen(true) : undefined}
+        onDownloadRequest={shouldShowDownload ? () => setIsPetitionModalOpen(true) : undefined}
         onCancelRequest={() => setIsCancelDialogOpen(true)}
         onEditRequest={isReturned ? () => router.push("/student/loan/apply") : undefined}
         showCancelRequest={canCancelRequest}
         showEditRequest={isReturned}
+        requestStatus={details.statusCode}
       />
       <TempDetailCard details={details} profile={profile} />
       <LoanDetailSchedule items={details.schedule} />

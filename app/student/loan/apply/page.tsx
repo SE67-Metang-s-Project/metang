@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import TempLoanApplicationPage from "@/components/student/application/TempLoanApplicationPage";
 import { requireStudentAccess } from "@/lib/loan-auth";
 import { getStudentCurrentLoan } from "@/db/queries/loan-requests";
+import { normalizeBankName } from "@/lib/bank-name";
 import { listAdvisors } from "@/db/queries/users";
 import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
 
@@ -50,7 +51,7 @@ export default async function StudentLoanApplyPage() {
       studentYear: currentLoan.studentYear,
       purpose: currentLoan.purpose,
       additionalNote: currentLoan.additionalNote,
-      bankName: currentLoan.bankName,
+      bankName: normalizeBankName(currentLoan.bankName),
       bankAccountNo: currentLoan.bankAccountNo,
       bankAccountName: currentLoan.bankAccountName,
       installmentCount: currentLoan.installmentCount,

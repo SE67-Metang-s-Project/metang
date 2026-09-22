@@ -4,7 +4,10 @@ import { useState } from "react";
 import { Check, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { LoanTimelineItem } from "@/app/student/studentMockData";
-import RequestTimeline, { type ActionHistory } from "@/components/shared/RequestTimeline";
+import RequestTimeline, {
+  type ActionHistory,
+  type BankDetails,
+} from "@/components/shared/RequestTimeline";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
@@ -12,6 +15,7 @@ import styles from "@/app/student/student.module.css";
 type LoanTimelineProps = {
   items?: LoanTimelineItem[];
   onShowTransferSlip?: () => void;
+  onDownloadRequest?: () => void;
   confirmTransferLabel?: string;
   isTransferAccepted?: boolean;
   onConfirmTransfer?: () => void;
@@ -20,18 +24,26 @@ type LoanTimelineProps = {
   onEditRequest?: () => void;
   showEditRequest?: boolean;
   compactActions?: boolean;
+  bankDetails?: BankDetails;
+  hideBankDetails?: boolean;
+  requestStatus?: string;
 };
 
-function getRequestStatus(items: LoanTimelineItem[]) {
+function getRequestStatus(items: LoanTimelineItem[], isTransferAccepted: boolean) {
   const pendingItem = items.find((item) => item.isPending);
   const pendingTitle = pendingItem?.title ?? "";
 
-  if (items.some((item) => item.title.includes("โอนเงิน") && !item.isPending)) {
-    return "disbursed";
-  }
   if (items.some((item) => item.isFailed)) return "rejected";
-  if (pendingTitle.includes("เจ้าหน้าที่การเงิน") || pendingTitle.includes("โอนเงิน")) {
+  if (
+    !isTransferAccepted &&
+    (pendingTitle.includes("เจ้าหน้าที่การเงิน") ||
+      pendingTitle.includes("โอนเงิน") ||
+      (Boolean(pendingItem) && items.some((item) => item.title.includes("โอนเงิน") && !item.isPending)))
+  ) {
     return "pending_disbursement";
+  }
+  if (isTransferAccepted || items.some((item) => item.title.includes("โอนเงิน") && !item.isPending)) {
+    return "disbursed";
   }
   if (pendingTitle.includes("ผู้บริหาร")) return "pending_executive";
   if (pendingTitle.includes("เจ้าหน้าที่")) return "pending_admin";
@@ -42,6 +54,7 @@ function getRequestStatus(items: LoanTimelineItem[]) {
 export default function LoanTimeline({
   items = [],
   onShowTransferSlip,
+  onDownloadRequest,
   confirmTransferLabel,
   isTransferAccepted = false,
   onConfirmTransfer,
@@ -50,6 +63,9 @@ export default function LoanTimeline({
   onEditRequest,
   showEditRequest = false,
   compactActions = false,
+  bankDetails,
+  hideBankDetails = false,
+  requestStatus,
 }: LoanTimelineProps) {
   const router = useRouter();
   const { language, t } = useStudentLanguage();
@@ -60,6 +76,9 @@ export default function LoanTimeline({
     isOpen: isConfirmationSuccessOpen,
   });
   const hasAcceptedTransfer = isTransferAccepted || isTransferConfirmed;
+  const effectiveRequestStatus = hasAcceptedTransfer
+    ? "disbursed"
+    : requestStatus ?? getRequestStatus(items, false);
   const shouldShowConfirmation = !hasAcceptedTransfer && Boolean(confirmTransferLabel || onConfirmTransfer);
   const confirmationLabel = confirmTransferLabel ?? t("ยืนยันการรับเงิน", "Confirm receipt");
   const advisorName = items.find((item) => item.title.includes("อาจารย์"))?.actor;
@@ -116,14 +135,17 @@ export default function LoanTimeline({
     <>
       <RequestTimeline
         advisorName={advisorName}
+        bankDetails={bankDetails}
         className={`${styles.studentRequestTimeline} ${
           compactActions ? styles.loanTimelineCompactActions : ""
         }`}
         footer={requestActions}
         history={history}
+        hideBankDetails={hideBankDetails}
         language={language}
         onShowTransferSlip={onShowTransferSlip}
-        requestStatus={items.length ? getRequestStatus(items) : undefined}
+        onDownloadRequest={onDownloadRequest}
+        requestStatus={items.length ? effectiveRequestStatus : undefined}
         showEmptyWhenNoHistory
         title={t("ติดตามสถานะคำร้อง", "Request Status")}
         timelineHistory={timelineHistory}

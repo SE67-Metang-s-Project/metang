@@ -46,7 +46,7 @@ export const tempLoanFormOptions = {
     ["BAY", "ธนาคารกรุงศรีอยุธยา", "Krungsri Bank"],
     ["TTB", "ธนาคารทหารไทยธนชาต", "TMBThanachart Bank"],
     ["GSB", "ธนาคารออมสิน", "Government Savings Bank"],
-    ["BAAC", "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (ธ.ก.ส.)", "BAAC"],
+    ["BAAC", "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร", "BAAC"],
     ["GHB", "ธนาคารอาคารสงเคราะห์ (ธอส.)", "Government Housing Bank"],
     ["UOB", "ธนาคารยูโอบี", "United Overseas Bank"],
     ["KKP", "ธนาคารเกียรตินาคินภัทร", "Kiatnakin Phatra Bank"],

@@ -289,6 +289,11 @@ export default function StudentDashboard({
       "status" in currentActiveLoan &&
       ["pending_disbursement", "disbursed", "closed"].includes(currentActiveLoan.status ?? ""),
   );
+  const isWaitingForTransferConfirmation = Boolean(
+    currentActiveLoan &&
+      "status" in currentActiveLoan &&
+      currentActiveLoan.status === "pending_disbursement",
+  );
   const currentLoanKey =
     currentActiveLoan && "id" in currentActiveLoan && currentActiveLoan.id
       ? currentActiveLoan.id
@@ -390,6 +395,11 @@ export default function StudentDashboard({
                   }
                 : undefined
             }
+            confirmTransferLabel={
+              isWaitingForTransferConfirmation && hasAdminTransferredFunds
+                ? t("ยืนยันการรับเงิน", "Accept money")
+                : undefined
+            }
             onShowTransferSlip={
               hasAdminTransferredFunds
                 ? () => {
@@ -403,6 +413,11 @@ export default function StudentDashboard({
             }
             showCancelRequest={Boolean(currentActiveLoan) && !hasExecutiveApproved}
             showEditRequest={isActiveLoanReturned}
+            requestStatus={
+              currentActiveLoan && "status" in currentActiveLoan
+                ? currentActiveLoan.status
+                : undefined
+            }
           />
 
           <LoanDetailSchedule items={schedule ?? []} />

@@ -13,6 +13,7 @@ import type {
   LoanTimelineItem,
   PaymentAccount,
 } from "@/app/student/studentMockData";
+import { normalizeBankName } from "@/lib/bank-name";
 
 export type StatusDisplay = {
   label: string;
@@ -471,12 +472,12 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
   // Disbursed
   if (loan.disbursedAt) {
     timeline.push({
-      title: `เจ้าหน้าที่โอนเงิน จำนวน ${requestedAmount.toLocaleString("th-TH")}`,
+      title: `เจ้าหน้าที่โอนเงิน จำนวน ฿${requestedAmount.toLocaleString("th-TH")}`,
       dateTime: formatThaiDateTime(loan.disbursedAt),
       actor: "เจ้าหน้าที่",
       isCompleted: true,
       transferDetails: [
-        `ธนาคาร: ${loan.bankName ?? "-"}`,
+        `ธนาคาร: ${loan.bankName ? normalizeBankName(loan.bankName) : "-"}`,
         `เลขที่บัญชี: ${loan.bankAccountNo ?? "-"}`,
         `ชื่อบัญชี: ${loan.bankAccountName ?? "-"}`,
       ],
@@ -552,7 +553,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     statusCode: loan.status,
     studentYear: loan.studentYear,
     advisorName: loan.advisor?.fullNameTh ?? "-",
-    bankName: loan.bankName,
+    bankName: loan.bankName ? normalizeBankName(loan.bankName) : undefined,
     bankAccountNo: loan.bankAccountNo,
     bankAccountName: loan.bankAccountName,
     requestNumber: formatRequestNumber(loan.id),

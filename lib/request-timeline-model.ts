@@ -141,7 +141,7 @@ export function buildFiveStepTimeline({
       (h.action.includes("ผู้บริหาร") || h.actor.includes("ผู้บริหาร")),
   );
 
-  const disburseHist = history.find((h) => h.action.includes("โอนเงิน"));
+  const disburseHist = [...history].reverse().find((h) => h.action.includes("โอนเงิน"));
 
   // Check which step returned if requestStatus is "returned"
   let returnedRole: "advisor" | "admin" | "executive" | null = null;
@@ -368,11 +368,11 @@ export function buildFiveStepTimeline({
   }
 
   // Step 5: เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว
+  const isStep5Pending = requestStatus === "pending_disbursement";
   const isStep5Disbursed =
     requestStatus === "disbursed" ||
     requestStatus === "closed" ||
-    Boolean(disburseHist);
-  const isStep5Pending = requestStatus === "pending_disbursement";
+    (!isStep5Pending && Boolean(disburseHist));
 
   const rawTransferDetails =
     disburseHist?.transferDetails ||
@@ -405,9 +405,9 @@ export function buildFiveStepTimeline({
     };
   } else if (isStep5Pending) {
     step5Item = {
-      action: "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว",
-      date: "กำลังดำเนินการ",
-      actor: "เจ้าหน้าที่การเงิน",
+      action: disburseHist?.action || "เจ้าหน้าที่การเงินดำเนินการโอนเงิน",
+      date: disburseHist?.date || "กำลังดำเนินการ",
+      actor: disburseHist?.actor || "เจ้าหน้าที่การเงิน",
       isPending: true,
       comment: hideComments ? undefined : disburseHist?.comment,
       commentTitle:

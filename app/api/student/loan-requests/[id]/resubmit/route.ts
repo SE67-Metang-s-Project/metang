@@ -8,6 +8,7 @@ import { serializeJson } from "@/lib/serialization";
 import { validateJsonRequest } from "@/lib/request-security";
 import { studentLoanSelect } from "@/db/queries/loan-requests";
 import { enqueueReviewerNotifications } from "@/db/queries/notification-recipients";
+import { normalizeBankName } from "@/lib/bank-name";
 
 
 type Params = { params: Promise<{ id: string }> };
@@ -37,6 +38,7 @@ export async function POST(request: Request, { params }: Params) {
   let input;
   try {
     input = parseLoanInput(await request.json());
+    input = { ...input, bankName: normalizeBankName(input.bankName) };
   } catch (error) {
     return apiError(
       "VALIDATION_ERROR",

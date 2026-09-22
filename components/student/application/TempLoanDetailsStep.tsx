@@ -112,6 +112,7 @@ export default function TempLoanDetailsStep({
   const hasExecutiveApproved = ["pending_disbursement", "disbursed", "closed"].includes(
     createdLoan?.status ?? "",
   );
+  const isWaitingForTransferConfirmation = createdLoan?.status === "pending_disbursement";
   const timelineItems = fullTimeline.filter((item) => !item.isUpcoming);
   const canCancelRequest = Boolean(createdLoan?.id) && !hasExecutiveApproved;
 
@@ -153,12 +154,22 @@ export default function TempLoanDetailsStep({
         {t("ขั้นตอนที่ 3: รายละเอียดการกู้ยืม", "Step 3: Loan Details")}
       </h2>
 
-      <LoanDetailOverview details={details} />
+      <LoanDetailOverview details={details} showDownload={hasExecutiveApproved} />
       <LoanTimeline
+        bankDetails={{
+          bankName: bankLabel,
+          accountNumber: formData.accountNumber,
+          accountName: formData.accountName,
+        }}
         items={timelineItems}
-        confirmTransferLabel={hasAdminFinishedTransfer ? t("ยืนยันการรับเงิน", "Confirm Receipt") : undefined}
+        confirmTransferLabel={
+          hasAdminFinishedTransfer && isWaitingForTransferConfirmation
+            ? t("ยืนยันการรับเงิน", "Accept money")
+            : undefined
+        }
         onCancelRequest={() => setIsCancelDialogOpen(true)}
         onShowTransferSlip={hasAdminFinishedTransfer ? () => undefined : undefined}
+        requestStatus={createdLoan?.status}
         showCancelRequest={canCancelRequest}
       />
 
