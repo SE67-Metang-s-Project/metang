@@ -15,13 +15,15 @@ async function handle(request: Request) {
 
   const date0 = bangkokDatePlusDays(0);
   const date1 = bangkokDatePlusDays(1);
+  const date3 = bangkokDatePlusDays(3);
   const time0 = date0.getTime();
   const time1 = date1.getTime();
+  const time3 = date3.getTime();
 
   const installments = await prisma.installment.findMany({
     where: {
       settledAt: null,
-      dueDate: { in: [date0, date1] },
+      dueDate: { in: [date0, date1, date3] },
     },
     select: { id: true, loanId: true, dueDate: true },
   });
@@ -35,6 +37,7 @@ async function handle(request: Request) {
         const offsets = [];
         if (timeDue === time0) offsets.push(0);
         if (timeDue === time1) offsets.push(1);
+        if (timeDue === time3) offsets.push(3);
 
         const isoDate = installment.dueDate.toISOString().slice(0, 10);
 
@@ -42,7 +45,7 @@ async function handle(request: Request) {
           const dedupeKey = buildInstallmentReminderDedupeKey(
             installment.id,
             isoDate,
-            offset as 0 | 1,
+            offset as 0 | 1 | 3,
           );
 
           await enqueueNotification(tx, {
