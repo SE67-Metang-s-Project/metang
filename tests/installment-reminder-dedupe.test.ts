@@ -14,8 +14,8 @@ test("buildInstallmentReminderDedupeKey produces correct strings", () => {
     "installment-reminder:123:2026-09-16:0",
   );
   assert.equal(
-    buildInstallmentReminderDedupeKey(BigInt(456), "2026-09-19", 3),
-    "installment-reminder:456:2026-09-19:3",
+    buildInstallmentReminderDedupeKey("789", "2026-09-20", 1),
+    "installment-reminder:789:2026-09-20:1",
   );
 });
 
