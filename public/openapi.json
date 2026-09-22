@@ -585,6 +585,478 @@
           "data"
         ]
       },
+      "AdminPaymentDetailResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "loanId": {
+                "type": "string"
+              },
+              "installmentId": {
+                "type": "string",
+                "nullable": true
+              },
+              "amount": {
+                "type": "number"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "pending_review",
+                  "confirmed",
+                  "rejected"
+                ],
+                "description": "The slip is read through GET /api/payments/{id}/slip; the storage path is never sent."
+              },
+              "hasSlip": {
+                "type": "boolean",
+                "description": "The slip is read through GET /api/payments/{id}/slip; the storage path is never sent."
+              },
+              "paidAt": {
+                "type": "string",
+                "nullable": true
+              },
+              "confirmedBy": {
+                "type": "string",
+                "nullable": true
+              },
+              "confirmedAt": {
+                "type": "string",
+                "nullable": true
+              },
+              "reviewNote": {
+                "type": "string",
+                "nullable": true
+              },
+              "createdAt": {
+                "type": "string"
+              },
+              "loan": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "draft",
+                      "returned",
+                      "pending_advisor",
+                      "pending_admin",
+                      "pending_executive",
+                      "pending_disbursement",
+                      "disbursed",
+                      "closed",
+                      "rejected",
+                      "cancelled"
+                    ]
+                  },
+                  "student": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "studentCode": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "fullNameTh": {
+                        "type": "string"
+                      },
+                      "fullNameEn": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "phone": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "studentCode",
+                      "fullNameTh",
+                      "fullNameEn",
+                      "phone"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "status",
+                  "student"
+                ]
+              },
+              "installment": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "seq": {
+                    "type": "number"
+                  },
+                  "dueDate": {
+                    "type": "string"
+                  },
+                  "amountDue": {
+                    "type": "number"
+                  },
+                  "amountPaid": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "id",
+                  "seq",
+                  "dueDate",
+                  "amountDue",
+                  "amountPaid"
+                ],
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "loanId",
+              "installmentId",
+              "amount",
+              "status",
+              "hasSlip",
+              "paidAt",
+              "confirmedBy",
+              "confirmedAt",
+              "reviewNote",
+              "createdAt",
+              "loan",
+              "installment"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "AdminPaymentItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "loanId": {
+            "type": "string"
+          },
+          "installmentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "amount": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending_review",
+              "confirmed",
+              "rejected"
+            ],
+            "description": "The slip is read through GET /api/payments/{id}/slip; the storage path is never sent."
+          },
+          "hasSlip": {
+            "type": "boolean",
+            "description": "The slip is read through GET /api/payments/{id}/slip; the storage path is never sent."
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "loan": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "returned",
+                  "pending_advisor",
+                  "pending_admin",
+                  "pending_executive",
+                  "pending_disbursement",
+                  "disbursed",
+                  "closed",
+                  "rejected",
+                  "cancelled"
+                ]
+              },
+              "student": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "studentCode": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "fullNameTh": {
+                    "type": "string"
+                  },
+                  "fullNameEn": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "phone": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "studentCode",
+                  "fullNameTh",
+                  "fullNameEn",
+                  "phone"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "status",
+              "student"
+            ]
+          },
+          "installment": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "seq": {
+                "type": "number"
+              },
+              "dueDate": {
+                "type": "string"
+              },
+              "amountDue": {
+                "type": "number"
+              },
+              "amountPaid": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "seq",
+              "dueDate",
+              "amountDue",
+              "amountPaid"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "loanId",
+          "installmentId",
+          "amount",
+          "status",
+          "hasSlip",
+          "paidAt",
+          "confirmedBy",
+          "confirmedAt",
+          "reviewNote",
+          "createdAt",
+          "loan",
+          "installment"
+        ]
+      },
+      "AdminPaymentQueueResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "loanId": {
+                  "type": "string"
+                },
+                "installmentId": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending_review",
+                    "confirmed",
+                    "rejected"
+                  ],
+                  "description": "The slip is read through GET /api/payments/{id}/slip; the storage path is never sent."
+                },
+                "hasSlip": {
+                  "type": "boolean",
+                  "description": "The slip is read through GET /api/payments/{id}/slip; the storage path is never sent."
+                },
+                "paidAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "confirmedBy": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "confirmedAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "reviewNote": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "loan": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "draft",
+                        "returned",
+                        "pending_advisor",
+                        "pending_admin",
+                        "pending_executive",
+                        "pending_disbursement",
+                        "disbursed",
+                        "closed",
+                        "rejected",
+                        "cancelled"
+                      ]
+                    },
+                    "student": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "studentCode": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "fullNameTh": {
+                          "type": "string"
+                        },
+                        "fullNameEn": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "phone": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "studentCode",
+                        "fullNameTh",
+                        "fullNameEn",
+                        "phone"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "student"
+                  ]
+                },
+                "installment": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "seq": {
+                      "type": "number"
+                    },
+                    "dueDate": {
+                      "type": "string"
+                    },
+                    "amountDue": {
+                      "type": "number"
+                    },
+                    "amountPaid": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "seq",
+                    "dueDate",
+                    "amountDue",
+                    "amountPaid"
+                  ],
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "loanId",
+                "installmentId",
+                "amount",
+                "status",
+                "hasSlip",
+                "paidAt",
+                "confirmedBy",
+                "confirmedAt",
+                "reviewNote",
+                "createdAt",
+                "loan",
+                "installment"
+              ]
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "AdminQueueItem": {
         "type": "object",
         "properties": {
@@ -4610,15 +5082,12 @@
                   "nullable": true
                 },
                 "amount": {
-                  "type": "number"
+                  "type": "number",
+                  "description": "The slip itself is read through GET /api/payments/{id}/slip; the storage path is never sent."
                 },
-                "slipPath": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "slipRef": {
-                  "type": "string",
-                  "nullable": true
+                "hasSlip": {
+                  "type": "boolean",
+                  "description": "The slip itself is read through GET /api/payments/{id}/slip; the storage path is never sent."
                 },
                 "status": {
                   "type": "string"
@@ -4644,8 +5113,7 @@
                 "loanId",
                 "installmentId",
                 "amount",
-                "slipPath",
-                "slipRef",
+                "hasSlip",
                 "status",
                 "confirmedBy",
                 "confirmedAt",
@@ -4696,15 +5164,12 @@
             "nullable": true
           },
           "amount": {
-            "type": "number"
+            "type": "number",
+            "description": "The slip itself is read through GET /api/payments/{id}/slip; the storage path is never sent."
           },
-          "slipPath": {
-            "type": "string",
-            "nullable": true
-          },
-          "slipRef": {
-            "type": "string",
-            "nullable": true
+          "hasSlip": {
+            "type": "boolean",
+            "description": "The slip itself is read through GET /api/payments/{id}/slip; the storage path is never sent."
           },
           "status": {
             "type": "string"
@@ -4730,8 +5195,7 @@
           "loanId",
           "installmentId",
           "amount",
-          "slipPath",
-          "slipRef",
+          "hasSlip",
           "status",
           "confirmedBy",
           "confirmedAt",
@@ -5024,15 +5488,12 @@
                         "nullable": true
                       },
                       "amount": {
-                        "type": "number"
+                        "type": "number",
+                        "description": "The slip itself is read through GET /api/payments/{id}/slip; the storage path is never sent."
                       },
-                      "slipPath": {
-                        "type": "string",
-                        "nullable": true
-                      },
-                      "slipRef": {
-                        "type": "string",
-                        "nullable": true
+                      "hasSlip": {
+                        "type": "boolean",
+                        "description": "The slip itself is read through GET /api/payments/{id}/slip; the storage path is never sent."
                       },
                       "status": {
                         "type": "string"
@@ -5058,8 +5519,7 @@
                       "loanId",
                       "installmentId",
                       "amount",
-                      "slipPath",
-                      "slipRef",
+                      "hasSlip",
                       "status",
                       "confirmedBy",
                       "confirmedAt",
@@ -5159,6 +5619,37 @@
           "withdrawal",
           "credit_adjustment",
           "debit_adjustment"
+        ]
+      },
+      "PaymentDecisionBody": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "rejected"
+            ],
+            "nullable": false
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "PaymentIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ]
       },
       "PhoneNumberBody": {
@@ -5278,6 +5769,158 @@
         "required": [
           "action",
           "role"
+        ]
+      },
+      "StudentPaymentBody": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Whole baht.",
+            "nullable": false
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO 8601. Defaults to now when omitted; never in the future."
+          },
+          "slip": {
+            "type": "string",
+            "description": "The transfer slip: image/jpeg, image/png or application/pdf, up to 10MB.",
+            "nullable": false
+          }
+        },
+        "required": [
+          "amount",
+          "slip"
+        ]
+      },
+      "StudentPaymentItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "loanId": {
+            "type": "string"
+          },
+          "installmentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "amount": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending_review",
+              "confirmed",
+              "rejected"
+            ],
+            "description": "The slip is read through GET /api/payments/{id}/slip; the storage path is never sent."
+          },
+          "hasSlip": {
+            "type": "boolean",
+            "description": "The slip is read through GET /api/payments/{id}/slip; the storage path is never sent."
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why a reviewer rejected it, so a corrected slip can be sent."
+          },
+          "reviewNote": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why a reviewer rejected it, so a corrected slip can be sent."
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "loanId",
+          "installmentId",
+          "amount",
+          "status",
+          "hasSlip",
+          "paidAt",
+          "confirmedAt",
+          "reviewNote",
+          "createdAt"
+        ]
+      },
+      "StudentPaymentResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "loanId": {
+                "type": "string"
+              },
+              "installmentId": {
+                "type": "string",
+                "nullable": true
+              },
+              "amount": {
+                "type": "number"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "pending_review",
+                  "confirmed",
+                  "rejected"
+                ],
+                "description": "The slip is read through GET /api/payments/{id}/slip; the storage path is never sent."
+              },
+              "hasSlip": {
+                "type": "boolean",
+                "description": "The slip is read through GET /api/payments/{id}/slip; the storage path is never sent."
+              },
+              "paidAt": {
+                "type": "string",
+                "nullable": true
+              },
+              "confirmedAt": {
+                "type": "string",
+                "nullable": true,
+                "description": "Why a reviewer rejected it, so a corrected slip can be sent."
+              },
+              "reviewNote": {
+                "type": "string",
+                "nullable": true,
+                "description": "Why a reviewer rejected it, so a corrected slip can be sent."
+              },
+              "createdAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "loanId",
+              "installmentId",
+              "amount",
+              "status",
+              "hasSlip",
+              "paidAt",
+              "confirmedAt",
+              "reviewNote",
+              "createdAt"
+            ]
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "SuperAdminUser": {
@@ -5901,7 +6544,8 @@
               "type": "string",
               "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "REQ202609060000"
+            "example": "REQ202609060000",
+            "description": "The loan request id."
           }
         ],
         "security": [
@@ -5980,7 +6624,8 @@
               "type": "string",
               "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "REQ202609060000"
+            "example": "REQ202609060000",
+            "description": "The loan request id."
           }
         ],
         "security": [
@@ -6088,7 +6733,8 @@
               "type": "string",
               "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "REQ202609060000"
+            "example": "REQ202609060000",
+            "description": "The loan request id."
           }
         ],
         "security": [
@@ -6122,6 +6768,263 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AdminLoanRequestDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/payments": {
+      "get": {
+        "operationId": "get-admin-payments",
+        "summary": "List repayment slips awaiting Admin/SuperAdmin review, oldest first.",
+        "description": "",
+        "tags": [
+          "Admin payments"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPaymentQueueResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/payments/{id}": {
+      "get": {
+        "operationId": "get-admin-payments-{id}",
+        "summary": "Get a single repayment slip submission for Admin/SuperAdmin review.",
+        "description": "`id` is the payment id - the `id` field of a payment, not its `installmentId`.",
+        "tags": [
+          "Admin payments"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "00000000-0000-0000-0000-000000000304",
+            "description": "The payment id - the `id` field of a payment, not its `installmentId` or `installment.id`."
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPaymentDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/payments/{id}/decision": {
+      "post": {
+        "operationId": "post-admin-payments-{id}-decision",
+        "summary": "Confirm or reject a repayment slip awaiting review. A confirmation applies the money to the",
+        "description": "`id` is the payment id - the `id` field of a payment, not its `installmentId`. The payment amount is not editable: it is read from the stored submission, never from this body. Rejecting requires a note, which is shown to the student so they can submit a corrected slip.",
+        "tags": [
+          "Admin payments"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "00000000-0000-0000-0000-000000000304",
+            "description": "The payment id - the `id` field of a payment, not its `installmentId` or `installment.id`."
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentDecisionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPaymentDetailResponse"
                 }
               }
             }
@@ -6244,7 +7147,8 @@
               "type": "string",
               "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "REQ202609060000"
+            "example": "REQ202609060000",
+            "description": "The loan request id."
           }
         ],
         "security": [
@@ -6293,7 +7197,8 @@
               "type": "string",
               "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "REQ202609060000"
+            "example": "REQ202609060000",
+            "description": "The loan request id."
           }
         ],
         "security": [
@@ -6624,7 +7529,8 @@
               "type": "string",
               "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "REQ202609060000"
+            "example": "REQ202609060000",
+            "description": "The loan request id."
           }
         ],
         "security": [
@@ -6693,7 +7599,8 @@
               "type": "string",
               "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "REQ202609060000"
+            "example": "REQ202609060000",
+            "description": "The loan request id."
           }
         ],
         "security": [
@@ -6798,9 +7705,11 @@
             "name": "id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d{1,18}$"
             },
-            "example": "123"
+            "example": "1",
+            "description": "The fund transaction id - the ledger row's own id, not a loan id or a payment id."
           }
         ],
         "security": [
@@ -7143,6 +8052,98 @@
         }
       }
     },
+    "/payments/{id}/slip": {
+      "get": {
+        "operationId": "get-payments-{id}-slip",
+        "summary": "Redirect to a short-lived signed URL for a payment's repayment slip evidence.",
+        "description": "Use it as an image source - `<img src=\"/api/payments/{id}/slip\">`. Testing it from this page fails with \"Failed to fetch\": the 302 target is cross-origin and Supabase answers `Access-Control-Allow-Origin: `, which a credentialed fetch rejects. An `<img>` load is not a credentialed CORS request, so it is unaffected.",
+        "tags": [
+          "Payment slips"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "00000000-0000-0000-0000-000000000304",
+            "description": "The payment id - the `id` field of a payment, not its `installmentId` or `installment.id`."
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Successful response",
+            "headers": {
+              "Location": {
+                "description": "Redirect target URL",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/student/phone-number": {
       "get": {
         "operationId": "get-student-phone-number",
@@ -7467,7 +8468,8 @@
               "type": "string",
               "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "REQ202609060000"
+            "example": "REQ202609060000",
+            "description": "The loan request id."
           }
         ],
         "security": [
@@ -7564,7 +8566,8 @@
               "type": "string",
               "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "REQ202609060000"
+            "example": "REQ202609060000",
+            "description": "The loan request id."
           }
         ],
         "security": [
@@ -7633,7 +8636,8 @@
               "type": "string",
               "pattern": "^REQ\\d{8}\\d{4}$"
             },
-            "example": "REQ202609060000"
+            "example": "REQ202609060000",
+            "description": "The loan request id."
           }
         ],
         "security": [
@@ -7695,6 +8699,111 @@
           },
           "404": {
             "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/student/payments": {
+      "post": {
+        "operationId": "post-student-payments",
+        "summary": "Submit a repayment slip for the student's own loan (multipart/form-data: a `slip` file -",
+        "description": "Takes no loan id: a student may hold only one non-terminal loan, so the server resolves the disbursed one itself and the client needs a single request. The slip is stored privately and read back only through GET /api/payments/{id}/slip. Only one submission may await review at a time. Repayment history is served by GET /api/student/loan-requests/{id}, which returns the loan's payments.",
+        "tags": [
+          "Student payments"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "slip": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "amount": {
+                    "type": "integer"
+                  },
+                  "paidAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "slip",
+                  "amount"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentPaymentResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/json": {
                 "schema": {
@@ -7954,7 +9063,8 @@
               "type": "string",
               "format": "uuid"
             },
-            "example": "4cf0a318-3344-4c95-a4b7-99d3a721b3bf"
+            "example": "4cf0a318-3344-4c95-a4b7-99d3a721b3bf",
+            "description": "The user id."
           }
         ],
         "security": [
@@ -8243,6 +9353,9 @@
       "name": "Admin loans"
     },
     {
+      "name": "Admin payments"
+    },
+    {
       "name": "Advisor loans"
     },
     {
@@ -8270,10 +9383,16 @@
       "name": "Openapi"
     },
     {
+      "name": "Payment slips"
+    },
+    {
       "name": "Student"
     },
     {
       "name": "Student loans"
+    },
+    {
+      "name": "Student payments"
     },
     {
       "name": "SuperAdmin fund"

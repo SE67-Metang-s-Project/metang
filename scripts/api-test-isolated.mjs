@@ -243,7 +243,7 @@ async function main() {
         "isolated",
         "--tests-only",
         "--exclude-tags",
-        "Fund_slips,Notifications,Workflow",
+        "Fund_slips,Payment_slips,Notifications,Workflow",
       ],
       "endpoints",
     );
