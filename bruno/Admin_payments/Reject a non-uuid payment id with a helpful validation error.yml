@@ -1,0 +1,42 @@
+info:
+  name: Reject a non-uuid payment id with a helpful validation error
+  type: http
+  seq: 3
+  tags:
+    - Admin_payments
+
+http:
+  method: GET
+  url: "{{baseUrl}}/admin/payments/:id"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  params:
+    - name: id
+      value: "140"
+      type: path
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "422"
+    - expression: res.body.error.code
+      operator: eq
+      value: VALIDATION_ERROR
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  "140" is an installment id, not a payment id - a payment response carries id, installmentId and
+  installment.id, so reaching for the wrong one is the easy mistake. The route answers 422 naming
+  the id it wants rather than a bare 404 that reads as "no such payment".

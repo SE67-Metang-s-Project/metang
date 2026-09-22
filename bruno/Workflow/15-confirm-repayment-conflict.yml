@@ -1,0 +1,39 @@
+info:
+  name: 15 replaying the confirmation conflicts
+  type: http
+  seq: 15
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/payments/00000000-0000-0000-0000-000000000304/decision"
+  body:
+    type: json
+    data: |-
+      {
+        "decision": "confirmed"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+    - expression: res.body.error.code
+      operator: eq
+      value: CONFLICT
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  NAT-33's "confirmation can occur only once", proven at runtime. Step 14 already moved the row off
+  pending_review, so the guarded updateMany matches zero rows and never reaches the money.
+
+  Two independent guards stand behind this: the status CAS here, and the partial unique index
+  fund_transaction_one_repayment_per_payment, which would reject a second credit even if the CAS
+  were somehow bypassed.

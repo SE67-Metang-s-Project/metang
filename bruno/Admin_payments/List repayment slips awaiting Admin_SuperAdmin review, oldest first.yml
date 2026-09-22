@@ -1,0 +1,43 @@
+info:
+  name: List repayment slips awaiting Admin_SuperAdmin review, oldest first
+  type: http
+  seq: 1
+  tags:
+    - Admin_payments
+
+http:
+  method: GET
+  url: "{{baseUrl}}/admin/payments"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    # Seeded payment 304 is the one pending_review row (500฿ on REQ202609060007).
+    - expression: res.body.data[0].status
+      operator: eq
+      value: pending_review
+    # The storage path must never appear - the slip is read through /payments/{id}/slip.
+    - expression: res.body.data[0].slipPath
+      operator: isUndefined
+    - expression: res.body.data[0].hasSlip
+      operator: isDefined
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  Oldest first: a review queue is FIFO, unlike the loan queues which surface newest first.
+  Runs before the Workflow walk confirms payment 304, so the queue is still non-empty here.
