@@ -234,6 +234,66 @@ export function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
+export type SystemSettingPatch = {
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+  contactLocationTh?: string;
+  contactLocationEn?: string | null;
+  contactPhone?: string;
+  contactExt?: string | null;
+  contactEmail?: string;
+};
+
+// A display string, not a dialable mobile - keep separators as typed. Do not reuse
+// parsePhoneNumber, which strips them and would rewrite the displayed office number.
+const CONTACT_PHONE_PATTERN = /^[0-9+\-\s()]+$/;
+const CONTACT_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function parseContactPhone(value: unknown) {
+  const phone = requiredText(value, "contactPhone", 32);
+  if (!CONTACT_PHONE_PATTERN.test(phone)) throw new Error("contactPhone is invalid");
+  return phone;
+}
+
+function parseContactEmail(value: unknown) {
+  const email = requiredText(value, "contactEmail", 254);
+  if (!CONTACT_EMAIL_PATTERN.test(email)) throw new Error("contactEmail is invalid");
+  return email;
+}
+
+export function parseSystemSettingPatch(value: unknown): SystemSettingPatch {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("request body is invalid");
+  }
+
+  const input = value as Record<string, unknown>;
+  const patch: SystemSettingPatch = {};
+
+  if ("bankName" in input) patch.bankName = requiredText(input.bankName, "bankName", 200);
+  if ("accountName" in input) {
+    patch.accountName = requiredText(input.accountName, "accountName", 200);
+  }
+  if ("accountNumber" in input) {
+    patch.accountNumber = requiredText(input.accountNumber, "accountNumber", 50);
+  }
+  if ("contactLocationTh" in input) {
+    patch.contactLocationTh = requiredText(input.contactLocationTh, "contactLocationTh", 500);
+  }
+  if ("contactLocationEn" in input) {
+    patch.contactLocationEn = optionalText(input.contactLocationEn, "contactLocationEn", 500);
+  }
+  if ("contactPhone" in input) patch.contactPhone = parseContactPhone(input.contactPhone);
+  if ("contactExt" in input) patch.contactExt = optionalText(input.contactExt, "contactExt", 50);
+  if ("contactEmail" in input) patch.contactEmail = parseContactEmail(input.contactEmail);
+
+  if (Object.keys(patch).length === 0) {
+    throw new Error("at least one field is required");
+  }
+
+  return patch;
+}
+
 export type AdminLoanQueueStatus = "pending_admin" | "pending_disbursement";
 
 export function parseAdminLoanQueueStatus(value: string | null): AdminLoanQueueStatus {

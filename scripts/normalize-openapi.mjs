@@ -18,6 +18,8 @@ const requiredRequestBodies = {
   RoleMutationBody: ["action", "role"],
   ReviewerNotificationBody: ["loanId"],
   LoanReminderBody: ["loanId"],
+  // SystemSettingBody has no entry here on purpose - it's a partial patch, every field is
+  // genuinely optional (one endpoint serves two independent settings-tab forms).
 };
 // next-openapi-gen only emits application/json request bodies, so a file-upload route generates a
 // contract its own handler rejects. Restate those bodies as multipart/form-data here.

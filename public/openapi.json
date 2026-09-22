@@ -5552,6 +5552,241 @@
           "data"
         ]
       },
+      "SystemSettingBody": {
+        "type": "object",
+        "properties": {
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountName": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactLocationTh": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactLocationEn": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactExt": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactEmail": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "SystemSettingItem": {
+        "type": "object",
+        "properties": {
+          "bankName": {
+            "type": "string"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "accountNumber": {
+            "type": "string"
+          },
+          "contactLocationTh": {
+            "type": "string"
+          },
+          "contactLocationEn": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactPhone": {
+            "type": "string"
+          },
+          "contactExt": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactEmail": {
+            "type": "string"
+          },
+          "updatedById": {
+            "type": "string",
+            "nullable": true
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bankName",
+          "accountName",
+          "accountNumber",
+          "contactLocationTh",
+          "contactLocationEn",
+          "contactPhone",
+          "contactExt",
+          "contactEmail",
+          "updatedById",
+          "updatedAt"
+        ]
+      },
+      "SystemSettingPublicFields": {
+        "type": "object",
+        "properties": {
+          "bankName": {
+            "type": "string"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "accountNumber": {
+            "type": "string"
+          },
+          "contactLocationTh": {
+            "type": "string"
+          },
+          "contactLocationEn": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactPhone": {
+            "type": "string"
+          },
+          "contactExt": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactEmail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bankName",
+          "accountName",
+          "accountNumber",
+          "contactLocationTh",
+          "contactLocationEn",
+          "contactPhone",
+          "contactExt",
+          "contactEmail"
+        ]
+      },
+      "SystemSettingPublicResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "bankName": {
+                "type": "string"
+              },
+              "accountName": {
+                "type": "string"
+              },
+              "accountNumber": {
+                "type": "string"
+              },
+              "contactLocationTh": {
+                "type": "string"
+              },
+              "contactLocationEn": {
+                "type": "string",
+                "nullable": true
+              },
+              "contactPhone": {
+                "type": "string"
+              },
+              "contactExt": {
+                "type": "string",
+                "nullable": true
+              },
+              "contactEmail": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "bankName",
+              "accountName",
+              "accountNumber",
+              "contactLocationTh",
+              "contactLocationEn",
+              "contactPhone",
+              "contactExt",
+              "contactEmail"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "SystemSettingResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "bankName": {
+                "type": "string"
+              },
+              "accountName": {
+                "type": "string"
+              },
+              "accountNumber": {
+                "type": "string"
+              },
+              "contactLocationTh": {
+                "type": "string"
+              },
+              "contactLocationEn": {
+                "type": "string",
+                "nullable": true
+              },
+              "contactPhone": {
+                "type": "string"
+              },
+              "contactExt": {
+                "type": "string",
+                "nullable": true
+              },
+              "contactEmail": {
+                "type": "string"
+              },
+              "updatedById": {
+                "type": "string",
+                "nullable": true
+              },
+              "updatedAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "bankName",
+              "accountName",
+              "accountNumber",
+              "contactLocationTh",
+              "contactLocationEn",
+              "contactPhone",
+              "contactExt",
+              "contactEmail",
+              "updatedById",
+              "updatedAt"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "UserIdParams": {
         "type": "object",
         "properties": {
@@ -6193,6 +6428,16 @@
       }
     },
     "/auth/logout": {
+      "get": {
+        "operationId": "get-auth-logout",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "responses": {}
+      },
       "post": {
         "operationId": "post-auth-logout",
         "summary": "",
@@ -6211,6 +6456,72 @@
         "description": "",
         "tags": [
           "Auth"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/cron/deliver-fon": {
+      "get": {
+        "operationId": "get-cron-deliver-fon",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Cron"
+        ],
+        "parameters": [],
+        "responses": {}
+      },
+      "post": {
+        "operationId": "post-cron-deliver-fon",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Cron"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/cron/deliver-reminders": {
+      "get": {
+        "operationId": "get-cron-deliver-reminders",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Cron"
+        ],
+        "parameters": [],
+        "responses": {}
+      },
+      "post": {
+        "operationId": "post-cron-deliver-reminders",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Cron"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/cron/installment-reminders": {
+      "get": {
+        "operationId": "get-cron-installment-reminders",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Cron"
+        ],
+        "parameters": [],
+        "responses": {}
+      },
+      "post": {
+        "operationId": "post-cron-installment-reminders",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Cron"
         ],
         "parameters": [],
         "responses": {}
@@ -7734,6 +8045,197 @@
           }
         }
       }
+    },
+    "/system-settings": {
+      "get": {
+        "operationId": "get-system-settings",
+        "summary": "Read the system-wide bank account and contact block shown to every signed-in user (student",
+        "description": "",
+        "tags": [
+          "System settings"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingPublicResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/super-admin/settings": {
+      "get": {
+        "operationId": "get-super-admin-settings",
+        "summary": "Read the system-wide bank and contact settings, including who last edited them.",
+        "description": "",
+        "tags": [
+          "System settings"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-super-admin-settings",
+        "summary": "Update one or more system-wide bank/contact settings fields. Absent keys are left unchanged.",
+        "description": "",
+        "tags": [
+          "System settings"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemSettingBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "tags": [
@@ -7745,6 +8247,9 @@
     },
     {
       "name": "Auth"
+    },
+    {
+      "name": "Cron"
     },
     {
       "name": "Executive"
@@ -7775,6 +8280,9 @@
     },
     {
       "name": "SuperAdmin roles"
+    },
+    {
+      "name": "System settings"
     }
   ]
 }

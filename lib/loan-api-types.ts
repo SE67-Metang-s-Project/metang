@@ -454,6 +454,50 @@ export type FundTransactionResponse = {
   data: FundTransactionItem;
 };
 
+// Partial patch - every key optional, one endpoint serves both settings tabs independently.
+export type SystemSettingBody = {
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+  contactLocationTh?: string;
+  contactLocationEn?: string | null;
+  contactPhone?: string;
+  contactExt?: string | null;
+  contactEmail?: string;
+};
+
+export type SystemSettingItem = {
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  contactLocationTh: string;
+  contactLocationEn: string | null;
+  contactPhone: string;
+  contactExt: string | null;
+  contactEmail: string;
+  updatedById: string | null;
+  updatedAt: string;
+};
+
+export type SystemSettingResponse = {
+  data: SystemSettingItem;
+};
+
+export type SystemSettingPublicFields = {
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  contactLocationTh: string;
+  contactLocationEn: string | null;
+  contactPhone: string;
+  contactExt: string | null;
+  contactEmail: string;
+};
+
+export type SystemSettingPublicResponse = {
+  data: SystemSettingPublicFields;
+};
+
 export type ReviewerNotificationBody = {
   loanId: string;
 };
