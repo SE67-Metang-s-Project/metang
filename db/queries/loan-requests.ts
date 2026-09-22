@@ -178,8 +178,9 @@ const globalLoanSelect = {
       loanId: true,
       installmentId: true,
       amount: true,
+      // Selected only to derive hasSlip below; withSlipFlag strips it before the row leaves this
+      // module. The slip is read through GET /api/payments/{id}/slip, never by storage path.
       slipPath: true,
-      slipRef: true,
       status: true,
       confirmedBy: true,
       confirmedAt: true,
@@ -189,8 +190,19 @@ const globalLoanSelect = {
   },
 } satisfies Prisma.LoanRequestSelect;
 
+/** Replaces a payment's storage path with a boolean, so callers can show a "view slip" control. */
+export function withSlipFlag<T extends { slipPath: string | null }>({ slipPath, ...payment }: T) {
+  return { ...payment, hasSlip: slipPath !== null };
+}
+
+type WithSlipFlag<T extends { payments: { slipPath: string | null }[] }> = Omit<T, "payments"> & {
+  payments: ReturnType<typeof withSlipFlag<T["payments"][number]>>[];
+};
+
 type AdvisorLoanRequest = Prisma.LoanRequestGetPayload<{ select: typeof advisorLoanSelect }>;
-type GlobalLoanRequest = Prisma.LoanRequestGetPayload<{ select: typeof globalLoanSelect }>;
+type GlobalLoanRequest = WithSlipFlag<
+  Prisma.LoanRequestGetPayload<{ select: typeof globalLoanSelect }>
+>;
 
 export function getLoanRequests(visibility: { scope: "global" }): Promise<GlobalLoanRequest[]>;
 export function getLoanRequests(visibility: {
@@ -213,7 +225,7 @@ export async function getLoanRequests(visibility: LoanRequestVisibility) {
     });
   }
 
-  return prisma.loanRequest.findMany({
+  const loans = await prisma.loanRequest.findMany({
     select: globalLoanSelect,
     orderBy: [
       { submittedAt: { sort: "desc", nulls: "last" } },
@@ -221,6 +233,7 @@ export async function getLoanRequests(visibility: LoanRequestVisibility) {
       { id: "desc" },
     ],
   });
+  return loans.map((loan) => ({ ...loan, payments: loan.payments.map(withSlipFlag) }));
 }
 
 export type AdvisorDecisionErrorCode = "NOT_FOUND" | "STALE_DECISION";
@@ -779,7 +792,9 @@ export async function getActionRequests(
         amount: String(p.amount),
         paidAt: p.paidAt ? formatThaiDate(p.paidAt) : formatThaiDate(p.createdAt),
         status: mappedStatus,
-        slipImageUrl: p.slipPath ?? "",
+        // The route, not the storage path: these props are serialized to the browser, and a bare
+        // bucket path in an <img src> renders nothing. The 302 re-runs authorization per load.
+        slipImageUrl: p.slipPath ? `/api/payments/${p.id}/slip` : "",
       };
     });
 
@@ -918,15 +933,26 @@ export const studentLoanDetailSelect = {
       id: true,
       installmentId: true,
       amount: true,
+      // Selected only to derive hasSlip; a student reads their own slip through
+      // GET /api/payments/{id}/slip, never by storage path.
       slipPath: true,
       status: true,
       paidAt: true,
       confirmedAt: true,
+      // The reviewer's reason for a rejection - the student needs it to send a corrected slip.
+      reviewNote: true,
       createdAt: true,
     },
     orderBy: { createdAt: "desc" },
   },
 } satisfies Prisma.LoanRequestSelect;
+
+type StudentLoanRow = Prisma.LoanRequestGetPayload<{ select: typeof studentLoanDetailSelect }>;
+
+const withStudentSlipFlags = (loan: StudentLoanRow): WithSlipFlag<StudentLoanRow> => ({
+  ...loan,
+  payments: loan.payments.map(withSlipFlag),
+});
 
 export async function getStudentLoanList(studentId: string) {
   const loans = await prisma.loanRequest.findMany({
@@ -934,7 +960,7 @@ export async function getStudentLoanList(studentId: string) {
     select: studentLoanDetailSelect,
     orderBy: { createdAt: "desc" },
   });
-  return serializeJson(loans);
+  return serializeJson(loans.map(withStudentSlipFlags));
 }
 
 export async function getStudentCurrentLoan(studentId: string) {
@@ -946,7 +972,7 @@ export async function getStudentCurrentLoan(studentId: string) {
     select: studentLoanDetailSelect,
     orderBy: { createdAt: "desc" },
   });
-  return loan ? serializeJson(loan) : null;
+  return loan ? serializeJson(withStudentSlipFlags(loan)) : null;
 }
 
 export async function getStudentLoanDetail(loanId: string, studentId: string) {
@@ -957,7 +983,7 @@ export async function getStudentLoanDetail(loanId: string, studentId: string) {
     },
     select: studentLoanDetailSelect,
   });
-  return loan ? serializeJson(loan) : null;
+  return loan ? serializeJson(withStudentSlipFlags(loan)) : null;
 }
 
 export type ExecutiveDecisionErrorCode = "NOT_FOUND" | "STALE_DECISION" | "MISSING_ADMIN_ASSIGNMENT";

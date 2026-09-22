@@ -328,6 +328,9 @@ async function main() {
             amount: 1000,
             direction: 1,
             loanId: loanId(208),
+            // Without this the seeded ledger has the one shape the app can never produce: a
+            // repayment the one-repayment-per-payment index cannot see.
+            paymentId: id(number),
             performedBy: id(3),
             note: fundNotes[index + 3],
           })),

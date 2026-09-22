@@ -187,13 +187,17 @@ model Payment {
   slipPath      String?       @map("slip_path") @db.Text
   slipRef       String?       @unique(map: "payment_slip_ref_key") @map("slip_ref") @db.Text
   status        PaymentStatus @default(pending_review)
+  // confirmedBy/confirmedAt are written for a rejection too: they mean "the reviewer, and when".
   confirmedBy   String?       @map("confirmed_by") @db.Uuid
   confirmedAt   DateTime?     @map("confirmed_at") @db.Timestamptz(6)
+  reviewNote    String?       @map("review_note") @db.Text
   paidAt        DateTime?     @map("paid_at") @db.Timestamptz(6)
   createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   loan          LoanRequest   @relation(fields: [loanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   installment   Installment?  @relation(fields: [installmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   confirmer     AppUser?      @relation(fields: [confirmedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  fundTransactions FundTransaction[]
 
   @@index([loanId], map: "payment_loan_idx")
   @@map("payment")
@@ -205,14 +209,17 @@ model FundTransaction {
   amount      Int                 @db.Integer
   direction   Int                 @db.SmallInt
   loanId      String?             @map("loan_id") @db.Text
+  paymentId   String?             @map("payment_id") @db.Uuid
   performedBy String              @map("performed_by") @db.Uuid
   slipPath    String?             @map("slip_path") @db.Text
   note        String?             @db.Text
   createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   loan        LoanRequest?        @relation(fields: [loanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  payment     Payment?            @relation(fields: [paymentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   performer   AppUser             @relation(fields: [performedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([loanId], map: "fund_transaction_one_disbursement_per_loan", where: { kind: "disbursement" })
+  @@unique([paymentId], map: "fund_transaction_one_repayment_per_payment", where: { kind: "repayment" })
   @@index([loanId], map: "fund_transaction_loan_idx")
   @@map("fund_transaction")
 }
