@@ -192,6 +192,128 @@ export function computeInstallmentSchedule(
   });
 }
 
+export type StudentPaymentInput = {
+  amount: number;
+  paidAt: Date | null;
+};
+
+/**
+ * Parses the non-file half of a repayment submission. Values arrive as multipart form fields, so
+ * every one is a string here - not JSON-typed like every other parser in this file.
+ */
+export function parseStudentPaymentInput(input: {
+  amount: unknown;
+  paidAt?: unknown;
+}): StudentPaymentInput {
+  const raw = typeof input.amount === "string" ? input.amount.trim() : input.amount;
+  const amount = typeof raw === "string" && raw !== "" ? Number(raw) : NaN;
+  if (!Number.isSafeInteger(amount) || amount <= 0 || amount > MAX_MONEY_AMOUNT) {
+    throw new Error("amount is invalid");
+  }
+
+  if (input.paidAt === undefined || input.paidAt === null || input.paidAt === "") {
+    return { amount, paidAt: null };
+  }
+  if (typeof input.paidAt !== "string") throw new Error("paidAt is invalid");
+  const paidAt = new Date(input.paidAt);
+  if (Number.isNaN(paidAt.getTime())) throw new Error("paidAt is invalid");
+  // A transfer cannot have happened in the future; a wrong date here would misreport a late
+  // payment as on time once conduct is derived from it.
+  if (paidAt.getTime() > Date.now()) throw new Error("paidAt cannot be in the future");
+
+  return { amount, paidAt };
+}
+
+export type PaymentDecision = "confirmed" | "rejected";
+
+export type PaymentDecisionInput = {
+  decision: PaymentDecision;
+  note: string | null;
+};
+
+export function parsePaymentDecisionInput(value: unknown): PaymentDecisionInput {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("request body is invalid");
+  }
+
+  const input = value as Record<string, unknown>;
+  if (input.decision !== "confirmed" && input.decision !== "rejected") {
+    throw new Error("decision is invalid");
+  }
+  const decision = input.decision;
+
+  const note = optionalText(input.note, "note", 2000);
+  // Same rule as a returned/rejected loan decision: any negative outcome states its reason, so the
+  // student is told what to fix before submitting a new slip.
+  if (decision === "rejected" && !note) {
+    throw new Error("A note is required when rejecting a payment");
+  }
+
+  return { decision, note };
+}
+
+export type PaymentAllocationTarget = {
+  id: bigint;
+  seq: number;
+  amountDue: number;
+  amountPaid: number;
+};
+
+export type PaymentAllocationEntry = {
+  id: bigint;
+  amountPaid: number;
+  settled: boolean;
+};
+
+export type PaymentAllocation = {
+  allocations: PaymentAllocationEntry[];
+  surplus: number;
+  outstandingAfter: number;
+  closesLoan: boolean;
+};
+
+/**
+ * Spreads a confirmed payment across the still-unsettled installments, filling each to its due
+ * amount in this order: the oldest, then the last, then the rest ascending. Paying past the final
+ * installment leaves a surplus - the fund is still credited the full payment and the excess is
+ * reconciled by hand outside the system. amountDue is never rewritten, so the original schedule
+ * stays auditable and `amountDue - amountPaid` keeps working as the remaining balance.
+ * Pure function - no DB access - so it is unit-testable on its own.
+ */
+export function allocatePayment(
+  unsettled: PaymentAllocationTarget[],
+  paymentAmount: number,
+): PaymentAllocation {
+  const ordered = [...unsettled].sort((a, b) => a.seq - b.seq);
+  // slice(1, -1) drops both ends, so a single installment is never targeted twice.
+  const targets =
+    ordered.length > 1
+      ? [ordered[0], ordered[ordered.length - 1], ...ordered.slice(1, -1)]
+      : ordered;
+
+  const allocations: PaymentAllocationEntry[] = [];
+  let left = Math.max(paymentAmount, 0);
+  let outstandingAfter = 0;
+
+  for (const target of targets) {
+    // Clamped: an overpaid row would otherwise hand negative "remaining" back to the pool and
+    // inflate every later allocation.
+    const remaining = Math.max(target.amountDue - target.amountPaid, 0);
+    const applied = Math.min(remaining, left);
+    left -= applied;
+    outstandingAfter += remaining - applied;
+    if (applied > 0) {
+      allocations.push({
+        id: target.id,
+        amountPaid: target.amountPaid + applied,
+        settled: applied === remaining,
+      });
+    }
+  }
+
+  return { allocations, surplus: left, outstandingAfter, closesLoan: outstandingAfter === 0 };
+}
+
 export type FundTransactionKindInput =
   "top_up" | "withdrawal" | "credit_adjustment" | "debit_adjustment";
 
