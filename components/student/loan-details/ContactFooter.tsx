@@ -20,13 +20,21 @@ export default function ContactFooter() {
     let isMounted = true;
 
     const loadSystemContact = async () => {
-      const address = await getSystemAddress();
+      // Phone, email and location come from the system settings row; opening hours has no column
+      // yet, so it still comes from the fixture.
+      const [address, stored] = await Promise.all([
+        getSystemAddress(),
+        fetch("/api/system-settings")
+          .then((res) => (res.ok ? res.json() : null))
+          .then((body) => body?.data ?? null)
+          .catch(() => null),
+      ]);
       if (!isMounted) return;
 
       setContact({
-        phone: address.phone,
-        email: address.email,
-        location: address.submissionLocation,
+        phone: stored?.contactPhone ?? address.phone,
+        email: stored?.contactEmail ?? address.email,
+        location: stored?.contactLocationTh ?? address.submissionLocation,
         openingHours: address.openingHours,
       });
     };

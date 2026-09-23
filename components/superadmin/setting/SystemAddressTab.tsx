@@ -20,6 +20,7 @@ import {
   getSystemAddress,
   saveSystemAddress,
 } from "@/components/shared/mock-data/mockSystemSettings";
+import { fetchSystemSetting, saveSystemSetting } from "@/lib/system-settings-client";
 
 // สร้าง Type ขยายเพิ่มเติมสำหรับฟิลด์ใหม่ (ภาษาอังกฤษ และวัน/เวลา)
 export interface ExtendedSystemAddressData extends SystemAddressData {
@@ -66,6 +67,25 @@ const translateTime = (thTime: string) => {
   return thTime.replace(/เวลา/g, "").replace(/น\./g, "").trim();
 };
 
+// Phone, extension, email and the Thai/English contact location are stored in the system_setting
+// row (POST /api/super-admin/settings) and read by students. The other fields still live in the
+// mock fixture for now, so the stored row overrides the fixture only for those five.
+async function loadAddress(): Promise<ExtendedSystemAddressData> {
+  const [data, stored] = await Promise.all([getSystemAddress(), fetchSystemSetting()]);
+  return {
+    ...data,
+    phone: stored.contactPhone,
+    internalExt: stored.contactExt ?? "",
+    email: stored.contactEmail,
+    submissionLocation: stored.contactLocationTh,
+    openingDaysTh: data.openingHours?.split(" เวลา ")[0] || "",
+    openingTimeTh: data.openingHours?.split(" เวลา ")[1] || "",
+    openingDaysEn: translateDays(data.openingHours?.split(" เวลา ")[0] || ""),
+    openingTimeEn: translateTime(data.openingHours?.split(" เวลา ")[1] || ""),
+    submissionLocationEn: stored.contactLocationEn ?? "",
+  };
+}
+
 export default function SystemAddressTab() {
   const [initialData, setInitialData] = useState<ExtendedSystemAddressData | null>(null);
   const [formData, setFormData] = useState<ExtendedSystemAddressData | null>(null);
@@ -85,17 +105,9 @@ export default function SystemAddressTab() {
   useEffect(() => {
     let isMounted = true;
 
-    getSystemAddress()
-      .then((data) => {
+    loadAddress()
+      .then((extendedData) => {
         if (isMounted) {
-          const extendedData: ExtendedSystemAddressData = {
-            ...data,
-            openingDaysTh: data.openingHours?.split(" เวลา ")[0] || "",
-            openingTimeTh: data.openingHours?.split(" เวลา ")[1] || "",
-            openingDaysEn: translateDays(data.openingHours?.split(" เวลา ")[0] || ""),
-            openingTimeEn: translateTime(data.openingHours?.split(" เวลา ")[1] || ""),
-            submissionLocationEn: (data as unknown as { submissionLocationEn?: string }).submissionLocationEn || "",
-          };
           setInitialData(extendedData);
           setFormData(extendedData);
           setIsLoading(false);
@@ -118,15 +130,7 @@ export default function SystemAddressTab() {
     try {
       setIsRefreshing(true);
       setErrorMessage(null);
-      const data = await getSystemAddress();
-      const extendedData: ExtendedSystemAddressData = {
-        ...data,
-        openingDaysTh: data.openingHours?.split(" เวลา ")[0] || "",
-        openingTimeTh: data.openingHours?.split(" เวลา ")[1] || "",
-        openingDaysEn: translateDays(data.openingHours?.split(" เวลา ")[0] || ""),
-        openingTimeEn: translateTime(data.openingHours?.split(" เวลา ")[1] || ""),
-        submissionLocationEn: (data as unknown as { submissionLocationEn?: string }).submissionLocationEn || "",
-      };
+      const extendedData = await loadAddress();
       setInitialData(extendedData);
       setFormData(extendedData);
     } catch (err) {
@@ -175,6 +179,18 @@ export default function SystemAddressTab() {
 
     setIsSaving(true);
     try {
+      const saveError = await saveSystemSetting({
+        contactPhone: formData.phone,
+        contactExt: formData.internalExt ?? "",
+        contactEmail: formData.email,
+        contactLocationTh: formData.submissionLocation,
+        contactLocationEn: formData.submissionLocationEn ?? "",
+      });
+      if (saveError) {
+        showToast(saveError);
+        return;
+      }
+
       // นำวัน/เวลากลับไปรวมใน openingHours เพื่อให้ saveSystemAddress ทำงานได้ตามโครงสร้างเก่า
       const combinedOpeningHours = `${formData.openingDaysTh} เวลา ${formData.openingTimeTh}`;
 
