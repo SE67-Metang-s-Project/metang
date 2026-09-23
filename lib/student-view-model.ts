@@ -1,4 +1,6 @@
 import type { LoanStatus } from "@/lib/generated/prisma/client";
+import { bangkokDateKey, bangkokParts } from "@/lib/date";
+import { deriveInstallmentConduct } from "@/lib/repayment-conduct";
 import type { ApprovalStep } from "@/components/shared/disburse-debt/DisburseDebtCard";
 import type {
   InstallmentPayment,
@@ -9,6 +11,7 @@ import type {
   LoanRequestStatus,
   LoanScheduleItem,
   LoanTimelineItem,
+  PaymentAccount,
 } from "@/app/student/studentMockData";
 
 export type StatusDisplay = {
@@ -82,10 +85,15 @@ export function formatThaiDate(dateInput: string | Date | null | undefined): str
   const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
   if (Number.isNaN(date.getTime())) return String(dateInput);
 
-  const day = date.getDate();
-  const month = thaiMonthShort[date.getMonth()];
-  const year = date.getFullYear() + 543;
-  return `${day} ${month} ${year}`;
+  // Bangkok parts, not getDate(): the server renders in UTC and the browser in its own zone.
+  const { day, month, year } = bangkokParts(date);
+  return `${day} ${thaiMonthShort[month - 1]} ${year + 543}`;
+}
+
+export function formatThaiTime(dateInput: string | Date): string {
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  const { hour, minute } = bangkokParts(date);
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")} น.`;
 }
 
 export function formatThaiDateTime(dateInput: string | Date | null | undefined): string {
@@ -93,10 +101,7 @@ export function formatThaiDateTime(dateInput: string | Date | null | undefined):
   const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
   if (Number.isNaN(date.getTime())) return String(dateInput);
 
-  const datePart = formatThaiDate(date);
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${datePart} ${hours}:${minutes} น.`;
+  return `${formatThaiDate(date)} ${formatThaiTime(date)}`;
 }
 
 export type RawLoanApproval = {
@@ -119,16 +124,34 @@ export type RawInstallment = {
   settledAt?: string | Date | null;
 };
 
+export type RawPaymentStatus = "pending_review" | "confirmed" | "rejected";
+
 export type RawPayment = {
   id?: string;
   installmentId?: string | number | bigint | null;
   amount: number;
-  slipUrl?: string | null;
-  status: string;
+  // The student read replaces slipPath with this flag; the slip itself is served by
+  // GET /api/payments/{id}/slip.
+  hasSlip?: boolean;
+  status: RawPaymentStatus;
   paidAt?: string | Date | null;
   confirmedAt?: string | Date | null;
+  reviewNote?: string | null;
   createdAt?: string | Date;
 };
+
+function paymentTime(payment: RawPayment) {
+  return payment.createdAt ? new Date(payment.createdAt).getTime() : 0;
+}
+
+/** Oldest first; the student loan read returns payments newest first. */
+function sortPaymentsOldestFirst(payments: RawPayment[] = []) {
+  return [...payments].sort((a, b) => paymentTime(a) - paymentTime(b));
+}
+
+export function paymentSlipUrl(payment: RawPayment): string {
+  return payment.hasSlip && payment.id ? `/api/payments/${payment.id}/slip` : "";
+}
 
 export type RawStudentLoan = {
   id: string;
@@ -181,6 +204,15 @@ function getRejectedStatusLabel(loan: RawStudentLoan, fallbackLabel: string) {
     ? `ไม่อนุมัติโดย${rejectionRoleByStep[rejectedApproval.step]}`
     : fallbackLabel;
 }
+
+const paymentHistoryStatus: Record<
+  RawPaymentStatus,
+  Pick<LoanPaymentHistoryItem, "status" | "statusLabel">
+> = {
+  pending_review: { status: "checking", statusLabel: "รอตรวจสอบ" },
+  confirmed: { status: "verified", statusLabel: "ตรวจสอบแล้ว" },
+  rejected: { status: "failed", statusLabel: "ไม่ผ่านการตรวจสอบ" },
+};
 
 export function formatRequestNumber(id: string): string {
   return id;
@@ -251,10 +283,25 @@ export function mapToActiveLoanSummary(loan: RawStudentLoan | null): ActiveLoanS
   };
 }
 
-export function mapToInstallmentPayments(installments: RawInstallment[] = []): InstallmentPayment[] {
+export function mapToInstallmentPayments(
+  installments: RawInstallment[] = [],
+  payments: RawPayment[] = [],
+  now: Date = new Date(),
+): InstallmentPayment[] {
   let nextPayableFound = false;
+  const orderedPayments = sortPaymentsOldestFirst(payments);
+  // The server accepts one submission awaiting review per loan, not per installment.
+  const isAwaitingReview = orderedPayments.some((pay) => pay.status === "pending_review");
+  const latestPayment = orderedPayments.at(-1);
+  const rejectionNote =
+    latestPayment?.status === "rejected"
+      ? `หลักฐานการชำระไม่ผ่านการตรวจสอบ${latestPayment.reviewNote ? `: ${latestPayment.reviewNote}` : ""}`
+      : undefined;
+  // Same conduct rule as computePaymentBehavior, so the cards and the conduct summary agree.
+  const conduct = deriveInstallmentConduct(installments, payments, now);
+  const today = bangkokDateKey(now);
 
-  return installments.map((inst) => {
+  return installments.map((inst, index) => {
     const isSettled = Boolean(inst.settledAt) || inst.amountPaid >= inst.amountDue;
 
     let status: InstallmentStatus = "upcoming";
@@ -277,6 +324,13 @@ export function mapToInstallmentPayments(installments: RawInstallment[] = []): I
       actionLabel: status !== "paid" ? "ชำระเงิน" : undefined,
       completedPaymentLabel: status === "paid" ? "ชำระเรียบร้อยแล้ว" : undefined,
       completedPaymentDateLabel: inst.settledAt ? formatThaiDate(inst.settledAt) : undefined,
+      completedPaymentTimeLabel: inst.settledAt ? formatThaiTime(inst.settledAt) : undefined,
+      paymentNote: status === "current" ? rejectionNote : undefined,
+      // Overdue from the day after the due date, on Bangkok calendar days.
+      isOverdue: status === "current" && today > bangkokDateKey(inst.dueDate),
+      isPaidLate: status === "paid" && conduct[index] === "late",
+      // Upcoming installments keep "pay the previous installment first".
+      isAwaitingReview: status === "current" && isAwaitingReview,
     };
   });
 }
@@ -458,16 +512,24 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
 
   const disbursementTransactionId = loan.fundTransactions?.[0]?.id;
 
-  // Payment history
-  const paymentHistory: LoanPaymentHistoryItem[] = (loan.payments ?? []).map((pay, idx) => ({
-    installmentNumber: idx + 1,
-    amount: pay.amount.toLocaleString("th-TH"),
-    receiptImage: pay.slipUrl ?? "",
-    paidAt: formatThaiDateTime(pay.paidAt ?? pay.createdAt),
-    checkedAt: formatThaiDateTime(pay.confirmedAt),
-    statusLabel: pay.status === "confirmed" ? "ตรวจสอบแล้ว" : "รอตรวจสอบ",
-    status: pay.status === "confirmed" ? "verified" : "checking",
-  }));
+  // Payment history, oldest first: LoanPaymentHistory numbers repeat attempts in that order.
+  const installmentSeqById = new Map(
+    (loan.installments ?? []).map((inst) => [String(inst.id), inst.seq]),
+  );
+  const paymentHistory: LoanPaymentHistoryItem[] = sortPaymentsOldestFirst(loan.payments).map(
+    (pay, idx) => ({
+      id: pay.id,
+      installmentNumber:
+        (pay.installmentId != null ? installmentSeqById.get(String(pay.installmentId)) : undefined) ??
+        idx + 1,
+      amount: pay.amount.toLocaleString("th-TH"),
+      receiptImage: paymentSlipUrl(pay),
+      paidAt: formatThaiDateTime(pay.paidAt ?? pay.createdAt),
+      checkedAt: formatThaiDateTime(pay.confirmedAt),
+      ...paymentHistoryStatus[pay.status],
+      reviewNote: pay.status === "rejected" ? (pay.reviewNote ?? undefined) : undefined,
+    }),
+  );
 
   const mappedApprovals: ApprovalStep[] = (loan.approvals ?? [])
     .filter((a) => a.decision !== "pending")
@@ -519,6 +581,21 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
   };
 }
 
+/** The public system-settings read (GET /api/system-settings) as the payment modal's account. */
+export function mapToPaymentAccount(
+  setting: { bankName: string; accountName: string; accountNumber: string } | null,
+): PaymentAccount | null {
+  if (!setting) return null;
+  return {
+    bankLabel: "ธนาคาร",
+    bankName: setting.bankName,
+    accountNameLabel: "ชื่อบัญชี",
+    accountName: setting.accountName,
+    accountNumberLabel: "เลขที่บัญชี",
+    accountNumber: setting.accountNumber,
+  };
+}
+
 export type PaymentBehaviorDisplay = {
   totalLoanRequests: number;
   totalInstallments: number;
@@ -543,24 +620,13 @@ export function computePaymentBehavior(loans?: RawStudentLoan[] | null): Payment
   let onTime = 0;
   let late = 0;
   let totalInstallments = 0;
-  const now = new Date();
 
   for (const loan of loans) {
     if (!loan.installments || !Array.isArray(loan.installments)) continue;
-    for (const inst of loan.installments) {
-      totalInstallments++;
-      const dueDate = new Date(inst.dueDate);
-      const paidDate = inst.settledAt ? new Date(inst.settledAt) : null;
-
-      if (paidDate) {
-        if (paidDate <= dueDate) {
-          onTime++;
-        } else {
-          late++;
-        }
-      } else if (inst.amountPaid < inst.amountDue && now > dueDate) {
-        late++;
-      }
+    totalInstallments += loan.installments.length;
+    for (const conduct of deriveInstallmentConduct(loan.installments, loan.payments)) {
+      if (conduct === "on_time") onTime++;
+      else if (conduct === "late") late++;
     }
   }
 

@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, LogIn, RefreshCw, X } from "lucide-react";
 import {
   activeLoan as defaultActiveLoan,
-  installmentPayments as defaultInstallmentPayments,
   loanRequestHistory as defaultLoanRequestHistory,
-  paymentAccount,
   studentProfile as defaultStudentProfile,
 } from "@/app/student/studentMockData";
 import LoanHistoryList from "./LoanHistoryList";
@@ -17,8 +15,14 @@ import PaymentBehaviorCard from "./PaymentBehaviorCard";
 import LoanTimeline from "../loan-details/LoanTimeline";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import InstallmentList from "../payments/InstallmentList";
-import PaymentModal from "@/components/shared/PaymentModal";
-import type { InstallmentPayment, LoanRequestHistoryItem, LoanScheduleItem, LoanTimelineItem } from "@/app/student/studentMockData";
+import PaymentModal, { type PaymentSubmission } from "@/components/shared/PaymentModal";
+import type {
+  InstallmentPayment,
+  LoanRequestHistoryItem,
+  LoanScheduleItem,
+  LoanTimelineItem,
+  PaymentAccount,
+} from "@/app/student/studentMockData";
 import { MedicalBagIcon } from "./StudentIllustrations";
 import ContactFooter from "../loan-details/ContactFooter";
 import TransferSlipModal from "../loan-details/TransferSlipModal";
@@ -34,7 +38,12 @@ import {
   type PaymentBehaviorDisplay,
   type RawStudentLoan,
 } from "@/lib/student-view-model";
-import { mapNetworkError, mapStudentApiError, type StudentUiError } from "@/lib/student-error-mapper";
+import {
+  mapNetworkError,
+  mapStudentApiError,
+  mapStudentPaymentError,
+  type StudentUiError,
+} from "@/lib/student-error-mapper";
 import {
   hasConfirmedTransfer,
   saveTransferConfirmation,
@@ -50,6 +59,8 @@ type StudentDashboardProps = {
   initialPaymentBehavior?: PaymentBehaviorDisplay | null;
   initialTimeline?: LoanTimelineItem[];
   initialSchedule?: LoanScheduleItem[];
+  /** The fund's receiving account from system settings; null when it could not be read. */
+  paymentAccount?: PaymentAccount | null;
 };
 
 export default function StudentDashboard({
@@ -60,6 +71,7 @@ export default function StudentDashboard({
   initialPaymentBehavior,
   initialTimeline,
   initialSchedule,
+  paymentAccount = null,
 }: StudentDashboardProps) {
   const [showAllRequests, setShowAllRequests] = useState(false);
   const [activePayment, setActivePayment] = useState<InstallmentPayment | null>(null);
@@ -144,12 +156,11 @@ export default function StudentDashboard({
             const details = mapToLoanDetails(rawLoan);
             setTimeline(details.timeline);
             setSchedule(details.schedule);
-            if (rawLoan.installments) {
-              setInstallments(mapToInstallmentPayments(rawLoan.installments));
-            }
+            setInstallments(mapToInstallmentPayments(rawLoan.installments, rawLoan.payments));
           } else {
             setTimeline([]);
             setSchedule([]);
+            setInstallments([]);
           }
 
           const rawList = (listJson.data || []) as RawStudentLoan[];
@@ -192,9 +203,49 @@ export default function StudentDashboard({
     router.push(`/student/detail?request=${encodeURIComponent(requestNumber)}`);
   };
 
-  const handlePaymentConfirmed = () => {
+  const openPayment = (installment: InstallmentPayment) => {
+    if (!paymentAccount) {
+      setDashboardError({
+        status: 0,
+        code: "INTERNAL_ERROR",
+        title: t("ไม่พบข้อมูลบัญชีรับชำระเงิน", "Payment account unavailable"),
+        message: t(
+          "ระบบยังไม่สามารถแสดงบัญชีสำหรับชำระเงินได้ กรุณาลองใหม่ภายหลังหรือติดต่อเจ้าหน้าที่",
+          "The payment account cannot be shown right now. Please try again later or contact the office.",
+        ),
+        action: "retry",
+      });
+      return;
+    }
+    setActivePayment(installment);
+  };
+
+  // Throws a user-facing Error so PaymentModal can show it and stay open for a retry.
+  const submitPayment = async ({ slip, amount, paidAt }: PaymentSubmission) => {
+    const formData = new FormData();
+    formData.append("slip", slip);
+    formData.append("amount", String(amount));
+    formData.append("paidAt", paidAt);
+
+    let response: Response;
+    try {
+      // No Content-Type header: the browser sets the multipart boundary itself.
+      response = await fetch("/api/student/payments", { method: "POST", body: formData });
+    } catch (err) {
+      throw new Error(mapNetworkError(err).message);
+    }
+
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => null);
+      const uiError = mapStudentPaymentError(response.status, errJson);
+      // A 409 means the loan moved on (already under review, settled, closed): show the latest.
+      if (response.status === 409) setRefreshKey((key) => key + 1);
+      throw new Error(uiError.message);
+    }
+
     setActivePayment(null);
     setIsPaymentSuccessOpen(true);
+    setRefreshKey((key) => key + 1);
   };
 
   const handleCancelRequest = async () => {
@@ -220,7 +271,7 @@ export default function StudentDashboard({
   };
 
   const currentActiveLoan = activeLoanData === undefined ? defaultActiveLoan : activeLoanData;
-  const currentInstallments = installments ?? defaultInstallmentPayments;
+  const currentInstallments = installments ?? [];
   const transferSlipImage =
     currentActiveLoan && "transferSlipImage" in currentActiveLoan
       ? currentActiveLoan.transferSlipImage
@@ -293,7 +344,11 @@ export default function StudentDashboard({
                   <button
                     className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm hover:bg-red-50"
                     disabled={isLoading}
-                    onClick={() => setRefreshKey((k) => k + 1)}
+                    onClick={() => {
+                      setRefreshKey((k) => k + 1);
+                      // The payment account is a server prop; only a server re-render reloads it.
+                      if (!paymentAccount) router.refresh();
+                    }}
                     type="button"
                   >
                     <RefreshCw className={isLoading ? "animate-spin" : ""} size={14} />
@@ -351,7 +406,7 @@ export default function StudentDashboard({
             <InstallmentList
               installments={currentInstallments}
               isPaymentLocked={hasAdminTransferredFunds && !isTransferAccepted}
-              onPay={setActivePayment}
+              onPay={openPayment}
             />
           ) : null}
 
@@ -365,12 +420,12 @@ export default function StudentDashboard({
         </div>
       </div>
 
-      {activePayment ? (
+      {activePayment && paymentAccount ? (
         <PaymentModal
           account={paymentAccount}
           installment={activePayment}
           onClose={() => setActivePayment(null)}
-          onConfirm={handlePaymentConfirmed}
+          onConfirm={submitPayment}
         />
       ) : null}
       {isTransferSlipOpen && transferSlipImage ? (

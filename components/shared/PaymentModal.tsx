@@ -6,12 +6,22 @@ import { ChevronDown, ChevronLeft, ChevronRight, Download, Landmark, ReceiptText
 import type { InstallmentPayment, PaymentAccount } from "@/app/student/studentMockData";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { bangkokDateKey, bangkokParts } from "@/lib/date";
+
+export type PaymentSubmission = {
+  slip: File;
+  /** Whole baht: the server stores payment amounts as integers. */
+  amount: number;
+  /** ISO 8601 with the Asia/Bangkok offset. */
+  paidAt: string;
+};
 
 type PaymentModalProps = {
   installment: InstallmentPayment;
   account: PaymentAccount;
   onClose: () => void;
-  onConfirm: () => void;
+  /** Rejects with a user-facing Error message when the submission fails. */
+  onConfirm: (submission: PaymentSubmission) => Promise<void>;
 };
 
 type PaymentFormField = "receipt" | "transferDate" | "transferTime" | "transferAmount";
@@ -30,6 +40,17 @@ function toDateInputValue(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+// getPaidAt() sends Bangkok wall-clock time, so "today", the future limit and the default time
+// follow Bangkok too, not the browser's own time zone.
+function getBangkokToday() {
+  return bangkokDateKey(new Date());
+}
+
+function getBangkokMonthStart() {
+  const { year, month } = bangkokParts(new Date());
+  return new Date(year, month - 1, 1);
+}
+
 function parseDateInputValue(value: string) {
   const [year, month, day] = value.split("-").map(Number);
   return new Date(year, month - 1, day);
@@ -46,13 +67,20 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
   const { language, t } = useStudentLanguage();
   const [isQrSaveNoticeOpen, setIsQrSaveNoticeOpen] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [receiptPreview, setReceiptPreview] = useState("");
   const [transferDate, setTransferDate] = useState("");
-  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
+  const [calendarMonth, setCalendarMonth] = useState(getBangkokMonthStart);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
-  const [selectedHour, setSelectedHour] = useState(() => String(new Date().getHours()).padStart(2, "0"));
-  const [selectedMinute, setSelectedMinute] = useState(() => String(new Date().getMinutes()).padStart(2, "0"));
+  const [selectedHour, setSelectedHour] = useState(() =>
+    String(bangkokParts(new Date()).hour).padStart(2, "0"),
+  );
+  const [selectedMinute, setSelectedMinute] = useState(() =>
+    String(bangkokParts(new Date()).minute).padStart(2, "0"),
+  );
   const [hasSelectedTime, setHasSelectedTime] = useState(false);
   const [transferAmount, setTransferAmount] = useState("");
   const [formErrors, setFormErrors] = useState<PaymentFormErrors>({});
@@ -90,7 +118,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
       if (event.key === "Escape") {
         if (isQrSaveNoticeOpen) {
           setIsQrSaveNoticeOpen(false);
-        } else {
+        } else if (!isSubmitting) {
           onClose();
         }
       }
@@ -98,7 +126,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isQrSaveNoticeOpen, onClose]);
+  }, [isQrSaveNoticeOpen, isSubmitting, onClose]);
 
   useEffect(() => {
     if (!isTimePickerOpen) return;
@@ -141,7 +169,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
     setCalendarMonth(
       (currentMonth) => {
         const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1);
-        const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const currentMonthStart = getBangkokMonthStart();
 
         return nextMonth > currentMonthStart ? currentMonthStart : nextMonth;
       },
@@ -149,13 +177,16 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
   };
 
   const selectTransferDate = (date: Date) => {
-    if (toDateInputValue(date) > toDateInputValue(new Date())) return;
+    if (toDateInputValue(date) > getBangkokToday()) return;
 
     setTransferDate(toDateInputValue(date));
     setCalendarMonth(new Date(date.getFullYear(), date.getMonth(), 1));
     setIsCalendarOpen(false);
     setFormErrors((current) => ({ ...current, transferDate: "" }));
   };
+
+  // The picked date and time are read as Bangkok wall-clock time, whatever the browser's zone.
+  const getPaidAt = () => `${transferDate}T${selectedHour}:${selectedMinute}:00+07:00`;
 
   const validatePaymentForm = () => {
     const errors: PaymentFormErrors = {};
@@ -164,11 +195,38 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
     if (!fileName) errors.receipt = requiredFieldMessage;
     if (!transferDate) errors.transferDate = requiredFieldMessage;
     if (!hasSelectedTime) errors.transferTime = requiredFieldMessage;
-    if (!transferAmount || Number(transferAmount.replaceAll(",", "")) <= 0) {
+    const amount = Number(transferAmount.replaceAll(",", ""));
+    if (!transferAmount || amount <= 0) {
       errors.transferAmount = requiredFieldMessage;
+    } else if (!Number.isSafeInteger(amount)) {
+      errors.transferAmount = t("กรุณาระบุจำนวนเงินเป็นจำนวนเต็มบาท", "Enter a whole number of baht.");
+    }
+    if (transferDate && hasSelectedTime && new Date(getPaidAt()).getTime() > Date.now()) {
+      errors.transferTime = t("เวลาโอนต้องไม่อยู่ในอนาคต", "The transfer time cannot be in the future.");
     }
 
     return errors;
+  };
+
+  const submitPayment = async () => {
+    if (!receiptFile || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setSubmitError("");
+    try {
+      await onConfirm({
+        slip: receiptFile,
+        amount: Number(transferAmount.replaceAll(",", "")),
+        paidAt: getPaidAt(),
+      });
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error && error.message
+          ? error.message
+          : t("ไม่สามารถส่งหลักฐานการชำระเงินได้ กรุณาลองใหม่อีกครั้ง", "Unable to submit the payment. Please try again."),
+      );
+      setIsSubmitting(false);
+    }
   };
 
   const handleConfirm = () => {
@@ -177,7 +235,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
     const firstInvalidField = requiredPaymentFields.find((field) => errors[field]);
 
     if (!firstInvalidField) {
-      onConfirm();
+      void submitPayment();
       return;
     }
 
@@ -198,8 +256,13 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
     });
   };
 
+  // An in-flight submission must finish (or fail) before the modal can close.
+  const closeModal = () => {
+    if (!isSubmitting) onClose();
+  };
+
   const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) onClose();
+    if (event.target === event.currentTarget) closeModal();
   };
 
   return (
@@ -219,7 +282,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
         <button
           aria-label={t("ยกเลิกและปิดหน้าต่างชำระเงิน", "Cancel and close payment dialog")}
           className="absolute right-5 top-4 z-10 rounded-full bg-gray-50 p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 sm:right-6"
-          onClick={onClose}
+          onClick={closeModal}
           type="button"
         >
           <X aria-hidden="true" size={20} />
@@ -261,28 +324,30 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
               </div>
             </dl>
 
-            <div className="mt-4 text-center">
-              <Image
-                alt={t("QR Code สำหรับชำระเงิน", "Payment QR code")}
-                className="mx-auto h-auto w-full rounded-lg"
-                height={300}
-                src={account.qrImageSrc}
-                width={300}
-              />
-              <a
-                className="group mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-orange-300 hover:bg-orange-50 active:border-orange-400 active:bg-orange-100"
-                download="payment-qr-code"
-                href={account.qrImageSrc}
-                onClick={() => setIsQrSaveNoticeOpen(true)}
-              >
-                <Download
-                  aria-hidden="true"
-                  className="text-gray-400 transition-colors group-hover:text-orange-300 group-active:text-orange-400"
-                  size={18}
+            {account.qrImageSrc ? (
+              <div className="mt-4 text-center">
+                <Image
+                  alt={t("QR Code สำหรับชำระเงิน", "Payment QR code")}
+                  className="mx-auto h-auto w-full rounded-lg"
+                  height={300}
+                  src={account.qrImageSrc}
+                  width={300}
                 />
-                {t("บันทึกรูปภาพ", "Save image")}
-              </a>
-            </div>
+                <a
+                  className="group mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-orange-300 hover:bg-orange-50 active:border-orange-400 active:bg-orange-100"
+                  download="payment-qr-code"
+                  href={account.qrImageSrc}
+                  onClick={() => setIsQrSaveNoticeOpen(true)}
+                >
+                  <Download
+                    aria-hidden="true"
+                    className="text-gray-400 transition-colors group-hover:text-orange-300 group-active:text-orange-400"
+                    size={18}
+                  />
+                  {t("บันทึกรูปภาพ", "Save image")}
+                </a>
+              </div>
+            ) : null}
           </section>
 
           <section
@@ -357,6 +422,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                   }
 
                   setFileName(file?.name ?? "");
+                  setReceiptFile(file ?? null);
                   setFormErrors((current) => ({ ...current, receipt: "" }));
 
                   if (file) {
@@ -427,10 +493,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                       <button
                         aria-label={t("เดือนถัดไป", "Next month")}
                         className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-transparent"
-                        disabled={
-                          calendarMonth.getFullYear() === new Date().getFullYear() &&
-                          calendarMonth.getMonth() === new Date().getMonth()
-                        }
+                        disabled={calendarMonth >= getBangkokMonthStart()}
                         onClick={() => changeCalendarMonth(1)}
                         type="button"
                       >
@@ -448,8 +511,8 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
 
                         const value = toDateInputValue(date);
                         const isSelected = value === transferDate;
-                        const isToday = value === toDateInputValue(new Date());
-                        const isFuture = value > toDateInputValue(new Date());
+                        const isToday = value === getBangkokToday();
+                        const isFuture = value > getBangkokToday();
 
                         return (
                           <button
@@ -629,20 +692,26 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
           </section>
         </div>
 
+        {submitError ? (
+          <p className="shrink-0 border-t border-red-100 bg-red-50 px-4 py-2 text-sm text-red-700 sm:px-5" role="alert">
+            {localizeStudentContent(submitError, language)}
+          </p>
+        ) : null}
         <footer className="flex shrink-0 justify-end gap-2 border-t border-gray-100 bg-gray-50 px-4 py-3 sm:px-5">
           <button
             className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100"
-            onClick={onClose}
+            onClick={closeModal}
             type="button"
           >
             {t("ยกเลิก", "Cancel")}
           </button>
           <button
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-green-700"
+            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-green-300"
+            disabled={isSubmitting}
             onClick={handleConfirm}
             type="button"
           >
-            {t("ยืนยัน", "Confirm")}
+            {isSubmitting ? t("กำลังส่ง...", "Submitting...") : t("ยืนยัน", "Confirm")}
           </button>
         </footer>
       </section>
