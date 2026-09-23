@@ -1548,7 +1548,7 @@
           },
           "comment": {
             "type": "string",
-            "nullable": true
+            "nullable": false
           }
         },
         "required": [

@@ -94,14 +94,14 @@ function parseDecision(value: unknown): LoanDecision {
   throw new Error("decision is invalid");
 }
 
-function parseDecisionComment(value: unknown, decision: LoanDecision) {
+function parseDecisionComment(value: unknown, required: boolean) {
   if (value !== undefined && value !== null && typeof value !== "string") {
     throw new Error("comment is invalid");
   }
 
   const comment = typeof value === "string" ? value.trim() : "";
   if (comment.length > 2000) throw new Error("comment is invalid");
-  if ((decision === "returned" || decision === "rejected") && !comment) {
+  if (required && !comment) {
     throw new Error("A comment is required for this decision");
   }
 
@@ -115,7 +115,20 @@ export function parseLoanDecisionInput(value: unknown): LoanDecisionInput {
 
   const input = value as Record<string, unknown>;
   const decision = parseDecision(input.decision);
-  return { decision, comment: parseDecisionComment(input.comment, decision) };
+  const required = decision === "returned" || decision === "rejected";
+  return { decision, comment: parseDecisionComment(input.comment, required) };
+}
+
+// Advisor decisions always carry a comment, unlike Admin/Executive where it's only
+// mandatory on returned/rejected - a deliberate divergence, not an oversight.
+export function parseAdvisorDecisionInput(value: unknown): LoanDecisionInput {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("request body is invalid");
+  }
+
+  const input = value as Record<string, unknown>;
+  const decision = parseDecision(input.decision);
+  return { decision, comment: parseDecisionComment(input.comment, true) };
 }
 
 export function parseAdminDecisionInput(value: unknown): AdminDecisionInput {
@@ -125,7 +138,10 @@ export function parseAdminDecisionInput(value: unknown): AdminDecisionInput {
 
   const input = value as Record<string, unknown>;
   const decision = parseDecision(input.decision);
-  const comment = parseDecisionComment(input.comment, decision);
+  const comment = parseDecisionComment(
+    input.comment,
+    decision === "returned" || decision === "rejected",
+  );
 
   if (decision !== "approved") {
     if (Object.hasOwn(input, "approvedAmount")) {

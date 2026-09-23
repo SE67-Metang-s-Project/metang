@@ -89,7 +89,7 @@ export type AdminPaymentDetailResponse = {
 
 export type AdvisorDecisionBody = {
   decision: LoanDecision;
-  comment?: string | null;
+  comment: string;
 };
 
 export type AdminDecisionBody = {

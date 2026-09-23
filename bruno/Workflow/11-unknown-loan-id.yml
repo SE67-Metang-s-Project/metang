@@ -12,7 +12,8 @@ http:
     type: json
     data: |-
       {
-        "decision": "approved"
+        "decision": "approved",
+        "comment": "อนุมัติ"
       }
 
 runtime:
