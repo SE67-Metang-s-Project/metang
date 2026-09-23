@@ -798,6 +798,8 @@ export async function getActionRequests(
         amount: String(p.amount),
         paidAt: p.paidAt ? formatThaiDate(p.paidAt) : formatThaiDate(p.createdAt),
         status: mappedStatus,
+        // The reviewer's reason for a rejection, shown in the verify-slip modal.
+        reviewNote: p.reviewNote ?? undefined,
         // The route, not the storage path: these props are serialized to the browser, and a bare
         // bucket path in an <img src> renders nothing. The 302 re-runs authorization per load.
         slipImageUrl: p.slipPath ? `/api/payments/${p.id}/slip` : "",
