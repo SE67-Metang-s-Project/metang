@@ -63,7 +63,8 @@ const studentTranslations: Record<string, string> = {
   "ธนาคารกรุงศรีอยุธยา": "Krungsri Bank",
   "ธนาคารทหารไทยธนชาต": "TMBThanachart Bank",
   "ธนาคารออมสิน": "Government Savings Bank",
-  "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร": "BAAC",
+  "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร":
+    "Bank for Agriculture and Agricultural Cooperatives",
   "ธนาคารอาคารสงเคราะห์ (ธอส.)": "Government Housing Bank",
   "ธนาคารยูโอบี": "United Overseas Bank",
   "ธนาคารเกียรตินาคินภัทร": "Kiatnakin Phatra Bank",

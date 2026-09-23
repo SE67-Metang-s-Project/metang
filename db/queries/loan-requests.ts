@@ -693,7 +693,12 @@ export async function getActionRequests(
       onTimeInstallments,
       lateInstallments,
       totalInstallments: onTimeInstallments + lateInstallments,
-      onTimeStatusLabel: lateInstallments === 0 ? "ชำระตรงเวลา" : "ชำระล่าช้า",
+      onTimeStatusLabel:
+        onTimeInstallments + lateInstallments === 0
+          ? "ยังไม่มีประวัติการชำระเงิน"
+          : lateInstallments === 0
+            ? "ชำระตรงเวลา"
+            : "ชำระล่าช้า",
     };
 
     const submitDateObj = loan.submittedAt ?? loan.createdAt;

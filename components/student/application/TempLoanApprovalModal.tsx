@@ -264,7 +264,7 @@ export default function TempLoanApprovalModal({
           <CardHeader
             className={styles.sectionCardHeading}
             icon={<Landmark aria-hidden="true" size={20} strokeWidth={2.2} />}
-            title={t("ข้อมูลธนาคาร", "Bank Information")}
+            title={t("ข้อมูลบัญชีธนาคารสำหรับรับเงิน", "Receiving Bank Account")}
           />
           <dl>
             <div>

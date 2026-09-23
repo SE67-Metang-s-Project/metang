@@ -63,7 +63,13 @@ function localizeTimelineText(value: string, language: StudentLanguage) {
   return directTranslation
     .replaceAll("ส่งกลับมาแก้ไข", "Returned for revision")
     .replaceAll("ไม่อนุมัติ", "Rejected")
-    .replaceAll("โดย", "by");
+    .replaceAll("โดย", "by")
+    .replace(/\(การแก้ไขครั้งที่ (\d+)\)/g, "(Revision $1)");
+}
+
+function splitReturnedStatusDate(value: string) {
+  const match = value.match(/^ส่งกลับมาแก้ไข \((.+)\)$/);
+  return match ? { status: "ส่งกลับมาแก้ไข", date: match[1] } : null;
 }
 
 function getStatusBadgeConfig(statusType: FullActionHistoryItem["statusType"], language: StudentLanguage) {
@@ -125,7 +131,7 @@ function getStatusBadgeConfig(statusType: FullActionHistoryItem["statusType"], l
         label: label("กำลังดำเนินการ", "In progress"),
         badgeClass: "bg-orange-50 text-orange-700 border-orange-200",
         icon: <Clock size={13} className="shrink-0" />,
-        dotClass: "bg-orange-400",
+        dotClass: "bg-orange-200",
       };
   }
 }
@@ -147,6 +153,10 @@ export interface RequestTimelineProps {
   hideBankDetails?: boolean;
   footer?: React.ReactNode;
   showEmptyWhenNoHistory?: boolean;
+  showHistoryAction?: boolean;
+  splitReturnedStatus?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
   language?: StudentLanguage;
 }
 
@@ -167,6 +177,10 @@ export default function RequestTimeline({
   hideBankDetails = false,
   footer,
   showEmptyWhenNoHistory = false,
+  showHistoryAction = true,
+  splitReturnedStatus = false,
+  emptyTitle,
+  emptyDescription,
   language = "th",
 }: RequestTimelineProps) {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -209,7 +223,7 @@ export default function RequestTimeline({
         className={styles.sectionCardHeading}
         icon={<Clock3 aria-hidden="true" size={20} strokeWidth={2.2} />}
         title={title}
-        action={
+        action={showHistoryAction && hasSourceHistory ? (
           <button
             type="button"
             onClick={() => setIsHistoryModalOpen(true)}
@@ -221,15 +235,16 @@ export default function RequestTimeline({
             <span className="hidden sm:inline">{t("ดูประวัติการดำเนินการทั้งหมด", "Show full log")}</span>
             <span className="sm:hidden">{t("ดูประวัติทั้งหมด", "Show log")}</span>
           </button>
-        }
+        ) : null}
       />
       {hasItems ? (
         <ol className={styles.loanTimeline}>
           {timelineItems.map((item, index) => {
-            const isRevisionItem = Boolean(item.isRevision);
+            const isRevisionItem = Boolean(item.isRevision) || item.date.startsWith("ส่งกลับมาแก้ไข");
             const isFailed = Boolean(item.isFailed);
             const isPending = Boolean(item.isPending);
             const isUpcoming = Boolean(item.isUpcoming);
+            const returnedStatus = splitReturnedStatus ? splitReturnedStatusDate(item.date) : null;
 
             return (
               <li className={styles.loanTimelineItem} key={`${item.action}-${index}`}>
@@ -241,15 +256,29 @@ export default function RequestTimeline({
                     isFailed ? styles.timelineMarkerFailed : ""
                   } ${isRevisionItem ? styles.timelineMarkerRevision : ""}`}
                 >
-                  {isRevisionItem ? <Pencil size={13} strokeWidth={2.8} /> : null}
+                  {isPending ? <Clock3 size={14} strokeWidth={2.4} /> : null}
                 </span>
                 <div className={styles.timelineContent}>
                   <strong>{localizeTimelineText(item.action, language)}</strong>
                   <p>
-                    {localizeTimelineText(item.date, language)}
-                    {item.actor
-                      ? ` · ${t("โดย", "by")} ${localizeTimelineText(item.actor, language)}`
-                      : ""}
+                    {returnedStatus ? (
+                      <>
+                        <span>{localizeTimelineText(returnedStatus.status, language)}</span>
+                        <span className="block">
+                          {localizeTimelineText(returnedStatus.date, language)}
+                          {item.actor
+                            ? ` · ${t("โดย", "by")} ${localizeTimelineText(item.actor, language)}`
+                            : ""}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        {localizeTimelineText(item.date, language)}
+                        {item.actor
+                          ? ` · ${t("โดย", "by")} ${localizeTimelineText(item.actor, language)}`
+                          : ""}
+                      </>
+                    )}
                   </p>
                   {!hideComments && item.commentTitle && item.comment ? (
                     <section
@@ -336,8 +365,12 @@ export default function RequestTimeline({
           })}
         </ol>
       ) : (
-        <div className="text-center py-4 bg-gray-50/50 rounded-xl border border-dashed border-gray-200 mt-2">
-          <p className="text-[13px] text-gray-500">{t("ยังไม่มีประวัติการดำเนินการ", "No activity yet")}</p>
+        <div className={styles.emptyDashboardState}>
+          <span aria-hidden="true" className={styles.emptyDashboardStateIcon}>
+            <Clock3 size={24} strokeWidth={2} />
+          </span>
+          <p>{emptyTitle ?? t("ยังไม่มีประวัติการดำเนินการ", "No activity yet")}</p>
+          {emptyDescription ? <span>{emptyDescription}</span> : null}
         </div>
       )}
 
@@ -435,7 +468,9 @@ export default function RequestTimeline({
                           {item.comment && (
                             <div
                               className={`p-3 rounded-lg text-sm leading-relaxed break-words whitespace-pre-wrap ${
-                                item.statusType === "rejected"
+                                item.statusType === "approved"
+                                  ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
+                                  : item.statusType === "rejected"
                                   ? "bg-red-50 border border-red-200 text-red-800"
                                   : item.statusType === "returned"
                                     ? "bg-amber-50 border border-amber-200 text-amber-800"

@@ -146,7 +146,14 @@ export default function LoanTimeline({
         onShowTransferSlip={onShowTransferSlip}
         onDownloadRequest={onDownloadRequest}
         requestStatus={items.length ? effectiveRequestStatus : undefined}
+        emptyTitle={t("ยังไม่มีคำร้องขอกู้ยืม", "No loan request yet")}
+        emptyDescription={t(
+          "สถานะคำร้องจะแสดงที่นี่เมื่อมีการยื่นคำร้อง",
+          "Request status appears after submission",
+        )}
+        showHistoryAction={items.length > 0}
         showEmptyWhenNoHistory
+        splitReturnedStatus
         title={t("ติดตามสถานะคำร้อง", "Request Status")}
         timelineHistory={timelineHistory}
       />

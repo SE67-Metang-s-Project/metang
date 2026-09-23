@@ -158,6 +158,7 @@ export default function TempLoanApplicationPage({
   const loanAgreement = language === "en" ? tempLoanAgreementEn : tempLoanAgreement;
   const isResubmit = existingLoan?.status === "returned";
   const fieldRefs = useRef<Partial<Record<RequiredFormField, HTMLLabelElement>>>({});
+  const purposeTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(
     searchParams.get("step") === "3" ? 3 : isResubmit ? 2 : 1,
   );
@@ -274,6 +275,20 @@ export default function TempLoanApplicationPage({
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [currentStep]);
+
+  const resizePurposeTextarea = () => {
+    const textarea = purposeTextareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.max(96, textarea.scrollHeight)}px`;
+  };
+
+  useEffect(() => {
+    if (currentStep === 2) {
+      resizePurposeTextarea();
+    }
+  }, [currentStep, formData.purpose]);
 
   useEffect(() => {
     if (currentStep !== 1) {
@@ -644,7 +659,7 @@ export default function TempLoanApplicationPage({
                       ) : null}
                       <p style={{ margin: 0, color: "#b45309", fontSize: "0.875rem" }}>
                         {t(
-                          "กรุณาแก้ไขข้อมูลให้ถูกต้องตามคำแนะนำ แล้วกดยืนยันเพื่อยื่นคำร้องใหม่อีกครั้ง",
+                          "กรุณาแก้ไขข้อมูลให้ถูกต้องตามคำแนะนำ และกดยืนยันเพื่อยื่นคำร้องใหม่อีกครั้ง",
                           "Please correct the information as advised, then confirm to submit the request again.",
                         )}
                       </p>
@@ -891,10 +906,15 @@ export default function TempLoanApplicationPage({
                       <span>{t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}</span>
                       <textarea
                         aria-invalid={Boolean(formErrors.purpose)}
+                        className={styles.loanPurposeTextarea}
                         maxLength={500}
                         onBlur={() => handleFieldBlur("purpose")}
-                        onChange={(event) => updateFormField("purpose", event.target.value)}
+                        onChange={(event) => {
+                          updateFormField("purpose", event.target.value);
+                          resizePurposeTextarea();
+                        }}
                         placeholder={t("กรอกวัตถุประสงค์", "Enter purpose")}
+                        ref={purposeTextareaRef}
                         value={formData.purpose}
                       />
                       <div className={styles.loanFormFieldMeta}>
@@ -1029,7 +1049,6 @@ export default function TempLoanApplicationPage({
                 onClick={() => router.push("/student")}
                 type="button"
               >
-                <House aria-hidden="true" size={19} strokeWidth={2.2} />
                 {t("กลับหน้าหลัก", "Back to home")}
               </button>
             </div>

@@ -146,6 +146,33 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepAdvReturned[3].isUpcoming, true);
   assert.equal(stepAdvReturned[4].isUpcoming, true);
 
+  const stepAdvReturnedTwice = buildFiveStepTimeline({
+    requestStatus: "returned",
+    history: [
+      { action: "ยื่นคำร้องขอกู้ยืม", date: "14 ต.ค. 2567", actor: "นายสมชาย ใจดี" },
+      {
+        action: "ส่งกลับให้นักศึกษาแก้ไข",
+        date: "15 ต.ค. 2567",
+        actor: "อาจารย์ที่ปรึกษา ทดสอบ",
+        commentTitle: "ข้อความจากอาจารย์ที่ปรึกษา",
+        comment: "คำแนะนำเดิม",
+      },
+      {
+        action: "ส่งกลับให้นักศึกษาแก้ไข",
+        date: "20 ต.ค. 2567",
+        actor: "อาจารย์ที่ปรึกษา ทดสอบ",
+        commentTitle: "ข้อความจากอาจารย์ที่ปรึกษา",
+        comment: "คำแนะนำล่าสุด",
+      },
+    ],
+  });
+  assert.match(stepAdvReturnedTwice[1].date, /20 ต.ค. 2567/);
+  assert.equal(stepAdvReturnedTwice[1].comment, "คำแนะนำล่าสุด");
+  assert.equal(
+    stepAdvReturnedTwice[1].commentTitle,
+    "ข้อความจากอาจารย์ที่ปรึกษา (การแก้ไขครั้งที่ 2)",
+  );
+
   // Case 3: Student resubmits after advisor return -> bounces back to pending_advisor
   const stepAdvResubmit = buildFiveStepTimeline({
     requestStatus: "pending_advisor",
@@ -184,6 +211,25 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepAdvApproved[2].isPending, true);
   assert.equal(stepAdvApproved[3].isUpcoming, true);
   assert.equal(stepAdvApproved[4].isUpcoming, true);
+
+  const stepAdminPendingAfterPreviousApproval = buildFiveStepTimeline({
+    requestStatus: "pending_admin",
+    history: [
+      { action: "ยื่นคำร้องขอกู้ยืม", date: "14 ต.ค. 2567", actor: "นายสมชาย ใจดี" },
+      {
+        action: "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ",
+        date: "15 ต.ค. 2567",
+        actor: "อาจารย์ที่ปรึกษา ทดสอบ",
+      },
+      {
+        action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+        date: "16 ต.ค. 2567",
+        actor: "เจ้าหน้าที่ ทดสอบ",
+      },
+    ],
+  });
+  assert.equal(stepAdminPendingAfterPreviousApproval[2].isPending, true);
+  assert.equal(stepAdminPendingAfterPreviousApproval[2].isCompleted, undefined);
 
   // Case 5: Admin returned for revision (status = returned by admin)
   // Step 1: checked, Step 2: checked, Step 3: empty circle (ส่งกลับมาแก้ไข), Steps 4-5: empty circle
@@ -417,6 +463,77 @@ test("buildFullActionHistory correctly tracks submission, return comments, and r
   assert.ok(history4[4].transferDetails, "Disbursed item should have transfer details");
 });
 
+test("buildFullActionHistory keeps an in-progress Admin review pending", async () => {
+  const { buildFullActionHistory } = await import("@/lib/request-timeline-model");
+  const history = buildFullActionHistory({
+    history: [
+      {
+        action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+        date: "กำลังดำเนินการ",
+        actor: "เจ้าหน้าที่",
+        isPending: true,
+      },
+    ],
+    requestStatus: "pending_admin",
+  });
+
+  const pendingAdminItem = history.find((item) => item.action.includes("เจ้าหน้าที่ตรวจสอบเอกสาร"));
+  assert.equal(pendingAdminItem?.statusType, "pending");
+});
+
+test("buildFullActionHistory does not attach an old Admin comment to the current pending review", async () => {
+  const { buildFullActionHistory } = await import("@/lib/request-timeline-model");
+  const history = buildFullActionHistory({
+    history: [
+      {
+        action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+        date: "กำลังดำเนินการ",
+        actor: "เจ้าหน้าที่",
+        isPending: true,
+      },
+    ],
+    approvals: [
+      {
+        step: "admin",
+        actorName: "เจ้าหน้าที่",
+        decision: "approved",
+        comment: "ความคิดเห็นจากการตรวจสอบครั้งก่อน",
+      },
+    ],
+    requestStatus: "pending_admin",
+  });
+
+  const pendingAdminItem = history.find((item) => item.action.includes("เจ้าหน้าที่ตรวจสอบเอกสาร"));
+  assert.equal(pendingAdminItem?.comment, undefined);
+});
+
+test("buildFiveStepTimeline shows the latest Admin return message during the current Admin review", async () => {
+  const { buildFiveStepTimeline } = await import("@/lib/request-timeline-model");
+  const timeline = buildFiveStepTimeline({
+    requestStatus: "pending_admin",
+    history: [
+      {
+        action: "เจ้าหน้าที่ส่งกลับแก้ไข",
+        date: "20 ก.ย. 2569",
+        actor: "แอดมิน ทดสอบ",
+        commentTitle: "ข้อความจากเจ้าหน้าที่",
+        comment: "แอดมินให้แก้ครั้งที่ 1",
+      },
+      {
+        action: "เจ้าหน้าที่ส่งกลับแก้ไข",
+        date: "23 ก.ย. 2569",
+        actor: "แอดมิน ทดสอบ",
+        commentTitle: "ข้อความจากเจ้าหน้าที่",
+        comment: "แอดมินให้แก้ครั้งที่ 2",
+      },
+    ],
+  });
+
+  assert.equal(timeline[2].isPending, true);
+  assert.equal(timeline[2].comment, "แอดมินให้แก้ครั้งที่ 2");
+  assert.equal(timeline[2].commentTitle, "ข้อความจากเจ้าหน้าที่");
+});
+
 test("Student role is not modified and does not use RequestTimeline", () => {
   const studentPage = read("app/student/page.tsx");
   const studentDashboard = read("components/student/dashboard/StudentDashboard.tsx");
@@ -426,4 +543,3 @@ test("Student role is not modified and does not use RequestTimeline", () => {
   assert.doesNotMatch(studentDashboard, /<RequestTimeline/, "Student dashboard must not use RequestTimeline");
   assert.doesNotMatch(loanTimeline, /buildFullActionHistory/, "Student loan timeline must not use buildFullActionHistory");
 });
-

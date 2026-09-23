@@ -130,6 +130,40 @@ test("builds timeline in mapToLoanDetails including comments on return", () => {
   assert.equal(summary?.statusLabel, "ส่งกลับแก้ไข");
 });
 
+test("includes the current pending Admin message in the student timeline", () => {
+  const loan: RawStudentLoan = {
+    id: "loan-pending-admin-message",
+    amount: 4000,
+    purpose: "ค่ารักษาพยาบาล",
+    installmentCount: 2,
+    firstDueDate: "2026-10-01",
+    status: "pending_admin",
+    submittedAt: "2026-09-01T08:00:00Z",
+    approvals: [
+      {
+        step: "advisor",
+        attempt: 1,
+        decision: "approved",
+        decidedAt: "2026-09-02T10:00:00Z",
+        comment: "เห็นชอบ",
+      },
+      {
+        step: "admin",
+        attempt: 1,
+        decision: "pending",
+        comment: "กำลังตรวจสอบเอกสารเพิ่มเติม",
+      },
+    ],
+  };
+
+  const details = mapToLoanDetails(loan);
+  const pendingAdminItem = details.timeline.find(
+    (item) => item.title === "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน" && item.isPending,
+  );
+  assert.equal(pendingAdminItem?.comment, "กำลังตรวจสอบเอกสารเพิ่มเติม");
+  assert.equal(pendingAdminItem?.commentTitle, "ข้อความจากเจ้าหน้าที่");
+});
+
 test("maps installments to InstallmentPayment display objects", () => {
   const installments = [
     { seq: 1, dueDate: "2026-10-15", amountDue: 2000, amountPaid: 2000, settledAt: "2026-10-10" },

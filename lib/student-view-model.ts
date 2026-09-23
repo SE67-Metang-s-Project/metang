@@ -359,9 +359,48 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     const timeB = b.decidedAt ? new Date(b.decidedAt).getTime() : 0;
     return timeA - timeB;
   });
+  const activePendingStep =
+    loan.status === "pending_advisor"
+      ? "advisor"
+      : loan.status === "pending_admin"
+        ? "admin"
+        : loan.status === "pending_executive"
+          ? "executive"
+          : null;
 
   for (const app of approvals) {
-    if (app.decision === "pending") continue;
+    if (app.decision === "pending") {
+      if (app.step !== activePendingStep || !app.comment?.trim()) continue;
+
+      const pendingDetails =
+        app.step === "advisor"
+          ? {
+              title: "อาจารย์ที่ปรึกษาพิจารณาคำร้อง",
+              actor: app.decider?.fullNameTh ?? loan.advisor?.fullNameTh ?? "อาจารย์ที่ปรึกษา",
+              commentTitle: "ข้อความจากอาจารย์ที่ปรึกษา",
+            }
+          : app.step === "admin"
+            ? {
+                title: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+                actor: app.decider?.fullNameTh ?? "เจ้าหน้าที่",
+                commentTitle: "ข้อความจากเจ้าหน้าที่",
+              }
+            : {
+                title: "ผู้บริหารอนุมัติคำร้องกู้ยืม",
+                actor: app.decider?.fullNameTh ?? "ผู้บริหาร",
+                commentTitle: "ข้อความจากผู้บริหาร",
+              };
+
+      timeline.push({
+        title: pendingDetails.title,
+        dateTime: "กำลังดำเนินการ",
+        actor: pendingDetails.actor,
+        commentTitle: pendingDetails.commentTitle,
+        comment: app.comment,
+        isPending: true,
+      });
+      continue;
+    }
 
     let stepTitle = "";
     let actorName = "";
