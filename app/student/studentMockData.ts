@@ -10,6 +10,7 @@ export type InstallmentPayment = {
   dueDateLabel: string;
   outstandingAmount: string;
   paymentNote?: string;
+  dueInDays?: number;
   completedPaymentLabel?: string;
   completedPaymentDateLabel?: string;
   completedPaymentTimeLabel?: string;
@@ -325,7 +326,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
         receiptImage: "/mock-payment-receipt-1.jpg",
         paidAt: "ชำระเมื่อ 27 ก.ค. 2569 10:00 น.",
         checkedAt: "ตรวจสอบเมื่อ 28 ก.ค. 2569 10:00 น. · ไม่ผ่าน",
-        statusLabel: "ไม่ผ่านการตรวจสอบ",
+        statusLabel: "ไม่ผ่าน",
         status: "failed",
       },
       {

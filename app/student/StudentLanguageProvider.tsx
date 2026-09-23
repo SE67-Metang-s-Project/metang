@@ -15,6 +15,7 @@ const studentTranslations: Record<string, string> = {
   "ชำระเรียบร้อยแล้ว": "Paid",
   "รอตรวจสอบ": "Under review",
   "ตรวจสอบแล้ว": "Verified",
+  "ไม่ผ่าน": "Failed",
   "ไม่ผ่านการตรวจสอบ": "Rejected",
   "หลักฐานการชำระไม่ผ่านการตรวจสอบ": "Payment evidence was rejected",
   // Errors PaymentModal can show after a failed submission (lib/student-error-mapper.ts).

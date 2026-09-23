@@ -276,7 +276,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
       <section
         aria-labelledby="payment-modal-title"
         aria-modal="true"
-        className="relative flex h-[calc(100dvh-2rem)] min-h-0 w-full max-w-[500px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+        className="relative flex h-[calc(90dvh-2rem)] min-h-0 w-full max-w-[500px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
         role="dialog"
       >
         <button

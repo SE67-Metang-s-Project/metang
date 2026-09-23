@@ -14,10 +14,12 @@ export default function PaymentBehaviorCard({ behavior }: PaymentBehaviorCardPro
   const { language, t } = useStudentLanguage();
   const currentBehavior = behavior ?? {
     ...defaultPaymentBehavior,
-    hasHistory: true,
+    hasHistory: false,
   };
 
-  const isLate = currentBehavior.hasHistory && currentBehavior.lateInstallments > 0;
+  const hasPaymentHistory =
+    currentBehavior.hasHistory && currentBehavior.onTimeInstallments + currentBehavior.lateInstallments > 0;
+  const isLate = hasPaymentHistory && currentBehavior.lateInstallments > 0;
 
   const statusBadgeStyle = isLate
     ? {
@@ -34,7 +36,7 @@ export default function PaymentBehaviorCard({ behavior }: PaymentBehaviorCardPro
           <CreditCard aria-hidden="true" size={27} strokeWidth={2.2} />
           {t("พฤติกรรมการชำระเงิน", "Payment Behavior")}
         </h2>
-        {currentBehavior.hasHistory ? (
+        {hasPaymentHistory ? (
           <span className={styles.behaviorStatus} style={statusBadgeStyle}>
             <i aria-hidden="true" />
             {localizeStudentContent(currentBehavior.onTimeStatusLabel, language)}
@@ -50,7 +52,7 @@ export default function PaymentBehaviorCard({ behavior }: PaymentBehaviorCardPro
         </div>
         <div
           className={`${styles.behaviorStat} ${
-            currentBehavior.hasHistory && currentBehavior.onTimeInstallments > 0
+            hasPaymentHistory && currentBehavior.onTimeInstallments > 0
               ? styles.behaviorStatOnTime
               : ""
           }`}

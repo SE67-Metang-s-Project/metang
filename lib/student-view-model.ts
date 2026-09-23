@@ -212,7 +212,7 @@ const paymentHistoryStatus: Record<
 > = {
   pending_review: { status: "checking", statusLabel: "รอตรวจสอบ" },
   confirmed: { status: "verified", statusLabel: "ตรวจสอบแล้ว" },
-  rejected: { status: "failed", statusLabel: "ไม่ผ่านการตรวจสอบ" },
+  rejected: { status: "failed", statusLabel: "ไม่ผ่าน" },
 };
 
 export function formatRequestNumber(id: string): string {
@@ -294,10 +294,7 @@ export function mapToInstallmentPayments(
   // The server accepts one submission awaiting review per loan, not per installment.
   const isAwaitingReview = orderedPayments.some((pay) => pay.status === "pending_review");
   const latestPayment = orderedPayments.at(-1);
-  const rejectionNote =
-    latestPayment?.status === "rejected"
-      ? `หลักฐานการชำระไม่ผ่านการตรวจสอบ${latestPayment.reviewNote ? `: ${latestPayment.reviewNote}` : ""}`
-      : undefined;
+  const hasRejectedPayment = latestPayment?.status === "rejected";
   // Same conduct rule as computePaymentBehavior, so the cards and the conduct summary agree.
   const conduct = deriveInstallmentConduct(installments, payments, now);
   const today = bangkokDateKey(now);
@@ -315,6 +312,11 @@ export function mapToInstallmentPayments(
 
     const remaining = Math.max(0, inst.amountDue - inst.amountPaid);
     const dateLabel = formatThaiDate(inst.dueDate);
+    const dueKey = bangkokDateKey(inst.dueDate);
+    const isOverdue = status === "current" && today > dueKey;
+    const dueInDays = Math.round(
+      (Date.parse(`${dueKey}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000,
+    );
 
     return {
       installmentNumber: inst.seq,
@@ -326,9 +328,9 @@ export function mapToInstallmentPayments(
       completedPaymentLabel: status === "paid" ? "ชำระเรียบร้อยแล้ว" : undefined,
       completedPaymentDateLabel: inst.settledAt ? formatThaiDate(inst.settledAt) : undefined,
       completedPaymentTimeLabel: inst.settledAt ? formatThaiTime(inst.settledAt) : undefined,
-      paymentNote: status === "current" ? rejectionNote : undefined,
+      dueInDays: status === "current" && hasRejectedPayment && !isOverdue ? dueInDays : undefined,
       // Overdue from the day after the due date, on Bangkok calendar days.
-      isOverdue: status === "current" && today > bangkokDateKey(inst.dueDate),
+      isOverdue,
       isPaidLate: status === "paid" && conduct[index] === "late",
       // Upcoming installments keep "pay the previous installment first".
       isAwaitingReview: status === "current" && isAwaitingReview,
@@ -731,10 +733,10 @@ export function computePaymentBehavior(loans?: RawStudentLoan[] | null): Payment
     }
   }
 
-  if (totalInstallments === 0) {
+  if (totalInstallments === 0 || onTime + late === 0) {
     return {
       totalLoanRequests: loans.length,
-      totalInstallments: 0,
+      totalInstallments,
       onTimeInstallments: 0,
       lateInstallments: 0,
       onTimeStatusLabel: "ยังไม่มีประวัติการชำระเงิน",

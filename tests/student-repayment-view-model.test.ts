@@ -79,17 +79,22 @@ test("a transfer made on time but confirmed after the due date is not paid late"
   assert.equal(computePaymentBehavior([{ ...loanWith(payments), installments: settled }]).lateInstallments, 0);
 });
 
-test("the latest rejection's note shows on the current installment only", () => {
+test("a rejected payment shows the current installment's due countdown", () => {
   const payments: RawPayment[] = [
     // Newest first, as the student loan read returns them.
     { id: "p2", installmentId: "12", amount: 1000, status: "rejected", reviewNote: "blurry slip", createdAt: "2026-09-03T00:00:00Z" },
     { id: "p1", installmentId: "11", amount: 1000, status: "confirmed", createdAt: "2026-08-02T00:00:00Z" },
   ];
-  const [first, second, third] = mapToInstallmentPayments(installments, payments, now);
+  const [first, second, third] = mapToInstallmentPayments(
+    installments,
+    payments,
+    new Date("2026-08-20T00:00:00Z"),
+  );
 
-  assert.equal(second.paymentNote, "หลักฐานการชำระไม่ผ่านการตรวจสอบ: blurry slip");
-  assert.equal(first.paymentNote, undefined);
-  assert.equal(third.paymentNote, undefined);
+  assert.equal(second.paymentNote, undefined);
+  assert.equal(second.dueInDays, 12);
+  assert.equal(first.dueInDays, undefined);
+  assert.equal(third.dueInDays, undefined);
   assert.equal(second.isAwaitingReview, false);
 });
 
@@ -110,7 +115,7 @@ test("payment history is oldest first with installment numbers, slip URLs and re
       [2, "checking", "/api/payments/p3/slip", undefined],
     ],
   );
-  assert.equal(paymentHistory[1].statusLabel, "ไม่ผ่านการตรวจสอบ");
+  assert.equal(paymentHistory[1].statusLabel, "ไม่ผ่าน");
 });
 
 test("a resubmitted slip with the same transfer time keeps a distinct id", () => {

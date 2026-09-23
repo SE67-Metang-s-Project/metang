@@ -27,6 +27,11 @@ function formatInstallmentAmount(amount: string) {
   return amount.replace(/\s*(บาท|THB)\b/gi, "");
 }
 
+function formatDueDate(label: string, language: "th" | "en") {
+  const localizedLabel = localizeStudentContent(label, language);
+  return localizedLabel.replace(language === "th" ? /^ครบกำหนด\s*/ : /^Due\s*/i, "");
+}
+
 export default function InstallmentCard({ installment, isPaymentLocked = false, onPay }: InstallmentCardProps) {
   const { language, t } = useStudentLanguage();
   const isUpcoming = installment.status === "upcoming";
@@ -62,7 +67,7 @@ export default function InstallmentCard({ installment, isPaymentLocked = false, 
           </p>
           <p className={styles.installmentDetailLine}>
             <span>{t("ครบกำหนด", "Due")}</span>
-            <span>{localizeStudentContent(installment.dueDateLabel, language)}</span>
+            <span>{formatDueDate(installment.dueDateLabel, language)}</span>
           </p>
         </div>
         {hasCompletedPayment ? (
@@ -75,6 +80,15 @@ export default function InstallmentCard({ installment, isPaymentLocked = false, 
               <span>
                 {localizeStudentContent(installment.completedPaymentDateLabel ?? "", language)} {localizeStudentContent(installment.completedPaymentTimeLabel ?? "", language)}
               </span>
+            </span>
+          </p>
+        ) : installment.dueInDays !== undefined ? (
+          <p className={styles.installmentNote}>
+            <i aria-hidden="true" />
+            <span className={styles.installmentNoteText}>
+              {language === "th"
+                ? `อีก ${installment.dueInDays} วันครบกำหนด`
+                : `Due in ${installment.dueInDays} days`}
             </span>
           </p>
         ) : installment.paymentNote ? (

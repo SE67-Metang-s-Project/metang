@@ -4047,6 +4047,7 @@
   overflow-wrap: anywhere;
   color: var(--color-detail-muted);
   font-size: 14px;
+  font-weight: 400;
   line-height: 1.3;
 }
 

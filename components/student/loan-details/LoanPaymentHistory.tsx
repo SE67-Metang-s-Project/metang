@@ -18,6 +18,10 @@ const paymentStatusClassNames = {
   failed: styles.rejectedExecutive,
 } as const;
 
+function withoutTimestampLabel(value: string) {
+  return value.replace(/^(?:ชำระเมื่อ|ส่งเมื่อ|ตรวจสอบเมื่อ|Paid|Sent|Verified)\s*/i, "");
+}
+
 export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
   const { language, t } = useStudentLanguage();
   const [selectedReceipt, setSelectedReceipt] = useState<LoanPaymentHistoryItem | null>(null);
@@ -31,8 +35,7 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
         .filter((record) => record.installmentNumber === item.installmentNumber).length;
 
       return { item, index, attemptNumber, totalAttempts: recordsForInstallment.length };
-    })
-    .reverse();
+    });
   const selectedReceiptIndex = selectedReceipt ? items.indexOf(selectedReceipt) : -1;
   const selectedReceiptAttempts = selectedReceipt
     ? items.filter((item) => item.installmentNumber === selectedReceipt.installmentNumber)
@@ -48,6 +51,61 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
     isOpen: Boolean(selectedReceipt),
   });
 
+  const paymentHistoryList = (
+    <div className={styles.paymentHistoryList}>
+      {paymentRecords.length > 0 ? (
+        paymentRecords.map(({ item, index, attemptNumber, totalAttempts }) => (
+          <button
+            className={styles.paymentHistoryCard}
+            key={item.id ?? `${item.installmentNumber}-${index}`}
+            onClick={() => setSelectedReceipt(item)}
+            type="button"
+          >
+            <span aria-hidden="true" className={styles.paymentReceiptIcon}>
+              {item.receiptImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img alt="" src={item.receiptImage} />
+              ) : (
+                <ReceiptText size={20} strokeWidth={1.8} />
+              )}
+            </span>
+            <div className={styles.paymentHistoryContent}>
+              <strong>
+                {t("งวดที่", "Installment")} {item.installmentNumber}
+                {totalAttempts > 1 ? ` (${t("ครั้งที่", "attempt")} ${attemptNumber})` : ""} · {item.amount}
+              </strong>
+              <p>
+                {t("ส่งเมื่อ", "Sent")} {localizeStudentContent(withoutTimestampLabel(item.paidAt), language)}
+              </p>
+              <p>
+                {t("ตรวจสอบเมื่อ", "Verified")} {localizeStudentContent(withoutTimestampLabel(item.checkedAt), language)}
+              </p>
+              {item.reviewNote ? (
+                <p>
+                  {t("เหตุผล", "Reason")}: {item.reviewNote}
+                </p>
+              ) : null}
+            </div>
+            <span className={styles.paymentVerifiedPill}>
+              <StatusPill
+                className={paymentStatusClassNames[item.status]}
+                label={localizeStudentContent(item.statusLabel, language)}
+                tone="neutral"
+              />
+            </span>
+          </button>
+        ))
+      ) : (
+        <div className={styles.paymentHistoryEmpty}>
+          <span className={styles.paymentHistoryEmptyIcon}>
+            <ReceiptText aria-hidden="true" size={28} strokeWidth={1.8} />
+          </span>
+          <p>{t("ยังไม่มีประวัติการชำระเงิน", "No payment history yet")}</p>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <section className={`${styles.loanDetailSection} ${styles.detailDashboardCard} ${styles.paymentHistorySection}`}>
       <header className={styles.sectionCardHeading}>
@@ -56,54 +114,7 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
           {t("ประวัติหลักฐานการชำระ", "Payment Evidence History")}
         </h2>
       </header>
-      <div className={styles.paymentHistoryList}>
-        {paymentRecords.length > 0 ? (
-          paymentRecords.map(({ item, index, attemptNumber, totalAttempts }) => (
-            <button
-              className={styles.paymentHistoryCard}
-              key={item.id ?? `${item.installmentNumber}-${index}`}
-              onClick={() => setSelectedReceipt(item)}
-              type="button"
-            >
-              <span aria-hidden="true" className={styles.paymentReceiptIcon}>
-                {item.receiptImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img alt="" src={item.receiptImage} />
-                ) : (
-                  <ReceiptText size={20} strokeWidth={1.8} />
-                )}
-              </span>
-              <div className={styles.paymentHistoryContent}>
-                <strong>
-                  {t("งวดที่", "Installment")} {item.installmentNumber}
-                  {totalAttempts > 1 ? ` (${t("ครั้งที่", "attempt")} ${attemptNumber})` : ""} · {item.amount}
-                </strong>
-                <p>{localizeStudentContent(item.paidAt, language)}</p>
-                <p>{localizeStudentContent(item.checkedAt, language)}</p>
-                {item.reviewNote ? (
-                  <p>
-                    {t("เหตุผล", "Reason")}: {item.reviewNote}
-                  </p>
-                ) : null}
-              </div>
-              <span className={styles.paymentVerifiedPill}>
-                <StatusPill
-                  className={paymentStatusClassNames[item.status]}
-                  label={localizeStudentContent(item.statusLabel, language)}
-                  tone="neutral"
-                />
-              </span>
-            </button>
-          ))
-        ) : (
-          <div className={styles.paymentHistoryEmpty}>
-            <span className={styles.paymentHistoryEmptyIcon}>
-              <ReceiptText aria-hidden="true" size={28} strokeWidth={1.8} />
-            </span>
-            <p>{t("ยังไม่มีประวัติการชำระเงิน", "No payment history yet")}</p>
-          </div>
-        )}
-      </div>
+      {paymentHistoryList}
       {selectedReceipt ? (
         <div
           aria-label={t("หลักฐานการชำระเงิน", "Payment evidence")}
