@@ -134,7 +134,7 @@ export function buildFiveStepTimeline({
         h.actor.includes("อ.")),
   );
 
-  const admHistApproved = history.find(
+  const admHistApproved = [...history].reverse().find(
     (h) =>
       (h.action.includes("เจ้าหน้าที่ตรวจสอบ") ||
         (h.action.includes("อนุมัติ") &&
@@ -223,7 +223,7 @@ export function buildFiveStepTimeline({
   const isStep2Approved =
     advisorApproval?.decision === "approved" ||
     Boolean(advHistApproved) ||
-    ["pending_admin", "pending_executive", "pending_disbursement", "disbursed", "closed"].includes(
+    ["pending_admin", "pending_executive", "pending_disbursement", "disbursed", "repaying", "closed"].includes(
       requestStatus || "",
     ) ||
     returnedRole === "admin" ||
@@ -302,7 +302,7 @@ export function buildFiveStepTimeline({
     !isStep3Pending &&
     (adminApproval?.decision === "approved" ||
       Boolean(admHistApproved) ||
-      ["pending_executive", "pending_disbursement", "disbursed", "closed"].includes(
+      ["pending_executive", "pending_disbursement", "disbursed", "repaying", "closed"].includes(
         requestStatus || "",
       ) ||
       returnedRole === "executive" ||
@@ -315,8 +315,8 @@ export function buildFiveStepTimeline({
   if (isStep3Approved) {
     step3Item = {
       action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
-      date: adminApproval?.date || admHistApproved?.date || "ตรวจสอบเรียบร้อย",
-      actor: adminApproval?.actorName || admHistApproved?.actor || "เจ้าหน้าที่",
+      date: admHistApproved?.date || adminApproval?.date || "ตรวจสอบเรียบร้อย",
+      actor: admHistApproved?.actor || adminApproval?.actorName || "เจ้าหน้าที่",
       isCompleted: true,
       comment: hideComments ? undefined : adminApproval?.comment || admHistApproved?.comment,
       commentTitle: hideComments ? undefined : "ความคิดเห็นของเจ้าหน้าที่",
@@ -368,7 +368,7 @@ export function buildFiveStepTimeline({
     !isStep4Pending &&
     (execApproval?.decision === "approved" ||
       Boolean(execHistApproved) ||
-      ["pending_disbursement", "disbursed", "closed"].includes(requestStatus || ""));
+      ["pending_disbursement", "disbursed", "repaying", "closed"].includes(requestStatus || ""));
 
   const isStep4Returned =
     returnedRole === "executive" ||
@@ -426,11 +426,11 @@ export function buildFiveStepTimeline({
   }
 
   // Step 5: เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว
-  const isStep5Pending = requestStatus === "pending_disbursement";
+  const isStep5Pending =
+    requestStatus === "pending_disbursement" || requestStatus === "disbursed";
   const isStep5Disbursed =
-    requestStatus === "disbursed" ||
-    requestStatus === "closed" ||
-    (!isStep5Pending && Boolean(disburseHist));
+    !isStep5Pending &&
+    (requestStatus === "repaying" || requestStatus === "closed" || Boolean(disburseHist));
 
   const rawTransferDetails =
     disburseHist?.transferDetails ||
@@ -451,7 +451,7 @@ export function buildFiveStepTimeline({
   let step5Item: ActionHistory;
   if (isStep5Disbursed) {
     step5Item = {
-      action: "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว",
+      action: disburseHist?.action || "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว",
       date: disburseHist?.date || "โอนเงินสำเร็จ",
       actor: disburseHist?.actor || "เจ้าหน้าที่การเงิน",
       isCompleted: true,

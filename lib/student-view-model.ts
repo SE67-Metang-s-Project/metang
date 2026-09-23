@@ -337,9 +337,7 @@ export function mapToInstallmentPayments(
 }
 
 export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
-  const display = mapLoanStatus(loan.status);
-  const statusLabel = getRejectedStatusLabel(loan, display.label);
-  const requestedAmount = loan.amount;
+  const requestedAmount = loan.approvedAmount ?? loan.amount;
 
   const timeline: LoanTimelineItem[] = [];
 
@@ -359,12 +357,49 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     const timeB = b.decidedAt ? new Date(b.decidedAt).getTime() : 0;
     return timeA - timeB;
   });
+  const latestExecutiveReturn = approvals
+    .filter((approval) => approval.step === "executive" && approval.decision === "returned")
+    .at(-1);
+  const executiveReturnAttempt = latestExecutiveReturn?.attempt ?? -1;
+  const latestAdminDecision = approvals
+    .filter((approval) => approval.step === "admin" && approval.decision !== "pending")
+    .at(-1);
+  const isExecutiveAdminRecheck =
+    loan.status === "pending_admin" &&
+    latestExecutiveReturn &&
+    approvals.some(
+      (approval) =>
+        approval.step === "admin" &&
+        approval.decision === "pending" &&
+        approval.attempt > executiveReturnAttempt,
+    ) &&
+    (!latestAdminDecision ||
+      new Date(latestAdminDecision.decidedAt ?? 0).getTime() <
+        new Date(latestExecutiveReturn.decidedAt ?? 0).getTime());
+  const studentVisibleStatus: LoanStatus = isExecutiveAdminRecheck
+    ? "pending_executive"
+    : loan.status;
+  const display = mapLoanStatus(studentVisibleStatus);
+  const statusLabel = getRejectedStatusLabel({ ...loan, status: studentVisibleStatus }, display.label);
+  const studentTimelineApprovals = isExecutiveAdminRecheck
+    ? approvals.filter(
+        (approval) =>
+          !(
+            (approval.step === "executive" &&
+              approval.decision === "returned" &&
+              approval.attempt === executiveReturnAttempt) ||
+            (approval.step === "admin" &&
+              approval.decision === "pending" &&
+              approval.attempt > executiveReturnAttempt)
+          ),
+      )
+    : approvals;
   const activePendingStep =
-    loan.status === "pending_advisor"
+    studentVisibleStatus === "pending_advisor"
       ? "advisor"
-      : loan.status === "pending_admin"
+      : studentVisibleStatus === "pending_admin"
         ? "admin"
-        : loan.status === "pending_executive"
+        : studentVisibleStatus === "pending_executive"
           ? "executive"
           : null;
 
@@ -379,7 +414,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     return `${roleLabel}แจ้งแก้ไข${revisionSuffix}`;
   };
 
-  for (const [approvalIndex, app] of approvals.entries()) {
+  for (const [approvalIndex, app] of studentTimelineApprovals.entries()) {
     if (app.decision === "pending") {
       if (app.step !== activePendingStep || !app.comment?.trim()) continue;
 
@@ -426,7 +461,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
         stepTitle = "อาจารย์ที่ปรึกษาส่งกลับแก้ไข";
         commentTitle = getRevisionCommentTitle(
           app.step,
-          approvals.slice(0, approvalIndex + 1).filter(
+          studentTimelineApprovals.slice(0, approvalIndex + 1).filter(
             (approval) => approval.step === app.step && approval.decision === "returned",
           ).length,
         );
@@ -443,7 +478,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
         stepTitle = "เจ้าหน้าที่ส่งกลับแก้ไข";
         commentTitle = getRevisionCommentTitle(
           app.step,
-          approvals.slice(0, approvalIndex + 1).filter(
+          studentTimelineApprovals.slice(0, approvalIndex + 1).filter(
             (approval) => approval.step === app.step && approval.decision === "returned",
           ).length,
         );
@@ -460,7 +495,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
         stepTitle = "ผู้บริหารส่งกลับแก้ไขให้เจ้าหน้าที่ตรวจสอบใหม่";
         commentTitle = getRevisionCommentTitle(
           app.step,
-          approvals.slice(0, approvalIndex + 1).filter(
+          studentTimelineApprovals.slice(0, approvalIndex + 1).filter(
             (approval) => approval.step === app.step && approval.decision === "returned",
           ).length,
         );
@@ -516,7 +551,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
       next: { title: "ได้รับเงินกู้และเริ่มชำระคืน", actor: "นักศึกษา" },
     },
   };
-  const pendingStep = pendingSteps[loan.status];
+  const pendingStep = pendingSteps[studentVisibleStatus];
 
   if (pendingStep) {
     const { next, ...currentStep } = pendingStep;
@@ -537,7 +572,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
   // Disbursed
   if (loan.disbursedAt) {
     timeline.push({
-      title: `เจ้าหน้าที่โอนเงิน จำนวน ฿${requestedAmount.toLocaleString("th-TH")}`,
+      title: `เจ้าหน้าที่โอนเงิน จำนวน ${requestedAmount.toLocaleString("th-TH")}`,
       dateTime: formatThaiDateTime(loan.disbursedAt),
       actor: "เจ้าหน้าที่",
       isCompleted: true,
@@ -597,7 +632,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     }),
   );
 
-  const mappedApprovals: ApprovalStep[] = (loan.approvals ?? [])
+  const mappedApprovals: ApprovalStep[] = studentTimelineApprovals
     .filter((a) => a.decision !== "pending")
     .map((a) => ({
       step: a.step,
@@ -615,7 +650,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
 
   return {
     id: loan.id,
-    statusCode: loan.status,
+    statusCode: studentVisibleStatus,
     studentYear: loan.studentYear,
     advisorName: loan.advisor?.fullNameTh ?? "-",
     bankName: loan.bankName ? normalizeBankName(loan.bankName) : undefined,

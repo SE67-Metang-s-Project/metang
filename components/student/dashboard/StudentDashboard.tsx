@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, LogIn, RefreshCw, X } from "lucide-react";
 import {
@@ -14,10 +14,12 @@ import TempLoanSummaryCard from "./TempLoanSummaryCard";
 import PaymentBehaviorCard from "./PaymentBehaviorCard";
 import LoanTimeline from "../loan-details/LoanTimeline";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
+import LoanPetitionModal from "@/components/shared/LoanPetitionModal";
 import InstallmentList from "../payments/InstallmentList";
 import PaymentModal, { type PaymentSubmission } from "@/components/shared/PaymentModal";
 import type {
   InstallmentPayment,
+  LoanDetails,
   LoanRequestHistoryItem,
   LoanScheduleItem,
   LoanTimelineItem,
@@ -49,6 +51,7 @@ import {
   saveTransferConfirmation,
   subscribeToTransferConfirmation,
 } from "@/lib/student-transfer-confirmation";
+import { mapStudentLoanToActionRequest } from "@/lib/student-action-request";
 import styles from "@/app/student/student.module.css";
 
 type StudentDashboardProps = {
@@ -56,6 +59,7 @@ type StudentDashboardProps = {
   initialActiveLoan?: ActiveLoanDisplay | null;
   initialHistoryRequests?: LoanRequestHistoryItem[];
   initialInstallments?: InstallmentPayment[];
+  initialLoanDetails?: LoanDetails | null;
   initialPaymentBehavior?: PaymentBehaviorDisplay | null;
   initialTimeline?: LoanTimelineItem[];
   initialSchedule?: LoanScheduleItem[];
@@ -68,6 +72,7 @@ export default function StudentDashboard({
   initialActiveLoan,
   initialHistoryRequests,
   initialInstallments,
+  initialLoanDetails = null,
   initialPaymentBehavior,
   initialTimeline,
   initialSchedule,
@@ -77,6 +82,7 @@ export default function StudentDashboard({
   const [activePayment, setActivePayment] = useState<InstallmentPayment | null>(null);
   const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState(false);
   const [isTransferSlipOpen, setIsTransferSlipOpen] = useState(false);
+  const [isPetitionModalOpen, setIsPetitionModalOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
@@ -98,6 +104,7 @@ export default function StudentDashboard({
   const [activeLoanData, setActiveLoanData] = useState<ActiveLoanDisplay | null | undefined>(initialActiveLoan);
   const [historyRequests, setHistoryRequests] = useState<LoanRequestHistoryItem[] | undefined>(initialHistoryRequests);
   const [installments, setInstallments] = useState<InstallmentPayment[] | undefined>(initialInstallments);
+  const [loanDetails, setLoanDetails] = useState<LoanDetails | null>(initialLoanDetails);
   const [paymentBehaviorData, setPaymentBehaviorData] = useState<PaymentBehaviorDisplay | null | undefined>(
     initialPaymentBehavior,
   );
@@ -154,10 +161,12 @@ export default function StudentDashboard({
           setActiveLoanData(mapToActiveLoanSummary(rawLoan));
           if (rawLoan) {
             const details = mapToLoanDetails(rawLoan);
+            setLoanDetails(details);
             setTimeline(details.timeline);
             setSchedule(details.schedule);
             setInstallments(mapToInstallmentPayments(rawLoan.installments, rawLoan.payments));
           } else {
+            setLoanDetails(null);
             setTimeline([]);
             setSchedule([]);
             setInstallments([]);
@@ -272,6 +281,15 @@ export default function StudentDashboard({
 
   const currentActiveLoan = activeLoanData === undefined ? defaultActiveLoan : activeLoanData;
   const currentInstallments = installments ?? [];
+  const currentRequestStatus =
+    loanDetails?.statusCode ??
+    (currentActiveLoan && "status" in currentActiveLoan ? currentActiveLoan.status : undefined);
+  const isTransferPending =
+    currentRequestStatus === "pending_disbursement" ||
+    [currentActiveLoan?.statusLabel, loanDetails?.statusLabel].some((label) =>
+      ["รอยืนยันการโอนเงิน", "รอยืนยันการรับเงิน", "Transfer pending"].includes(label ?? ""),
+    );
+  const timelineRequestStatus = isTransferPending ? "pending_disbursement" : currentRequestStatus;
   const transferSlipImage =
     currentActiveLoan && "transferSlipImage" in currentActiveLoan
       ? currentActiveLoan.transferSlipImage
@@ -285,15 +303,9 @@ export default function StudentDashboard({
     Boolean(currentActiveLoan && "status" in currentActiveLoan && currentActiveLoan.status === "closed") ||
     dashboardTimeline.some((item) => Boolean(item.transferDetails));
   const hasExecutiveApproved = Boolean(
-    currentActiveLoan &&
-      "status" in currentActiveLoan &&
-      ["pending_disbursement", "disbursed", "closed"].includes(currentActiveLoan.status ?? ""),
+    ["pending_disbursement", "disbursed", "closed"].includes(timelineRequestStatus ?? ""),
   );
-  const isWaitingForTransferConfirmation = Boolean(
-    currentActiveLoan &&
-      "status" in currentActiveLoan &&
-      currentActiveLoan.status === "pending_disbursement",
-  );
+  const isWaitingForTransferConfirmation = isTransferPending;
   const currentLoanKey =
     currentActiveLoan && "id" in currentActiveLoan && currentActiveLoan.id
       ? currentActiveLoan.id
@@ -310,6 +322,15 @@ export default function StudentDashboard({
   const isActiveLoanReturned =
     Boolean(currentActiveLoan && "status" in currentActiveLoan && currentActiveLoan.status === "returned") ||
     Boolean(currentActiveLoan?.statusLabel.includes("แก้ไข"));
+  const shouldShowDownload =
+    Boolean(loanDetails) &&
+    (isWaitingForTransferConfirmation ||
+      hasAdminTransferredFunds ||
+      ["disbursed", "closed"].includes(loanDetails?.statusCode ?? ""));
+  const petitionRequest = useMemo(
+    () => (loanDetails ? mapStudentLoanToActionRequest(loanDetails, profile) : null),
+    [loanDetails, profile],
+  );
   const displayedRequests = (historyRequests ?? defaultLoanRequestHistory).map((request) =>
     isTransferAccepted && request.requestNumber === currentActiveLoan?.requestNumber
       ? { ...request, statusLabel: "กำลังชำระ", statusType: "pending" as const }
@@ -384,20 +405,14 @@ export default function StudentDashboard({
 
           <LoanTimeline
             compactActions
+            hideBankDetails
             items={dashboardTimeline}
             isTransferAccepted={isTransferAccepted}
             onCancelRequest={() => setIsCancelDialogOpen(true)}
             onEditRequest={isActiveLoanReturned ? () => router.push("/student/loan/apply") : undefined}
             onConfirmTransfer={
-              hasAdminTransferredFunds
-                ? () => {
-                    saveTransferConfirmation(currentLoanKey);
-                  }
-                : undefined
-            }
-            confirmTransferLabel={
-              isWaitingForTransferConfirmation && hasAdminTransferredFunds
-                ? t("ยืนยันการรับเงิน", "Accept money")
+              isWaitingForTransferConfirmation
+                ? () => saveTransferConfirmation(currentLoanKey)
                 : undefined
             }
             onShowTransferSlip={
@@ -411,13 +426,14 @@ export default function StudentDashboard({
                   }
                 : undefined
             }
-            showCancelRequest={Boolean(currentActiveLoan) && !hasExecutiveApproved}
-            showEditRequest={isActiveLoanReturned}
-            requestStatus={
-              currentActiveLoan && "status" in currentActiveLoan
-                ? currentActiveLoan.status
+            onDownloadRequest={
+              shouldShowDownload && !isWaitingForTransferConfirmation
+                ? () => setIsPetitionModalOpen(true)
                 : undefined
             }
+            showCancelRequest={Boolean(currentActiveLoan) && !hasExecutiveApproved}
+            showEditRequest={isActiveLoanReturned}
+            requestStatus={timelineRequestStatus}
           />
 
           <LoanDetailSchedule items={schedule ?? []} />
@@ -452,6 +468,13 @@ export default function StudentDashboard({
         <TransferSlipModal
           imageSrc={transferSlipImage}
           onClose={() => setIsTransferSlipOpen(false)}
+        />
+      ) : null}
+      {isPetitionModalOpen && petitionRequest ? (
+        <LoanPetitionModal
+          isOpen={isPetitionModalOpen}
+          onClose={() => setIsPetitionModalOpen(false)}
+          request={petitionRequest}
         />
       ) : null}
 

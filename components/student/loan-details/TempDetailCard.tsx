@@ -70,7 +70,7 @@ export default function TempDetailCard({ details, profile }: TempDetailCardProps
         <header className={styles.sectionCardHeading}>
           <h2>
             <Landmark aria-hidden="true" size={23} strokeWidth={2.2} />
-            {t("ข้อมูลธนาคาร", "Bank Information")}
+            {t("ข้อมูลบัญชีธนาคารสำหรับรับเงิน", "Receiving Bank Account")}
           </h2>
         </header>
         <dl className={styles.loanDetailDefinitionList}>

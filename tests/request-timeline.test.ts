@@ -299,7 +299,7 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepAdminResubmit[3].isUpcoming, true);
   assert.equal(stepAdminResubmit[4].isUpcoming, true);
 
-  // Case 7: Disbursed -> all 5 checked
+  // Case 7: Funds transferred -> final transfer status stays active until the loan closes
   const stepDisbursed = buildFiveStepTimeline({
     requestStatus: "disbursed",
     studentName: "นายสมชาย ใจดี",
@@ -317,7 +317,8 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepDisbursed[1].isCompleted, true);
   assert.equal(stepDisbursed[2].isCompleted, true);
   assert.equal(stepDisbursed[3].isCompleted, true);
-  assert.equal(stepDisbursed[4].isCompleted, true);
+  assert.equal(stepDisbursed[4].isPending, true);
+  assert.equal(stepDisbursed[4].isCompleted, undefined);
 
   // Case 8: Comments from various roles like student page
   const stepWithComments = buildFiveStepTimeline({
@@ -355,6 +356,26 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepWithComments[2].comment, "เอกสารครบถ้วนสมบูรณ์");
   assert.equal(stepWithComments[3].commentTitle, "ความคิดเห็นของผู้บริหาร");
   assert.equal(stepWithComments[3].comment, "อนุมัติเงินกู้ยืม");
+
+  const latestAdminApproval = buildFiveStepTimeline({
+    requestStatus: "pending_disbursement",
+    history: [
+      {
+        action: "เจ้าหน้าที่ตรวจสอบเอกสารผ่านการอนุมัติ",
+        date: "20 Sep 2026 10:00",
+        actor: "เจ้าหน้าที่คนเดิม",
+        comment: "ความคิดเห็นเดิม",
+      },
+      {
+        action: "เจ้าหน้าที่ตรวจสอบเอกสารผ่านการอนุมัติ",
+        date: "23 Sep 2026 23:18",
+        actor: "เจ้าหน้าที่คนล่าสุด",
+        comment: "ความคิดเห็นล่าสุด",
+      },
+    ],
+  });
+  assert.equal(latestAdminApproval[2].date, "23 Sep 2026 23:18");
+  assert.equal(latestAdminApproval[2].comment, "ความคิดเห็นล่าสุด");
 });
 
 test("RequestTimeline has header action button to view full action history and modal", () => {

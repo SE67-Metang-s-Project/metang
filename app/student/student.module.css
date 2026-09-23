@@ -3468,8 +3468,8 @@
   justify-content: center;
   gap: 7px;
   margin-top: 13px;
-  min-height: 42px;
-  padding: 10px;
+  min-height: 38px;
+  padding: 8px 10px;
   border: 0;
   border-radius: 8px;
   background: var(--color-detail-orange);
@@ -3485,6 +3485,12 @@
 
 .loanDownloadButton:hover {
   background: var(--color-detail-orange-dark);
+}
+
+.loanDownloadRequestButton {
+  min-height: 36px !important;
+  padding-top: 7px !important;
+  padding-bottom: 7px !important;
 }
 
 .loanTimeline {

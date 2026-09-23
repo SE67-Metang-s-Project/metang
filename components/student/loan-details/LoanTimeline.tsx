@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { LoanTimelineItem } from "@/app/student/studentMockData";
 import RequestTimeline, {
@@ -77,10 +77,12 @@ export default function LoanTimeline({
   });
   const hasAcceptedTransfer = isTransferAccepted || isTransferConfirmed;
   const effectiveRequestStatus = hasAcceptedTransfer
-    ? "disbursed"
+    ? "repaying"
     : requestStatus ?? getRequestStatus(items, false);
-  const shouldShowConfirmation = !hasAcceptedTransfer && Boolean(confirmTransferLabel || onConfirmTransfer);
-  const confirmationLabel = confirmTransferLabel ?? t("ยืนยันการรับเงิน", "Confirm receipt");
+  const shouldShowConfirmation =
+    !hasAcceptedTransfer &&
+    effectiveRequestStatus === "pending_disbursement" &&
+    Boolean(confirmTransferLabel || onConfirmTransfer);
   const advisorName = items.find((item) => item.title.includes("อาจารย์"))?.actor;
   const hasExecutiveReturnForRevision = items.some(
     (item) => item.title.includes("ผู้บริหาร") && item.title.includes("ส่งกลับแก้ไข"),
@@ -110,7 +112,7 @@ export default function LoanTimeline({
   };
 
   const requestActions =
-    showEditRequest || showCancelRequest || shouldShowConfirmation ? (
+    showEditRequest || showCancelRequest ? (
       <div className={styles.loanTimelineRequestActions}>
         {showEditRequest ? (
           <button className={styles.loanTimelineEditButton} onClick={onEditRequest} type="button">
@@ -120,12 +122,6 @@ export default function LoanTimeline({
         {showCancelRequest ? (
           <button className={styles.loanTimelineCancelButton} onClick={onCancelRequest} type="button">
             {t("ยกเลิกคำร้อง", "Cancel request")}
-          </button>
-        ) : null}
-        {shouldShowConfirmation ? (
-          <button className={styles.loanApplicationNext} onClick={handleConfirmTransfer} type="button">
-            <Check aria-hidden="true" size={18} strokeWidth={3} />
-            {confirmationLabel}
           </button>
         ) : null}
       </div>
@@ -143,6 +139,7 @@ export default function LoanTimeline({
         history={history}
         hideBankDetails={hideBankDetails}
         language={language}
+        onConfirmReceipt={shouldShowConfirmation ? handleConfirmTransfer : undefined}
         onShowTransferSlip={onShowTransferSlip}
         onDownloadRequest={onDownloadRequest}
         requestStatus={items.length ? effectiveRequestStatus : undefined}

@@ -148,6 +148,7 @@ export interface RequestTimelineProps {
   title?: string;
   className?: string;
   onShowTransferSlip?: () => void;
+  onConfirmReceipt?: () => void;
   onDownloadRequest?: () => void;
   hideComments?: boolean;
   hideBankDetails?: boolean;
@@ -172,6 +173,7 @@ export default function RequestTimeline({
   title = "ติดตามสถานะคำร้อง",
   className = "",
   onShowTransferSlip,
+  onConfirmReceipt,
   onDownloadRequest,
   hideComments = false,
   hideBankDetails = false,
@@ -299,9 +301,13 @@ export default function RequestTimeline({
                     const hasDetails = filteredDetails.length > 0;
                     const isTransferStatus = item.action.includes("โอนเงิน");
                     const hasSlipButton = isTransferStatus && Boolean(onShowTransferSlip);
-                    const hasDownloadButton = isTransferStatus && Boolean(onDownloadRequest);
+                    const hasConfirmReceiptButton = isTransferStatus && Boolean(onConfirmReceipt);
+                    const hasDownloadButton =
+                      isTransferStatus && !hasConfirmReceiptButton && Boolean(onDownloadRequest);
 
-                    if (!hasDetails && !hasSlipButton && !hasDownloadButton) return null;
+                    if (!hasDetails && !hasSlipButton && !hasConfirmReceiptButton && !hasDownloadButton) {
+                      return null;
+                    }
 
                     return (
                       <>
@@ -326,10 +332,12 @@ export default function RequestTimeline({
                             })}
                           </dl>
                         ) : null}
-                        {hasSlipButton || hasDownloadButton ? (
+                        {hasSlipButton || hasConfirmReceiptButton || hasDownloadButton ? (
                           <div
                             className={`${styles.loanTimelineActions} ${
-                              hasSlipButton && hasDownloadButton ? "" : styles.loanTimelineActionsSingle
+                              hasSlipButton && (hasConfirmReceiptButton || hasDownloadButton)
+                                ? ""
+                                : styles.loanTimelineActionsSingle
                             }`}
                           >
                             {hasSlipButton ? (
@@ -342,9 +350,19 @@ export default function RequestTimeline({
                                 {t("ดูหลักฐาน", "View proof")}
                               </button>
                             ) : null}
+                            {hasConfirmReceiptButton ? (
+                              <button
+                                className={`${styles.loanApplicationNext} ${styles.loanDownloadRequestButton}`}
+                                onClick={onConfirmReceipt}
+                                type="button"
+                              >
+                                <CheckCircle2 aria-hidden="true" size={18} />
+                                {t("ยืนยันการรับเงิน", "Confirm receipt")}
+                              </button>
+                            ) : null}
                             {hasDownloadButton ? (
                               <button
-                                className={styles.loanApplicationNext}
+                                className={`${styles.loanApplicationNext} ${styles.loanDownloadRequestButton}`}
                                 onClick={onDownloadRequest}
                                 type="button"
                               >

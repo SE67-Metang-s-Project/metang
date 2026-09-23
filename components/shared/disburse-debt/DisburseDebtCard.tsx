@@ -631,12 +631,12 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                 </dl>
               </section>
 
-              {/* ข้อมูลธนาคาร */}
+              {/* ข้อมูลบัญชีธนาคารสำหรับรับเงิน */}
               <section className={styles.loanApprovalInfoCard}>
                 <CardHeader
                   className={styles.sectionCardHeading}
                   icon={<Landmark aria-hidden="true" size={20} strokeWidth={2.2} />}
-                  title="ข้อมูลธนาคาร"
+                  title="ข้อมูลบัญชีธนาคารสำหรับรับเงิน"
                 />
                 <dl>
                   <div>
@@ -858,7 +858,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                 )}
               </section>
 
-              {/* ประวัติการชำระคืนกองทุน */}
+              {/* พฤติกรรมการชำระเงิน */}
               <section className={styles.loanApprovalInfoCard}>
                 <div className="flex justify-between items-center pb-2.5 mb-3 border-b border-gray-200">
                   <header className="flex items-center gap-2">
@@ -869,21 +869,23 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                       className="text-gray-400"
                     />
                     <h3 className="m-0 text-gray-900 text-[17px] font-semibold">
-                      ประวัติการชำระคืนกองทุน
+                      พฤติกรรมการชำระเงิน
                     </h3>
                   </header>
-                  <span
-                    className={`text-[12px] font-bold px-2.5 py-0.5 rounded-full ${
-                      (selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                        : "bg-red-50 text-red-700 border border-red-200"
-                    }`}
-                  >
-                    ●{" "}
-                    {(selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0
-                      ? "ชำระตรงเวลา"
-                      : "ชำระล่าช้า"}
-                  </span>
+                  {(selectedRequest.paymentBehavior?.totalInstallments ?? 0) > 0 && (
+                    <span
+                      className={`text-[12px] font-bold px-2.5 py-0.5 rounded-full ${
+                        (selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-red-50 text-red-700 border border-red-200"
+                      }`}
+                    >
+                      ●{" "}
+                      {(selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0
+                        ? "ชำระตรงเวลา"
+                        : "ชำระล่าช้า"}
+                    </span>
+                  )}
                 </div>
                 <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
                   <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
@@ -892,9 +894,32 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                       {selectedRequest.paymentBehavior?.totalLoanRequests ?? 0} ครั้ง
                     </div>
                   </div>
-                  <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
-                    <div className="text-[11px] text-emerald-700 font-medium">ตรงเวลา</div>
-                    <div className="font-bold text-[15px] text-emerald-800 mt-0.5">
+                  <div
+                    className={
+                      (selectedRequest.paymentBehavior?.totalInstallments ?? 0) > 0 &&
+                      (selectedRequest.paymentBehavior?.onTimeInstallments ?? 0) > 0
+                        ? "bg-emerald-50/60 p-3 rounded-xl border border-emerald-100"
+                        : "bg-gray-50 p-3 rounded-xl border border-gray-100"
+                    }
+                  >
+                    <div
+                      className={
+                        (selectedRequest.paymentBehavior?.totalInstallments ?? 0) > 0 &&
+                        (selectedRequest.paymentBehavior?.onTimeInstallments ?? 0) > 0
+                          ? "text-[11px] text-emerald-700 font-medium"
+                          : "text-[11px] text-gray-500"
+                      }
+                    >
+                      ตรงเวลา
+                    </div>
+                    <div
+                      className={
+                        (selectedRequest.paymentBehavior?.totalInstallments ?? 0) > 0 &&
+                        (selectedRequest.paymentBehavior?.onTimeInstallments ?? 0) > 0
+                          ? "font-bold text-[15px] text-emerald-800 mt-0.5"
+                          : "font-bold text-[15px] text-gray-900 mt-0.5"
+                      }
+                    >
                       {selectedRequest.paymentBehavior?.onTimeInstallments ?? 0} งวด
                     </div>
                   </div>

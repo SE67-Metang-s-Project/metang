@@ -60,6 +60,7 @@ export default async function StudentPage() {
       initialActiveLoan={initialActiveLoan}
       initialHistoryRequests={initialHistoryRequests}
       initialInstallments={initialInstallments}
+      initialLoanDetails={currentDetails}
       initialPaymentBehavior={initialPaymentBehavior}
       initialSchedule={initialSchedule}
       initialTimeline={initialTimeline}

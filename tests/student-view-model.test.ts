@@ -130,6 +130,79 @@ test("builds timeline in mapToLoanDetails including comments on return", () => {
   assert.equal(summary?.statusLabel, "ส่งกลับแก้ไข");
 });
 
+test("uses the adjusted approved amount for student details and the estimated repayment schedule", () => {
+  const loan: RawStudentLoan = {
+    id: "loan-adjusted-amount",
+    amount: 6000,
+    approvedAmount: 4500,
+    purpose: "ค่ารักษาพยาบาล",
+    installmentCount: 2,
+    firstDueDate: "2026-10-01",
+    status: "pending_executive",
+    submittedAt: "2026-09-01T08:00:00Z",
+  };
+
+  const details = mapToLoanDetails(loan);
+
+  assert.equal(details.amount, "4,500");
+  assert.deepEqual(
+    details.schedule.map((installment) => installment.amount),
+    ["2,250", "2,250"],
+  );
+});
+
+test("keeps an executive-to-admin recheck internal on the student request status", () => {
+  const loan: RawStudentLoan = {
+    id: "loan-executive-admin-recheck",
+    amount: 4000,
+    purpose: "ค่ารักษาพยาบาล",
+    installmentCount: 2,
+    firstDueDate: "2026-10-01",
+    status: "pending_admin",
+    submittedAt: "2026-09-01T08:00:00Z",
+    approvals: [
+      {
+        step: "advisor",
+        attempt: 1,
+        decision: "approved",
+        decidedAt: "2026-09-02T10:00:00Z",
+      },
+      {
+        step: "admin",
+        attempt: 1,
+        decision: "approved",
+        decidedAt: "2026-09-03T10:00:00Z",
+      },
+      {
+        step: "executive",
+        attempt: 1,
+        decision: "returned",
+        decidedAt: "2026-09-04T10:00:00Z",
+        comment: "ตรวจสอบวงเงินอีกครั้ง",
+      },
+      {
+        step: "admin",
+        attempt: 2,
+        decision: "pending",
+      },
+    ],
+  };
+
+  const details = mapToLoanDetails(loan);
+
+  assert.equal(details.statusCode, "pending_executive");
+  assert.equal(details.statusLabel, "รอผู้บริหาร");
+  assert.ok(
+    details.timeline.some(
+      (item) => item.title === "ผู้บริหารพิจารณาอนุมัติคำร้อง" && item.isPending,
+    ),
+  );
+  assert.ok(
+    !details.timeline.some((item) => item.title.includes("ส่งกลับแก้ไขให้เจ้าหน้าที่ตรวจสอบใหม่")),
+  );
+  assert.ok(!details.approvals?.some((approval) => approval.step === "executive"));
+});
+
 test("includes the current pending Admin message in the student timeline", () => {
   const loan: RawStudentLoan = {
     id: "loan-pending-admin-message",

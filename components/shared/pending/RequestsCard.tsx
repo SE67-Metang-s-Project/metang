@@ -418,6 +418,7 @@ export default function RequestsCard({
     originalRequestedAmount > 0
       ? Math.min(originalRequestedAmount, tempLoanApplicationLimit)
       : tempLoanApplicationLimit;
+  const selectedDisplayAmount = String(selectedRequest?.approvedAmount ?? selectedRequest?.amount ?? "0");
 
   const handleEditAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -734,7 +735,9 @@ export default function RequestsCard({
                 <div className="flex gap-4">
                   <div>
                     <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่ขอ</div>
-                    <div className="font-bold text-[#ea580c]">{formatAmount(req.amount)}</div>
+                    <div className="font-bold text-[#ea580c]">
+                      {formatAmount(req.approvedAmount ?? req.amount)}
+                    </div>
                   </div>
                   <div>
                     <div className="text-[11px] text-gray-500 mb-0.5">จำนวนงวด</div>
@@ -820,7 +823,7 @@ export default function RequestsCard({
                     <div className="line-clamp-2">{req.objective}</div>
                   </td>
                   <td className="py-4 px-4 text-center font-normal text-gray-900 border-r border-gray-200 whitespace-nowrap">
-                    {formatAmount(req.amount)}
+                    {formatAmount(req.approvedAmount ?? req.amount)}
                   </td>
                   <td className="py-4 px-4 text-center font-normal text-gray-700 border-r border-gray-200 whitespace-nowrap">
                     {req.term} งวด
@@ -923,13 +926,13 @@ export default function RequestsCard({
                 </dl>
               </section>
 
-              {/* ข้อมูลธนาคาร */}
+              {/* ข้อมูลบัญชีธนาคารสำหรับรับเงิน */}
               {canViewSensitiveData && (
                 <section className={styles.loanApprovalInfoCard}>
                   <CardHeader
                     className={styles.sectionCardHeading}
                     icon={<Landmark aria-hidden="true" size={20} strokeWidth={2.2} />}
-                    title="ข้อมูลธนาคาร"
+                    title="ข้อมูลบัญชีธนาคารสำหรับรับเงิน"
                   />
                   <dl>
                     <div>
@@ -1044,7 +1047,7 @@ export default function RequestsCard({
                                 ปรับลดจาก {formatAmount(originalRequestedAmount)}
                               </span>
                             )}
-                          <span>{formatAmount(selectedRequest.amount)}</span>
+                          <span>{formatAmount(selectedDisplayAmount)}</span>
                         </div>
                       )}
                     </dd>
@@ -1067,7 +1070,7 @@ export default function RequestsCard({
                   {calculateInstallments(
                     selectedRequest.submitDate,
                     selectedRequest.term,
-                    selectedRequest.amount,
+                    selectedDisplayAmount,
                     selectedRequest.paymentHistory,
                   ).map((inst) => (
                     <div className={styles.loanScheduleRow} key={inst.installmentNumber}>

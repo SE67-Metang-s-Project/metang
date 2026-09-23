@@ -44,7 +44,8 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
   const isWaitingForTransferConfirmation =
     details.statusCode === "pending_disbursement" ||
     details.statusLabel === "รอยืนยันการรับเงิน" ||
-    details.statusLabel === "รอยืนยันการโอนเงิน";
+    details.statusLabel === "รอยืนยันการโอนเงิน" ||
+    details.statusLabel === "Transfer pending";
   const hasAdminTransferredFunds =
     ["disbursed", "closed"].includes(details.statusCode ?? "") ||
     Boolean(details.transferSlipImage && details.transferSlipImage.trim() !== "") ||
@@ -135,7 +136,7 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
       <LoanDetailOverview
         details={displayedDetails}
         profile={profile}
-        showDownload={false}
+        showDownload={shouldShowDownload}
         onDownloadClick={() => setIsPetitionModalOpen(true)}
       />
 
@@ -145,28 +146,26 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
           accountNumber: details.bankAccountNo,
           accountName: details.bankAccountName,
         }}
+        compactActions
         hideBankDetails
-        confirmTransferLabel={
-          isWaitingForTransferConfirmation && hasAdminTransferredFunds
-            ? t("ยืนยันการรับเงิน", "Accept money")
-            : undefined
-        }
         items={displayedTimeline}
         isTransferAccepted={isTransferAccepted}
         onConfirmTransfer={
-          hasAdminTransferredFunds
-            ? () => {
-                saveTransferConfirmation(details.id ?? details.requestNumber);
-              }
+          isWaitingForTransferConfirmation
+            ? () => saveTransferConfirmation(details.id ?? details.requestNumber)
             : undefined
         }
         onShowTransferSlip={hasAdminTransferredFunds ? () => setIsSlipModalOpen(true) : undefined}
-        onDownloadRequest={shouldShowDownload ? () => setIsPetitionModalOpen(true) : undefined}
+        onDownloadRequest={
+          shouldShowDownload && !isWaitingForTransferConfirmation
+            ? () => setIsPetitionModalOpen(true)
+            : undefined
+        }
         onCancelRequest={() => setIsCancelDialogOpen(true)}
         onEditRequest={isReturned ? () => router.push("/student/loan/apply") : undefined}
         showCancelRequest={canCancelRequest}
         showEditRequest={isReturned}
-        requestStatus={details.statusCode}
+        requestStatus={isWaitingForTransferConfirmation ? "pending_disbursement" : details.statusCode}
       />
       <TempDetailCard details={details} profile={profile} />
       <LoanDetailSchedule items={details.schedule} />
