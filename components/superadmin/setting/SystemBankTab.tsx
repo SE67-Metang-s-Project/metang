@@ -8,6 +8,7 @@ import {
   getSystemBankAccounts,
   saveSystemBankAccounts,
 } from "@/components/shared/mock-data/mockSystemSettings";
+import { fetchSystemSetting, saveSystemSetting } from "@/lib/system-settings-client";
 
 // รายชื่อธนาคารและธีมสี
 const bankPresets: Record<string, { name: string; code: SystemBankAccount["bankCode"] }> = {
@@ -20,6 +21,12 @@ const bankPresets: Record<string, { name: string; code: SystemBankAccount["bankC
   TTB: { name: "ธนาคารทหารไทยธนชาต", code: "TTB" },
   OTHER: { name: "ธนาคารอื่นๆ", code: "OTHER" },
 };
+
+// Only bankName, accountName and accountNumber are stored in the system_setting row and shown to
+// students. The other fields in this form still live in the mock fixture for now.
+function bankCodeForName(bankName: string): SystemBankAccount["bankCode"] {
+  return Object.values(bankPresets).find((preset) => preset.name === bankName)?.code ?? "OTHER";
+}
 
 export default function SystemBankTab() {
   const [allAccounts, setAllAccounts] = useState<SystemBankAccount[]>([]);
@@ -40,13 +47,28 @@ export default function SystemBankTab() {
   // โหลดข้อมูลเมื่อเปิดหน้า
   useEffect(() => {
     let isMounted = true;
-    getSystemBankAccounts()
-      .then((data) => {
+    Promise.all([
+      getSystemBankAccounts(),
+      fetchSystemSetting(),
+    ])
+      .then(([data, stored]) => {
         if (isMounted) {
-          setAllAccounts(data);
           // ดึงบัญชีหลักมาแสดงในฟอร์ม (หรือถ้าไม่มีให้ดึงบัญชีแรก)
           const primaryAcc = data.find((a) => a.isPrimary) || data[0];
-          setFormData(primaryAcc || null);
+          // The stored row wins for the fields it holds; the rest still come from the fixture.
+          const merged = primaryAcc
+            ? {
+                ...primaryAcc,
+                bankName: stored.bankName,
+                bankCode: bankCodeForName(stored.bankName),
+                accountName: stored.accountName,
+                accountNumber: stored.accountNumber,
+              }
+            : null;
+          setAllAccounts(
+            merged ? data.map((acc) => (acc.id === merged.id ? merged : acc)) : data,
+          );
+          setFormData(merged);
           setIsLoading(false);
         }
       })
@@ -83,6 +105,16 @@ export default function SystemBankTab() {
 
     setIsSaving(true);
     try {
+      const saveError = await saveSystemSetting({
+        bankName: formData.bankName.trim(),
+        accountName: formData.accountName.trim(),
+        accountNumber: formData.accountNumber.trim(),
+      });
+      if (saveError) {
+        showToast(saveError);
+        return;
+      }
+
       // อัปเดตข้อมูลกลับเข้าไปใน Array เดิม
       const updatedList = allAccounts.map((acc) => {
         if (acc.id === formData.id) {
@@ -125,7 +157,9 @@ export default function SystemBankTab() {
       <div className="bg-white rounded-2xl border border-red-200 p-10 text-center shadow-sm w-full">
         <AlertCircle size={36} className="text-red-500 mx-auto mb-3" />
         <h3 className="text-base font-bold text-gray-900">ไม่พบข้อมูลบัญชีธนาคาร</h3>
-        <p className="text-sm text-gray-500 mt-1">กรุณาตรวจสอบฐานข้อมูลจำลองของระบบ</p>
+        <p className="text-sm text-gray-500 mt-1">
+          ไม่สามารถโหลดข้อมูลบัญชีจากระบบได้ กรุณารีเฟรชหน้าแล้วลองใหม่อีกครั้ง
+        </p>
       </div>
     );
   }
