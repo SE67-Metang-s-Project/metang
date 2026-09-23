@@ -255,9 +255,7 @@ export default function RequestTimeline({
                   } ${isUpcoming ? styles.timelineMarkerUpcoming : ""} ${
                     isFailed ? styles.timelineMarkerFailed : ""
                   } ${isRevisionItem ? styles.timelineMarkerRevision : ""}`}
-                >
-                  {isPending ? <Clock3 size={14} strokeWidth={2.4} /> : null}
-                </span>
+                />
                 <div className={styles.timelineContent}>
                   <strong>{localizeTimelineText(item.action, language)}</strong>
                   <p>

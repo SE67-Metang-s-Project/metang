@@ -35,6 +35,33 @@ export const isBankDetail = (detail: string) => {
   );
 };
 
+type ReviewRole = "advisor" | "admin" | "executive";
+
+const getRevisionCommentTitle = (role: ReviewRole, revisionCount = 1) => {
+  const roleLabel =
+    role === "advisor" ? "อาจารย์ที่ปรึกษา" : role === "admin" ? "เจ้าหน้าที่" : "ผู้บริหาร";
+  const revisionSuffix = revisionCount > 1 ? ` (ครั้งที่ ${revisionCount})` : "";
+
+  return `${roleLabel}แจ้งแก้ไข${revisionSuffix}`;
+};
+
+const getReviewRole = (action: string, actor?: string): ReviewRole | undefined => {
+  const text = `${action} ${actor || ""}`;
+  if (text.includes("ผู้บริหาร")) return "executive";
+  if (text.includes("เจ้าหน้าที่")) return "admin";
+  if (
+    text.includes("อาจารย์") ||
+    text.includes("ผศ.") ||
+    text.includes("ดร.") ||
+    text.includes("อ.") ||
+    action === "ส่งกลับให้นักศึกษาแก้ไข"
+  ) {
+    return "advisor";
+  }
+
+  return undefined;
+};
+
 export function buildFiveStepTimeline({
   history = [],
   approvals = [],
@@ -122,6 +149,11 @@ export function buildFiveStepTimeline({
       (h.action.includes("เจ้าหน้าที่") || h.actor.includes("เจ้าหน้าที่")),
   );
   const admHistReturned = adminReturnedHistory[adminReturnedHistory.length - 1];
+  const adminReturnCount = Math.max(
+    adminReturnedHistory.length,
+    approvals.filter((approval) => approval.step === "admin" && approval.decision === "returned")
+      .length,
+  );
   const admHistPending = [...history]
     .reverse()
     .find((h) => h.isPending && (h.action.includes("เจ้าหน้าที่") || h.actor.includes("เจ้าหน้าที่")));
@@ -140,10 +172,16 @@ export function buildFiveStepTimeline({
       !h.action.includes("ส่งกลับ") &&
       !h.action.includes("แก้ไข"),
   );
-  const execHistReturned = history.find(
+  const executiveReturnedHistory = history.filter(
     (h) =>
       (h.action.includes("ส่งกลับ") || h.action.includes("แก้ไข")) &&
       (h.action.includes("ผู้บริหาร") || h.actor.includes("ผู้บริหาร")),
+  );
+  const execHistReturned = executiveReturnedHistory[executiveReturnedHistory.length - 1];
+  const executiveReturnCount = Math.max(
+    executiveReturnedHistory.length,
+    approvals.filter((approval) => approval.step === "executive" && approval.decision === "returned")
+      .length,
   );
   const execHistRejected = history.find(
     (h) =>
@@ -220,8 +258,6 @@ export function buildFiveStepTimeline({
     };
   } else if (isStep2Returned) {
     const rDate = advHistReturned?.date || advisorApproval?.date;
-    const advisorReturnCommentTitle =
-      advHistReturned?.commentTitle || "ข้อความจากอาจารย์ที่ปรึกษา";
     step2Item = {
       action: "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ",
       date: rDate ? `ส่งกลับมาแก้ไข (${rDate})` : "ส่งกลับมาแก้ไข",
@@ -235,9 +271,7 @@ export function buildFiveStepTimeline({
       commentTitle:
         hideComments
           ? undefined
-          : advisorReturnCount > 1
-            ? `${advisorReturnCommentTitle} (การแก้ไขครั้งที่ ${advisorReturnCount})`
-            : advisorReturnCommentTitle,
+          : getRevisionCommentTitle("advisor", advisorReturnCount),
     };
   } else if (isStep2Rejected) {
     const rejDate = advHistRejected?.date || advisorApproval?.date;
@@ -288,9 +322,8 @@ export function buildFiveStepTimeline({
       commentTitle: hideComments ? undefined : "ความคิดเห็นของเจ้าหน้าที่",
     };
   } else if (isStep3Pending) {
-    const currentAdminComment = admHistPending?.comment || admHistReturned?.comment || adminApproval?.comment;
-    const currentAdminCommentTitle =
-      admHistPending?.commentTitle || admHistReturned?.commentTitle || "ข้อความจากเจ้าหน้าที่";
+    const currentAdminComment = admHistPending?.comment;
+    const currentAdminCommentTitle = admHistPending?.commentTitle || "ข้อความจากเจ้าหน้าที่";
     step3Item = {
       action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
       date: "กำลังดำเนินการ",
@@ -308,7 +341,7 @@ export function buildFiveStepTimeline({
       isUpcoming: true,
       comment: hideComments ? undefined : adminApproval?.comment || admHistReturned?.comment,
       commentTitle:
-        hideComments ? undefined : admHistReturned?.commentTitle || "ความคิดเห็นของเจ้าหน้าที่",
+        hideComments ? undefined : getRevisionCommentTitle("admin", adminReturnCount),
     };
   } else if (isStep3Rejected) {
     const rejDate = admHistRejected?.date || adminApproval?.date;
@@ -330,12 +363,13 @@ export function buildFiveStepTimeline({
   }
 
   // Step 4: ผู้บริหารอนุมัติคำร้อง
-  const isStep4Approved =
-    execApproval?.decision === "approved" ||
-    Boolean(execHistApproved) ||
-    ["pending_disbursement", "disbursed", "closed"].includes(requestStatus || "");
-
   const isStep4Pending = requestStatus === "pending_executive";
+  const isStep4Approved =
+    !isStep4Pending &&
+    (execApproval?.decision === "approved" ||
+      Boolean(execHistApproved) ||
+      ["pending_disbursement", "disbursed", "closed"].includes(requestStatus || ""));
+
   const isStep4Returned =
     returnedRole === "executive" ||
     (requestStatus === "pending_admin" &&
@@ -368,7 +402,9 @@ export function buildFiveStepTimeline({
       isUpcoming: true,
       comment: hideComments ? undefined : execApproval?.comment || execHistReturned?.comment,
       commentTitle:
-        hideComments ? undefined : execHistReturned?.commentTitle || "ความคิดเห็นของผู้บริหาร",
+        hideComments
+          ? undefined
+          : getRevisionCommentTitle("executive", executiveReturnCount),
     };
   } else if (isStep4Rejected) {
     const rejDate = execHistRejected?.date || execApproval?.date;
@@ -593,6 +629,11 @@ export function buildFullActionHistory({
   }
 
   let lastReturnIndex = -1;
+  const revisionCounts: Record<ReviewRole, number> = {
+    advisor: 0,
+    admin: 0,
+    executive: 0,
+  };
 
   for (let i = 0; i < history.length; i++) {
     const item = history[i];
@@ -626,6 +667,14 @@ export function buildFullActionHistory({
             : item.action.includes("ผู้บริหาร")
               ? "ความคิดเห็นของผู้บริหาร"
               : "ความคิดเห็น";
+      }
+    }
+
+    if (statusType === "returned") {
+      const reviewRole = getReviewRole(item.action, item.actor) || matchedApproval?.step;
+      if (reviewRole) {
+        revisionCounts[reviewRole] += 1;
+        commentTitle = getRevisionCommentTitle(reviewRole, revisionCounts[reviewRole]);
       }
     }
 
@@ -708,7 +757,11 @@ export function buildFullActionHistory({
       comment: advisorApproval.comment,
       commentTitle:
         advisorApproval.decision === "returned"
-          ? "ข้อความจากอาจารย์ที่ปรึกษา"
+          ? getRevisionCommentTitle(
+              "advisor",
+              approvals.filter((approval) => approval.step === "advisor" && approval.decision === "returned")
+                .length,
+            )
           : advisorApproval.decision === "rejected"
             ? "เหตุผลที่ไม่อนุมัติ"
             : "ความคิดเห็นของอาจารย์ที่ปรึกษา",
@@ -740,7 +793,11 @@ export function buildFullActionHistory({
       comment: adminApproval.comment,
       commentTitle:
         adminApproval.decision === "returned"
-          ? "ข้อความจากเจ้าหน้าที่"
+          ? getRevisionCommentTitle(
+              "admin",
+              approvals.filter((approval) => approval.step === "admin" && approval.decision === "returned")
+                .length,
+            )
           : adminApproval.decision === "rejected"
             ? "เหตุผลที่ไม่อนุมัติ"
             : "ความคิดเห็นของเจ้าหน้าที่",
@@ -772,7 +829,12 @@ export function buildFullActionHistory({
       comment: execApproval.comment,
       commentTitle:
         execApproval.decision === "returned"
-          ? "ข้อความจากผู้บริหาร"
+          ? getRevisionCommentTitle(
+              "executive",
+              approvals.filter(
+                (approval) => approval.step === "executive" && approval.decision === "returned",
+              ).length,
+            )
           : execApproval.decision === "rejected"
             ? "เหตุผลที่ไม่อนุมัติ"
             : "ความคิดเห็นของผู้บริหาร",

@@ -108,6 +108,9 @@ const studentTranslations: Record<string, string> = {
   "ข้อความจากอาจารย์ที่ปรึกษา": "Message from advisor",
   "ข้อความจากเจ้าหน้าที่": "Message from admin",
   "ข้อความจากผู้บริหาร": "Message from executive",
+  "อาจารย์ที่ปรึกษาแจ้งแก้ไข": "Advisor requested revision",
+  "เจ้าหน้าที่แจ้งแก้ไข": "Admin requested revision",
+  "ผู้บริหารแจ้งแก้ไข": "Executive requested revision",
   "เหตุผลที่ไม่อนุมัติ": "Reason for rejection",
   "นักศึกษา": "Student",
   "อาจารย์ที่ปรึกษา": "Advisor",
@@ -148,6 +151,7 @@ export function localizeStudentContent(value: string, language: StudentLanguage)
     .replace("ตรวจสอบเมื่อ", "Verified")
     .replace("ชั้นปีที่", "Year")
     .replace(" น.", "")
+    .replace(/\(ครั้งที่ (\d+)\)/g, "(Round $1)")
     .replace(/\b25(\d{2})\b/g, (_, year: string) => String(2500 + Number(year) - 543));
 
   return Object.entries(studentTranslations)

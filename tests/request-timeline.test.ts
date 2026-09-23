@@ -170,7 +170,7 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepAdvReturnedTwice[1].comment, "คำแนะนำล่าสุด");
   assert.equal(
     stepAdvReturnedTwice[1].commentTitle,
-    "ข้อความจากอาจารย์ที่ปรึกษา (การแก้ไขครั้งที่ 2)",
+    "อาจารย์ที่ปรึกษาแจ้งแก้ไข (ครั้งที่ 2)",
   );
 
   // Case 3: Student resubmits after advisor return -> bounces back to pending_advisor
@@ -230,6 +230,21 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   });
   assert.equal(stepAdminPendingAfterPreviousApproval[2].isPending, true);
   assert.equal(stepAdminPendingAfterPreviousApproval[2].isCompleted, undefined);
+
+  const stepExecutivePendingAfterPreviousApproval = buildFiveStepTimeline({
+    requestStatus: "pending_executive",
+    history: [
+      { action: "ยื่นคำร้องขอกู้ยืม", date: "14 ต.ค. 2567", actor: "นายสมชาย ใจดี" },
+      {
+        action: "ผู้บริหารอนุมัติคำร้อง",
+        date: "18 ต.ค. 2567",
+        actor: "ผู้บริหาร",
+        isCompleted: true,
+      },
+    ],
+  });
+  assert.equal(stepExecutivePendingAfterPreviousApproval[3].isPending, true);
+  assert.equal(stepExecutivePendingAfterPreviousApproval[3].isCompleted, undefined);
 
   // Case 5: Admin returned for revision (status = returned by admin)
   // Step 1: checked, Step 2: checked, Step 3: empty circle (ส่งกลับมาแก้ไข), Steps 4-5: empty circle
@@ -507,7 +522,7 @@ test("buildFullActionHistory does not attach an old Admin comment to the current
   assert.equal(pendingAdminItem?.comment, undefined);
 });
 
-test("buildFiveStepTimeline shows the latest Admin return message during the current Admin review", async () => {
+test("buildFiveStepTimeline hides prior Admin return messages after the student resubmits", async () => {
   const { buildFiveStepTimeline } = await import("@/lib/request-timeline-model");
   const timeline = buildFiveStepTimeline({
     requestStatus: "pending_admin",
@@ -530,8 +545,8 @@ test("buildFiveStepTimeline shows the latest Admin return message during the cur
   });
 
   assert.equal(timeline[2].isPending, true);
-  assert.equal(timeline[2].comment, "แอดมินให้แก้ครั้งที่ 2");
-  assert.equal(timeline[2].commentTitle, "ข้อความจากเจ้าหน้าที่");
+  assert.equal(timeline[2].comment, undefined);
+  assert.equal(timeline[2].commentTitle, undefined);
 });
 
 test("Student role is not modified and does not use RequestTimeline", () => {

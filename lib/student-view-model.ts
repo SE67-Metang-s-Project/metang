@@ -368,7 +368,18 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
           ? "executive"
           : null;
 
-  for (const app of approvals) {
+  const getRevisionCommentTitle = (
+    step: RawLoanApproval["step"],
+    revisionCount: number,
+  ) => {
+    const roleLabel =
+      step === "advisor" ? "อาจารย์ที่ปรึกษา" : step === "admin" ? "เจ้าหน้าที่" : "ผู้บริหาร";
+    const revisionSuffix = revisionCount > 1 ? ` (ครั้งที่ ${revisionCount})` : "";
+
+    return `${roleLabel}แจ้งแก้ไข${revisionSuffix}`;
+  };
+
+  for (const [approvalIndex, app] of approvals.entries()) {
     if (app.decision === "pending") {
       if (app.step !== activePendingStep || !app.comment?.trim()) continue;
 
@@ -413,7 +424,12 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
         commentTitle = "ความคิดเห็นของอาจารย์ที่ปรึกษา";
       } else if (app.decision === "returned") {
         stepTitle = "อาจารย์ที่ปรึกษาส่งกลับแก้ไข";
-        commentTitle = "ข้อความจากอาจารย์ที่ปรึกษา";
+        commentTitle = getRevisionCommentTitle(
+          app.step,
+          approvals.slice(0, approvalIndex + 1).filter(
+            (approval) => approval.step === app.step && approval.decision === "returned",
+          ).length,
+        );
       } else if (app.decision === "rejected") {
         stepTitle = "อาจารย์ที่ปรึกษาไม่อนุมัติคำร้อง";
         commentTitle = "เหตุผลที่ไม่อนุมัติ";
@@ -425,7 +441,12 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
         commentTitle = "ความคิดเห็นของเจ้าหน้าที่";
       } else if (app.decision === "returned") {
         stepTitle = "เจ้าหน้าที่ส่งกลับแก้ไข";
-        commentTitle = "ข้อความจากเจ้าหน้าที่";
+        commentTitle = getRevisionCommentTitle(
+          app.step,
+          approvals.slice(0, approvalIndex + 1).filter(
+            (approval) => approval.step === app.step && approval.decision === "returned",
+          ).length,
+        );
       } else if (app.decision === "rejected") {
         stepTitle = "เจ้าหน้าที่ไม่อนุมัติคำร้อง";
         commentTitle = "เหตุผลที่ไม่อนุมัติ";
@@ -437,7 +458,12 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
         commentTitle = "ความคิดเห็นของผู้บริหาร";
       } else if (app.decision === "returned") {
         stepTitle = "ผู้บริหารส่งกลับแก้ไขให้เจ้าหน้าที่ตรวจสอบใหม่";
-        commentTitle = "ข้อความจากผู้บริหาร";
+        commentTitle = getRevisionCommentTitle(
+          app.step,
+          approvals.slice(0, approvalIndex + 1).filter(
+            (approval) => approval.step === app.step && approval.decision === "returned",
+          ).length,
+        );
       } else if (app.decision === "rejected") {
         stepTitle = "ผู้บริหารไม่อนุมัติคำร้อง";
         commentTitle = "เหตุผลที่ไม่อนุมัติ";
