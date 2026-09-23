@@ -5,7 +5,6 @@ import { getStudentCurrentLoan, getStudentLoanDetail } from "@/db/queries/loan-r
 import { mapToLoanDetails, type RawStudentLoan } from "@/lib/student-view-model";
 import StudentRequestDetailPage from "@/components/student/loan-details/StudentRequestDetailPage";
 import StudentTopNav from "@/components/student/StudentTopNav";
-import { activeLoan, getLoanDetails } from "@/app/student/studentMockData";
 import styles from "@/app/student/student.module.css";
 
 export const dynamic = "force-dynamic";
@@ -36,9 +35,7 @@ export default async function StudentDetailPage({ searchParams }: StudentDetailP
     phoneNumber: context.user.phone ?? undefined,
   };
 
-  const details = loan
-    ? mapToLoanDetails(loan)
-    : (!requestId ? (getLoanDetails(activeLoan.requestNumber) ?? null) : null);
+  const details = loan ? mapToLoanDetails(loan) : null;
 
   if (!details) {
     return (

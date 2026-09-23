@@ -1,4 +1,4 @@
-import type { InstallmentPayment, InstallmentStatus } from "@/app/student/studentMockData";
+import type { InstallmentPayment } from "@/app/student/studentMockData";
 import styles from "@/app/student/student.module.css";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 
@@ -8,9 +8,18 @@ type InstallmentCardProps = {
   onPay: (installment: InstallmentPayment) => void;
 };
 
-function getStatusLabel(status: InstallmentStatus, language: "th" | "en") {
-  if (status === "paid") return language === "th" ? "ชำระตรงเวลา" : "Paid on time";
-  if (status === "current") return language === "th" ? "ค้างชำระ" : "Overdue";
+function getStatusLabel(installment: InstallmentPayment, language: "th" | "en") {
+  const { status, isOverdue, isPaidLate, isAwaitingReview } = installment;
+
+  if (status === "paid") {
+    if (isPaidLate) return language === "th" ? "ชำระล่าช้า" : "Paid late";
+    return language === "th" ? "ชำระตรงเวลา" : "Paid on time";
+  }
+  if (status === "current") {
+    if (isAwaitingReview) return language === "th" ? "รอตรวจสอบ" : "Under review";
+    if (isOverdue) return language === "th" ? "ค้างชำระ" : "Overdue";
+    return language === "th" ? "รอชำระ" : "Due";
+  }
   return language === "th" ? "ชำระล่วงหน้า" : "Upcoming";
 }
 
@@ -35,7 +44,7 @@ export default function InstallmentCard({ installment, isPaymentLocked = false, 
             <span
               className={`${styles.statusPill} ${language === "en" ? styles.studentEnglishStatus : ""}`}
             >
-              ● {getStatusLabel(installment.status, language)}
+              ● {getStatusLabel(installment, language)}
             </span>
           ) : null}
         </div>
@@ -79,12 +88,14 @@ export default function InstallmentCard({ installment, isPaymentLocked = false, 
       {installment.actionLabel ? (
         <button
           className={styles.installmentAction}
-          disabled={isUpcoming || isPaymentLocked}
+          disabled={isUpcoming || isPaymentLocked || installment.isAwaitingReview}
           onClick={() => onPay(installment)}
           type="button"
         >
           {isPaymentLocked
             ? t("กรุณายืนยันการรับเงินก่อนชำระ", "Please confirm receipt before paying")
+            : installment.isAwaitingReview
+            ? t("รอเจ้าหน้าที่ตรวจสอบหลักฐานการชำระ", "Waiting for admin to review your payment")
             : installment.status === "current"
             ?
               t("ชำระงวดนี้ · คงเหลือ", "Pay this installment · Remaining") +

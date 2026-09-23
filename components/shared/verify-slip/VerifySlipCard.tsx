@@ -1,7 +1,13 @@
 // components/shared/verify-slip/VerifySlipCard.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  paymentDecisionErrorMessage,
+  PAYMENT_DECISION_NETWORK_ERROR,
+  REJECT_NOTE_REQUIRED,
+} from "@/lib/payment-review-errors";
 import {
   X,
   UserRound,
@@ -10,6 +16,7 @@ import {
   CheckCircle2,
   Receipt,
   SearchX,
+  XCircle,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
 import { formatThaiBahtText } from "@/app/student/studentFormatters";
@@ -28,6 +35,8 @@ export type PaymentEvidence = {
   verifiedAt?: string;
   status: "pending" | "verified" | "rejected";
   slipImageUrl: string;
+  // The reviewer's reason for a rejection.
+  reviewNote?: string;
 };
 
 export type StudentInfo = {
@@ -261,23 +270,112 @@ function calculateInstallments(
 // Main Component
 // ==========================================
 export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
-  const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
-  const [selectedEvidence, setSelectedEvidence] = useState<PaymentEvidence | null>(null);
+  const router = useRouter();
+  // Selection is kept by id and read from `requests`, so router.refresh() after a decision shows
+  // the new status instead of a stale copy of the pending slip.
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [selectedEvidenceId, setSelectedEvidenceId] = useState<string | null>(null);
   const [slipConfirmAction, setSlipConfirmAction] = useState<"approve" | "reject" | null>(null);
   const [slipRemark, setSlipRemark] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Pending until router.refresh() has delivered the decided slip, so a stale "pending" copy
+  // cannot be submitted again in between.
+  const [isRefreshing, startRefresh] = useTransition();
+  const isBusy = isSubmitting || isRefreshing;
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const closeAllModals = () => {
-    setSelectedRequest(null);
-    setSelectedEvidence(null);
+  const selectedRequest = requests.find((req) => req.id === selectedRequestId) ?? null;
+  const selectedEvidence =
+    selectedRequest?.paymentHistory?.find((ev) => ev.id === selectedEvidenceId) ?? null;
+
+  // A refresh can drop the selected request (its last pending slip was decided) or the slip. Clear
+  // the ids so the modal does not reopen by itself when the request comes back later.
+  if (selectedRequestId && !selectedRequest) setSelectedRequestId(null);
+  if (selectedEvidenceId && !selectedEvidence) {
+    setSelectedEvidenceId(null);
+    setSlipConfirmAction(null);
+  }
+
+  const resetEvidenceState = () => {
+    setSelectedEvidenceId(null);
     setSlipConfirmAction(null);
     setSlipRemark("");
+    setErrorMessage(null);
+  };
+
+  const closeAllModals = () => {
+    if (isBusy) return;
+    setSelectedRequestId(null);
+    resetEvidenceState();
   };
 
   const closeEvidenceModal = () => {
-    setSelectedEvidence(null);
-    setSlipConfirmAction(null);
-    setSlipRemark("");
+    if (isBusy) return;
+    resetEvidenceState();
   };
+
+  const chooseSlipAction = (action: "approve" | "reject" | null) => {
+    setSlipConfirmAction(action);
+    setErrorMessage(null);
+  };
+
+  const handleConfirmSlipDecision = async () => {
+    if (isBusy || !selectedEvidence || !slipConfirmAction) return;
+
+    const note = slipRemark.trim();
+    if (slipConfirmAction === "reject" && !note) {
+      setErrorMessage(REJECT_NOTE_REQUIRED);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      // `id` is the payment id, not the installment id.
+      const res = await fetch(`/api/admin/payments/${selectedEvidence.id}/decision`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(
+          slipConfirmAction === "approve"
+            ? { decision: "confirmed" }
+            : { decision: "rejected", note },
+        ),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        // A conflict means the slip changed elsewhere; reload so the modal shows its real status.
+        if (res.status === 409) startRefresh(() => router.refresh());
+        throw new Error(paymentDecisionErrorMessage(res.status, data?.error?.message));
+      }
+
+      resetEvidenceState();
+      startRefresh(() => router.refresh());
+    } catch (err: unknown) {
+      // fetch rejects with a TypeError ("Failed to fetch") when the network or server is down.
+      setErrorMessage(
+        err instanceof Error && !(err instanceof TypeError)
+          ? err.message
+          : PAYMENT_DECISION_NETWORK_ERROR,
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const errorBox = errorMessage && (
+    <div
+      className="text-[12px] text-red-600 mb-3 bg-red-50 p-2.5 rounded-lg border border-red-200 flex items-center gap-2"
+      role="alert"
+    >
+      <XCircle size={14} className="shrink-0" />
+      <span>{errorMessage}</span>
+    </div>
+  );
 
   const isEvidenceModalOpen = Boolean(selectedEvidence && selectedRequest);
   const isRequestModalOpen = Boolean(selectedRequest && !selectedEvidence);
@@ -337,7 +435,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                   </div>
                 </div>
                 <button
-                  onClick={() => setSelectedRequest(req)}
+                  onClick={() => setSelectedRequestId(req.id)}
                   className="w-fit max-w-full px-4 py-2 text-[13px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200 cursor-pointer"
                 >
                   <span className="block truncate">ตรวจสอบ</span>
@@ -424,7 +522,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                   <td className="py-4 px-4 align-middle">
                     <div className="flex justify-center">
                       <button
-                        onClick={() => setSelectedRequest(req)}
+                        onClick={() => setSelectedRequestId(req.id)}
                         className="w-fit max-w-full px-3 py-1.5 text-[13px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200 cursor-pointer"
                       >
                         <span className="block truncate">ตรวจสอบ</span>
@@ -565,7 +663,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                           <td className="py-2.5 px-3 text-center">
                             {inst.evidence ? (
                               <button
-                                onClick={() => setSelectedEvidence(inst.evidence!)}
+                                onClick={() => setSelectedEvidenceId(inst.evidence!.id)}
                                 className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-lg border transition-all hover:shadow-sm cursor-pointer ${
                                   inst.evidence.status === "verified"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
@@ -645,8 +743,10 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                 </span>
                 <button
                   onClick={closeEvidenceModal}
-                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
+                  disabled={isBusy}
+                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   aria-label="ปิดหน้าต่าง"
+                  type="button"
                 >
                   <X size={20} />
                 </button>
@@ -729,6 +829,12 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                           </span>
                         </dd>
                       </div>
+                      {selectedEvidence.status === "rejected" && selectedEvidence.reviewNote && (
+                        <div>
+                          <dt>เหตุผลที่ปฏิเสธ</dt>
+                          <dd>{selectedEvidence.reviewNote}</dd>
+                        </div>
+                      )}
                     </dl>
                   </section>
 
@@ -766,14 +872,14 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                 {!slipConfirmAction ? (
                   <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <button
-                      onClick={() => setSlipConfirmAction("reject")}
+                      onClick={() => chooseSlipAction("reject")}
                       className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98] cursor-pointer"
                       type="button"
                     >
                       ปฏิเสธสลิป
                     </button>
                     <button
-                      onClick={() => setSlipConfirmAction("approve")}
+                      onClick={() => chooseSlipAction("approve")}
                       className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98] cursor-pointer"
                       type="button"
                     >
@@ -783,6 +889,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                 ) : (
                   <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2">
                     <h4
+                      id="slip-decision-title"
                       className={`font-bold text-[14px] mb-2 flex items-center gap-2 ${
                         slipConfirmAction === "approve" ? "text-emerald-700" : "text-red-700"
                       }`}
@@ -796,35 +903,43 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                         className="w-full border border-gray-300 rounded-xl p-3 text-[13px] mb-3 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
                         placeholder="ระบุเหตุผล เช่น ยอดเงินไม่ตรงกับยอดที่เรียกเก็บ, รูปภาพไม่ชัดเจน..."
                         rows={3}
+                        maxLength={2000}
                         value={slipRemark}
                         onChange={(e) => setSlipRemark(e.target.value)}
+                        disabled={isBusy}
+                        aria-labelledby="slip-decision-title"
+                        aria-invalid={errorMessage === REJECT_NOTE_REQUIRED}
                       />
                     )}
+                    {errorBox}
                     <div className="flex gap-2 justify-end">
                       <button
-                        onClick={() => setSlipConfirmAction(null)}
-                        className="px-4 py-2 border border-gray-300 rounded-xl text-[13px] font-semibold text-gray-700 bg-white hover:bg-gray-100 transition-colors cursor-pointer"
+                        onClick={() => chooseSlipAction(null)}
+                        disabled={isBusy}
+                        className="px-4 py-2 border border-gray-300 rounded-xl text-[13px] font-semibold text-gray-700 bg-white hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                         type="button"
                       >
                         ยกเลิก
                       </button>
                       <button
-                        onClick={closeEvidenceModal}
-                        className={`px-5 py-2 text-white font-bold rounded-xl text-[13px] shadow-sm transition-all active:scale-[0.98] cursor-pointer ${
+                        onClick={handleConfirmSlipDecision}
+                        disabled={isBusy}
+                        className={`px-5 py-2 text-white font-bold rounded-xl text-[13px] shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
                           slipConfirmAction === "approve"
                             ? "bg-[#059669] hover:bg-[#047857]"
                             : "bg-red-600 hover:bg-red-700"
                         }`}
                         type="button"
                       >
-                        ยืนยัน
+                        {isBusy ? "กำลังบันทึก..." : "ยืนยัน"}
                       </button>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex shrink-0">
+              <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex flex-col shrink-0">
+                {errorBox}
                 <button
                   onClick={closeEvidenceModal}
                   className="w-full py-3 flex items-center justify-center rounded-xl text-[14px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"

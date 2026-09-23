@@ -198,3 +198,40 @@ export function mapNetworkError(error?: unknown): StudentUiError {
     action: "retry",
   };
 }
+
+// Only the 409s: PaymentModal validates amount, paidAt and slip type before sending, so a 422 there
+// falls through to the generic validation message.
+const PAYMENT_CONFLICT_PATTERNS: Array<{ pattern: RegExp; title: string; message: string }> = [
+  {
+    pattern: /already awaiting review/i,
+    title: "มีหลักฐานการชำระรอตรวจสอบอยู่แล้ว",
+    message: "กรุณารอเจ้าหน้าที่ตรวจสอบหลักฐานการชำระครั้งก่อนให้เสร็จสิ้น แล้วจึงส่งหลักฐานใหม่",
+  },
+  {
+    pattern: /nothing left to repay/i,
+    title: "ชำระครบแล้ว",
+    message: "สัญญากู้ยืมนี้ไม่มียอดค้างชำระแล้ว",
+  },
+  {
+    pattern: /no loan open for repayment/i,
+    title: "ไม่มีสัญญาที่ต้องชำระคืน",
+    message: "ไม่พบสัญญากู้ยืมที่อยู่ระหว่างชำระคืน กรุณาตรวจสอบสถานะล่าสุด",
+  },
+];
+
+/** POST /api/student/payments errors; its 409s are about repayment, not an open loan request. */
+export function mapStudentPaymentError(
+  status: number,
+  payload?: ApiErrorPayload | null,
+): StudentUiError {
+  const rawMessage = payload?.error?.message || payload?.message || "";
+
+  if (status === 409) {
+    const match = PAYMENT_CONFLICT_PATTERNS.find((item) => item.pattern.test(rawMessage));
+    if (match) {
+      return { status, code: "CONFLICT", title: match.title, message: match.message, action: "refresh" };
+    }
+  }
+
+  return mapStudentApiError(status, payload);
+}

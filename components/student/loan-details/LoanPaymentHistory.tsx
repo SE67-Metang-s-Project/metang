@@ -30,7 +30,7 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
         .slice(0, index + 1)
         .filter((record) => record.installmentNumber === item.installmentNumber).length;
 
-      return { item, attemptNumber, totalAttempts: recordsForInstallment.length };
+      return { item, index, attemptNumber, totalAttempts: recordsForInstallment.length };
     })
     .reverse();
   const selectedReceiptIndex = selectedReceipt ? items.indexOf(selectedReceipt) : -1;
@@ -58,16 +58,20 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
       </header>
       <div className={styles.paymentHistoryList}>
         {paymentRecords.length > 0 ? (
-          paymentRecords.map(({ item, attemptNumber, totalAttempts }) => (
+          paymentRecords.map(({ item, index, attemptNumber, totalAttempts }) => (
             <button
               className={styles.paymentHistoryCard}
-              key={`${item.installmentNumber}-${item.paidAt}`}
+              key={item.id ?? `${item.installmentNumber}-${index}`}
               onClick={() => setSelectedReceipt(item)}
               type="button"
             >
               <span aria-hidden="true" className={styles.paymentReceiptIcon}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img alt="" src={item.receiptImage} />
+                {item.receiptImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img alt="" src={item.receiptImage} />
+                ) : (
+                  <ReceiptText size={20} strokeWidth={1.8} />
+                )}
               </span>
               <div className={styles.paymentHistoryContent}>
                 <strong>
@@ -76,6 +80,11 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
                 </strong>
                 <p>{localizeStudentContent(item.paidAt, language)}</p>
                 <p>{localizeStudentContent(item.checkedAt, language)}</p>
+                {item.reviewNote ? (
+                  <p>
+                    {t("เหตุผล", "Reason")}: {item.reviewNote}
+                  </p>
+                ) : null}
               </div>
               <span className={styles.paymentVerifiedPill}>
                 <StatusPill
@@ -116,8 +125,12 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
               {selectedReceiptAttempts.length > 1 ? ` (${t("ครั้งที่", "attempt")} ${selectedReceiptAttemptNumber})` : ""}
             </h2>
             <div className={styles.transferSlipImageFrame}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img alt={t("รูปหลักฐานการชำระเงิน", "Payment evidence image")} src={selectedReceipt.receiptImage} />
+              {selectedReceipt.receiptImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img alt={t("รูปหลักฐานการชำระเงิน", "Payment evidence image")} src={selectedReceipt.receiptImage} />
+              ) : (
+                <p>{t("ไม่มีไฟล์หลักฐาน", "No evidence file")}</p>
+              )}
             </div>
           </section>
         </div>

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma, type ApprovalStep as LoanApprovalStep, type Decision } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
+import { deriveInstallmentConduct } from "@/lib/repayment-conduct";
 import { computeInstallmentSchedule, type ExecutiveDecision, type LoanDecision } from "@/lib/loan-validation";
 import { enqueueReviewerNotifications } from "@/db/queries/notification-recipients";
 import type {
@@ -598,10 +599,21 @@ export async function getActionRequests(
               installments: {
                 select: {
                   id: true,
+                  seq: true,
                   dueDate: true,
                   settledAt: true,
                   amountDue: true,
                   amountPaid: true,
+                },
+              },
+              // Repayment history for conduct; see deriveInstallmentConduct.
+              payments: {
+                select: {
+                  status: true,
+                  amount: true,
+                  paidAt: true,
+                  confirmedAt: true,
+                  createdAt: true,
                 },
               },
             },
@@ -668,17 +680,11 @@ export async function getActionRequests(
     let onTimeInstallments = 0;
     let lateInstallments = 0;
 
+    // The student dashboard's rule: judged by transfer date, not by settledAt (review time).
     for (const sLoan of studentLoans) {
-      for (const inst of sLoan.installments || []) {
-        if (inst.settledAt) {
-          if (new Date(inst.settledAt) <= new Date(inst.dueDate)) {
-            onTimeInstallments += 1;
-          } else {
-            lateInstallments += 1;
-          }
-        } else if (new Date(inst.dueDate) < new Date() && inst.amountPaid < inst.amountDue) {
-          lateInstallments += 1;
-        }
+      for (const conduct of deriveInstallmentConduct(sLoan.installments, sLoan.payments)) {
+        if (conduct === "on_time") onTimeInstallments += 1;
+        else if (conduct === "late") lateInstallments += 1;
       }
     }
 
@@ -792,6 +798,8 @@ export async function getActionRequests(
         amount: String(p.amount),
         paidAt: p.paidAt ? formatThaiDate(p.paidAt) : formatThaiDate(p.createdAt),
         status: mappedStatus,
+        // The reviewer's reason for a rejection, shown in the verify-slip modal.
+        reviewNote: p.reviewNote ?? undefined,
         // The route, not the storage path: these props are serialized to the browser, and a bare
         // bucket path in an <img src> renders nothing. The 302 re-runs authorization per load.
         slipImageUrl: p.slipPath ? `/api/payments/${p.id}/slip` : "",

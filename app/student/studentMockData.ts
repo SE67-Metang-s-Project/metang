@@ -14,6 +14,10 @@ export type InstallmentPayment = {
   completedPaymentDateLabel?: string;
   completedPaymentTimeLabel?: string;
   actionLabel?: string;
+  // Live-data flags; the Sprint 3 fixtures leave them unset.
+  isOverdue?: boolean;
+  isPaidLate?: boolean;
+  isAwaitingReview?: boolean;
 };
 
 export type PaymentAccount = {
@@ -23,11 +27,12 @@ export type PaymentAccount = {
   accountName: string;
   accountNumberLabel: string;
   accountNumber: string;
-  qrTitle: string;
-  qrImageSrc: string;
-  qrRecipientName: string;
-  qrAccountName: string;
-  qrReference: string;
+  // Optional: the live system settings carry no QR (PromptPay is out of scope for NAT-200).
+  qrTitle?: string;
+  qrImageSrc?: string;
+  qrRecipientName?: string;
+  qrAccountName?: string;
+  qrReference?: string;
 };
 
 export type LoanRequestStatus =
@@ -71,6 +76,7 @@ export type LoanScheduleItem = {
 };
 
 export type LoanPaymentHistoryItem = {
+  id?: string;
   installmentNumber: number;
   amount: string;
   receiptImage: string;
@@ -78,6 +84,7 @@ export type LoanPaymentHistoryItem = {
   checkedAt: string;
   statusLabel: string;
   status: "verified" | "checking" | "failed";
+  reviewNote?: string;
 };
 
 export type LoanContact = {
@@ -159,51 +166,6 @@ export const paymentBehavior = {
   totalLoanRequests: 4,
   totalInstallments: 12,
 };
-
-export const paymentAccount: PaymentAccount = {
-  bankLabel: "ธนาคาร",
-  bankName: "ธนาคารกรุงไทย",
-  accountNameLabel: "ชื่อบัญชี",
-  accountName: "คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่",
-  accountNumberLabel: "เลขที่บัญชี",
-  accountNumber: "1234567890",
-  qrTitle: "THAI QR PAYMENT",
-  qrImageSrc: "/payment-qr.jpg",
-  qrRecipientName: "น.ส. ชลลานนา สายคำปา",
-  qrAccountName: "xxx-x-x1188-x",
-  qrReference: "004999123469479",
-};
-
-export const installmentPayments: InstallmentPayment[] = [
-  {
-    installmentNumber: 1,
-    status: "paid",
-    paidAmountSummary: "1,000 / 1,000",
-    dueDateLabel: "19 ม.ค. 2570",
-    outstandingAmount: "0",
-    completedPaymentLabel: "ชำระเสร็จสิ้นเมื่อ",
-    completedPaymentDateLabel: "7 ม.ค. 2570",
-    completedPaymentTimeLabel: "17:00 น.",
-  },
-  {
-    installmentNumber: 2,
-    status: "current",
-    paidAmountSummary: "300 / 1,000",
-    dueDateLabel: "18 ก.พ. 2570",
-    outstandingAmount: "700",
-    paymentNote: "อีก 15 วันครบกำหนด",
-    actionLabel: "ชำระงวดนี้ · คงเหลือ 700",
-  },
-  {
-    installmentNumber: 3,
-    status: "upcoming",
-    paidAmountSummary: "500 / 1,000",
-    dueDateLabel: "20 มี.ค. 2570",
-    outstandingAmount: "500",
-    paymentNote: "อีก 45 วันครบกำหนด",
-    actionLabel: "กรุณาดำเนินการชำระงวดก่อนหน้าให้เสร็จสิ้น",
-  },
-];
 
 export const loanRequestHistory: LoanRequestHistoryItem[] = [
   {
@@ -451,8 +413,4 @@ if (returnedRequestDetails) {
       },
     ],
   };
-}
-
-export function getLoanDetails(requestNumber: string) {
-  return loanDetailsByRequestNumber[requestNumber] ?? null;
 }

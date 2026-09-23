@@ -12,6 +12,32 @@ const studentTranslations: Record<string, string> = {
   "รอผู้บริหาร": "Executive pending",
   "รอยืนยันการโอนเงิน": "Transfer pending",
   "กำลังชำระ": "Repaying",
+  "ชำระเรียบร้อยแล้ว": "Paid",
+  "รอตรวจสอบ": "Under review",
+  "ตรวจสอบแล้ว": "Verified",
+  "ไม่ผ่านการตรวจสอบ": "Rejected",
+  "หลักฐานการชำระไม่ผ่านการตรวจสอบ": "Payment evidence was rejected",
+  // Errors PaymentModal can show after a failed submission (lib/student-error-mapper.ts).
+  "กรุณารอเจ้าหน้าที่ตรวจสอบหลักฐานการชำระครั้งก่อนให้เสร็จสิ้น แล้วจึงส่งหลักฐานใหม่":
+    "Please wait until the office reviews your previous payment evidence, then send new evidence.",
+  "สัญญากู้ยืมนี้ไม่มียอดค้างชำระแล้ว": "This loan has no outstanding balance.",
+  "ไม่พบสัญญากู้ยืมที่อยู่ระหว่างชำระคืน กรุณาตรวจสอบสถานะล่าสุด":
+    "No loan is open for repayment. Please check its latest status.",
+  "ท่านมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว ระบบอนุญาตให้เปิดได้ครั้งละ 1 คำร้อง":
+    "You already have a loan request in progress. Only one request can be open at a time.",
+  "เซสชันการเข้าสู่ระบบหมดอายุหรือไม่ได้รับอนุญาต กรุณาเข้าสู่ระบบใหม่อีกครั้ง":
+    "Your session has expired or is not authorized. Please sign in again.",
+  "ไม่พบข้อมูลคำร้องขอกู้ยืมที่ระบุ": "The loan request could not be found.",
+  "ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบความถูกต้องของข้อมูล":
+    "Some details are invalid. Please check them and try again.",
+  "ระบบเซิร์ฟเวอร์ขัดข้องชั่วคราว กรุณารอสักครู่แล้วลองใหม่อีกครั้ง":
+    "The server is temporarily unavailable. Please wait a moment and try again.",
+  "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ กรุณาลองใหม่อีกครั้ง":
+    "An unexpected error occurred. Please try again.",
+  "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต":
+    "Unable to reach the server. Please check your internet connection.",
+  // Prefix of mapNetworkError's "<this>: <browser error>" form.
+  "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้": "Unable to reach the server",
   "ชำระแล้ว": "Paid",
   "ไม่อนุมัติโดยอาจารย์": "Advisor rejected",
   "ไม่อนุมัติโดยเจ้าหน้าที่": "Admin rejected",

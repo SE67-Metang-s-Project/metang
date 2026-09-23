@@ -1,12 +1,14 @@
 import StudentDashboard from "@/components/student/dashboard/StudentDashboard";
 import { requireStudentAccess } from "@/lib/loan-auth";
 import { getStudentCurrentLoan, getStudentLoanList } from "@/db/queries/loan-requests";
+import { getPublicSystemSetting } from "@/db/queries/system-settings";
 import {
   computePaymentBehavior,
   mapToActiveLoanSummary,
   mapToInstallmentPayments,
   mapToLoanDetails,
   mapToLoanRequestHistoryItem,
+  mapToPaymentAccount,
   type RawStudentLoan,
 } from "@/lib/student-view-model";
 
@@ -16,7 +18,7 @@ export default async function StudentPage() {
   const context = await requireStudentAccess();
   const studentId = context.user.id;
 
-  const [currentLoanRaw, loanListRaw] = await Promise.all([
+  const [currentLoanRaw, loanListRaw, systemSetting] = await Promise.all([
     getStudentCurrentLoan(studentId).catch((err) => {
       console.error("Unable to load student current loan", err);
       return null;
@@ -24,6 +26,10 @@ export default async function StudentPage() {
     getStudentLoanList(studentId).catch((err) => {
       console.error("Unable to load student loan history", err);
       return [];
+    }),
+    getPublicSystemSetting().catch((err) => {
+      console.error("Unable to load the repayment account from system settings", err);
+      return null;
     }),
   ]);
 
@@ -42,7 +48,7 @@ export default async function StudentPage() {
   const initialActiveLoan = mapToActiveLoanSummary(currentLoan);
   const initialHistoryRequests = loanList.map(mapToLoanRequestHistoryItem);
   const initialInstallments = currentLoan?.installments
-    ? mapToInstallmentPayments(currentLoan.installments)
+    ? mapToInstallmentPayments(currentLoan.installments, currentLoan.payments)
     : undefined;
   const initialPaymentBehavior = computePaymentBehavior(loanList);
   const currentDetails = currentLoan ? mapToLoanDetails(currentLoan) : null;
@@ -57,6 +63,7 @@ export default async function StudentPage() {
       initialPaymentBehavior={initialPaymentBehavior}
       initialSchedule={initialSchedule}
       initialTimeline={initialTimeline}
+      paymentAccount={mapToPaymentAccount(systemSetting)}
       profile={initialProfile}
     />
   );
