@@ -8,9 +8,88 @@ export type FundTransactionIdParams = {
   id: string;
 };
 
+export type PaymentIdParams = {
+  id: string;
+};
+
+export type StudentPaymentBody = {
+  /** Whole baht. */
+  amount: number;
+  /** ISO 8601. Defaults to now when omitted; never in the future. */
+  paidAt?: string | null;
+  /** The transfer slip: image/jpeg, image/png or application/pdf, up to 10MB. */
+  slip: string;
+};
+
+export type StudentPaymentItem = {
+  id: string;
+  loanId: string;
+  installmentId: string | null;
+  amount: number;
+  status: "pending_review" | "confirmed" | "rejected";
+  /** The slip is read through GET /api/payments/{id}/slip; the storage path is never sent. */
+  hasSlip: boolean;
+  paidAt: string | null;
+  confirmedAt: string | null;
+  /** Why a reviewer rejected it, so a corrected slip can be sent. */
+  reviewNote: string | null;
+  createdAt: string;
+};
+
+export type StudentPaymentResponse = {
+  data: StudentPaymentItem;
+};
+
+export type PaymentDecisionBody = {
+  decision: "confirmed" | "rejected";
+  note?: string | null;
+};
+
+/** Same shape for the queue and the detail - one select serves both. */
+export type AdminPaymentItem = {
+  id: string;
+  loanId: string;
+  installmentId: string | null;
+  amount: number;
+  status: "pending_review" | "confirmed" | "rejected";
+  /** The slip is read through GET /api/payments/{id}/slip; the storage path is never sent. */
+  hasSlip: boolean;
+  paidAt: string | null;
+  confirmedBy: string | null;
+  confirmedAt: string | null;
+  reviewNote: string | null;
+  createdAt: string;
+  loan: {
+    id: string;
+    status: AdvisorQueueItem["status"];
+    student: {
+      id: string;
+      studentCode: string | null;
+      fullNameTh: string;
+      fullNameEn: string | null;
+      phone: string | null;
+    };
+  };
+  installment: {
+    id: string;
+    seq: number;
+    dueDate: string;
+    amountDue: number;
+    amountPaid: number;
+  } | null;
+};
+
+export type AdminPaymentQueueResponse = {
+  data: AdminPaymentItem[];
+};
+
+export type AdminPaymentDetailResponse = {
+  data: AdminPaymentItem;
+};
+
 export type AdvisorDecisionBody = {
   decision: LoanDecision;
-  comment?: string | null;
+  comment: string;
 };
 
 export type AdminDecisionBody = {
@@ -452,6 +531,50 @@ export type FundTransactionBody = {
 
 export type FundTransactionResponse = {
   data: FundTransactionItem;
+};
+
+// Partial patch - every key optional, one endpoint serves both settings tabs independently.
+export type SystemSettingBody = {
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+  contactLocationTh?: string;
+  contactLocationEn?: string | null;
+  contactPhone?: string;
+  contactExt?: string | null;
+  contactEmail?: string;
+};
+
+export type SystemSettingItem = {
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  contactLocationTh: string;
+  contactLocationEn: string | null;
+  contactPhone: string;
+  contactExt: string | null;
+  contactEmail: string;
+  updatedById: string | null;
+  updatedAt: string;
+};
+
+export type SystemSettingResponse = {
+  data: SystemSettingItem;
+};
+
+export type SystemSettingPublicFields = {
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  contactLocationTh: string;
+  contactLocationEn: string | null;
+  contactPhone: string;
+  contactExt: string | null;
+  contactEmail: string;
+};
+
+export type SystemSettingPublicResponse = {
+  data: SystemSettingPublicFields;
 };
 
 export type ReviewerNotificationBody = {

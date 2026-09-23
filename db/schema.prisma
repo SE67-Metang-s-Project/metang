@@ -80,26 +80,27 @@ enum NotificationStatus {
 }
 
 model AppUser {
-  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email              String            @unique(map: "app_user_email_key") @db.Text
-  cmuAccount         String            @unique(map: "app_user_cmu_account_key") @map("cmu_account") @db.Text
-  studentCode        String?           @unique(map: "app_user_student_code_key") @map("student_code") @db.Text
-  fullNameTh         String            @map("full_name_th") @db.Text
-  fullNameEn         String?           @map("full_name_en") @db.Text
-  phone              String?           @db.Text
-  educationLevel     String?           @map("education_level") @db.Text
-  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  studentLoans       LoanRequest[]     @relation("StudentLoans")
-  advisorLoans       LoanRequest[]     @relation("AdvisorLoans")
-  cancelledLoans     LoanRequest[]     @relation("CancelledLoans")
-  assignedAdminLoans LoanRequest[]     @relation("AssignedAdminLoans")
-  approvalDecisions  LoanApproval[]
-  confirmedPayments  Payment[]
-  fundTransactions   FundTransaction[]
-  auditLogs          AuditLog[]
-  roles              UserRole[]        @relation("UserRoles")
-  grantedRoles       UserRole[]        @relation("GrantedRoles")
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                String            @unique(map: "app_user_email_key") @db.Text
+  cmuAccount           String            @unique(map: "app_user_cmu_account_key") @map("cmu_account") @db.Text
+  studentCode          String?           @unique(map: "app_user_student_code_key") @map("student_code") @db.Text
+  fullNameTh           String            @map("full_name_th") @db.Text
+  fullNameEn           String?           @map("full_name_en") @db.Text
+  phone                String?           @db.Text
+  educationLevel       String?           @map("education_level") @db.Text
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  studentLoans         LoanRequest[]     @relation("StudentLoans")
+  advisorLoans         LoanRequest[]     @relation("AdvisorLoans")
+  cancelledLoans       LoanRequest[]     @relation("CancelledLoans")
+  assignedAdminLoans   LoanRequest[]     @relation("AssignedAdminLoans")
+  approvalDecisions    LoanApproval[]
+  confirmedPayments    Payment[]
+  fundTransactions     FundTransaction[]
+  auditLogs            AuditLog[]
+  roles                UserRole[]        @relation("UserRoles")
+  grantedRoles         UserRole[]        @relation("GrantedRoles")
+  systemSettingUpdates SystemSetting[]
 
   @@index([fullNameTh], map: "app_user_full_name_th_idx")
   @@map("app_user")
@@ -186,13 +187,17 @@ model Payment {
   slipPath      String?       @map("slip_path") @db.Text
   slipRef       String?       @unique(map: "payment_slip_ref_key") @map("slip_ref") @db.Text
   status        PaymentStatus @default(pending_review)
+  // confirmedBy/confirmedAt are written for a rejection too: they mean "the reviewer, and when".
   confirmedBy   String?       @map("confirmed_by") @db.Uuid
   confirmedAt   DateTime?     @map("confirmed_at") @db.Timestamptz(6)
+  reviewNote    String?       @map("review_note") @db.Text
   paidAt        DateTime?     @map("paid_at") @db.Timestamptz(6)
   createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   loan          LoanRequest   @relation(fields: [loanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   installment   Installment?  @relation(fields: [installmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   confirmer     AppUser?      @relation(fields: [confirmedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  fundTransactions FundTransaction[]
 
   @@index([loanId], map: "payment_loan_idx")
   @@map("payment")
@@ -204,14 +209,17 @@ model FundTransaction {
   amount      Int                 @db.Integer
   direction   Int                 @db.SmallInt
   loanId      String?             @map("loan_id") @db.Text
+  paymentId   String?             @map("payment_id") @db.Uuid
   performedBy String              @map("performed_by") @db.Uuid
   slipPath    String?             @map("slip_path") @db.Text
   note        String?             @db.Text
   createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   loan        LoanRequest?        @relation(fields: [loanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  payment     Payment?            @relation(fields: [paymentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   performer   AppUser             @relation(fields: [performedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([loanId], map: "fund_transaction_one_disbursement_per_loan", where: { kind: "disbursement" })
+  @@unique([paymentId], map: "fund_transaction_one_repayment_per_payment", where: { kind: "repayment" })
   @@index([loanId], map: "fund_transaction_loan_idx")
   @@map("fund_transaction")
 }
@@ -259,4 +267,26 @@ model UserRole {
   @@id([userId, role], map: "user_role_pkey")
   @@unique([role], map: "one_executive_only", where: { role: "executive" })
   @@map("user_role")
+}
+
+// System-wide display settings shown to every signed-in user (the receiving bank account and the
+// office contact block). Deliberately standalone: no relation to LoanRequest, Payment, or
+// FundTransaction. A singleton row (id is always 1, enforced by a CHECK in the migration) edited
+// only by SuperAdmin.
+model SystemSetting {
+  id                Int      @id @default(1) @db.SmallInt
+  bankName          String   @map("bank_name") @db.Text
+  accountName       String   @map("account_name") @db.Text
+  accountNumber     String   @map("account_number") @db.Text
+  contactLocationTh String   @map("contact_location_th") @db.Text
+  contactLocationEn String?  @map("contact_location_en") @db.Text
+  contactPhone      String   @map("contact_phone") @db.Text
+  contactExt        String?  @map("contact_ext") @db.Text
+  contactEmail      String   @map("contact_email") @db.Text
+  updatedById       String?  @map("updated_by_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedBy         AppUser? @relation(fields: [updatedById], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@map("system_setting")
 }

@@ -1,0 +1,63 @@
+info:
+  name: Redirect to a short-lived signed URL for a payment's repayment slip evidence
+  type: http
+  seq: 1
+  tags:
+    - Payment_slips
+
+http:
+  method: GET
+  url: "{{baseUrl}}/payments/:id/slip"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  params:
+    - name: id
+      value: 00000000-0000-0000-0000-000000000301
+      type: path
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "302"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
+
+docs: |-
+  Use it as an image source - `<img src="/api/payments/{id}/slip">`.
+
+  Excluded from `npm run api:test` (tag `Payment_slips`): the isolated container has no Supabase
+  credentials, and the seeded payments carry placeholder slip paths rather than real bucket
+  objects, so signing would fail. Run it by hand against an environment with real storage.
+
+  The seeded id above is payment 301 from db/seed.ts, whose loan is REQ202609060008.
+
+examples:
+  - name: 302 Response
+    description: Successful response
+    request:
+      url: "{{baseUrl}}/payments/:id/slip"
+      method: GET
+      headers:
+        - name: cmu_session
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: 00000000-0000-0000-0000-000000000301
+          type: path
+    response:
+      status: 302
+      statusText: Found
+      body:
+        type: text

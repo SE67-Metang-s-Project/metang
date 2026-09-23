@@ -1,0 +1,48 @@
+info:
+  name: Get a single repayment slip submission for Admin_SuperAdmin review
+  type: http
+  seq: 2
+  tags:
+    - Admin_payments
+
+http:
+  method: GET
+  url: "{{baseUrl}}/admin/payments/:id"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  params:
+    - name: id
+      value: 00000000-0000-0000-0000-000000000304
+      type: path
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.amount
+      operator: eq
+      value: "500"
+    - expression: res.body.data.loan.status
+      operator: eq
+      value: disbursed
+    - expression: res.body.data.slipPath
+      operator: isUndefined
+    - expression: res.body.data.slipRef
+      operator: isUndefined
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  Seeded payment 304 from db/seed.ts: 500฿, pending_review, on loan REQ202609060007, which is
+  disbursed with three unsettled 1,500฿ installments. Seed edits and this file travel together.

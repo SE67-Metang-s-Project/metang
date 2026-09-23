@@ -1,0 +1,45 @@
+info:
+  name: 14 confirming a repayment slip applies the money
+  type: http
+  seq: 14
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/payments/00000000-0000-0000-0000-000000000304/decision"
+  body:
+    type: json
+    data: |-
+      {
+        "decision": "confirmed"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.status
+      operator: eq
+      value: confirmed
+    - expression: res.body.data.confirmedAt
+      operator: isDefined
+    # A confirmation carries no note, unlike a rejection.
+    - expression: res.body.data.reviewNote
+      operator: isNull
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  The only runtime check that the whole repayment path works end to end: the status CAS, then
+  applyConfirmedPayment settling installments and writing the `repayment` fund_transaction, all in
+  one Serializable transaction.
+
+  Seeded payment 304 is 500฿ on loan REQ202609060007 (disbursed, three unsettled 1,500฿
+  installments). The money lands on installment 1 - the oldest unsettled - not on the installment
+  the payment nominally targets, so nothing settles and the loan stays open.

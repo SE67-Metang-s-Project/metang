@@ -215,6 +215,25 @@ async function main() {
       }
 
       await tx.appUser.createMany({ data: users, skipDuplicates: true });
+
+      // The system_setting migration seeds this row too, but db:reset's TRUNCATE ... CASCADE
+      // (db/clear.ts) wipes it along with app_user, since it holds a FK to app_user. Restore it
+      // here so a reset doesn't leave every settings endpoint 500ing. Same values as the
+      // migration's seed INSERT - keep both in sync if the fixture values ever change.
+      await tx.systemSetting.upsert({
+        where: { id: 1 },
+        update: {},
+        create: {
+          bankName: "ธนาคารกรุงไทย",
+          accountName: "คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่ (เงินกู้ยืมฉุกเฉิน)",
+          accountNumber: "521-0-12345-6",
+          contactLocationTh: "จุดรับเอกสารคำร้องเงินกู้ยืม ชั้น 1 อาคารเทพรัตน์ คณะพยาบาลศาสตร์ มช.",
+          contactPhone: "053-935025",
+          contactExt: "5025, 5026",
+          contactEmail: "loan@nurse.cmu.ac.th",
+        },
+      });
+
       await tx.userRole.createMany({ data: roles, skipDuplicates: true });
       await tx.loanRequest.createMany({ data: loans, skipDuplicates: true });
       await tx.$queryRaw`
@@ -309,6 +328,9 @@ async function main() {
             amount: 1000,
             direction: 1,
             loanId: loanId(208),
+            // Without this the seeded ledger has the one shape the app can never produce: a
+            // repayment the one-repayment-per-payment index cannot see.
+            paymentId: id(number),
             performedBy: id(3),
             note: fundNotes[index + 3],
           })),

@@ -91,11 +91,13 @@ assertions only.
 | | |
 |---|---|
 | `POST /admin/loan-requests/:id/disburse` | uploads to Supabase Storage — needs `SUPABASE_URL` and a bucket the container does not provide |
+| `POST /student/payments` | uploads the repayment slip to Supabase Storage — same missing credentials as the disburse upload, so it has no request file at all |
+| `GET /payments/:id/slip` | signs a Supabase Storage object; the container has no credentials, and the seeded payments carry placeholder slip paths rather than real bucket objects |
 | `POST /notifications/fon`, `POST /notifications/outlook` | send a real LINE message and a real email |
 | `GET /auth/callback` | needs a live OAuth code from CMU Entra |
 
-Excluded by tag: `--exclude-tags Fund_slips,Notifications`. The requests stay in the collection,
-documented and runnable by hand.
+Excluded by tag: `--exclude-tags Fund_slips,Payment_slips,Notifications,Workflow`. The requests stay
+in the collection, documented and runnable by hand.
 
 **Seven handlers are missing from `public/openapi.json`** and therefore from this collection:
 `GET /auth/logout` (the route exports both verbs, only POST is documented) and the three

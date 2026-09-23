@@ -1,55 +1,89 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { isLoanId, parseLoanDecisionInput } from "@/lib/loan-validation";
+import {
+  isLoanId,
+  parseAdvisorDecisionInput,
+  parseExecutiveDecisionInput,
+} from "@/lib/loan-validation";
 
-test("parseLoanDecisionInput parses approved decisions with optional comment", () => {
-  assert.deepEqual(parseLoanDecisionInput({ decision: "approved" }), {
+test("parseExecutiveDecisionInput parses approved decisions with optional comment", () => {
+  assert.deepEqual(parseExecutiveDecisionInput({ decision: "approved" }), {
     decision: "approved",
     comment: null,
   });
 
-  assert.deepEqual(parseLoanDecisionInput({ decision: "approved", comment: "  เห็นชอบ  " }), {
+  assert.deepEqual(parseExecutiveDecisionInput({ decision: "approved", comment: "  เห็นชอบ  " }), {
     decision: "approved",
     comment: "เห็นชอบ",
   });
 });
 
-test("parseLoanDecisionInput requires comments for returned decisions", () => {
-  assert.deepEqual(parseLoanDecisionInput({ decision: "returned", comment: "กรุณาแนบเลขบัญชีใหม่" }), {
-    decision: "returned",
-    comment: "กรุณาแนบเลขบัญชีใหม่",
-  });
+test("parseExecutiveDecisionInput requires comments for returned decisions", () => {
+  assert.deepEqual(
+    parseExecutiveDecisionInput({ decision: "returned", comment: "กรุณาแนบเลขบัญชีใหม่" }),
+    {
+      decision: "returned",
+      comment: "กรุณาแนบเลขบัญชีใหม่",
+    },
+  );
 
   assert.throws(
-    () => parseLoanDecisionInput({ decision: "returned", comment: "" }),
+    () => parseExecutiveDecisionInput({ decision: "returned", comment: "" }),
     /A comment is required for this decision/,
   );
   assert.throws(
-    () => parseLoanDecisionInput({ decision: "returned", comment: "   " }),
+    () => parseExecutiveDecisionInput({ decision: "returned", comment: "   " }),
     /A comment is required for this decision/,
   );
   assert.throws(
-    () => parseLoanDecisionInput({ decision: "returned" }),
+    () => parseExecutiveDecisionInput({ decision: "returned" }),
     /A comment is required for this decision/,
   );
 });
 
-test("parseLoanDecisionInput requires comments for rejected decisions", () => {
-  assert.deepEqual(parseLoanDecisionInput({ decision: "rejected", comment: "ไม่ผ่านเกณฑ์การกู้ยืม" }), {
-    decision: "rejected",
-    comment: "ไม่ผ่านเกณฑ์การกู้ยืม",
+test("parseExecutiveDecisionInput requires comments for rejected decisions", () => {
+  assert.deepEqual(
+    parseExecutiveDecisionInput({ decision: "rejected", comment: "ไม่ผ่านเกณฑ์การกู้ยืม" }),
+    {
+      decision: "rejected",
+      comment: "ไม่ผ่านเกณฑ์การกู้ยืม",
+    },
+  );
+
+  assert.throws(
+    () => parseExecutiveDecisionInput({ decision: "rejected", comment: "" }),
+    /A comment is required for this decision/,
+  );
+  assert.throws(
+    () => parseExecutiveDecisionInput({ decision: "rejected", comment: "   " }),
+    /A comment is required for this decision/,
+  );
+  assert.throws(
+    () => parseExecutiveDecisionInput({ decision: "rejected" }),
+    /A comment is required for this decision/,
+  );
+});
+
+test("parseAdvisorDecisionInput always requires a comment, including on approval", () => {
+  assert.deepEqual(parseAdvisorDecisionInput({ decision: "approved", comment: "เห็นชอบ" }), {
+    decision: "approved",
+    comment: "เห็นชอบ",
   });
 
   assert.throws(
-    () => parseLoanDecisionInput({ decision: "rejected", comment: "" }),
+    () => parseAdvisorDecisionInput({ decision: "approved" }),
     /A comment is required for this decision/,
   );
   assert.throws(
-    () => parseLoanDecisionInput({ decision: "rejected", comment: "   " }),
+    () => parseAdvisorDecisionInput({ decision: "approved", comment: "   " }),
     /A comment is required for this decision/,
   );
   assert.throws(
-    () => parseLoanDecisionInput({ decision: "rejected" }),
+    () => parseAdvisorDecisionInput({ decision: "returned" }),
+    /A comment is required for this decision/,
+  );
+  assert.throws(
+    () => parseAdvisorDecisionInput({ decision: "rejected" }),
     /A comment is required for this decision/,
   );
 });

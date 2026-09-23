@@ -50,8 +50,8 @@ export type LoanRequestListPayment = {
   loanId: string;
   installmentId: string | null;
   amount: number;
-  slipPath: string | null;
-  slipRef: string | null;
+  /** The slip itself is read through GET /api/payments/{id}/slip; the storage path is never sent. */
+  hasSlip: boolean;
   status: string;
   confirmedBy: string | null;
   confirmedAt: string | null;

@@ -1,0 +1,6 @@
+info:
+  name: Admin_payments
+  type: folder
+
+request:
+  auth: inherit

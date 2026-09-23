@@ -1,5 +1,5 @@
 info:
-  name: 06 advisor approves
+  name: 06 advisor approves 
   type: http
   seq: 6
   tags:
@@ -12,7 +12,8 @@ http:
     type: json
     data: |-
       {
-        "decision": "approved"
+        "decision": "approved",
+        "comment": "เอกสารครบถ้วน"
       }
 
 runtime:

@@ -209,6 +209,23 @@ Table notification_outbox {
   Note: 'NAT-28/NAT-171: durable claim/retry handoff for installment reminder delivery.'
 }
 
+Table system_setting {
+  id                  smallint [pk, default: 1]
+  bank_name           text [not null]
+  account_name        text [not null]
+  account_number      text [not null]
+  contact_location_th text [not null]
+  contact_location_en text
+  contact_phone       text [not null]
+  contact_ext         text
+  contact_email       text [not null]
+  updated_by_id       uuid [ref: > app_user.id]
+  created_at          timestamptz [not null, default: `now()`]
+  updated_at          timestamptz [not null, default: `now()`]
+
+  Note: 'NAT-200: system-wide bank + contact display, read by everyone, written by SuperAdmin only. Singleton row, id always 1 (CHECK constraint).'
+}
+
 // NAT-34: view student_conduct (overdue_count, late_payment_count, max_days_late,
 // is_delinquent) is derived from installment + loan_request. Views are not drawn
 // by dbdiagram — see db/001_init.sql.

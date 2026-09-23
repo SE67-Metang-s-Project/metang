@@ -19,7 +19,8 @@ http:
     type: json
     data: |-
       {
-        "decision": "approved"
+        "decision": "approved",
+        "comment": "เอกสารครบถ้วน"
       }
   auth:
     type: apikey

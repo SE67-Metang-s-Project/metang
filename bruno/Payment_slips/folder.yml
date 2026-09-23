@@ -1,0 +1,6 @@
+info:
+  name: Payment_slips
+  type: folder
+
+request:
+  auth: inherit

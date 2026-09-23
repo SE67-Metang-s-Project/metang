@@ -2,7 +2,7 @@ import { AdvisorDecisionError, decideLoanRequest } from "@/db/queries/loan-reque
 import { Prisma } from "@/lib/generated/prisma/client";
 import { apiError, apiOk } from "@/lib/api-response";
 import { getAdvisorAccess } from "@/lib/loan-auth";
-import { isLoanId, parseLoanDecisionInput } from "@/lib/loan-validation";
+import { isLoanId, parseAdvisorDecisionInput } from "@/lib/loan-validation";
 import { serializeJson } from "@/lib/serialization";
 import { validateJsonRequest } from "@/lib/request-security";
 
@@ -35,7 +35,7 @@ export async function POST(request: Request, { params }: Params) {
 
   let input;
   try {
-    input = parseLoanDecisionInput(await request.json());
+    input = parseAdvisorDecisionInput(await request.json());
   } catch (error) {
     return apiError(
       "VALIDATION_ERROR",
