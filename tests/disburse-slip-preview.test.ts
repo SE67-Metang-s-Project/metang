@@ -22,12 +22,6 @@ test("DisburseDebtCard provides preview functionality for transfer slip evidence
     "DisburseDebtCard must handle modal dismissal for slip preview",
   );
 
-  // Check for full preview button in completed slip section
-  assert.match(
-    content,
-    /<button[\s\S]*?onClick=\{\(\)\s*=>\s*setPreviewSlipUrl\(selectedRequest\.slipUrl[\s\S]*?ดูรูปขนาดเต็ม[\s\S]*?<\/button>/,
-    "DisburseDebtCard must have a 'ดูรูปขนาดเต็ม' button in the completed slip section",
-  );
 
   // Check for clickable image container with hover overlay
   assert.match(

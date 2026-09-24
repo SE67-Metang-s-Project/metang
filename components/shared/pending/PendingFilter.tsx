@@ -65,9 +65,7 @@ export default function PendingFilter({
     setIsDropdownOpen(false);
   };
 
-  const isExecutivePendingEnabled = Boolean(
-    showExecutivePending || pendingExecutiveCount !== undefined,
-  );
+  const isExecutivePendingEnabled = Boolean(showExecutivePending);
 
   const mainFilterOptions: { id: FilterStatus; label: string; count?: number }[] = [
     { id: "all", label: "ทั้งหมด" },
@@ -90,14 +88,9 @@ export default function PendingFilter({
       ? [{ id: "pending_admin" as const, label: "รอเจ้าหน้าที่ตรวจสอบ" }]
       : []),
     { id: "cancelled", label: "นักศึกษายกเลิกคำร้อง" },
-    ...(!isExecutivePendingEnabled
-      ? [{ id: "pending_executive" as const, label: "รอผู้บริหารอนุมัติ" }]
-      : []),
   ];
   const rawStatusOptions = customStatusOptions ?? defaultStatusOptions;
-  const statusOptions = isExecutivePendingEnabled
-    ? rawStatusOptions.filter((option) => option.id !== "pending_executive")
-    : rawStatusOptions;
+  const statusOptions = rawStatusOptions.filter((option) => option.id !== "pending_executive");
   const selectedStatus = statusOptions.find((option) => option.id === currentFilter);
   const isDropdownActive = selectedStatus !== undefined;
 
