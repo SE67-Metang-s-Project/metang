@@ -4048,6 +4048,10 @@
   background: #f0fdf4;
 }
 
+.paymentEvidenceRowPending {
+  background: #fffbeb;
+}
+
 .paymentEvidenceRowButton {
   width: 100%;
   padding: 12px 13px;
@@ -4069,6 +4073,10 @@
 
 .paymentEvidenceRowVerified .paymentEvidenceRowButton:hover {
   background: #dcfce7;
+}
+
+.paymentEvidenceRowPending .paymentEvidenceRowButton:hover {
+  background: #fef3c7;
 }
 
 .paymentEvidenceInstallment,
@@ -4104,7 +4112,7 @@
 .paymentEvidenceStatusCell {
   min-width: 122px;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 4px;
   color: #64748b;
 }
 

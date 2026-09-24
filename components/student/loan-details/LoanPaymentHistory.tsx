@@ -68,6 +68,8 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
                     ? styles.paymentEvidenceRowFailed
                     : isExpanded && status === "verified"
                       ? styles.paymentEvidenceRowVerified
+                      : isExpanded && status === "pending"
+                        ? styles.paymentEvidenceRowPending
                       : ""
                 }`}
                 key={id}
@@ -182,7 +184,7 @@ function PaymentStatus({ status }: { status: PaymentEvidenceStatus }) {
   const labels = {
     verified: t("ผ่าน", "Verified"),
     failed: t("ไม่ผ่าน", "Failed"),
-    pending: t("สถานะตรวจสอบ", "Pending"),
+    pending: t("ตรวจสอบ", "Pending"),
   };
 
   return (
