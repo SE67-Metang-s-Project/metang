@@ -6,6 +6,7 @@ import PendingFilter, { FilterStatus } from "@/components/shared/pending/Pending
 import RequestsCard, {
   ActionRequest,
   UserRole,
+  isExecutiveReturned,
   sortRequestsBySubmissionDateDesc,
 } from "@/components/shared/pending/RequestsCard";
 
@@ -88,9 +89,12 @@ export default function SharedRequestsList({
   const targetPendingStatus = getTargetPendingStatus(userRole);
   const pendingCount = requests.filter((req) => req.requestStatus === targetPendingStatus).length;
   const pendingExecutiveCount = requests.filter(
-    (req) => req.requestStatus === "pending_executive",
+    (req) =>
+      req.requestStatus === "pending_executive" ||
+      (userRole === "advisor" && isExecutiveReturned(req)),
   ).length;
-  const showExecutivePending = userRole === "admin" || userRole === "super_admin";
+  const showExecutivePending =
+    userRole === "admin" || userRole === "super_admin" || userRole === "advisor";
 
   const filteredRequests = React.useMemo(() => {
     const list = requests.filter((req) => {
@@ -105,7 +109,9 @@ export default function SharedRequestsList({
       } else if (filter === "pending") {
         isStatusMatch = req.requestStatus === targetPendingStatus;
       } else if (filter === "pending_executive") {
-        isStatusMatch = req.requestStatus === "pending_executive";
+        isStatusMatch =
+          req.requestStatus === "pending_executive" ||
+          (userRole === "advisor" && isExecutiveReturned(req));
       } else if (filter === "approved") {
         // ถ้าอนุมัติแล้ว สถานะจะขยับไปด่านถัดไป
         if (userRole === "admin" || userRole === "super_admin") {

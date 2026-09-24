@@ -196,5 +196,71 @@ export const mockAdvisorRequests: ActionRequest[] = [
       onTimeInstallments: 3,
       lateInstallments: 1,
     },
-  }
+  },
+
+  // 5. รายการที่ผู้บริหารส่งกลับให้แก้ไข ส่งไปที่แอดมิน
+  {
+    id: "REQ-67006",
+    name: "นายพีรพล ก้องไกล",
+    studentId: "651234572",
+    major: "พยาบาลศาสตร์",
+    program: "พยาบาลศาสตรบัณฑิต",
+    year: "3",
+    phone: "086-666-6666",
+    objective: "ค่าใช้จ่ายฉุกเฉินและค่าอุปกรณ์การเรียน",
+    amount: "6000",
+    term: "6",
+    submitDate: "05 ต.ค. 2567",
+    requestStatus: "pending_admin",
+    history: [
+      {
+        action: "ยื่นคำร้องขอกู้ยืม",
+        date: "05 ต.ค. 2567 10:00",
+        actor: "นายพีรพล ก้องไกล",
+      },
+      {
+        action: "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ",
+        date: "06 ต.ค. 2567 11:30",
+        actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+      },
+      {
+        action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+        date: "07 ต.ค. 2567 14:00",
+        actor: "นางจินตนา เจ้าหน้าที่คณะ",
+      },
+      {
+        action: "ผู้บริหารส่งกลับแก้ไข",
+        date: "08 ต.ค. 2567 16:00",
+        actor: "ศ.ดร. วิจิตร ผู้บริหาร",
+      },
+    ],
+    approvals: [
+      {
+        step: "advisor",
+        actorName: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+        comment: "เห็นควรอนุมัติ",
+        decision: "approved",
+        date: "06 ต.ค. 2567",
+      },
+      {
+        step: "admin",
+        actorName: "นางจินตนา เจ้าหน้าที่คณะ",
+        comment: "เอกสารครบถ้วน",
+        decision: "approved",
+        date: "07 ต.ค. 2567",
+      },
+      {
+        step: "executive",
+        actorName: "ศ.ดร. วิจิตร ผู้บริหาร",
+        comment: "ขอให้เจ้าหน้าที่ตรวจสอบเอกสารรายรับเพิ่มเติมและปรับลดวงเงิน",
+        decision: "returned",
+        date: "08 ต.ค. 2567",
+      },
+    ],
+    paymentBehavior: {
+      totalLoanRequests: 1,
+      onTimeInstallments: 4,
+      lateInstallments: 0,
+    },
+  },
 ];

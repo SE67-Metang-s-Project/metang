@@ -18,6 +18,7 @@ import {
   Loader2,
   FileText,
   Download,
+  RotateCcw,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
 import LoanPetitionDocument, {
@@ -307,6 +308,29 @@ export {
   getSubmittedTime,
 };
 
+export const isExecutiveReturned = (req?: ActionRequest | null): boolean => {
+  if (!req) return false;
+
+  const isClosedOrRejected = ["closed", "disbursed", "rejected", "cancelled"].includes(
+    String(req.requestStatus).toLowerCase(),
+  );
+  if (isClosedOrRejected) return false;
+
+  const hasExecReturnApproval = req.approvals?.some(
+    (a) => a.step === "executive" && a.decision === "returned",
+  );
+  if (hasExecReturnApproval) return true;
+
+  const hasExecReturnHistory = req.history?.some(
+    (h) =>
+      h.action?.includes("ผู้บริหารส่งกลับ") ||
+      (h.action?.includes("แก้ไข") && (h.actor?.includes("ผู้บริหาร") || h.action?.includes("ผู้บริหาร"))),
+  );
+  if (hasExecReturnHistory) return true;
+
+  return false;
+};
+
 const getStatusDisplay = (status: LoanStatus) => {
   switch (status) {
     case "draft":
@@ -413,6 +437,7 @@ export default function RequestsCard({
 
   const canViewSensitiveData = userRole === "admin" || userRole === "super_admin";
   const canEditAmount = userRole === "admin" || userRole === "super_admin";
+  const isAdminOrSuperAdmin = userRole === "admin" || userRole === "super_admin";
 
   const maxAllowedAmount =
     originalRequestedAmount > 0
@@ -505,7 +530,9 @@ export default function RequestsCard({
           ? "กรุณาระบุความเห็นประกอบการพิจารณา"
           : confirmAction === "return"
             ? "กรุณาระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข"
-            : "กรุณาระบุเหตุผลที่ไม่อนุมัติ",
+            : isAdminOrSuperAdmin
+              ? "กรุณาระบุเหตุผลในการยกเลิกคำร้อง"
+              : "กรุณาระบุเหตุผลที่ไม่อนุมัติ",
       );
       return;
     }
@@ -666,6 +693,18 @@ export default function RequestsCard({
       );
     }
 
+    if (isExecutiveReturned(req)) {
+      return (
+        <button
+          onClick={() => openRequestModal(req)}
+          className={`${baseClasses} font-normal bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-300 inline-flex items-center justify-center gap-1.5`}
+        >
+          <RotateCcw size={13} className="shrink-0 text-amber-600" />
+          <span className="block whitespace-nowrap">ผู้บริหารส่งกลับมาแก้ไข</span>
+        </button>
+      );
+    }
+
     let colorClass = "bg-gray-50 hover:bg-gray-100 text-gray-600 border-gray-200";
 
     if (
@@ -713,8 +752,17 @@ export default function RequestsCard({
             >
               <div className="flex justify-between items-start gap-2">
                 <div>
-                  <div className="font-bold text-gray-900 text-[15px] leading-tight">
-                    {req.name}
+                  <div className="font-bold text-gray-900 text-[15px] leading-tight flex items-center gap-2 flex-wrap">
+                    <span>{req.name}</span>
+                    {isExecutiveReturned(req) && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800 border border-amber-300"
+                        title="ผู้บริหารส่งกลับมาแก้ไขให้เจ้าหน้าที่ตรวจสอบใหม่"
+                      >
+                        <RotateCcw size={11} className="shrink-0 text-amber-700" />
+                        <span>ผู้บริหารให้แก้ไข</span>
+                      </span>
+                    )}
                   </div>
                   <div className="text-[13px] text-gray-500 mt-1">{formatStudentDetails(req)}</div>
                 </div>
@@ -808,7 +856,18 @@ export default function RequestsCard({
                     {req.id}
                   </td>
                   <td className="w-[25%] py-4 px-4 border-r border-gray-200">
-                    <div className="font-bold text-gray-900">{req.name}</div>
+                    <div className="font-bold text-gray-900 flex items-center gap-2 flex-wrap">
+                      <span>{req.name}</span>
+                      {isExecutiveReturned(req) && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800 border border-amber-300"
+                          title="ผู้บริหารส่งกลับมาแก้ไขให้เจ้าหน้าที่ตรวจสอบใหม่"
+                        >
+                          <RotateCcw size={11} className="shrink-0 text-amber-700" />
+                          <span>ผู้บริหารให้แก้ไข</span>
+                        </span>
+                      )}
+                    </div>
                     <div className="mt-0.5 text-[13px] text-gray-500">
                       {formatStudentDetails(req)}
                     </div>
@@ -862,11 +921,16 @@ export default function RequestsCard({
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <span
-                  className={`text-[12px] font-bold px-3 py-1 rounded-full border ${getStatusBadgeClass(
-                    selectedRequest.requestStatus,
-                  )}`}
+                  className={`text-[12px] font-bold px-3 py-1 rounded-full border ${
+                    isExecutiveReturned(selectedRequest)
+                      ? "bg-amber-50 text-amber-700 border-amber-300"
+                      : getStatusBadgeClass(selectedRequest.requestStatus)
+                  }`}
                 >
-                  ● {getStatusDisplay(selectedRequest.requestStatus)}
+                  ●{" "}
+                  {isExecutiveReturned(selectedRequest)
+                    ? "ผู้บริหารส่งกลับมาแก้ไข"
+                    : getStatusDisplay(selectedRequest.requestStatus)}
                 </span>
                 <button
                   onClick={closeAllModals}
@@ -879,6 +943,17 @@ export default function RequestsCard({
             </div>
 
             <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 bg-gray-50/50">
+              {isExecutiveReturned(selectedRequest) && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-2.5 text-amber-800 text-[13px]">
+                  <RotateCcw className="size-4 shrink-0 text-amber-600 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-amber-900">ผู้บริหารส่งกลับมาแก้ไข</p>
+                    <p className="text-amber-700 mt-0.5">
+                      คำร้องนี้ถูกผู้บริหารส่งกลับเพื่อให้เจ้าหน้าที่ดำเนินการแก้ไขเพิ่มเติม
+                    </p>
+                  </div>
+                </div>
+              )}
               {/* ข้อมูลนักศึกษา */}
               <section className={styles.loanApprovalInfoCard}>
                 <CardHeader
@@ -1219,7 +1294,7 @@ export default function RequestsCard({
                       }}
                       className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98]"
                     >
-                      ไม่อนุมัติ
+                      {isAdminOrSuperAdmin ? "ยกเลิกคำร้อง" : "ไม่อนุมัติ"}
                     </button>
                     <button
                       onClick={() => {
@@ -1237,7 +1312,7 @@ export default function RequestsCard({
                       }}
                       className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98]"
                     >
-                      อนุมัติ
+                      {isAdminOrSuperAdmin ? "ส่งพิจารณา" : "อนุมัติ"}
                     </button>
                   </div>
                 ) : (
@@ -1263,7 +1338,9 @@ export default function RequestsCard({
                           ? "ความเห็นประกอบการพิจารณา (แนบในแบบฟอร์ม)"
                           : confirmAction === "return"
                             ? "ระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข (เช่น แนบเอกสารใหม่)"
-                            : "ระบุเหตุผลเพื่อแจ้งกลับให้นักศึกษาทราบ"}
+                            : isAdminOrSuperAdmin
+                              ? "ระบุเหตุผลในการยกเลิกคำร้อง"
+                              : "ระบุเหตุผลเพื่อแจ้งกลับให้นักศึกษาทราบ"}
                       </span>
                       <span className="text-red-500 font-bold" title="จำเป็น">
                         *
@@ -1274,7 +1351,11 @@ export default function RequestsCard({
                       originalRequestedAmount > 0 &&
                       Number(selectedRequest.amount) < originalRequestedAmount && (
                         <div className="mb-2.5 text-[12px] bg-amber-50 border border-amber-200 text-amber-800 px-3 py-1.5 rounded-lg flex items-center justify-between">
-                          <span>วงเงินที่อนุมัติ (ปรับลดลง):</span>
+                          <span>
+                            {isAdminOrSuperAdmin
+                              ? "วงเงินที่ส่งพิจารณา (ปรับลดลง):"
+                              : "วงเงินที่อนุมัติ (ปรับลดลง):"}
+                          </span>
                           <span className="font-bold text-[#ea580c]">
                             {formatAmount(selectedRequest.amount)}{" "}
                             <span className="text-gray-400 font-normal line-through text-[11px]">
@@ -1289,10 +1370,14 @@ export default function RequestsCard({
                         maxLength={200}
                         placeholder={
                           confirmAction === "approve"
-                            ? "ระบุความเห็นประกอบการพิจารณา เช่น เห็นสมควรให้กู้ยืมเพื่อนำไปใช้จ่าย..."
+                            ? isAdminOrSuperAdmin
+                              ? "ระบุความเห็นเพื่อส่งพิจารณา เช่น ตรวจสอบเอกสารครบถ้วน เห็นควรส่งผู้บริหารพิจารณา..."
+                              : "ระบุความเห็นประกอบการพิจารณา เช่น เห็นสมควรให้กู้ยืมเพื่อนำไปใช้จ่าย..."
                             : confirmAction === "return"
                               ? "เช่น ใบแจ้งหนี้ไม่ชัดเจน กรุณาถ่ายรูปและแนบไฟล์มาใหม่..."
-                              : "เช่น เอกสารหรือเหตุผลไม่เพียงพอต่อการกู้ยืม..."
+                              : isAdminOrSuperAdmin
+                                ? "เช่น ไม่ตรงตามเกณฑ์ หรือขอยกเลิกคำร้อง..."
+                                : "เช่น เอกสารหรือเหตุผลไม่เพียงพอต่อการกู้ยืม..."
                         }
                         className={`w-full border rounded-lg p-3 text-[13px] focus:outline-none resize-none h-20 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors ${
                           errorMessage
@@ -1354,9 +1439,15 @@ export default function RequestsCard({
                             <span>กำลังบันทึก...</span>
                           </>
                         ) : confirmAction === "approve" ? (
-                          "ยืนยันอนุมัติ"
+                          isAdminOrSuperAdmin ? (
+                            "ยืนยันส่งพิจารณา"
+                          ) : (
+                            "ยืนยันอนุมัติ"
+                          )
                         ) : confirmAction === "return" ? (
                           "ยืนยันส่งกลับแก้ไข"
+                        ) : isAdminOrSuperAdmin ? (
+                          "ยืนยันยกเลิกคำร้อง"
                         ) : (
                           "ยืนยันไม่อนุมัติ"
                         )}
@@ -1414,10 +1505,14 @@ export default function RequestsCard({
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               {completedDecision.action === "approve"
-                ? "อนุมัติ"
+                ? isAdminOrSuperAdmin
+                  ? "ส่งพิจารณา"
+                  : "อนุมัติ"
                 : completedDecision.action === "return"
                   ? "ส่งกลับแก้ไข"
-                  : "ไม่อนุมัติ"}{" "}
+                  : isAdminOrSuperAdmin
+                    ? "ยกเลิกคำร้อง"
+                    : "ไม่อนุมัติ"}{" "}
               คำร้อง {completedDecision.requestId} เรียบร้อยแล้ว
             </p>
             <p className="mt-1 text-sm text-gray-500">

@@ -122,7 +122,7 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepInitial[4].isUpcoming, true);
 
   // Case 2: Advisor returned for revision (status = returned by advisor)
-  // Step 1: checked, Step 2: returned (ยังขึ้นเป็นว่างอยู่ / isUpcoming: true), Steps 3-5: upcoming
+  // Step 1: checked, Step 2: returned (ยังขึ้นเป็นว่างอยู่ / isUpcoming: true, date: "ขั้นตอนถัดไป", no return comments), Steps 3-5: upcoming
   const stepAdvReturned = buildFiveStepTimeline({
     requestStatus: "returned",
     studentName: "นายสมชาย ใจดี",
@@ -141,7 +141,9 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepAdvReturned.length, 5);
   assert.equal(stepAdvReturned[0].isCompleted, true);
   assert.equal(stepAdvReturned[1].isUpcoming, true, "Advisor returned step must show as empty (ยังขึ้นเป็นว่างอยู่)");
-  assert.match(stepAdvReturned[1].date, /ส่งกลับมาแก้ไข/);
+  assert.equal(stepAdvReturned[1].date, "ขั้นตอนถัดไป");
+  assert.equal(stepAdvReturned[1].comment, undefined, "Return comments must not appear on 5-step timeline");
+  assert.equal(stepAdvReturned[1].commentTitle, undefined);
   assert.equal(stepAdvReturned[2].isUpcoming, true);
   assert.equal(stepAdvReturned[3].isUpcoming, true);
   assert.equal(stepAdvReturned[4].isUpcoming, true);
@@ -166,12 +168,10 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
       },
     ],
   });
-  assert.match(stepAdvReturnedTwice[1].date, /20 ต.ค. 2567/);
-  assert.equal(stepAdvReturnedTwice[1].comment, "คำแนะนำล่าสุด");
-  assert.equal(
-    stepAdvReturnedTwice[1].commentTitle,
-    "อาจารย์ที่ปรึกษาแจ้งแก้ไข (ครั้งที่ 2)",
-  );
+  assert.equal(stepAdvReturnedTwice[1].isUpcoming, true);
+  assert.equal(stepAdvReturnedTwice[1].date, "ขั้นตอนถัดไป");
+  assert.equal(stepAdvReturnedTwice[1].comment, undefined, "Return comments must not appear on 5-step timeline");
+  assert.equal(stepAdvReturnedTwice[1].commentTitle, undefined);
 
   // Case 3: Student resubmits after advisor return -> bounces back to pending_advisor
   const stepAdvResubmit = buildFiveStepTimeline({
@@ -247,7 +247,7 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepExecutivePendingAfterPreviousApproval[3].isCompleted, undefined);
 
   // Case 5: Admin returned for revision (status = returned by admin)
-  // Step 1: checked, Step 2: checked, Step 3: empty circle (ส่งกลับมาแก้ไข), Steps 4-5: empty circle
+  // Step 1: checked, Step 2: checked, Step 3: empty circle, Steps 4-5: empty circle
   const stepAdminReturned = buildFiveStepTimeline({
     requestStatus: "returned",
     studentName: "นายสมชาย ใจดี",
@@ -272,8 +272,11 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   });
   assert.equal(stepAdminReturned[0].isCompleted, true);
   assert.equal(stepAdminReturned[1].isCompleted, true, "Advisor approval should stay checked");
+  assert.equal(stepAdminReturned[1].comment, "เห็นชอบ");
+  assert.equal(stepAdminReturned[1].commentTitle, "ความคิดเห็นของอาจารย์ที่ปรึกษา");
   assert.equal(stepAdminReturned[2].isUpcoming, true, "Admin returned step must show as empty (ยังขึ้นเป็นว่างอยู่)");
-  assert.match(stepAdminReturned[2].date, /ส่งกลับมาแก้ไข/);
+  assert.equal(stepAdminReturned[2].date, "ขั้นตอนถัดไป");
+  assert.equal(stepAdminReturned[2].comment, undefined, "Return comments must not appear on 5-step timeline");
   assert.equal(stepAdminReturned[3].isUpcoming, true);
   assert.equal(stepAdminReturned[4].isUpcoming, true);
 
@@ -568,6 +571,77 @@ test("buildFiveStepTimeline hides prior Admin return messages after the student 
   assert.equal(timeline[2].isPending, true);
   assert.equal(timeline[2].comment, undefined);
   assert.equal(timeline[2].commentTitle, undefined);
+});
+
+test("buildFiveStepTimeline does not show return dates or return comments for Executive return, while buildFullActionHistory does", async () => {
+  const { buildFiveStepTimeline, buildFullActionHistory } = await import("@/lib/request-timeline-model");
+
+  // Executive returned to admin (requestStatus: pending_admin)
+  const timeline = buildFiveStepTimeline({
+    requestStatus: "pending_admin",
+    studentName: "นายสมชาย ใจดี",
+    advisorName: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+    submitDate: "14 ต.ค. 2567",
+    approvals: [
+      {
+        step: "advisor",
+        actorName: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
+        comment: "เห็นชอบ",
+        decision: "approved",
+        date: "15 ต.ค. 2567",
+      },
+      {
+        step: "admin",
+        actorName: "เจ้าหน้าที่ สมชาย",
+        comment: "เอกสารครบ",
+        decision: "approved",
+        date: "16 ต.ค. 2567",
+      },
+      {
+        step: "executive",
+        actorName: "ผู้บริหาร สมควร",
+        comment: "เอกสารขาดสำเนาบัญชีธนาคาร ให้เจ้าหน้าที่ตรวจสอบอีกครั้ง",
+        decision: "returned",
+        date: "17 ต.ค. 2567",
+      },
+    ],
+  });
+
+  // Step 2 is approved with approval comment
+  assert.equal(timeline[1].isCompleted, true);
+  assert.equal(timeline[1].comment, "เห็นชอบ");
+  // Step 3 is pending (admin reviewing/fixing), NO comment shown
+  assert.equal(timeline[2].isPending, true);
+  assert.equal(timeline[2].comment, undefined);
+  // Step 4 is upcoming, NO return date ("ขั้นตอนถัดไป"), NO return comment
+  assert.equal(timeline[3].isUpcoming, true);
+  assert.equal(timeline[3].date, "ขั้นตอนถัดไป");
+  assert.equal(timeline[3].comment, undefined);
+  assert.equal(timeline[3].commentTitle, undefined);
+
+  // Full action history has the executive return comment and full audit trail
+  const fullHistory = buildFullActionHistory({
+    requestStatus: "pending_admin",
+    studentName: "นายสมชาย ใจดี",
+    submitDate: "14 ต.ค. 2567",
+    history: [
+      { action: "ยื่นคำร้องขอกู้ยืม", date: "14 ต.ค. 2567", actor: "นายสมชาย ใจดี" },
+      { action: "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ", date: "15 ต.ค. 2567", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" },
+      { action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน", date: "16 ต.ค. 2567", actor: "เจ้าหน้าที่ สมชาย" },
+      {
+        action: "ผู้บริหารส่งกลับแก้ไข",
+        date: "17 ต.ค. 2567",
+        actor: "ผู้บริหาร สมควร",
+        comment: "เอกสารขาดสำเนาบัญชีธนาคาร ให้เจ้าหน้าที่ตรวจสอบอีกครั้ง",
+      },
+      { action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน", date: "กำลังดำเนินการ", actor: "เจ้าหน้าที่ สมชาย", isPending: true },
+    ],
+  });
+
+  const execReturnItem = fullHistory.find((item) => item.action.includes("ผู้บริหารส่งกลับแก้ไข"));
+  assert.ok(execReturnItem);
+  assert.equal(execReturnItem.statusType, "returned");
+  assert.equal(execReturnItem.comment, "เอกสารขาดสำเนาบัญชีธนาคาร ให้เจ้าหน้าที่ตรวจสอบอีกครั้ง");
 });
 
 test("Student role is not modified and does not use RequestTimeline", () => {
