@@ -58,9 +58,10 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
   );
   const displayedTimeline = details.timeline.filter((item) => !item.isUpcoming);
   const isRepaymentInProgress =
-    details.statusCode === "disbursed" ||
+    ["disbursed", "closed", "paid"].includes(details.statusCode ?? "") ||
     details.statusLabel.includes("อยู่ระหว่างการชำระ") ||
-    details.statusLabel.includes("กำลังชำระ");
+    details.statusLabel.includes("กำลังชำระ") ||
+    details.statusLabel === "Paid";
   const shouldShowDownload =
     isWaitingForTransferConfirmation ||
     ["disbursed", "closed"].includes(details.statusCode ?? "") ||
@@ -156,11 +157,6 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
             : undefined
         }
         onShowTransferSlip={hasAdminTransferredFunds ? () => setIsSlipModalOpen(true) : undefined}
-        onDownloadRequest={
-          shouldShowDownload && !isWaitingForTransferConfirmation
-            ? () => setIsPetitionModalOpen(true)
-            : undefined
-        }
         onCancelRequest={() => setIsCancelDialogOpen(true)}
         onEditRequest={isReturned ? () => router.push("/student/loan/apply") : undefined}
         showCancelRequest={canCancelRequest}

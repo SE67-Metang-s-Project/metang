@@ -3014,6 +3014,7 @@
 
 .contactFooterItem {
   display: flex;
+  width: 100%;
   min-width: 0;
   align-items: center;
   justify-content: flex-start;
@@ -3026,6 +3027,7 @@
 }
 
 .contactFooterItem a {
+  flex: 0 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
   color: inherit;
@@ -3041,12 +3043,13 @@
 }
 
 .contactFooterItem span {
+  flex: 1 1 0;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
 .contactFooterPrimaryItem {
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .contactFooterNarrowBreak {
@@ -3825,6 +3828,10 @@
   text-align: center;
 }
 
+.paymentEvidenceModal {
+  padding-top: 52px;
+}
+
 .transferSlipImageFrame {
   overflow: hidden;
   border: 1px solid var(--color-border);
@@ -3836,6 +3843,22 @@
   display: block;
   width: 100%;
   height: auto;
+}
+
+.paymentEvidenceImageFrame {
+  display: flex;
+  max-height: min(60svh, 440px);
+  align-items: center;
+  justify-content: center;
+}
+
+.paymentEvidenceImageFrame img {
+  width: auto;
+  max-width: 100%;
+  max-height: min(60svh, 440px);
+  margin: auto;
+  object-fit: contain;
+  object-position: center;
 }
 
 .transferProofModal .transferSlipImageFrame {
@@ -3931,6 +3954,331 @@
   gap: 7px;
 }
 
+.paymentHistorySummary {
+  margin: 0;
+  color: var(--color-detail-muted);
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.paymentEvidenceStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.paymentEvidenceStat {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border: 1px solid;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.paymentEvidenceStat > span:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  place-items: center;
+}
+
+.paymentEvidenceStat strong {
+  font-size: 19px;
+  line-height: 1;
+}
+
+.paymentEvidenceStat small {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paymentEvidenceStatVerified {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.paymentEvidenceStatFailed {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.paymentEvidenceStatPending {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.paymentEvidenceTable {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.paymentEvidenceRowButton {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(110px, 0.75fr) 140px;
+  gap: 14px;
+  align-items: center;
+}
+
+.paymentEvidenceRow {
+  border-bottom: 1px solid #f1f5f9;
+  background: var(--color-surface);
+}
+
+.paymentEvidenceRow:last-child {
+  border-bottom: 0;
+}
+
+.paymentEvidenceRowFailed {
+  background: #fff7f7;
+}
+
+.paymentEvidenceRowVerified {
+  background: #f0fdf4;
+}
+
+.paymentEvidenceRowButton {
+  width: 100%;
+  padding: 12px 13px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.paymentEvidenceRowButton:hover {
+  background: #f8fafc;
+}
+
+.paymentEvidenceRowFailed .paymentEvidenceRowButton:hover {
+  background: #fff1f2;
+}
+
+.paymentEvidenceRowVerified .paymentEvidenceRowButton:hover {
+  background: #dcfce7;
+}
+
+.paymentEvidenceInstallment,
+.paymentEvidenceStatusCell {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.paymentEvidenceInstallment {
+  gap: 7px;
+}
+
+.paymentEvidenceInstallment strong {
+  color: var(--color-heading);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.paymentEvidenceAmount {
+  color: var(--color-heading);
+  font-size: 14px;
+  font-weight: 400;
+  text-align: center;
+}
+
+.paymentEvidenceAttempt {
+  color: var(--color-heading);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.paymentEvidenceStatusCell {
+  min-width: 122px;
+  justify-content: flex-end;
+  gap: 8px;
+  color: #64748b;
+}
+
+.paymentEvidenceStatus {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 2px 9px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.paymentEvidenceStatus > span {
+  color: currentColor;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.paymentEvidenceStatusVerified {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.paymentEvidenceStatusVerified > span {
+  background: transparent;
+}
+
+.paymentEvidenceStatusFailed {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.paymentEvidenceStatusFailed > span {
+  background: transparent;
+}
+
+.paymentEvidenceStatusPending {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #a16207;
+}
+
+.paymentEvidenceStatusPending > span {
+  background: transparent;
+}
+
+.paymentEvidenceExpanded {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 18px;
+  margin: 0 14px 14px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 58%);
+}
+
+.paymentEvidenceReceipt {
+  display: flex;
+  min-width: 120px;
+  min-height: 120px;
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.paymentEvidenceReceipt img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.paymentEvidenceReceiptButton {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.paymentEvidenceReceiptButton img {
+  display: block;
+}
+
+.paymentEvidenceDetails {
+  margin: 0;
+  padding: 8px 0;
+}
+
+.paymentEvidenceDetails > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+}
+
+.paymentEvidenceDetails > div:first-child {
+  padding-top: 0;
+}
+
+.paymentEvidenceDetails > div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.paymentEvidenceDetails dt {
+  color: #64748b;
+}
+
+.paymentEvidenceDetails dd {
+  margin: 0;
+  color: var(--color-heading);
+  font-weight: 400;
+  text-align: right;
+}
+
+.paymentEvidenceDetails .paymentEvidenceFailedReason {
+  max-width: 190px;
+  color: #dc2626;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .paymentEvidenceStat {
+    padding: 8px;
+  }
+
+  .paymentEvidenceStat strong {
+    font-size: 17px;
+  }
+
+  .paymentEvidenceRowButton {
+    grid-template-columns: minmax(0, 1fr) minmax(72px, 0.6fr) 112px;
+  }
+
+  .paymentEvidenceStatusCell {
+    min-width: auto;
+  }
+
+  .paymentEvidenceStatus {
+    padding: 2px 7px;
+  }
+
+  .paymentEvidenceExpanded {
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .paymentEvidenceDetails {
+    padding: 10px 12px;
+  }
+
+  .paymentEvidenceDetails > div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .paymentEvidenceDetails dd {
+    text-align: left;
+  }
+
+}
+
 .paymentHistoryEmpty {
   display: grid;
   min-height: 118px;
@@ -4011,6 +4359,12 @@
   display: grid;
   width: 44px;
   height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 44px;
+  max-height: 44px;
+  align-self: start;
+  overflow: hidden;
   place-items: center;
   border-radius: 8px;
   background: var(--color-detail-green-soft);
@@ -4638,7 +4992,7 @@
   }
 
   .contactFooterItem span {
-    white-space: nowrap;
+    white-space: normal;
   }
 }
 
