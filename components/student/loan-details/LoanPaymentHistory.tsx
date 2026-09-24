@@ -25,6 +25,8 @@ function withoutTimestampLabel(value: string) {
 export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
   const { language, t } = useStudentLanguage();
   const [selectedReceipt, setSelectedReceipt] = useState<LoanPaymentHistoryItem | null>(null);
+  const verifiedCount = items.filter((item) => item.status === "verified").length;
+  const failedCount = items.filter((item) => item.status === "failed").length;
   const paymentRecords = items
     .map((item, index) => {
       const recordsForInstallment = items.filter(
@@ -71,7 +73,7 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
             </span>
             <div className={styles.paymentHistoryContent}>
               <strong>
-                {t("งวดที่", "Installment")} {item.installmentNumber}
+                {t("งวด", "Inst.")} {item.installmentNumber}
                 {totalAttempts > 1 ? ` (${t("ครั้งที่", "attempt")} ${attemptNumber})` : ""} · {item.amount}
               </strong>
               <p>
@@ -115,6 +117,12 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
         </h2>
       </header>
       {paymentHistoryList}
+      {items.length > 0 ? (
+        <p className={styles.paymentHistorySummary}>
+          {t("ผ่านการตรวจสอบ", "Verified")} {verifiedCount} ·{" "}
+          {t("ไม่ผ่านการตรวจสอบ", "Failed")} {failedCount}
+        </p>
+      ) : null}
       {selectedReceipt ? (
         <div
           aria-label={t("หลักฐานการชำระเงิน", "Payment evidence")}
@@ -122,7 +130,11 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
           {...backdropDismiss}
           role="presentation"
         >
-          <section aria-labelledby="payment-receipt-title" className={styles.transferSlipModal} role="dialog">
+          <section
+            aria-labelledby="payment-receipt-title"
+            className={`${styles.transferSlipModal} ${styles.paymentEvidenceModal}`}
+            role="dialog"
+          >
             <button
               aria-label={t("ปิดหลักฐานการชำระเงิน", "Close payment evidence")}
               className="absolute right-5 top-4 z-10 rounded-full bg-gray-50 p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
@@ -132,10 +144,10 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
               <X aria-hidden="true" size={20} />
             </button>
             <h2 id="payment-receipt-title">
-              {t("หลักฐานการชำระงวดที่", "Payment evidence for installment")} {selectedReceipt.installmentNumber}
+              {t("หลักฐานการชำระงวด", "Payment evidence — Inst.")} {selectedReceipt.installmentNumber}
               {selectedReceiptAttempts.length > 1 ? ` (${t("ครั้งที่", "attempt")} ${selectedReceiptAttemptNumber})` : ""}
             </h2>
-            <div className={styles.transferSlipImageFrame}>
+            <div className={`${styles.transferSlipImageFrame} ${styles.paymentEvidenceImageFrame}`}>
               {selectedReceipt.receiptImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img alt={t("รูปหลักฐานการชำระเงิน", "Payment evidence image")} src={selectedReceipt.receiptImage} />

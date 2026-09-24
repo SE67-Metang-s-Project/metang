@@ -3825,6 +3825,10 @@
   text-align: center;
 }
 
+.paymentEvidenceModal {
+  padding-top: 52px;
+}
+
 .transferSlipImageFrame {
   overflow: hidden;
   border: 1px solid var(--color-border);
@@ -3836,6 +3840,22 @@
   display: block;
   width: 100%;
   height: auto;
+}
+
+.paymentEvidenceImageFrame {
+  display: flex;
+  max-height: min(60svh, 440px);
+  align-items: center;
+  justify-content: center;
+}
+
+.paymentEvidenceImageFrame img {
+  width: auto;
+  max-width: 100%;
+  max-height: min(60svh, 440px);
+  margin: auto;
+  object-fit: contain;
+  object-position: center;
 }
 
 .transferProofModal .transferSlipImageFrame {
@@ -3931,6 +3951,14 @@
   gap: 7px;
 }
 
+.paymentHistorySummary {
+  margin: 0;
+  color: var(--color-detail-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: right;
+}
+
 .paymentHistoryEmpty {
   display: grid;
   min-height: 118px;
@@ -4011,6 +4039,12 @@
   display: grid;
   width: 44px;
   height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 44px;
+  max-height: 44px;
+  align-self: start;
+  overflow: hidden;
   place-items: center;
   border-radius: 8px;
   background: var(--color-detail-green-soft);
