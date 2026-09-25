@@ -143,6 +143,7 @@ export interface RequestTimelineProps {
   requestStatus?: string;
   bankDetails?: BankDetails;
   advisorName?: string;
+  advisorNameEn?: string;
   studentName?: string;
   submitDate?: string;
   title?: string;
@@ -168,6 +169,7 @@ export default function RequestTimeline({
   requestStatus,
   bankDetails,
   advisorName,
+  advisorNameEn,
   studentName,
   submitDate,
   title = "ติดตามสถานะคำร้อง",
@@ -218,6 +220,12 @@ export default function RequestTimeline({
     history.length > 0 || approvals.length > 0 || Boolean(requestStatus || submitDate);
   const hasItems = showEmptyWhenNoHistory ? hasSourceHistory : timelineItems.length > 0;
   const t = (thai: string, english: string) => (language === "en" ? english : thai);
+  const localizeActor = (actor: string, actorEn?: string) =>
+    language === "en" && actorEn
+      ? actorEn
+      : language === "en" && advisorNameEn && actor === advisorName
+        ? advisorNameEn
+        : localizeTimelineText(actor, language);
 
   return (
     <section className={`${styles.loanApprovalInfoCard} ${className}`}>
@@ -235,7 +243,7 @@ export default function RequestTimeline({
           >
             <History aria-hidden="true" size={14} strokeWidth={2.2} />
             <span className="hidden sm:inline">{t("ดูประวัติการดำเนินการทั้งหมด", "Show full log")}</span>
-            <span className="sm:hidden">{t("ดูประวัติทั้งหมด", "Show log")}</span>
+            <span className="sm:hidden">{t("ดูประวิติ", "Show log")}</span>
           </button>
         ) : null}
       />
@@ -267,7 +275,7 @@ export default function RequestTimeline({
                         <span className="block">
                           {localizeTimelineText(returnedStatus.date, language)}
                           {item.actor
-                            ? ` · ${t("โดย", "by")} ${localizeTimelineText(item.actor, language)}`
+                            ? ` · ${t("โดย", "by")} ${localizeActor(item.actor, item.actorEn)}`
                             : ""}
                         </span>
                       </>
@@ -275,7 +283,7 @@ export default function RequestTimeline({
                       <>
                         {localizeTimelineText(item.date, language)}
                         {item.actor
-                          ? ` · ${t("โดย", "by")} ${localizeTimelineText(item.actor, language)}`
+                          ? ` · ${t("โดย", "by")} ${localizeActor(item.actor, item.actorEn)}`
                           : ""}
                       </>
                     )}
@@ -418,14 +426,6 @@ export default function RequestTimeline({
                   >
                     {t("ประวัติการดำเนินการทั้งหมด", "Full activity log")}
                   </h2>
-                  <p className="mt-0.5 text-sm text-gray-500">
-                    {studentName
-                      ? `${t("นักศึกษา", "Student")}: ${localizeTimelineText(studentName, language)}`
-                      : t(
-                          "บันทึกการยื่นคำร้อง การส่งแก้ไข และการพิจารณา",
-                          "Request submissions, revisions, and reviews",
-                        )}
-                  </p>
                 </div>
               </div>
               <button
@@ -457,18 +457,16 @@ export default function RequestTimeline({
                         />
 
                         <div className="bg-gray-50/70 border border-gray-200/80 rounded-xl p-3.5 space-y-2.5">
-                          <div className="flex items-start justify-between gap-2 flex-wrap">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm font-semibold border ${badge.badgeClass}`}
-                              >
-                                {badge.icon}
-                                {badge.label}
-                              </span>
-                              <strong className="text-sm text-gray-900 font-bold">
-                                {localizeTimelineText(item.action, language)}
-                              </strong>
-                            </div>
+                          <div className="space-y-2">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm font-semibold border ${badge.badgeClass}`}
+                            >
+                              {badge.icon}
+                              {badge.label}
+                            </span>
+                            <strong className="block text-sm text-gray-900 font-bold">
+                              {localizeTimelineText(item.action, language)}
+                            </strong>
                             <span className="text-sm text-gray-500 whitespace-nowrap">
                               {localizeTimelineText(item.date, language)}
                             </span>
@@ -477,7 +475,7 @@ export default function RequestTimeline({
                           {item.actor && (
                             <p className="text-sm text-gray-600">
                               <span className="text-gray-400">{t("ดำเนินการโดย:", "Handled by:")}</span>{" "}
-                              {localizeTimelineText(item.actor, language)}
+                              {localizeActor(item.actor, item.actorEn)}
                             </p>
                           )}
 
@@ -494,8 +492,8 @@ export default function RequestTimeline({
                               }`}
                             >
                               {item.commentTitle && (
-                                <div className="mb-1 text-sm font-semibold uppercase tracking-wider opacity-80">
-                                  {item.commentTitle}
+                                <div className="mb-1 text-sm font-semibold opacity-80">
+                                  {localizeTimelineText(item.commentTitle, language)}:
                                 </div>
                               )}
                               <p>{localizeTimelineText(item.comment, language)}</p>
@@ -524,17 +522,6 @@ export default function RequestTimeline({
                   {t("ยังไม่มีประวัติการดำเนินการ", "No activity yet")}
                 </div>
               )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex justify-end items-center px-5 sm:px-6 py-3.5 bg-gray-50 border-t border-gray-100 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsHistoryModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-xs cursor-pointer"
-              >
-                {t("ปิด", "Close")}
-              </button>
             </div>
           </div>
         </div>

@@ -113,7 +113,7 @@ export type RawLoanApproval = {
   decidedBy?: string | null;
   decidedAt?: string | Date | null;
   comment?: string | null;
-  decider?: { fullNameTh?: string | null } | null;
+  decider?: { fullNameTh?: string | null; fullNameEn?: string | null } | null;
 };
 
 export type RawInstallment = {
@@ -425,7 +425,8 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
           ? {
               title: "อาจารย์ที่ปรึกษาพิจารณาคำร้อง",
               actor: app.decider?.fullNameTh ?? loan.advisor?.fullNameTh ?? "อาจารย์ที่ปรึกษา",
-              commentTitle: "ข้อความจากอาจารย์ที่ปรึกษา",
+              actorEn: app.decider?.fullNameEn ?? loan.advisor?.fullNameEn ?? undefined,
+              commentTitle: "อาจารย์ที่ปรึกษาแจ้งแก้ไข",
             }
           : app.step === "admin"
             ? {
@@ -443,6 +444,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
         title: pendingDetails.title,
         dateTime: "กำลังดำเนินการ",
         actor: pendingDetails.actor,
+        actorEn: pendingDetails.actorEn,
         commentTitle: pendingDetails.commentTitle,
         comment: app.comment,
         isPending: true,
@@ -452,10 +454,12 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
 
     let stepTitle = "";
     let actorName = "";
+    let actorNameEn: string | undefined;
     let commentTitle = "";
 
     if (app.step === "advisor") {
       actorName = app.decider?.fullNameTh ?? loan.advisor?.fullNameTh ?? "อาจารย์ที่ปรึกษา";
+      actorNameEn = app.decider?.fullNameEn ?? loan.advisor?.fullNameEn ?? undefined;
       if (app.decision === "approved") {
         stepTitle = "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ";
         commentTitle = "ความคิดเห็นของอาจารย์ที่ปรึกษา";
@@ -512,6 +516,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
         title: stepTitle,
         dateTime: formatThaiDateTime(app.decidedAt),
         actor: actorName,
+        actorEn: actorNameEn,
         commentTitle: commentTitle || undefined,
         comment: app.comment || undefined,
         isCompleted: app.decision === "approved",
@@ -530,11 +535,15 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
   }
 
   const pendingSteps: Partial<
-    Record<LoanStatus, { title: string; actor: string; next?: { title: string; actor: string } }>
+    Record<
+      LoanStatus,
+      { title: string; actor: string; actorEn?: string; next?: { title: string; actor: string } }
+    >
   > = {
     pending_advisor: {
       title: "อาจารย์ที่ปรึกษาพิจารณาคำร้อง",
       actor: loan.advisor?.fullNameTh ?? "อาจารย์ที่ปรึกษา",
+      actorEn: loan.advisor?.fullNameEn ?? undefined,
       next: { title: "เจ้าหน้าที่ตรวจสอบเอกสาร", actor: "เจ้าหน้าที่" },
     },
     pending_admin: {
@@ -655,6 +664,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     statusCode: studentVisibleStatus,
     studentYear: loan.studentYear,
     advisorName: loan.advisor?.fullNameTh ?? "-",
+    advisorNameEn: loan.advisor?.fullNameEn ?? undefined,
     bankName: loan.bankName ? normalizeBankName(loan.bankName) : undefined,
     bankAccountNo: loan.bankAccountNo,
     bankAccountName: loan.bankAccountName,

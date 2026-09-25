@@ -14,6 +14,7 @@ import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanS
 import type { StudentUiError } from "@/lib/student-error-mapper";
 
 type TempLoanApprovalModalProps = {
+  advisorNameEn?: string;
   formData: TempLoanFormData;
   profile?: StudentProfileDisplay;
   onClose: () => void;
@@ -43,6 +44,7 @@ function getProgramLabel(programName: string | undefined, language: "th" | "en")
 }
 
 export default function TempLoanApprovalModal({
+  advisorNameEn,
   formData,
   profile,
   onClose,
@@ -63,6 +65,7 @@ export default function TempLoanApprovalModal({
   const educationLevel = formData.educationLevel
     ? localizeStudentContent(formData.educationLevel, language)
     : "-";
+  const advisorName = language === "en" ? advisorNameEn || formData.advisorName : formData.advisorName;
   const bankLabel =
     language === "en"
       ? tempLoanFormOptions.banks.find((bank) => bank.value === formData.bankName)?.labelEn || formData.bankName
@@ -255,7 +258,7 @@ export default function TempLoanApprovalModal({
             </div>
             <div>
               <dt>{t("อาจารย์ที่ปรึกษา", "Advisor")}</dt>
-              <dd>{formData.advisorName || "-"}</dd>
+              <dd>{advisorName || "-"}</dd>
             </div>
           </dl>
         </section>

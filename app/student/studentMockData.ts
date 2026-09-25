@@ -61,6 +61,7 @@ export type LoanTimelineItem = {
   title: string;
   dateTime: string;
   actor: string;
+  actorEn?: string;
   commentTitle?: string;
   comment?: string;
   isCompleted?: boolean;
@@ -100,6 +101,7 @@ export type LoanDetails = {
   statusCode?: string;
   studentYear?: number;
   advisorName?: string;
+  advisorNameEn?: string;
   bankName?: string;
   bankAccountNo?: string;
   bankAccountName?: string;

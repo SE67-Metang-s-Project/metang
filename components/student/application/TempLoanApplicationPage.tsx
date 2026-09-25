@@ -48,6 +48,7 @@ import type { RawStudentLoan } from "@/lib/student-view-model";
 type FormField = Exclude<keyof TempLoanFormData, "installmentCount">;
 type RequiredFormField = Exclude<FormField, "additionalNote">;
 type FormErrors = Partial<Record<RequiredFormField, string>>;
+type AdvisorOption = { name: string; nameEn?: string };
 
 const educationLevelsByStudentIdDigit: Record<string, string> = {
   "0": "ประกาศนียบัตรบัณฑิต",
@@ -147,7 +148,7 @@ export type ExistingLoanData = {
 
 type TempLoanApplicationPageProps = {
   profile?: StudentProfileDisplay & { phoneNumber?: string };
-  advisorOptions?: string[];
+  advisorOptions?: AdvisorOption[];
   existingLoan?: ExistingLoanData | null;
   loanLimit: number;
 };
@@ -190,7 +191,7 @@ export default function TempLoanApplicationPage({
     ? localizeStudentContent(educationLevel, language)
     : t("ไม่พบข้อมูลระดับการศึกษา", "Education level not found");
 
-  const [advisors, setAdvisors] = useState<string[]>(advisorOptions ?? []);
+  const [advisors, setAdvisors] = useState<AdvisorOption[]>(advisorOptions ?? []);
 
   useEffect(() => {
     if (advisorOptions && advisorOptions.length > 0) return;
@@ -199,11 +200,16 @@ export default function TempLoanApplicationPage({
       .then((res) => res.json())
       .then((json) => {
         if (isMounted && json.data && Array.isArray(json.data)) {
-          const names = json.data
-            .map((a: { fullNameTh?: string }) => a.fullNameTh)
-            .filter((name: unknown): name is string => typeof name === "string" && Boolean(name));
-          if (names.length > 0) {
-            setAdvisors(names);
+          const availableAdvisors = json.data
+            .filter((advisor: { fullNameTh?: string }): advisor is { fullNameTh: string; fullNameEn?: string } =>
+              Boolean(advisor.fullNameTh),
+            )
+            .map((advisor: { fullNameTh: string; fullNameEn?: string }) => ({
+              name: advisor.fullNameTh,
+              nameEn: advisor.fullNameEn,
+            }));
+          if (availableAdvisors.length > 0) {
+            setAdvisors(availableAdvisors);
           }
         }
       })
@@ -478,8 +484,13 @@ export default function TempLoanApplicationPage({
 
   const advisorSelectOptions =
     advisors.length > 0
-      ? advisors.map((name) => ({ label: name, value: name }))
+      ? advisors.map((advisor) => ({
+          label: advisor.name,
+          labelEn: advisor.nameEn,
+          value: advisor.name,
+        }))
       : tempLoanFormOptions.advisors;
+  const selectedAdvisor = advisors.find((advisor) => advisor.name === formData.advisorName);
 
   if (existingLoan && existingLoan.status !== "returned") {
     return (
@@ -654,10 +665,9 @@ export default function TempLoanApplicationPage({
                           }}
                         >
                           <strong>
-                            {t("ข้อความจาก", "Message from ")}
                             {existingLoan.returnStep === "admin"
-                              ? t("เจ้าหน้าที่", "the staff")
-                              : t("อาจารย์ที่ปรึกษา", "the advisor")}
+                              ? t("ข้อความจากเจ้าหน้าที่", "Message from the staff")
+                              : t("อาจารย์ที่ปรึกษาแจ้งแก้ไข", "Advisor requested revision")}
                             :
                           </strong>
                           <span style={{ display: "block" }}>{existingLoan.returnComment}</span>
@@ -998,6 +1008,7 @@ export default function TempLoanApplicationPage({
             </section>
           ) : (
             <TempLoanDetailsStep
+              advisorNameEn={selectedAdvisor?.nameEn}
               createdLoan={createdLoanData}
               formData={savedFormData}
               profile={profile}
@@ -1064,6 +1075,7 @@ export default function TempLoanApplicationPage({
 
       {isApprovalModalOpen ? (
         <TempLoanApprovalModal
+          advisorNameEn={selectedAdvisor?.nameEn}
           errorDetails={submitErrorDetails}
           errorMessage={submitError}
           formData={savedFormData}

@@ -2,6 +2,7 @@ export type ActionHistory = {
   action: string;
   date: string;
   actor: string;
+  actorEn?: string;
   commentTitle?: string;
   comment?: string;
   isCompleted?: boolean;
@@ -255,6 +256,19 @@ export function buildFiveStepTimeline({
       comment: hideComments ? undefined : advisorApproval?.comment || advHistRejected?.comment,
       commentTitle: hideComments ? undefined : "เหตุผลที่ไม่อนุมัติ",
     };
+  } else if (returnedRole === "advisor") {
+    step2Item = {
+      action: "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ",
+      date: advHistReturned?.date || advisorApproval?.date || "ส่งกลับมาแก้ไข",
+      actor:
+        advisorApproval?.actorName ||
+        advHistReturned?.actor ||
+        advisorName ||
+        "อาจารย์ที่ปรึกษา",
+      isRevision: true,
+      comment: hideComments ? undefined : advisorApproval?.comment || advHistReturned?.comment,
+      commentTitle: hideComments ? undefined : "อาจารย์ที่ปรึกษาแจ้งแก้ไข",
+    };
   } else {
     step2Item = {
       action: "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ",
@@ -304,6 +318,15 @@ export function buildFiveStepTimeline({
       isFailed: true,
       comment: hideComments ? undefined : adminApproval?.comment || admHistRejected?.comment,
       commentTitle: hideComments ? undefined : "เหตุผลที่ไม่อนุมัติ",
+    };
+  } else if (returnedRole === "admin") {
+    step3Item = {
+      action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+      date: admHistReturned?.date || adminApproval?.date || "ส่งกลับมาแก้ไข",
+      actor: adminApproval?.actorName || admHistReturned?.actor || "เจ้าหน้าที่",
+      isRevision: true,
+      comment: hideComments ? undefined : adminApproval?.comment || admHistReturned?.comment,
+      commentTitle: hideComments ? undefined : "เจ้าหน้าที่แจ้งแก้ไข",
     };
   } else {
     step3Item = {
@@ -583,7 +606,7 @@ export function buildFullActionHistory({
     if (!commentTitle && comment) {
       if (statusType === "returned") {
         commentTitle = item.action.includes("อาจารย์")
-          ? "ข้อความจากอาจารย์ที่ปรึกษา"
+          ? "อาจารย์ที่ปรึกษาแจ้งแก้ไข"
           : item.action.includes("เจ้าหน้าที่")
             ? "ข้อความจากเจ้าหน้าที่"
             : item.action.includes("ผู้บริหาร")
@@ -652,9 +675,13 @@ export function buildFullActionHistory({
     );
 
     if (!hasResubmissionAfterReturn) {
+      const resubmittedAt =
+        submitDate ||
+        result.find((item) => item.statusType === "submitted")?.date ||
+        "-";
       const resubmissionItem: FullActionHistoryItem = {
         action: "ส่งการแก้ไขคำร้อง",
-        date: "ส่งแก้ไขเรียบร้อย",
+        date: resubmittedAt,
         actor: studentName || "นักศึกษา",
         statusType: "resubmitted",
         isCompleted: true,

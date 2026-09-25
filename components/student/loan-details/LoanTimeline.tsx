@@ -27,6 +27,8 @@ type LoanTimelineProps = {
   bankDetails?: BankDetails;
   hideBankDetails?: boolean;
   requestStatus?: string;
+  advisorName?: string;
+  advisorNameEn?: string;
 };
 
 function getRequestStatus(items: LoanTimelineItem[], isTransferAccepted: boolean) {
@@ -66,6 +68,8 @@ export default function LoanTimeline({
   bankDetails,
   hideBankDetails = false,
   requestStatus,
+  advisorName: advisorNameProp,
+  advisorNameEn,
 }: LoanTimelineProps) {
   const router = useRouter();
   const { language, t } = useStudentLanguage();
@@ -83,7 +87,7 @@ export default function LoanTimeline({
     !hasAcceptedTransfer &&
     effectiveRequestStatus === "pending_disbursement" &&
     Boolean(confirmTransferLabel || onConfirmTransfer);
-  const advisorName = items.find((item) => item.title.includes("อาจารย์"))?.actor;
+  const advisorName = advisorNameProp ?? items.find((item) => item.title.includes("อาจารย์"))?.actor;
   const hasExecutiveReturnForRevision = items.some(
     (item) => item.title.includes("ผู้บริหาร") && item.title.includes("ส่งกลับแก้ไข"),
   );
@@ -91,6 +95,7 @@ export default function LoanTimeline({
     action: item.title,
     date: item.dateTime,
     actor: item.actor,
+    actorEn: item.actorEn,
     commentTitle: item.commentTitle,
     comment: item.comment,
     isCompleted: item.isCompleted,
@@ -131,6 +136,7 @@ export default function LoanTimeline({
     <>
       <RequestTimeline
         advisorName={advisorName}
+        advisorNameEn={advisorNameEn}
         bankDetails={bankDetails}
         className={`${styles.studentRequestTimeline} ${
           compactActions ? styles.loanTimelineCompactActions : ""

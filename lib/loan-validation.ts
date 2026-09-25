@@ -100,7 +100,7 @@ function parseDecisionComment(value: unknown, required: boolean) {
   }
 
   const comment = typeof value === "string" ? value.trim() : "";
-  if (comment.length > 2000) throw new Error("comment is invalid");
+  if (comment.length > 500) throw new Error("comment is invalid");
   if (required && !comment) {
     throw new Error("A comment is required for this decision");
   }

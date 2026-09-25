@@ -39,8 +39,8 @@ export default async function StudentLoanApplyPage() {
   };
 
   const advisorOptions = advisors
-    .map((advisor) => advisor.fullNameTh)
-    .filter((name): name is string => typeof name === "string" && Boolean(name));
+    .filter((advisor): advisor is typeof advisor & { fullNameTh: string } => Boolean(advisor.fullNameTh))
+    .map((advisor) => ({ name: advisor.fullNameTh, nameEn: advisor.fullNameEn ?? undefined }));
 
   let existingLoan = null;
   if (currentLoan) {

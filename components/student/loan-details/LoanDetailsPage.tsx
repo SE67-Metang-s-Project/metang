@@ -142,6 +142,8 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
       />
 
       <LoanTimeline
+        advisorName={details.advisorName}
+        advisorNameEn={details.advisorNameEn}
         bankDetails={{
           bankName: details.bankName,
           accountNumber: details.bankAccountNo,

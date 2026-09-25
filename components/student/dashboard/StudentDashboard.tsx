@@ -404,6 +404,8 @@ export default function StudentDashboard({
           <PaymentBehaviorCard behavior={paymentBehaviorData} />
 
           <LoanTimeline
+            advisorName={loanDetails?.advisorName}
+            advisorNameEn={loanDetails?.advisorNameEn}
             compactActions
             hideBankDetails
             items={dashboardTimeline}

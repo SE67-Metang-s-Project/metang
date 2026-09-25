@@ -61,7 +61,11 @@ export default function TempDetailCard({ details, profile }: TempDetailCardProps
           </div>
           <div>
             <dt>{t("อาจารย์ที่ปรึกษา", "Advisor")}</dt>
-            <dd>{details.advisorName ? localizeStudentContent(details.advisorName, language) : "-"}</dd>
+            <dd>
+              {language === "en"
+                ? details.advisorNameEn || details.advisorName || "-"
+                : details.advisorName || "-"}
+            </dd>
           </div>
         </dl>
       </section>

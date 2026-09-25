@@ -333,6 +333,26 @@ export const isExecutiveReturned = (req?: ActionRequest | null): boolean => {
   return false;
 };
 
+const getExecutiveReturnComment = (req?: ActionRequest | null) => {
+  if (!req) return undefined;
+
+  const approvalComment = req.approvals
+    ?.filter((approval) => approval.step === "executive" && approval.decision === "returned")
+    .at(-1)
+    ?.comment?.trim();
+  if (approvalComment) return approvalComment;
+
+  return req.history
+    ?.filter(
+      (item) =>
+        (item.action?.includes("ผู้บริหารส่งกลับ") ||
+          (item.action?.includes("แก้ไข") && item.actor?.includes("ผู้บริหาร"))) &&
+        Boolean(item.comment?.trim()),
+    )
+    .at(-1)
+    ?.comment?.trim();
+};
+
 const getStatusDisplay = (status: LoanStatus) => {
   switch (status) {
     case "draft":
@@ -431,6 +451,7 @@ export default function RequestsCard({
         (h) => h.action.includes("โอนเงิน") || h.action.includes("เบิกจ่าย"),
       ),
     );
+  const executiveReturnComment = getExecutiveReturnComment(selectedRequest);
   // State สำหรับการแก้ไขวงเงิน (Admin / Super Admin)
   const [isEditingAmount, setIsEditingAmount] = useState(false);
   const [editAmountValue, setEditAmountValue] = useState("");
@@ -702,7 +723,9 @@ export default function RequestsCard({
           className={`${baseClasses} font-normal bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-300 inline-flex items-center justify-center gap-1.5`}
         >
           <RotateCcw size={13} className="shrink-0 text-amber-600" />
-          <span className="block whitespace-nowrap">ผู้บริหารส่งกลับมาแก้ไข</span>
+          <span className="block whitespace-nowrap">
+            {userRole === "executive" ? "รอเจ้าหน้าที่ตรวจสอบ" : "ผู้บริหารส่งกลับมาแก้ไข"}
+          </span>
         </button>
       );
     }
@@ -762,7 +785,7 @@ export default function RequestsCard({
                         title="ผู้บริหารส่งกลับมาแก้ไขให้เจ้าหน้าที่ตรวจสอบใหม่"
                       >
                         <RotateCcw size={11} className="shrink-0 text-amber-700" />
-                        <span>ผู้บริหารให้แก้ไข</span>
+                        <span>{userRole === "executive" ? "เจ้าหน้าที่ตรวจสอบ" : "ผู้บริหารให้แก้ไข"}</span>
                       </span>
                     )}
                   </div>
@@ -855,20 +878,22 @@ export default function RequestsCard({
                   className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
                 >
                   <td className="w-[140px] min-w-[140px] py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
-                    {req.id}
-                  </td>
-                  <td className="w-[25%] py-4 px-4 border-r border-gray-200">
-                    <div className="font-bold text-gray-900 flex items-center gap-2 flex-wrap">
-                      <span>{req.name}</span>
+                    <div className="flex flex-col items-center gap-1">
+                      <span>{req.id}</span>
                       {isExecutiveReturned(req) && (
                         <span
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800 border border-amber-300"
                           title="ผู้บริหารส่งกลับมาแก้ไขให้เจ้าหน้าที่ตรวจสอบใหม่"
                         >
                           <RotateCcw size={11} className="shrink-0 text-amber-700" />
-                          <span>ผู้บริหารให้แก้ไข</span>
+                          <span>{userRole === "executive" ? "เจ้าหน้าที่ตรวจสอบ" : "ผู้บริหารให้แก้ไข"}</span>
                         </span>
                       )}
+                    </div>
+                  </td>
+                  <td className="w-[25%] py-4 px-4 border-r border-gray-200">
+                    <div className="font-bold text-gray-900 flex items-center gap-2 flex-wrap">
+                      <span>{req.name}</span>
                     </div>
                     <div className="mt-0.5 text-[13px] text-gray-500">
                       {formatStudentDetails(req)}
@@ -916,10 +941,6 @@ export default function RequestsCard({
                 <p className="text-[13px] text-gray-500 mt-0.5">
                   อ้างอิงคำร้อง: {selectedRequest.id}
                 </p>
-                <p className="text-[13px] text-gray-500 mt-0.5">
-                  เวลายื่นคำร้อง: {selectedRequest.submitDate}
-                  {getSubmittedTime(selectedRequest) ? ` ${getSubmittedTime(selectedRequest)}` : ""}
-                </p>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <span
@@ -950,9 +971,11 @@ export default function RequestsCard({
                   <RotateCcw className="size-4 shrink-0 text-amber-600 mt-0.5" />
                   <div>
                     <p className="font-semibold text-amber-900">ผู้บริหารส่งกลับมาแก้ไข</p>
-                    <p className="text-amber-700 mt-0.5">
-                      คำร้องนี้ถูกผู้บริหารส่งกลับเพื่อให้เจ้าหน้าที่ดำเนินการแก้ไขเพิ่มเติม
-                    </p>
+                    {executiveReturnComment && (
+                      <p className="mt-0.5 whitespace-pre-wrap text-amber-700">
+                        {executiveReturnComment}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -1039,6 +1062,14 @@ export default function RequestsCard({
                   <div className={styles.loanApprovalPurposeRow}>
                     <dt>วัตถุประสงค์การกู้ยืม</dt>
                     <dd>{selectedRequest.objective || "-"}</dd>
+                  </div>
+                  <div>
+                    <dt>ยื่นเมื่อ</dt>
+                    <dd>
+                      {selectedRequest.submitTime
+                        ? `${selectedRequest.submitDate} ${selectedRequest.submitTime}`
+                        : selectedRequest.submitDate}
+                    </dd>
                   </div>
                   <div className={styles.loanAmountRow}>
                     <dt className="flex items-center gap-2">
@@ -1294,25 +1325,27 @@ export default function RequestsCard({
                         setConfirmAction("reject");
                         setErrorMessage(null);
                       }}
-                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98]"
+                      className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98]"
                     >
                       {isAdminOrSuperAdmin ? "ยกเลิกคำร้อง" : "ไม่อนุมัติ"}
                     </button>
-                    <button
-                      onClick={() => {
-                        setConfirmAction("return");
-                        setErrorMessage(null);
-                      }}
-                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-bold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
-                    >
-                      ส่งกลับแก้ไข
-                    </button>
+                    {!isExecutiveReturned(selectedRequest) && (
+                      <button
+                        onClick={() => {
+                          setConfirmAction("return");
+                          setErrorMessage(null);
+                        }}
+                        className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-bold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
+                      >
+                        ส่งกลับแก้ไข
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setConfirmAction("approve");
                         setErrorMessage(null);
                       }}
-                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98]"
+                      className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98]"
                     >
                       {isAdminOrSuperAdmin ? "ส่งพิจารณา" : "อนุมัติ"}
                     </button>
@@ -1369,7 +1402,7 @@ export default function RequestsCard({
 
                     <div className="relative mb-3">
                       <textarea
-                        maxLength={200}
+                        maxLength={500}
                         placeholder={
                           confirmAction === "approve"
                             ? isAdminOrSuperAdmin
@@ -1397,10 +1430,10 @@ export default function RequestsCard({
                       <div className="flex justify-end mt-1">
                         <span
                           className={`text-[11px] ${
-                            remark.length >= 200 ? "text-gray-500" : "text-gray-500"
+                            remark.length >= 500 ? "text-gray-500" : "text-gray-500"
                           }`}
                         >
-                          {remark.length}/200
+                          {remark.length}/500
                         </span>
                       </div>
                     </div>
@@ -1458,17 +1491,7 @@ export default function RequestsCard({
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex gap-3 shrink-0">
-                <button
-                  onClick={closeAllModals}
-                  className="w-full py-3 flex items-center justify-center rounded-xl text-[14px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
-                  type="button"
-                >
-                  ปิดหน้าต่าง
-                </button>
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}

@@ -121,8 +121,8 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepInitial[4].action, "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว");
   assert.equal(stepInitial[4].isUpcoming, true);
 
-  // Case 2: Advisor returned for revision (status = returned by advisor)
-  // Step 1: checked, Step 2: returned (ยังขึ้นเป็นว่างอยู่ / isUpcoming: true, date: "ขั้นตอนถัดไป", no return comments), Steps 3-5: upcoming
+  // Case 2: Advisor returned for revision (status = returned by advisor).
+  // The student-facing status card shows the advisor's latest guidance directly.
   const stepAdvReturned = buildFiveStepTimeline({
     requestStatus: "returned",
     studentName: "นายสมชาย ใจดี",
@@ -140,10 +140,10 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   });
   assert.equal(stepAdvReturned.length, 5);
   assert.equal(stepAdvReturned[0].isCompleted, true);
-  assert.equal(stepAdvReturned[1].isUpcoming, true, "Advisor returned step must show as empty (ยังขึ้นเป็นว่างอยู่)");
-  assert.equal(stepAdvReturned[1].date, "ขั้นตอนถัดไป");
-  assert.equal(stepAdvReturned[1].comment, undefined, "Return comments must not appear on 5-step timeline");
-  assert.equal(stepAdvReturned[1].commentTitle, undefined);
+  assert.equal(stepAdvReturned[1].isRevision, true);
+  assert.equal(stepAdvReturned[1].date, "15 ต.ค. 2567");
+  assert.equal(stepAdvReturned[1].comment, "ขอให้ชี้แจงความจำเป็นเพิ่มเติม");
+  assert.equal(stepAdvReturned[1].commentTitle, "อาจารย์ที่ปรึกษาแจ้งแก้ไข");
   assert.equal(stepAdvReturned[2].isUpcoming, true);
   assert.equal(stepAdvReturned[3].isUpcoming, true);
   assert.equal(stepAdvReturned[4].isUpcoming, true);
@@ -168,10 +168,10 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
       },
     ],
   });
-  assert.equal(stepAdvReturnedTwice[1].isUpcoming, true);
-  assert.equal(stepAdvReturnedTwice[1].date, "ขั้นตอนถัดไป");
-  assert.equal(stepAdvReturnedTwice[1].comment, undefined, "Return comments must not appear on 5-step timeline");
-  assert.equal(stepAdvReturnedTwice[1].commentTitle, undefined);
+  assert.equal(stepAdvReturnedTwice[1].isRevision, true);
+  assert.equal(stepAdvReturnedTwice[1].date, "20 ต.ค. 2567");
+  assert.equal(stepAdvReturnedTwice[1].comment, "คำแนะนำล่าสุด");
+  assert.equal(stepAdvReturnedTwice[1].commentTitle, "อาจารย์ที่ปรึกษาแจ้งแก้ไข");
 
   // Case 3: Student resubmits after advisor return -> bounces back to pending_advisor
   const stepAdvResubmit = buildFiveStepTimeline({
@@ -247,7 +247,7 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepExecutivePendingAfterPreviousApproval[3].isCompleted, undefined);
 
   // Case 5: Admin returned for revision (status = returned by admin)
-  // Step 1: checked, Step 2: checked, Step 3: empty circle, Steps 4-5: empty circle
+  // Step 1: checked, Step 2: checked, Step 3: revision state, Steps 4-5: empty circle
   const stepAdminReturned = buildFiveStepTimeline({
     requestStatus: "returned",
     studentName: "นายสมชาย ใจดี",
@@ -274,9 +274,10 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepAdminReturned[1].isCompleted, true, "Advisor approval should stay checked");
   assert.equal(stepAdminReturned[1].comment, "เห็นชอบ");
   assert.equal(stepAdminReturned[1].commentTitle, "ความคิดเห็นของอาจารย์ที่ปรึกษา");
-  assert.equal(stepAdminReturned[2].isUpcoming, true, "Admin returned step must show as empty (ยังขึ้นเป็นว่างอยู่)");
-  assert.equal(stepAdminReturned[2].date, "ขั้นตอนถัดไป");
-  assert.equal(stepAdminReturned[2].comment, undefined, "Return comments must not appear on 5-step timeline");
+  assert.equal(stepAdminReturned[2].isRevision, true);
+  assert.equal(stepAdminReturned[2].date, "17 ต.ค. 2567");
+  assert.equal(stepAdminReturned[2].comment, "เอกสารไม่ครบ");
+  assert.equal(stepAdminReturned[2].commentTitle, "เจ้าหน้าที่แจ้งแก้ไข");
   assert.equal(stepAdminReturned[3].isUpcoming, true);
   assert.equal(stepAdminReturned[4].isUpcoming, true);
 
@@ -479,6 +480,7 @@ test("buildFullActionHistory correctly tracks submission, return comments, and r
   const resubmitItem = history3.find((h) => h.statusType === "resubmitted");
   assert.ok(resubmitItem, "Must have resubmitted statusType");
   assert.equal(resubmitItem?.actor, "นายสมชาย ใจดี");
+  assert.equal(resubmitItem?.date, "14 ต.ค. 2567");
 
   // Case 4: Disbursed case
   const history4 = buildFullActionHistory({

@@ -23,6 +23,7 @@ import type { StudentProfileDisplay } from "../dashboard/LoanSummaryCard";
 import { mapToLoanDetails, type RawStudentLoan } from "@/lib/student-view-model";
 
 type TempLoanDetailsStepProps = {
+  advisorNameEn?: string;
   formData: TempLoanFormData;
   profile?: StudentProfileDisplay;
   createdLoan?: RawStudentLoan | null;
@@ -47,6 +48,7 @@ function getProgramLabel(programName: string | undefined, language: "th" | "en")
 }
 
 export default function TempLoanDetailsStep({
+  advisorNameEn,
   formData,
   profile,
   createdLoan,
@@ -56,6 +58,7 @@ export default function TempLoanDetailsStep({
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const currentProfile: StudentProfileDisplay = profile ?? tempStudentProfile;
+  const advisorName = language === "en" ? advisorNameEn || formData.advisorName : formData.advisorName;
   const initialTimeline: LoanTimelineItem[] = [
     {
       title: t("ยื่นคำร้องกู้ยืมเงิน", "Loan request submitted"),
@@ -66,7 +69,7 @@ export default function TempLoanDetailsStep({
     {
       title: t("อาจารย์ที่ปรึกษาพิจารณาคำร้อง", "Advisor reviewing the request"),
       dateTime: t("กำลังดำเนินการ", "In progress"),
-      actor: t("อาจารย์ที่ปรึกษา", "Advisor"),
+      actor: advisorName || t("อาจารย์ที่ปรึกษา", "Advisor"),
       isPending: true,
     },
   ];
@@ -156,6 +159,8 @@ export default function TempLoanDetailsStep({
 
       <LoanDetailOverview details={details} showDownload={hasExecutiveApproved} />
       <LoanTimeline
+        advisorName={formData.advisorName}
+        advisorNameEn={advisorNameEn}
         bankDetails={{
           bankName: bankLabel,
           accountNumber: formData.accountNumber,
@@ -206,7 +211,7 @@ export default function TempLoanDetailsStep({
           </div>
           <div>
             <dt>{t("อาจารย์ที่ปรึกษา", "Advisor")}</dt>
-            <dd>{formData.advisorName || "-"}</dd>
+            <dd>{advisorName || "-"}</dd>
           </div>
         </dl>
       </section>

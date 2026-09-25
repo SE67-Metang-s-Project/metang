@@ -62,6 +62,7 @@ export type LoanDetails = {
 
 export type RequestStatus = {
   submitDate: string;
+  submitTime?: string;
   waitDays?: number;
   isOverdue?: boolean;
   history?: ActionHistory[];
@@ -693,6 +694,14 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     <dt>วัตถุประสงค์การกู้ยืม</dt>
                     <dd>{selectedRequest.objective || "-"}</dd>
                   </div>
+                  <div>
+                    <dt>ยื่นเมื่อ</dt>
+                    <dd>
+                      {selectedRequest.submitTime
+                        ? `${selectedRequest.submitDate} ${selectedRequest.submitTime}`
+                        : selectedRequest.submitDate}
+                    </dd>
+                  </div>
                   <div className={styles.loanAmountRow}>
                     <dt>
                       {isCompleted ? "ยอดเงินที่โอนแล้ว (บาท)" : "จำนวนเงินที่อนุมัติ (บาท)"}
@@ -960,16 +969,8 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
             </div>
 
             {/* Footer Buttons */}
-            <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex gap-3 shrink-0">
-              {isCompleted ? (
-                <button
-                  onClick={closeAllModals}
-                  className="w-full py-3 flex items-center justify-center rounded-xl text-[14px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
-                  type="button"
-                >
-                  ปิดหน้าต่าง
-                </button>
-              ) : (
+            {!isCompleted && (
+              <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex gap-3 shrink-0">
                 <div className="w-full space-y-3">
                   {errorMessage && (
                     <div className="text-[12px] text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200 flex items-center gap-2">
@@ -1008,8 +1009,8 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     </button>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
