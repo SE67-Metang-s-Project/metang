@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { computeFundBudgetTotals } from "@/lib/fund-budget";
+import { getFundCapacity } from "@/db/queries/fund-transactions";
 import type {
   ExecutiveFinancialOverviewData,
   FinancialOverviewPoint,
@@ -84,32 +84,12 @@ export async function getExecutiveFinancialOverviewData(
   const yearStart = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0));
   const yearEnd = new Date(Date.UTC(currentYear + 1, 0, 1, 0, 0, 0));
 
-  const [capitalTransactions, fundTotals, approvedLoansAggregate, yearLoans, yearPayments] =
+  const [capacity, yearLoans, yearPayments] =
     await Promise.all([
-      // 1. Total capital in system - same figure and same computeFundBudgetTotals() logic
-      // SystemBudgetTab's "วงเงินรวม" uses (top_up + credit_adjustment - withdrawal - debit_adjustment),
-      // not just top_up, so this stays in sync with that instead of only counting initial funding.
-      prisma.fundTransaction.findMany({
-        select: { kind: true, amount: true },
-      }),
+      // 1. Current balance, outstanding and totalSystem - same figures the capacity rule uses
+      getFundCapacity(),
 
-      // 2. Current balance, summed per direction by Postgres (two rows at most)
-      prisma.fundTransaction.groupBy({
-        by: ["direction"],
-        _sum: { amount: true },
-      }),
-
-      // 3. Approved loans metric - money actually disbursed. Read straight from the fund
-      // ledger (same source SystemBudgetTab's "เบิกจ่ายแล้ว" uses) instead of re-deriving it
-      // from loanRequest.status, so this can't drift from the ledger the way it could when it
-      // was a separate status-based aggregate.
-      prisma.fundTransaction.aggregate({
-        where: { kind: "disbursement" },
-        _sum: { amount: true },
-        _count: { id: true },
-      }),
-
-      // 4. Annual loan requests breakdown
+      // 2. Annual loan requests breakdown
       prisma.loanRequest.findMany({
         where: {
           createdAt: { gte: yearStart, lt: yearEnd },
@@ -122,7 +102,7 @@ export async function getExecutiveFinancialOverviewData(
         },
       }),
 
-      // 5. Annual confirmed payments breakdown
+      // 3. Annual confirmed payments breakdown
       prisma.payment.findMany({
         where: {
           status: "confirmed",
@@ -136,17 +116,12 @@ export async function getExecutiveFinancialOverviewData(
       }),
     ]);
 
-  const totalSystem = computeFundBudgetTotals({
-    transactions: capitalTransactions,
-    balance: 0,
-    pendingDisbursement: 0,
-  }).currentTotal;
-  const fundBalance = fundTotals.reduce(
-    (total, row) => total + (row._sum.amount ?? 0) * row.direction,
-    0,
-  );
-  const approvedAmount = approvedLoansAggregate._sum.amount ?? 0;
-  const approvedCount = approvedLoansAggregate._count.id;
+  // fundBalance = current balance; approvedAmount = outstanding repayment from students;
+  // totalSystem = current balance + outstanding, so the two dashboard slices sum to 100%.
+  const totalSystem = capacity.totalSystem;
+  const fundBalance = capacity.balance;
+  const approvedAmount = capacity.outstanding;
+  const approvedCount = capacity.disbursedLoanCount;
 
   // Initialize 12 monthly slots
   const monthly: FinancialOverviewPoint[] = THAI_MONTH_NAMES.map((label) => ({
