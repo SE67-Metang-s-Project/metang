@@ -8356,7 +8356,7 @@
       "post": {
         "operationId": "post-student-loan-requests",
         "summary": "Submit a student loan request.",
-        "description": "",
+        "description": "An amount larger than the fund's available capacity (cash balance minus what loan requests not yet paid out may still take) is rejected with 409 INSUFFICIENT_FUND_CAPACITY.",
         "tags": [
           "Student loans"
         ],
@@ -8623,7 +8623,7 @@
       "post": {
         "operationId": "post-student-loan-requests-{id}-resubmit",
         "summary": "Resubmit a returned student loan request.",
-        "description": "",
+        "description": "The new amount replaces this loan's own reservation; an amount larger than the fund's available capacity is rejected with 409 INSUFFICIENT_FUND_CAPACITY.",
         "tags": [
           "Student loans"
         ],
@@ -8905,7 +8905,7 @@
       "post": {
         "operationId": "post-super-admin-fund-transactions",
         "summary": "Record a manual fund transaction (top-up, withdrawal, or adjustment).",
-        "description": "",
+        "description": "A withdrawal or debit adjustment larger than the fund's available capacity (cash balance minus what loan requests not yet paid out may still take) is rejected with 409 INSUFFICIENT_FUND_CAPACITY.",
         "tags": [
           "SuperAdmin fund"
         ],
