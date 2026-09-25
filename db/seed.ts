@@ -203,14 +203,17 @@ async function main() {
   await prisma.$transaction(
     async (tx) => {
       if (reset) {
+        // Children before parents: fund_transaction references payment, so it must go first.
+        await tx.$executeRaw`SET LOCAL methang.allow_fund_mutation = 'on'`;
+        await tx.fundTransaction.deleteMany();
         await tx.payment.deleteMany();
         await tx.installment.deleteMany();
         await tx.loanApproval.deleteMany();
-        await tx.$executeRaw`SET LOCAL methang.allow_fund_mutation = 'on'`;
-        await tx.fundTransaction.deleteMany();
         await tx.auditLog.deleteMany();
         await tx.userRole.deleteMany();
         await tx.loanRequest.deleteMany();
+        await tx.notificationOutbox.deleteMany();
+        // system_setting.updated_by_id is ON DELETE SET NULL, so the singleton row survives.
         await tx.appUser.deleteMany();
       }
 
