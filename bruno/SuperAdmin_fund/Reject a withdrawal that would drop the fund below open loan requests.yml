@@ -1,0 +1,37 @@
+info:
+  name: Reject a withdrawal that would drop the fund below open loan requests
+  type: http
+  seq: 3
+  tags:
+    - SuperAdmin_fund
+
+http:
+  method: POST
+  url: "{{baseUrl}}/super-admin/fund-transactions"
+  body:
+    type: json
+    data: |-
+      {
+        "kind": "withdrawal",
+        "amount": 2000000000,
+        "note": "capacity guard check"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+    - expression: res.body.error.code
+      operator: eq
+      value: "INSUFFICIENT_FUND_CAPACITY"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  Cash left after money out must cover every loan request not yet paid out
+  (computeFundCapacity in lib/fund-budget.ts). Nothing is written.

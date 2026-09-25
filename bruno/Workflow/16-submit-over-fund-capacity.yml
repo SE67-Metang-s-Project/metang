@@ -1,0 +1,42 @@
+info:
+  name: 16 submitting more than the fund can lend is rejected
+  type: http
+  seq: 16
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/student/loan-requests"
+  body:
+    type: json
+    data: |-
+      {
+        "advisorName": "อาจารย์ที่ปรึกษา ทดสอบ",
+        "amount": 2000000000,
+        "studentYear": 2,
+        "purpose": "ค่าเทอม 1/2569",
+        "bankName": "ไทยพาณิชย์",
+        "bankAccountNo": "1234567890",
+        "bankAccountName": "นักศึกษา ทดสอบ 1",
+        "installmentCount": 3
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+    - expression: res.body.error.code
+      operator: eq
+      value: "INSUFFICIENT_FUND_CAPACITY"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  A request may not exceed cash balance - reserved (computeFundCapacity). The capacity check runs
+  before the insert, so it wins over one_open_loan_per_student even though the walk's loan is open.
