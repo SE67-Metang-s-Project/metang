@@ -65,6 +65,15 @@ export const fundTransactionSelect = {
   createdAt: true,
 } satisfies Prisma.FundTransactionSelect;
 
+export async function getStudentLoanLimit(studentId: string): Promise<number> {
+  const returned = await prisma.loanRequest.findFirst({
+    where: { studentId, status: "returned" },
+    select: { id: true },
+  });
+  const { available } = await getFundCapacity(prisma, returned?.id);
+  return Math.max(0, available);
+}
+
 export async function getFundBalance() {
   const totals = await prisma.fundTransaction.groupBy({
     by: ["direction"],
