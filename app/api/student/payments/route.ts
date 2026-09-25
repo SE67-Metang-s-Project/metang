@@ -3,6 +3,7 @@ import {
   findRepayableLoanId,
   StudentPaymentError,
 } from "@/db/queries/student-payments";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { apiError, apiOk } from "@/lib/api-response";
 import { getStudentContext } from "@/lib/loan-auth";
 import { parseStudentPaymentInput } from "@/lib/loan-validation";
@@ -82,14 +83,23 @@ export async function POST(request: Request) {
   try {
     // ponytail: orphaned slip object if the insert below fails - same tradeoff the disburse route
     // takes, since the object is already durably stored and cannot be rolled back.
-    const payment = await createStudentPayment({
-      loanId,
-      studentId: context.user.id,
-      amount: input.amount,
-      slipPath,
-      paidAt: input.paidAt,
-    });
-    return apiOk(serializeJson(payment));
+    const submit = () =>
+      createStudentPayment({
+        loanId,
+        studentId: context.user.id,
+        amount: input.amount,
+        slipPath,
+        paidAt: input.paidAt,
+      });
+    // A Serializable conflict (P2034) is transient and the slip is already stored, so re-run the
+    // transaction with the same slip before giving up; the re-run re-checks every rule.
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return apiOk(serializeJson(await submit()));
+      } catch (error) {
+        if (attempt >= 3 || !isSerializationFailure(error)) throw error;
+      }
+    }
   } catch (error) {
     if (
       error instanceof StudentPaymentError &&
@@ -103,7 +113,14 @@ export async function POST(request: Request) {
     if (error instanceof StudentPaymentError && error.code === "NOTHING_OUTSTANDING") {
       return apiError("CONFLICT", "This loan has nothing left to repay", 409);
     }
+    if (isSerializationFailure(error)) {
+      return apiError("CONFLICT", "The request changed; please try again", 409);
+    }
     console.error("Unable to submit repayment", error);
     return apiError("INTERNAL_ERROR", "Unable to submit repayment", 500);
   }
+}
+
+function isSerializationFailure(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034";
 }
