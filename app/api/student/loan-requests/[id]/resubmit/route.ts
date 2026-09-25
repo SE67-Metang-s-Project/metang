@@ -8,6 +8,7 @@ import { serializeJson } from "@/lib/serialization";
 import { validateJsonRequest } from "@/lib/request-security";
 import { studentLoanSelect } from "@/db/queries/loan-requests";
 import { enqueueReviewerNotifications } from "@/db/queries/notification-recipients";
+import { FundMutationError, getFundCapacity } from "@/db/queries/fund-transactions";
 import { normalizeBankName } from "@/lib/bank-name";
 
 
@@ -15,6 +16,7 @@ type Params = { params: Promise<{ id: string }> };
 
 /**
  * Resubmit a returned student loan request.
+ * @description The new amount replaces this loan's own reservation; an amount larger than the fund's available capacity is rejected with 409 INSUFFICIENT_FUND_CAPACITY.
  * @tag Student loans
  * @pathParams LoanRequestIdParams
  * @auth cookieAuth
@@ -76,6 +78,10 @@ export async function POST(request: Request, { params }: Params) {
       const step = latestReturned?.step === "admin" && current.advisorId === advisorId ? "admin" : "advisor";
       const status = step === "admin" ? "pending_admin" : "pending_advisor";
 
+      // The new amount replaces this loan's own reservation, so leave it out of the capacity.
+      const { available } = await getFundCapacity(tx, id);
+      if (input.amount > available) throw new FundMutationError("CAPACITY_EXCEEDED", available);
+
       const firstDueDate = bangkokDatePlusDays(30);
       const submittedAt = new Date();
       const updated = await tx.loanRequest.updateMany({
@@ -123,10 +129,17 @@ export async function POST(request: Request, { params }: Params) {
       });
       await enqueueReviewerNotifications(tx, { loanId: id, auditLogId: audit.id });
       return final;
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15_000 });
 
     return apiOk(serializeJson(loan));
   } catch (error) {
+    if (error instanceof FundMutationError && error.code === "CAPACITY_EXCEEDED") {
+      return apiError(
+        "INSUFFICIENT_FUND_CAPACITY",
+        "The requested amount is more than the fund can currently lend",
+        409,
+      );
+    }
     if (error instanceof Error && error.message === "STALE_RESUBMIT") {
       return apiError("CONFLICT", "The request is no longer available for resubmission", 409);
     }

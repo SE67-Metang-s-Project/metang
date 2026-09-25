@@ -23,6 +23,14 @@ runtime:
       operator: isDefined
     - expression: res.body.error
       operator: isUndefined
+  scripts:
+    - type: tests
+      code: |-
+        test("total in system is current balance plus outstanding repayment", function() {
+          const d = res.body.data;
+          expect(d.approvedAmount).to.be.at.least(0);
+          expect(d.totalSystem).to.equal(d.fundBalance + d.approvedAmount);
+        });
 
 settings:
   encodeUrl: true

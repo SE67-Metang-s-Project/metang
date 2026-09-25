@@ -4,6 +4,7 @@ import {
   getFundBalance,
   listFundTransactions,
 } from "@/db/queries/fund-transactions";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { getPendingDisbursementTotal } from "@/db/queries/loan-requests";
 import { apiError, apiOk } from "@/lib/api-response";
 import { getSuperAdminAccess } from "@/lib/loan-auth";
@@ -44,6 +45,7 @@ export async function GET() {
 
 /**
  * Record a manual fund transaction (top-up, withdrawal, or adjustment).
+ * @description A withdrawal or debit adjustment larger than the fund's available capacity (cash balance minus what loan requests not yet paid out may still take) is rejected with 409 INSUFFICIENT_FUND_CAPACITY.
  * @tag SuperAdmin fund
  * @body FundTransactionBody
  * @auth cookieAuth
@@ -99,6 +101,16 @@ export async function POST(request: Request) {
       if (error.code === "INSUFFICIENT_BALANCE") {
         return apiError("INSUFFICIENT_FUNDS", "The fund balance cannot go negative", 409);
       }
+      if (error.code === "CAPACITY_EXCEEDED") {
+        return apiError(
+          "INSUFFICIENT_FUND_CAPACITY",
+          `The fund's cash must cover every loan request not yet paid out; at most ${error.available} can be taken out`,
+          409,
+        );
+      }
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+      return apiError("CONFLICT", "The request changed; please retry", 409);
     }
     console.error("Unable to create fund transaction", error);
     return apiError("INTERNAL_ERROR", "Unable to create fund transaction", 500);

@@ -24,19 +24,17 @@ const ROLE_TO_THAI: Record<PredefinedRoleName, string> = {
 };
 
 const THAI_TO_ROLE: Record<string, PredefinedRoleName> = {
-  "นักศึกษา": "student",
-  "อาจารย์ที่ปรึกษา": "advisor",
   "เจ้าหน้าที่": "admin",
   "ผู้บริหาร": "executive",
   "ผู้ดูแลระบบ": "super_admin",
 };
 
+const MANAGED_ROLES = new Set<PredefinedRoleName>(["admin", "executive", "super_admin"]);
+
 const ROLE_PRIORITY: PredefinedRoleName[] = [
   "super_admin",
   "executive",
   "admin",
-  "advisor",
-  "student",
 ];
 
 function getPrimaryRole(roles: { role: PredefinedRoleName }[]): string {
@@ -45,7 +43,7 @@ function getPrimaryRole(roles: { role: PredefinedRoleName }[]): string {
       return ROLE_TO_THAI[priority];
     }
   }
-  return "นักศึกษา";
+  return ROLE_TO_THAI.admin;
 }
 
 function getInitials(name?: string | null, email?: string | null): string {
@@ -130,7 +128,7 @@ export default function UserRolesTab({
   // Handle role mutation
   const handleRoleChange = async (user: SuperAdminUser, newThaiRole: string) => {
     const targetRole = THAI_TO_ROLE[newThaiRole];
-    if (!targetRole) return;
+    if (!targetRole || !MANAGED_ROLES.has(targetRole)) return;
 
     const currentRoleNames = user.roles.map((r) => r.role);
     if (currentRoleNames.length === 1 && currentRoleNames[0] === targetRole) {
@@ -164,9 +162,10 @@ export default function UserRolesTab({
         }
       }
 
-      // 2. Remove all old roles that are not the target role
+      // 2. Remove all old managed roles that are not the target role
       for (const oldRole of currentRoleNames) {
         if (oldRole === targetRole) continue;
+        if (!MANAGED_ROLES.has(oldRole)) continue;
         const remRes = await fetch(`/api/super-admin/users/${user.id}/roles`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -181,13 +180,15 @@ export default function UserRolesTab({
         }
       }
 
-      // 4. Update local state
+      // 3. Update local state
       setUsersList((prev) =>
         prev.map((u) => {
           if (u.id !== user.id) return u;
+          const keptRoles = u.roles.filter((r) => !MANAGED_ROLES.has(r.role));
           return {
             ...u,
             roles: [
+              ...keptRoles,
               {
                 role: targetRole,
                 grantedBy: currentUserId || null,
@@ -216,7 +217,11 @@ export default function UserRolesTab({
   };
 
   // Filter users by search query and role
+  // Filter users by search query and role (managing only admin, executive, super_admin)
   const filteredUsers = usersList.filter((user) => {
+    const hasManagedRole = user.roles.some((r) => MANAGED_ROLES.has(r.role));
+    if (!hasManagedRole) return false;
+
     const name = (user.fullNameTh || user.fullNameEn || "").toLowerCase();
     const email = (user.email || "").toLowerCase();
     const code = (user.studentCode || user.cmuAccount || user.id || "").toLowerCase();
@@ -276,8 +281,6 @@ export default function UserRolesTab({
             className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 shadow-sm cursor-pointer appearance-none"
           >
             <option value="ทุกบทบาท">ทุกบทบาท</option>
-            <option value="นักศึกษา">นักศึกษา</option>
-            <option value="อาจารย์ที่ปรึกษา">อาจารย์ที่ปรึกษา</option>
             <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
             <option value="ผู้บริหาร">ผู้บริหาร</option>
             <option value="ผู้ดูแลระบบ">ผู้ดูแลระบบ</option>
@@ -353,16 +356,18 @@ export default function UserRolesTab({
                   </div>
 
                   {/* Badges for active roles if multi-role */}
-                  {user.roles.length > 1 && (
+                  {user.roles.filter((r) => MANAGED_ROLES.has(r.role)).length > 1 && (
                     <div className="flex flex-wrap gap-1 pt-1">
-                      {user.roles.map((r) => (
-                        <span
-                          key={r.role}
-                          className="px-2 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-md text-[11px] font-medium"
-                        >
-                          {ROLE_TO_THAI[r.role]}
-                        </span>
-                      ))}
+                      {user.roles
+                        .filter((r) => MANAGED_ROLES.has(r.role))
+                        .map((r) => (
+                          <span
+                            key={r.role}
+                            className="px-2 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-md text-[11px] font-medium"
+                          >
+                            {ROLE_TO_THAI[r.role]}
+                          </span>
+                        ))}
                     </div>
                   )}
 
@@ -384,8 +389,6 @@ export default function UserRolesTab({
                             disabled={isMutating}
                             className="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-[12px] font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 outline-none cursor-pointer transition-all focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
                           >
-                            <option value="นักศึกษา">นักศึกษา</option>
-                            <option value="อาจารย์ที่ปรึกษา">อาจารย์ที่ปรึกษา</option>
                             <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
                             <option value="ผู้บริหาร" disabled={isAnotherUserExecutive}>
                               ผู้บริหาร{isAnotherUserExecutive ? " (มีผู้บริหารแล้ว)" : ""}
@@ -479,16 +482,18 @@ export default function UserRolesTab({
                                 <Star size={14} className="fill-orange-500 text-orange-500" />
                               )}
                             </div>
-                            {user.roles.length > 1 && (
+                            {user.roles.filter((r) => MANAGED_ROLES.has(r.role)).length > 1 && (
                               <div className="flex flex-wrap gap-1 mt-1">
-                                {user.roles.map((r) => (
-                                  <span
-                                    key={r.role}
-                                    className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-orange-100/70 text-orange-800"
-                                  >
-                                    {ROLE_TO_THAI[r.role]}
-                                  </span>
-                                ))}
+                                {user.roles
+                                  .filter((r) => MANAGED_ROLES.has(r.role))
+                                  .map((r) => (
+                                    <span
+                                      key={r.role}
+                                      className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-orange-100/70 text-orange-800"
+                                    >
+                                      {ROLE_TO_THAI[r.role]}
+                                    </span>
+                                  ))}
                               </div>
                             )}
                           </div>
@@ -514,8 +519,6 @@ export default function UserRolesTab({
                                   disabled={isMutating}
                                   className="w-full appearance-none pl-4 pr-8 py-1.5 rounded-lg text-[13px] font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 outline-none cursor-pointer transition-all focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
                                 >
-                                  <option value="นักศึกษา">นักศึกษา</option>
-                                  <option value="อาจารย์ที่ปรึกษา">อาจารย์ที่ปรึกษา</option>
                                   <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
                                   <option value="ผู้บริหาร" disabled={isAnotherUserExecutive}>
                                     ผู้บริหาร{isAnotherUserExecutive ? " (มีผู้บริหารแล้ว)" : ""}

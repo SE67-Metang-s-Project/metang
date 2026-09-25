@@ -59,4 +59,36 @@ describe("PendingFilter and Executive Approval Filter", () => {
       "SuperAdminRequestsList should filter requests by pending_executive",
     );
   });
+
+  it("Advisor pending view does not contain pending_executive filter; only role admin has it", () => {
+    const sharedListPath = path.join(process.cwd(), "components/shared/pending/SharedRequestsList.tsx");
+    const sharedContent = fs.readFileSync(sharedListPath, "utf8");
+
+    // showExecutivePending must ONLY be enabled for admin and super_admin, NOT advisor
+    assert.ok(
+      sharedContent.includes('const showExecutivePending = userRole === "admin" || userRole === "super_admin";'),
+      "showExecutivePending should strictly be enabled only for admin and super_admin",
+    );
+    assert.ok(
+      !sharedContent.includes('userRole === "advisor" || userRole === "admin"') &&
+      !sharedContent.includes('userRole === "admin" || userRole === "super_admin" || userRole === "advisor"'),
+      "showExecutivePending must not include advisor",
+    );
+
+    // PendingFilter default dropdown options must NOT include pending_executive
+    const filterFilePath = path.join(process.cwd(), "components/shared/pending/PendingFilter.tsx");
+    const filterContent = fs.readFileSync(filterFilePath, "utf8");
+    assert.ok(
+      !filterContent.includes('{ id: "pending_executive" as const, label: "รอผู้บริหารอนุมัติ" }'),
+      "PendingFilter default dropdown options should not contain pending_executive",
+    );
+
+    // Executive pending-advisor view should not contain pending_executive filter
+    const advisorListPath = path.join(process.cwd(), "components/executive/pending-advisor/RequestsList.tsx");
+    const advisorListContent = fs.readFileSync(advisorListPath, "utf8");
+    assert.ok(
+      !advisorListContent.includes('filter === "pending_executive"'),
+      "Executive pending-advisor view must not filter by pending_executive",
+    );
+  });
 });

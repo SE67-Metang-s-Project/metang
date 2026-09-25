@@ -55,6 +55,70 @@ export function computeFundBudgetTotals(overview: FundBudgetOverview): FundBudge
   return { spentAmount, pendingAmount, remainingBudget, currentTotal };
 }
 
+export type OpenLoanMoney = {
+  status: string;
+  // The student's requested amount (loan_request.amount).
+  amount: number;
+  approvedAmount: number | null;
+  // From the fund ledger; both 0 until the loan is disbursed.
+  disbursed: number;
+  repaid: number;
+};
+
+export type FundCapacity = {
+  // Cash on hand: the net of the whole fund ledger.
+  balance: number;
+  // Still owed on disbursed loans (ledger disbursed - repaid, never below 0 per loan).
+  outstanding: number;
+  // Money the fund will hold once every repayment is in: balance + outstanding. Display only -
+  // repayments not received yet can't pay out a loan, so the rule below uses cash.
+  totalSystem: number;
+  // Money that may still leave the fund (see computeFundCapacity).
+  reserved: number;
+  // balance - reserved: what may still be withdrawn or requested. Negative when the fund already
+  // sits below open requests; then every withdrawal and new request is refused.
+  available: number;
+  // Loans still being repaid (status disbursed).
+  disbursedLoanCount: number;
+};
+
+/**
+ * Fund capacity rule: cash on hand must always cover every loan that may still be paid out, so a
+ * disbursement can never fail for lack of money (0 cash => no open request can exist).
+ * SuperAdmin may withdraw at most `available`, and a student may request at most `available`.
+ *
+ * `openLoans` = loans not closed/rejected/cancelled. Disbursed ones only feed `outstanding` (their
+ * money already left). The rest reserve the most that can still leave:
+ *   - pending_disbursement: approvedAmount (final; exactly what the payout transfers)
+ *   - draft, returned, pending_advisor, pending_admin, pending_executive: amount (an executive
+ *     return clears approvedAmount and the admin may re-approve up to the full amount)
+ * A payout lowers balance and reserved by the same approvedAmount, so `available` is unchanged;
+ * decisions, cancels and repayments only keep or raise it.
+ */
+export function computeFundCapacity(balance: number, openLoans: OpenLoanMoney[]): FundCapacity {
+  let outstanding = 0;
+  let reserved = 0;
+  let disbursedLoanCount = 0;
+  for (const loan of openLoans) {
+    if (loan.status === "disbursed") {
+      disbursedLoanCount += 1;
+      outstanding += Math.max(0, loan.disbursed - loan.repaid);
+    } else if (loan.status === "pending_disbursement") {
+      reserved += loan.approvedAmount ?? loan.amount;
+    } else {
+      reserved += loan.amount;
+    }
+  }
+  return {
+    balance,
+    outstanding,
+    totalSystem: balance + outstanding,
+    reserved,
+    available: balance - reserved,
+    disbursedLoanCount,
+  };
+}
+
 export function computeUsagePercentage(totals: Pick<FundBudgetTotals, "spentAmount" | "pendingAmount" | "currentTotal">) {
   if (totals.currentTotal <= 0) return 0;
   return Math.min(100, ((totals.spentAmount + totals.pendingAmount) / totals.currentTotal) * 100);

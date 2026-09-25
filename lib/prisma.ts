@@ -20,6 +20,7 @@ const readOperations = new Set([
 const createPrismaClient = () => {
   const base = new PrismaClient({
     adapter: new PrismaPg({ connectionString, idleTimeoutMillis: 60_000 }),
+    transactionOptions: { maxWait: 10_000 },
   });
 
   return base.$extends({

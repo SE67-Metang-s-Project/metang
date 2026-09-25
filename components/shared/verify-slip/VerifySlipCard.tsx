@@ -17,6 +17,9 @@ import {
   Receipt,
   SearchX,
   XCircle,
+  ZoomIn,
+  FileImage,
+  ExternalLink,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
@@ -276,6 +279,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
   const [selectedEvidenceId, setSelectedEvidenceId] = useState<string | null>(null);
   const [slipConfirmAction, setSlipConfirmAction] = useState<"approve" | "reject" | null>(null);
   const [slipRemark, setSlipRemark] = useState("");
+  const [previewSlipUrl, setPreviewSlipUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Pending until router.refresh() has delivered the decided slip, so a stale "pending" copy
   // cannot be submitted again in between.
@@ -299,6 +303,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
     setSelectedEvidenceId(null);
     setSlipConfirmAction(null);
     setSlipRemark("");
+    setPreviewSlipUrl(null);
     setErrorMessage(null);
   };
 
@@ -387,6 +392,11 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
   const evidenceModalDismiss = useModalDismiss({
     onClose: closeEvidenceModal,
     isOpen: isEvidenceModalOpen,
+  });
+
+  const slipPreviewModalDismiss = useModalDismiss({
+    onClose: () => setPreviewSlipUrl(null),
+    isOpen: Boolean(previewSlipUrl),
   });
 
   return (
@@ -769,12 +779,29 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                     title="รูปภาพสลิปโอนเงิน"
                   />
                   <div className="relative rounded-xl border border-gray-200 bg-gray-50/50 p-2 flex justify-center items-center min-h-[260px] mt-2">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={selectedEvidence.slipImageUrl}
-                      alt="สลิปหลักฐานการโอนเงิน"
-                      className="max-h-[48vh] w-auto max-w-full rounded-lg shadow-sm object-contain"
-                    />
+                    {selectedEvidence.slipImageUrl ? (
+                      <div
+                        onClick={() => setPreviewSlipUrl(selectedEvidence.slipImageUrl)}
+                        className="relative group cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white hover:shadow-md transition-all flex justify-center items-center"
+                        title="คลิกเพื่อดูภาพขนาดเต็ม (Preview)"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={selectedEvidence.slipImageUrl}
+                          alt="สลิปหลักฐานการโอนเงิน"
+                          className="max-h-[48vh] w-auto max-w-full rounded-lg shadow-sm object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-xs sm:text-sm font-semibold rounded-lg">
+                          <ZoomIn size={22} className="drop-shadow" />
+                          <span className="drop-shadow">คลิกเพื่อดูภาพขนาดเต็ม</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-gray-400 py-8">
+                        <FileImage size={36} className="mb-2 opacity-50" />
+                        <p className="text-sm">ไม่พบรูปภาพหลักฐานการโอนเงิน</p>
+                      </div>
+                    )}
                   </div>
                 </section>
 
@@ -942,6 +969,103 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* 5. Modal พรีวิวสลิปหลักฐานการโอนเงิน (Image Preview Lightbox) */}
+      {/* ========================================== */}
+      {previewSlipUrl && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm animate-in fade-in duration-200"
+          {...slipPreviewModalDismiss}
+          role="presentation"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[92vh] overflow-hidden border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header ของ Modal พรีวิวสลิป */}
+            <div className="flex justify-between items-center px-5 sm:px-6 py-4 border-b border-gray-100 bg-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="bg-orange-100 text-[#ea580c] p-2 rounded-lg">
+                  <FileImage size={22} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 leading-tight">
+                    สลิปหลักฐานการชำระเงิน
+                  </h3>
+                  {selectedRequest && selectedEvidence && (
+                    <p className="text-[13px] text-gray-500 mt-0.5">
+                      คำร้อง: {selectedRequest.id} • {selectedRequest.name} (งวดที่ {selectedEvidence.installmentNumber})
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewSlipUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-500 hover:text-[#ea580c] bg-gray-50 hover:bg-orange-50 px-2.5 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 text-xs font-semibold"
+                  title="เปิดรูปภาพในแท็บใหม่"
+                >
+                  <ExternalLink size={15} />
+                  <span className="hidden sm:inline">เปิดในแท็บใหม่</span>
+                </a>
+                <button
+                  onClick={() => setPreviewSlipUrl(null)}
+                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
+                  aria-label="ปิดหน้าต่างพรีวิว"
+                  type="button"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* ส่วนแสดงภาพสลิป */}
+            <div className="p-4 sm:p-6 overflow-auto flex-1 flex items-center justify-center bg-gray-100/70 min-h-[300px]">
+              {previewSlipUrl.toLowerCase().includes(".pdf") ||
+              previewSlipUrl.startsWith("data:application/pdf") ? (
+                <iframe
+                  src={previewSlipUrl}
+                  className="w-full h-[70vh] rounded-xl border border-gray-300 shadow-sm bg-white"
+                  title="สลิปหลักฐานการชำระเงิน"
+                />
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={previewSlipUrl}
+                  alt="สลิปหลักฐานการชำระเงินขนาดเต็ม"
+                  className="max-h-[72vh] w-auto max-w-full rounded-xl shadow-md object-contain select-none bg-white"
+                />
+              )}
+            </div>
+
+            {/* Footer ของ Modal พรีวิวสลิป */}
+            <div className="p-3.5 sm:p-4 bg-white border-t border-gray-100 flex justify-between items-center shrink-0">
+              <span className="text-[12px] text-gray-500 hidden sm:inline">
+                กด Esc หรือคลิกพื้นที่ภายนอกเพื่อปิด
+              </span>
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <a
+                  href={previewSlipUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white bg-[#ea580c] hover:bg-[#c2410c] shadow-sm transition-all cursor-pointer active:scale-[0.98]"
+                >
+                  <ExternalLink size={15} />
+                  <span>ดูภาพต้นฉบับ</span>
+                </a>
+                <button
+                  onClick={() => setPreviewSlipUrl(null)}
+                  className="px-5 py-2 rounded-xl text-[13px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer active:scale-[0.98]"
+                  type="button"
+                >
+                  ปิด
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

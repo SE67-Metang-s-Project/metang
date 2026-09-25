@@ -12,6 +12,7 @@ import {
 } from "@/lib/loan-auth";
 import { getStudentLoanList, studentLoanDetailSelect } from "@/db/queries/loan-requests";
 import { enqueueReviewerNotifications } from "@/db/queries/notification-recipients";
+import { FundMutationError, getFundCapacity } from "@/db/queries/fund-transactions";
 import { normalizeBankName } from "@/lib/bank-name";
 
 const educationLevelByStudentCodeDigit: Record<string, string> = {
@@ -50,6 +51,7 @@ export async function GET() {
 
 /**
  * Submit a student loan request.
+ * @description An amount larger than the fund's available capacity (cash balance minus what loan requests not yet paid out may still take) is rejected with 409 INSUFFICIENT_FUND_CAPACITY.
  * @tag Student loans
  * @auth cookieAuth
  * @body LoanInput
@@ -139,6 +141,10 @@ export async function POST(request: Request) {
         update: {},
       });
 
+      // A request may not reserve more than the fund can still lend (see computeFundCapacity).
+      const { available } = await getFundCapacity(tx);
+      if (input.amount > available) throw new FundMutationError("CAPACITY_EXCEEDED", available);
+
       const created = await tx.loanRequest.create({
         data: {
           amount: input.amount,
@@ -169,10 +175,17 @@ export async function POST(request: Request) {
       });
       await enqueueReviewerNotifications(tx, { loanId: created.id, auditLogId: audit.id });
       return tx.loanRequest.findUniqueOrThrow({ where: { id: created.id }, select: studentLoanDetailSelect });
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15_000 });
 
     return apiOk(serializeJson(loan), 201);
   } catch (error) {
+    if (error instanceof FundMutationError && error.code === "CAPACITY_EXCEEDED") {
+      return apiError(
+        "INSUFFICIENT_FUND_CAPACITY",
+        "The requested amount is more than the fund can currently lend",
+        409,
+      );
+    }
     if (isUniqueConstraintOnField(error, "student_id")) {
       return apiError("CONFLICT", "You already have an open loan request", 409);
     }

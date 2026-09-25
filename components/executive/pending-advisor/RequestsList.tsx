@@ -72,8 +72,6 @@ export default function RequestsList({ initialRequests }: RequestsListProps = {}
         isStatusMatch = req.requestStatus === "pending_admin";
       } else if (filter === "cancelled") {
         isStatusMatch = req.requestStatus === "cancelled";
-      } else if (filter === "pending_executive") {
-        isStatusMatch = req.requestStatus === "pending_executive";
       }
 
       const lowerQuery = searchQuery.toLowerCase();
@@ -95,6 +93,11 @@ export default function RequestsList({ initialRequests }: RequestsListProps = {}
         onSearchChange={setSearchQuery}
         pendingCount={pendingCount} // ส่งจำนวนเข้าไปแสดงบน Badge
         pendingLabel="รอพิจารณา" // ตั้งชื่อแท็บให้เข้ากับ Advisor
+        statusOptions={[
+          { id: "approved", label: "อนุมัติแล้ว" },
+          { id: "rejected", label: "ไม่อนุมัติ" },
+          { id: "cancelled", label: "นักศึกษายกเลิกคำร้อง" },
+        ]}
       />
 
       <RequestsCard
