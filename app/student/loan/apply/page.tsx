@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import TempLoanApplicationPage from "@/components/student/application/TempLoanApplicationPage";
 import { requireStudentAccess } from "@/lib/loan-auth";
 import { getStudentCurrentLoan } from "@/db/queries/loan-requests";
+import { getStudentLoanLimit } from "@/db/queries/fund-transactions";
 import { normalizeBankName } from "@/lib/bank-name";
 import { listAdvisors } from "@/db/queries/users";
 import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
@@ -12,7 +13,7 @@ export default async function StudentLoanApplyPage() {
   const context = await requireStudentAccess();
   const studentId = context.user.id;
 
-  const [currentLoan, advisors] = await Promise.all([
+  const [currentLoan, advisors, studentLoanLimit] = await Promise.all([
     getStudentCurrentLoan(studentId).catch((err) => {
       console.error("Failed to check existing loan", err);
       return null;
@@ -20,6 +21,10 @@ export default async function StudentLoanApplyPage() {
     listAdvisors().catch((err) => {
       console.error("Failed to load advisors", err);
       return [];
+    }),
+    getStudentLoanLimit(studentId).catch((err) => {
+      console.error("Failed to load student loan limit", err);
+      return 0;
     }),
   ]);
 
@@ -66,6 +71,7 @@ export default async function StudentLoanApplyPage() {
       <TempLoanApplicationPage
         advisorOptions={advisorOptions.length > 0 ? advisorOptions : undefined}
         existingLoan={existingLoan}
+        loanLimit={studentLoanLimit}
         profile={profile}
       />
     </Suspense>

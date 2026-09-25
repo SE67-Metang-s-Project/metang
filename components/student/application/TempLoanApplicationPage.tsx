@@ -13,7 +13,6 @@ import {
 import {
   tempLoanAgreement,
   tempLoanAgreementEn,
-  tempLoanApplicationLimit,
   tempLoanFormDefaults,
   tempLoanFormOptions,
   tempStudentProfile,
@@ -90,7 +89,12 @@ const requiredFormFields: RequiredFormField[] = [
   "loanAmount",
 ];
 
-const validateField = (field: RequiredFormField, value: string, language: "th" | "en") => {
+const validateField = (
+  field: RequiredFormField,
+  value: string,
+  language: "th" | "en",
+  loanLimit: number,
+) => {
   if (field === "phoneNumber") {
     const cleaned = value.trim().replace(/[-\s]/g, "");
     if (!/^0(?:[689]\d{8}|[23457]\d{7})$/.test(cleaned)) {
@@ -111,7 +115,7 @@ const validateField = (field: RequiredFormField, value: string, language: "th" |
     if (!value.trim() || isNaN(amount) || amount <= 0) {
       return language === "en" ? "Please enter a valid amount." : "กรุณากรอกจำนวนเงินที่ถูกต้อง";
     }
-    if (amount > tempLoanApplicationLimit) {
+    if (amount > loanLimit) {
       return language === "en"
         ? "Amount is outside available credit limit"
         : "จำนวนเงินไม่อยู่ในวงเงินที่ใช้ได้";
@@ -145,13 +149,15 @@ type TempLoanApplicationPageProps = {
   profile?: StudentProfileDisplay & { phoneNumber?: string };
   advisorOptions?: string[];
   existingLoan?: ExistingLoanData | null;
+  loanLimit: number;
 };
 
 export default function TempLoanApplicationPage({
   profile: initialProfile,
   advisorOptions,
   existingLoan,
-}: TempLoanApplicationPageProps = {}) {
+  loanLimit,
+}: TempLoanApplicationPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { language, t } = useStudentLanguage();
@@ -314,7 +320,7 @@ export default function TempLoanApplicationPage({
     setFormData((current) => ({ ...current, [field]: value }));
 
     if (field === "loanAmount" || (field !== "additionalNote" && touchedFields[field])) {
-      setFormErrors((current) => ({ ...current, [field]: validateField(field, value, language) }));
+      setFormErrors((current) => ({ ...current, [field]: validateField(field, value, language, loanLimit) }));
     }
   };
 
@@ -325,7 +331,7 @@ export default function TempLoanApplicationPage({
 
   const validateLoanForm = () => {
     return requiredFormFields.reduce<FormErrors>((errors, field) => {
-      const error = validateField(field, savedFormData[field], language);
+      const error = validateField(field, savedFormData[field], language, loanLimit);
 
       if (error) {
         errors[field] = error;
@@ -340,7 +346,7 @@ export default function TempLoanApplicationPage({
 
     setFormErrors((current) => ({
       ...current,
-      [field]: validateField(field, formData[field], language),
+      [field]: validateField(field, formData[field], language, loanLimit),
     }));
   };
 
@@ -947,7 +953,7 @@ export default function TempLoanApplicationPage({
                         fieldRefs.current.loanAmount = element ?? undefined;
                       }}
                     >
-                      <span>{t("จำนวนเงินที่ขอกู้ยืม (บาท)", "Requested loan amount (baht)")}</span>
+                      <span>{t("จำนวนเงินที่ขอกู้ยืม", "Requested loan amount")}</span>
                       <input
                         aria-invalid={Boolean(formErrors.loanAmount)}
                         inputMode="numeric"
