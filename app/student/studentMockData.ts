@@ -24,6 +24,7 @@ export type InstallmentPayment = {
 export type PaymentAccount = {
   bankLabel: string;
   bankName: string;
+  bankLogoSrc?: string;
   accountNameLabel: string;
   accountName: string;
   accountNumberLabel: string;

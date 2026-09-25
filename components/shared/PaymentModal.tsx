@@ -2,7 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { ChevronDown, ChevronLeft, ChevronRight, Download, Landmark, ReceiptText, UploadCloud, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Download,
+  Landmark,
+  ReceiptText,
+  UploadCloud,
+  X,
+} from "lucide-react";
 import type { InstallmentPayment, PaymentAccount } from "@/app/student/studentMockData";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
@@ -69,6 +80,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
   const [fileName, setFileName] = useState("");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAccountNumberCopied, setIsAccountNumberCopied] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [receiptPreview, setReceiptPreview] = useState("");
   const [transferDate, setTransferDate] = useState("");
@@ -98,6 +110,16 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
   const hourListRef = useRef<HTMLDivElement>(null);
   const minuteListRef = useRef<HTMLDivElement>(null);
   const receiptInputRef = useRef<HTMLInputElement>(null);
+
+  const copyAccountNumber = async () => {
+    try {
+      await navigator.clipboard.writeText(account.accountNumber);
+      setIsAccountNumberCopied(true);
+      window.setTimeout(() => setIsAccountNumberCopied(false), 1800);
+    } catch {
+      setSubmitError(t("ไม่สามารถคัดลอกเลขที่บัญชีได้", "Could not copy account number."));
+    }
+  };
 
   useEffect(() => {
     const closePickersOnOutsidePress = (event: MouseEvent) => {
@@ -312,7 +334,19 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
             <dl className="text-sm">
               <div className="flex items-start justify-between gap-5 border-b border-gray-200 py-2.5">
                 <dt className="shrink-0 text-gray-500">{t(account.bankLabel, "Bank")}</dt>
-                <dd className="text-right font-medium text-gray-900">{localizeStudentContent(account.bankName, language)}</dd>
+                <dd className="flex items-center justify-end gap-1.5 text-right font-medium text-gray-900">
+                  {account.bankLogoSrc ? (
+                    <Image
+                      alt=""
+                      aria-hidden="true"
+                      className="h-5 w-5 shrink-0 object-contain"
+                      height={20}
+                      src={account.bankLogoSrc}
+                      width={20}
+                    />
+                  ) : null}
+                  {localizeStudentContent(account.bankName, language)}
+                </dd>
               </div>
               <div className="flex items-start justify-between gap-5 border-b border-gray-200 py-2.5">
                 <dt className="shrink-0 text-gray-500">{t(account.accountNameLabel, "Account name")}</dt>
@@ -320,7 +354,26 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
               </div>
               <div className="flex items-start justify-between gap-5 py-2.5">
                 <dt className="shrink-0 text-gray-500">{t(account.accountNumberLabel, "Account number")}</dt>
-                <dd className="break-all text-right font-medium text-gray-900">{account.accountNumber}</dd>
+                <dd className="flex min-w-0 items-center justify-end gap-2 text-right font-medium text-gray-900">
+                  <span className="break-all">{account.accountNumber}</span>
+                  <button
+                    aria-label={
+                      isAccountNumberCopied
+                        ? t("คัดลอกเลขที่บัญชีแล้ว", "Account number copied")
+                        : t("คัดลอกเลขที่บัญชี", "Copy account number")
+                    }
+                    className="inline-flex shrink-0 items-center justify-center rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                    onClick={copyAccountNumber}
+                    title={
+                      isAccountNumberCopied
+                        ? t("คัดลอกแล้ว", "Copied")
+                        : t("คัดลอกเลขที่บัญชี", "Copy account number")
+                    }
+                    type="button"
+                  >
+                    {isAccountNumberCopied ? <Check aria-hidden="true" size={16} /> : <Copy aria-hidden="true" size={16} />}
+                  </button>
+                </dd>
               </div>
             </dl>
 

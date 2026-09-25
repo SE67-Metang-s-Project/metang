@@ -467,6 +467,10 @@ export default function RequestsCard({
       ? Math.min(originalRequestedAmount, tempLoanApplicationLimit)
       : tempLoanApplicationLimit;
   const selectedDisplayAmount = String(selectedRequest?.approvedAmount ?? selectedRequest?.amount ?? "0");
+  const mustReduceAmountBeforeApproval =
+    isAdminOrSuperAdmin &&
+    originalRequestedAmount > 0 &&
+    Number(String(selectedRequest?.amount ?? "0").replace(/,/g, "")) >= originalRequestedAmount;
 
   const handleEditAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -488,7 +492,7 @@ export default function RequestsCard({
       return;
     }
     const normalized = clean.length > 1 && clean.startsWith("0") ? String(num) : clean;
-    setEditAmountValue(normalized);
+    setEditAmountValue(Number(normalized).toLocaleString("en-US"));
     if (amountError) setAmountError(null);
   };
 
@@ -496,7 +500,7 @@ export default function RequestsCard({
     const parsedAmount = parseInt(String(req.amount || "").replace(/,/g, ""), 10) || 0;
     setSelectedRequest(req);
     setOriginalRequestedAmount(parsedAmount);
-    setEditAmountValue(String(parsedAmount));
+    setEditAmountValue(parsedAmount.toLocaleString("en-US"));
     setIsEditingAmount(false);
     setAmountError(null);
     setConfirmAction(null);
@@ -546,6 +550,11 @@ export default function RequestsCard({
 
   const handleConfirmDecision = async () => {
     if (!selectedRequest || !confirmAction) return;
+
+    if (confirmAction === "approve" && mustReduceAmountBeforeApproval) {
+      setErrorMessage("กรุณาปรับลดวงเงินก่อนส่งพิจารณา");
+      return;
+    }
 
     if (!remark.trim()) {
       setErrorMessage(
@@ -685,7 +694,7 @@ export default function RequestsCard({
 
     setAmountError(null);
     setSelectedRequest({ ...selectedRequest, amount: String(num) });
-    setEditAmountValue(String(num));
+    setEditAmountValue(num.toLocaleString("en-US"));
     setIsEditingAmount(false);
   };
 
@@ -1078,9 +1087,10 @@ export default function RequestsCard({
                         <button
                           type="button"
                           onClick={() => {
-                            setEditAmountValue(
+                            const amount = Number(
                               String(selectedRequest.amount || "").replace(/,/g, ""),
                             );
+                            setEditAmountValue(amount ? amount.toLocaleString("en-US") : "");
                             setAmountError(null);
                             setIsEditingAmount(true);
                           }}
@@ -1095,13 +1105,8 @@ export default function RequestsCard({
                         <div className="flex flex-col items-end gap-1 mt-1">
                           <div className="flex items-center justify-end gap-1.5">
                             <input
-                              type="number"
-                              min={1}
-                              max={
-                                originalRequestedAmount
-                                  ? Math.min(originalRequestedAmount, tempLoanApplicationLimit)
-                                  : tempLoanApplicationLimit
-                              }
+                              type="text"
+                              inputMode="numeric"
                               value={editAmountValue}
                               onChange={handleEditAmountChange}
                               onKeyDown={(e) => {
@@ -1115,10 +1120,10 @@ export default function RequestsCard({
                                   e.preventDefault();
                                 }
                               }}
-                              className={`w-28 border rounded px-2 py-0.5 text-sm font-bold text-[#ea580c] focus:outline-none text-right ${
+                              className={`w-28 border rounded px-2 py-0.5 text-sm font-medium text-amber-800 focus:outline-none text-right ${
                                 amountError
                                   ? "border-red-500 focus:ring-1 focus:ring-red-500"
-                                  : "border-gray-300 focus:ring-1 focus:ring-[#ea580c]"
+                                  : "border-gray-300 focus:border-orange-300 focus:ring-1 focus:ring-orange-200"
                               }`}
                               autoFocus
                             />
@@ -1133,7 +1138,7 @@ export default function RequestsCard({
                             <button
                               type="button"
                               onClick={handleCancelEditAmount}
-                              className="bg-gray-100 text-gray-600 p-1 rounded hover:bg-gray-200 transition-colors cursor-pointer"
+                              className="bg-red-50 text-red-500 p-1 rounded hover:bg-red-100 transition-colors cursor-pointer"
                               title="ยกเลิก"
                             >
                               <X size={16} />
@@ -1345,7 +1350,13 @@ export default function RequestsCard({
                         setConfirmAction("approve");
                         setErrorMessage(null);
                       }}
-                      className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98]"
+                      disabled={isAdminOrSuperAdmin && mustReduceAmountBeforeApproval}
+                      title={
+                        isAdminOrSuperAdmin && mustReduceAmountBeforeApproval
+                          ? "กรุณาปรับลดวงเงินก่อนส่งพิจารณา"
+                          : undefined
+                      }
+                      className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isAdminOrSuperAdmin ? "ส่งพิจารณา" : "อนุมัติ"}
                     </button>
@@ -1370,7 +1381,7 @@ export default function RequestsCard({
                       )}
                       <span>
                         {confirmAction === "approve"
-                          ? "ความเห็นประกอบการพิจารณา (แนบในแบบฟอร์ม)"
+                          ? "ความเห็นประกอบการพิจารณา"
                           : confirmAction === "return"
                             ? "ระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข (เช่น แนบเอกสารใหม่)"
                             : isAdminOrSuperAdmin
@@ -1385,7 +1396,7 @@ export default function RequestsCard({
                     {confirmAction === "approve" &&
                       originalRequestedAmount > 0 &&
                       Number(selectedRequest.amount) < originalRequestedAmount && (
-                        <div className="mb-2.5 text-[12px] bg-amber-50 border border-amber-200 text-amber-800 px-3 py-1.5 rounded-lg flex items-center justify-between">
+                        <div className="mb-2.5 text-[14px] bg-amber-50 border border-amber-200 text-amber-800 px-3 py-1.5 rounded-lg flex items-center justify-between">
                           <span>
                             {isAdminOrSuperAdmin
                               ? "วงเงินที่ส่งพิจารณา (ปรับลดลง):"
@@ -1393,7 +1404,7 @@ export default function RequestsCard({
                           </span>
                           <span className="font-bold text-[#ea580c]">
                             {formatAmount(selectedRequest.amount)}{" "}
-                            <span className="text-gray-400 font-normal line-through text-[11px]">
+                            <span className="text-amber-800 font-normal text-[14px]">
                               (จาก {formatAmount(originalRequestedAmount)})
                             </span>
                           </span>
@@ -1414,7 +1425,7 @@ export default function RequestsCard({
                                 ? "เช่น ไม่ตรงตามเกณฑ์ หรือขอยกเลิกคำร้อง..."
                                 : "เช่น เอกสารหรือเหตุผลไม่เพียงพอต่อการกู้ยืม..."
                         }
-                        className={`w-full border rounded-lg p-3 text-[13px] focus:outline-none resize-none h-20 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors ${
+                        className={`w-full border rounded-lg p-3 text-[14px] focus:outline-none resize-none h-20 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors ${
                           errorMessage
                             ? "border-red-400 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
                             : "border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -1429,7 +1440,7 @@ export default function RequestsCard({
                       />
                       <div className="flex justify-end mt-1">
                         <span
-                          className={`text-[11px] ${
+                          className={`text-[14px] ${
                             remark.length >= 500 ? "text-gray-500" : "text-gray-500"
                           }`}
                         >
@@ -1439,7 +1450,7 @@ export default function RequestsCard({
                     </div>
 
                     {errorMessage && (
-                      <div className="text-[12px] text-red-600 mb-3 bg-red-50 p-2.5 rounded-lg border border-red-200 flex items-center gap-2">
+                      <div className="text-[14px] text-red-600 mb-3 bg-red-50 p-2.5 rounded-lg border border-red-200 flex items-center gap-2">
                         <XCircle size={14} className="shrink-0" />
                         <span>{errorMessage}</span>
                       </div>
@@ -1453,14 +1464,19 @@ export default function RequestsCard({
                           setRemark("");
                         }}
                         disabled={isSubmitting}
-                        className="px-4 py-2 text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                        className="px-4 py-2 text-[14px] font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                       >
                         ยกเลิก
                       </button>
                       <button
                         onClick={handleConfirmDecision}
-                        disabled={isSubmitting}
-                        className={`px-4 py-2 text-[13px] font-bold text-white rounded-lg shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed ${
+                        disabled={isSubmitting || (confirmAction === "approve" && mustReduceAmountBeforeApproval)}
+                        title={
+                          confirmAction === "approve" && mustReduceAmountBeforeApproval
+                            ? "กรุณาปรับลดวงเงินก่อนส่งพิจารณา"
+                            : undefined
+                        }
+                        className={`px-4 py-2 text-[14px] font-bold text-white rounded-lg shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed ${
                           confirmAction === "approve"
                             ? "bg-[#059669] hover:bg-[#047857]"
                             : confirmAction === "return"

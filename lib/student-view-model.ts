@@ -11,7 +11,6 @@ import type {
   LoanRequestStatus,
   LoanScheduleItem,
   LoanTimelineItem,
-  PaymentAccount,
 } from "@/app/student/studentMockData";
 import { normalizeBankName } from "@/lib/bank-name";
 
@@ -691,21 +690,6 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
       location: "คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่",
       openingHours: "จันทร์ - ศุกร์ 08:30 - 16:30 น.",
     },
-  };
-}
-
-/** The public system-settings read (GET /api/system-settings) as the payment modal's account. */
-export function mapToPaymentAccount(
-  setting: { bankName: string; accountName: string; accountNumber: string } | null,
-): PaymentAccount | null {
-  if (!setting) return null;
-  return {
-    bankLabel: "ธนาคาร",
-    bankName: setting.bankName,
-    accountNameLabel: "ชื่อบัญชี",
-    accountName: setting.accountName,
-    accountNumberLabel: "เลขที่บัญชี",
-    accountNumber: setting.accountNumber,
   };
 }
 

@@ -154,7 +154,7 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
         items={displayedTimeline}
         isTransferAccepted={isTransferAccepted}
         onConfirmTransfer={
-          isWaitingForTransferConfirmation
+          isWaitingForTransferConfirmation && hasAdminTransferredFunds
             ? () => saveTransferConfirmation(details.id ?? details.requestNumber)
             : undefined
         }

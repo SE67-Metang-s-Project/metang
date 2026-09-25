@@ -52,6 +52,7 @@ import {
   subscribeToTransferConfirmation,
 } from "@/lib/student-transfer-confirmation";
 import { mapStudentLoanToActionRequest } from "@/lib/student-action-request";
+import { getBankLogoSrc } from "@/lib/bank-name";
 import styles from "@/app/student/student.module.css";
 
 type StudentDashboardProps = {
@@ -63,9 +64,25 @@ type StudentDashboardProps = {
   initialPaymentBehavior?: PaymentBehaviorDisplay | null;
   initialTimeline?: LoanTimelineItem[];
   initialSchedule?: LoanScheduleItem[];
-  /** The fund's receiving account from system settings; null when it could not be read. */
-  paymentAccount?: PaymentAccount | null;
 };
+
+type PaymentAccountSettings = {
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+};
+
+function mapPaymentAccount(settings: PaymentAccountSettings): PaymentAccount {
+  return {
+    bankLabel: "ธนาคาร",
+    bankName: settings.bankName,
+    bankLogoSrc: getBankLogoSrc(settings.bankName),
+    accountNameLabel: "ชื่อบัญชี",
+    accountName: settings.accountName,
+    accountNumberLabel: "เลขที่บัญชี",
+    accountNumber: settings.accountNumber,
+  };
+}
 
 export default function StudentDashboard({
   profile: initialProfile,
@@ -76,10 +93,10 @@ export default function StudentDashboard({
   initialPaymentBehavior,
   initialTimeline,
   initialSchedule,
-  paymentAccount = null,
 }: StudentDashboardProps) {
   const [showAllRequests, setShowAllRequests] = useState(false);
   const [activePayment, setActivePayment] = useState<InstallmentPayment | null>(null);
+  const [activePaymentAccount, setActivePaymentAccount] = useState<PaymentAccount | null>(null);
   const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState(false);
   const [isTransferSlipOpen, setIsTransferSlipOpen] = useState(false);
   const [isPetitionModalOpen, setIsPetitionModalOpen] = useState(false);
@@ -212,8 +229,19 @@ export default function StudentDashboard({
     router.push(`/student/detail?request=${encodeURIComponent(requestNumber)}`);
   };
 
-  const openPayment = (installment: InstallmentPayment) => {
-    if (!paymentAccount) {
+  const openPayment = async (installment: InstallmentPayment) => {
+    try {
+      const response = await fetch("/api/system-settings", { cache: "no-store" });
+      const body = (await response.json().catch(() => null)) as {
+        data?: PaymentAccountSettings;
+      } | null;
+      if (!response.ok || !body?.data) {
+        throw new Error("Payment account unavailable");
+      }
+
+      setActivePaymentAccount(mapPaymentAccount(body.data));
+      setActivePayment(installment);
+    } catch {
       setDashboardError({
         status: 0,
         code: "INTERNAL_ERROR",
@@ -224,9 +252,7 @@ export default function StudentDashboard({
         ),
         action: "retry",
       });
-      return;
     }
-    setActivePayment(installment);
   };
 
   // Throws a user-facing Error so PaymentModal can show it and stay open for a retry.
@@ -377,8 +403,6 @@ export default function StudentDashboard({
                     disabled={isLoading}
                     onClick={() => {
                       setRefreshKey((k) => k + 1);
-                      // The payment account is a server prop; only a server re-render reloads it.
-                      if (!paymentAccount) router.refresh();
                     }}
                     type="button"
                   >
@@ -413,7 +437,7 @@ export default function StudentDashboard({
             onCancelRequest={() => setIsCancelDialogOpen(true)}
             onEditRequest={isActiveLoanReturned ? () => router.push("/student/loan/apply") : undefined}
             onConfirmTransfer={
-              isWaitingForTransferConfirmation
+              isWaitingForTransferConfirmation && hasAdminTransferredFunds
                 ? () => saveTransferConfirmation(currentLoanKey)
                 : undefined
             }
@@ -458,11 +482,14 @@ export default function StudentDashboard({
         </div>
       </div>
 
-      {activePayment && paymentAccount ? (
+      {activePayment && activePaymentAccount ? (
         <PaymentModal
-          account={paymentAccount}
+          account={activePaymentAccount}
           installment={activePayment}
-          onClose={() => setActivePayment(null)}
+          onClose={() => {
+            setActivePayment(null);
+            setActivePaymentAccount(null);
+          }}
           onConfirm={submitPayment}
         />
       ) : null}
