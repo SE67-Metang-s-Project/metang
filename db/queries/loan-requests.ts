@@ -802,6 +802,7 @@ export async function getActionRequests(
         installmentNumber: matchingInst ? matchingInst.seq : 1,
         amount: String(p.amount),
         paidAt: p.paidAt ? formatThaiDate(p.paidAt) : formatThaiDate(p.createdAt),
+        reviewedAt: p.confirmedAt ? formatThaiDate(p.confirmedAt) : undefined,
         status: mappedStatus,
         // The reviewer's reason for a rejection, shown in the verify-slip modal.
         reviewNote: p.reviewNote ?? undefined,

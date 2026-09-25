@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import type { PaymentEvidenceRecord } from "./PaymentEvidenceHistory";
 
 // ==========================================
 // การกำหนด Type
@@ -20,10 +21,12 @@ export interface Student {
   totalBorrowed: string;
   balance: string;
   delayDays: string;
+  paymentHistory?: PaymentEvidenceRecord[];
 }
 
 interface StudentListTableProps {
   students: Student[];
+  onStudentSelect?: (student: Student) => void;
 }
 
 // ----------------------------------------------------
@@ -57,7 +60,7 @@ const getBadgeDotColor = (colorTheme: string) => {
   }
 };
 
-export default function StudentListTable({ students }: StudentListTableProps) {
+export default function StudentListTable({ students, onStudentSelect }: StudentListTableProps) {
   return (
     <div className="w-full">
       {/* 1. มุมมองสำหรับ Mobile */}
@@ -70,7 +73,16 @@ export default function StudentListTable({ students }: StudentListTableProps) {
           students.map((student, idx) => (
             <div
               key={idx}
-              className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow"
+              className={`bg-white border border-gray-100 rounded-xl p-4 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow ${onStudentSelect ? "cursor-pointer" : ""}`}
+              onClick={() => onStudentSelect?.(student)}
+              onKeyDown={(event) => {
+                if (onStudentSelect && (event.key === "Enter" || event.key === " ")) {
+                  event.preventDefault();
+                  onStudentSelect(student);
+                }
+              }}
+              role={onStudentSelect ? "button" : undefined}
+              tabIndex={onStudentSelect ? 0 : undefined}
             >
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-[10px] bg-[#fff7ed] flex items-center justify-center font-bold text-[#ea580c] text-[18px] shrink-0 border border-[#ffedd5]">
@@ -166,7 +178,16 @@ export default function StudentListTable({ students }: StudentListTableProps) {
               students.map((student, idx) => (
                 <tr
                   key={idx}
-                  className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
+                  className={`border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px] ${onStudentSelect ? "cursor-pointer" : ""}`}
+                  onClick={() => onStudentSelect?.(student)}
+                  onKeyDown={(event) => {
+                    if (onStudentSelect && (event.key === "Enter" || event.key === " ")) {
+                      event.preventDefault();
+                      onStudentSelect(student);
+                    }
+                  }}
+                  role={onStudentSelect ? "button" : undefined}
+                  tabIndex={onStudentSelect ? 0 : undefined}
                 >
                   {/* ข้อมูลชื่อและรหัสนักศึกษา */}
                   <td className="py-3 px-4 border-r border-gray-200">

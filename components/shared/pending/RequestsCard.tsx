@@ -119,6 +119,8 @@ export type PaymentRecord = {
   installmentNumber: number;
   amount: number | string;
   paidAt?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
   slipImageUrl?: string;
   dueDate?: string;
   paidDate?: string;
