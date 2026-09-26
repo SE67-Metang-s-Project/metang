@@ -116,7 +116,7 @@ test("the mutation validates the request, the body, then maps every domain error
     /decidePayment\(\{\s*paymentId: id,\s*adminId: access\.context\.user\.id,\s*decision: input\.decision,\s*note: input\.note,\s*\}\)/,
   );
 
-  for (const code of ["NOT_FOUND", "STALE_DECISION", "ACCESS_REVOKED"]) {
+  for (const code of ["NOT_FOUND", "STALE_DECISION", "ACCESS_REVOKED", "OVERPAYMENT_REQUIRES_CONTACT"]) {
     assert.match(decisionRoute, new RegExp(`PaymentDecisionError && error\\.code === "${code}"`));
   }
   // Errors from the money side surface too, rather than falling through to a 500.

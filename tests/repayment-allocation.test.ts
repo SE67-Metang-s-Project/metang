@@ -51,6 +51,18 @@ test("any amount is accepted - there is no per-installment minimum", () => {
   assert.equal(result.outstandingAfter, 2999);
 });
 
+test("amount - surplus is the remaining balance the submit cap reports", () => {
+  // The approved example: 1200 split 400x3, 200 already paid, so 1000 is still owed.
+  const owed = [{ ...schedule(3, 400)[0], amountPaid: 200 }, ...schedule(3, 400).slice(1)];
+
+  const over = allocatePayment(owed, 1100);
+  assert.equal(over.surplus, 100);
+  assert.equal(1100 - over.surplus, 1000);
+
+  // Paying exactly the balance is not an overpayment.
+  assert.equal(allocatePayment(owed, 1000).surplus, 0);
+});
+
 test("overpaying past the final installment settles everything and leaves a surplus", () => {
   const result = allocatePayment(schedule(3), 5000);
   assert.equal(result.allocations.length, 3);

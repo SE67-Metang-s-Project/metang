@@ -78,7 +78,30 @@ test("no storage path reaches the student, only a flag", () => {
 test("the recorded installment is context only - allocation still runs oldest-first", () => {
   assert.match(query, /where: \{ loanId, settledAt: null \}/);
   assert.match(query, /orderBy: \{ seq: "asc" \}/);
+  assert.match(query, /const unsettled = await tx\.installment\.findMany\(/);
+  assert.match(query, /const nextDue = unsettled\[0\];/);
   assert.match(query, /if \(!nextDue\) throw new StudentPaymentError\("NOTHING_OUTSTANDING"\);/);
+});
+
+test("a submission cannot exceed what is still owed", () => {
+  // The same allocator that applies the money on confirmation, so the two rules cannot drift: a
+  // slip accepted here is never one decidePayment refuses as OVERPAYMENT_REQUIRES_CONTACT.
+  assert.match(query, /import \{ allocatePayment \} from "@\/lib\/loan-validation";/);
+  assert.match(query, /const \{ surplus \} = allocatePayment\(unsettled, amount\);/);
+  assert.match(
+    query,
+    /if \(surplus > 0\) throw new StudentPaymentError\("AMOUNT_EXCEEDS_REMAINING", amount - surplus\);/,
+  );
+  // Checked inside the Serializable transaction, after the one-open-review guard: with no other
+  // slip pending, nothing can shrink the balance between this read and the insert.
+  const write = query.slice(query.indexOf("export async function createStudentPayment"));
+  assert.ok(write.indexOf("REVIEW_IN_PROGRESS") < write.indexOf("AMOUNT_EXCEEDS_REMAINING"));
+  assert.ok(write.indexOf("AMOUNT_EXCEEDS_REMAINING") < write.indexOf("tx.payment.create"));
+
+  assert.match(
+    route,
+    /error\.code === "AMOUNT_EXCEEDS_REMAINING"\) \{\s*return apiError\(\s*"VALIDATION_ERROR",\s*`amount exceeds the remaining repayment \(\$\{error\.remaining\}\)`,\s*422,/,
+  );
 });
 
 test("submission is audited and every write goes through tx", () => {
