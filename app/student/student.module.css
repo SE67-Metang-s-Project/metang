@@ -2322,13 +2322,14 @@
 }
 
 .statusPill {
-  padding: 3px 8px;
+  padding: 1px 8px;
   border: 1px solid #8debc8;
   border-radius: 15px;
   background: #edfff7;
   color: #16a34a;
   font-size: 14px;
   font-weight: 400;
+  line-height: 1.25;
   white-space: nowrap;
 }
 
@@ -4174,6 +4175,14 @@
   background: rgb(255 255 255 / 58%);
 }
 
+.paymentEvidenceRow:last-child .paymentEvidenceExpanded {
+  margin-bottom: 0;
+}
+
+.paymentEvidenceRow:last-child:has(.paymentEvidenceExpanded) {
+  padding-bottom: 14px;
+}
+
 .paymentEvidenceReceipt {
   display: flex;
   min-width: 120px;
@@ -4185,6 +4194,34 @@
   border-radius: 10px;
   background: #f1f5f9;
   color: #94a3b8;
+}
+
+.paymentEvidenceReceiptColumn {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.paymentEvidenceFailedReasonNotice {
+  grid-column: 1 / -1;
+  padding: 9px 10px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.paymentEvidenceFailedReasonNotice span {
+  display: block;
+  font-weight: 500;
+}
+
+.paymentEvidenceFailedReasonNotice p {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
 }
 
 .paymentEvidenceReceipt img {

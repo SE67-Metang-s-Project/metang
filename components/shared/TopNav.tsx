@@ -2,10 +2,10 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, Mail, Menu } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import type { UserRole } from "@/components/shared/SidebarNav";
 import type { StudentLanguage } from "@/app/student/StudentLanguageProvider";
+import ImageWithSkeleton from "@/components/shared/ImageWithSkeleton";
 
 export const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   student: "นักศึกษา",
@@ -81,11 +81,11 @@ export default function TopNav({
           className="ml-6 flex shrink-0 items-center rounded-lg transition-all duration-200 hover:scale-105 hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
           href={logoHref}
         >
-          <Image
+          <ImageWithSkeleton
             alt="METANG"
             className="h-12 w-12 object-contain sm:h-14 sm:w-14"
+            containerClassName="h-12 w-12 sm:h-14 sm:w-14"
             height={56}
-            priority
             src="/metang-logo7.png"
             width={56}
           />

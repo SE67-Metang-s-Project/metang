@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import Image from "next/image";
 import {
   Building,
   Landmark,
@@ -21,6 +20,7 @@ import {
   ChevronDown,
   Check,
 } from "lucide-react";
+import ImageWithSkeleton from "@/components/shared/ImageWithSkeleton";
 import {
   type SystemAddressData,
   type SystemBankAccount,
@@ -476,12 +476,13 @@ export default function SystemContactInfoTab() {
                       <div className="flex items-center gap-3">
                         {selectedBank ? (
                           <>
-                            <Image
+                            <ImageWithSkeleton
                               src={selectedBank.logoSrc}
                               alt={selectedBank.label}
                               width={24}
                               height={24}
                               className="rounded-full shrink-0"
+                              containerClassName="size-6 shrink-0 rounded-full"
                             />
                             <div>
                               <span className="font-medium text-gray-900">{selectedBank.label}</span>
@@ -538,12 +539,13 @@ export default function SystemContactInfoTab() {
                               }`}
                             >
                               <div className="flex items-center gap-3">
-                                <Image
+                                <ImageWithSkeleton
                                   src={bank.logoSrc}
                                   alt={bank.label}
                                   width={24}
                                   height={24}
                                   className="rounded-full shrink-0"
+                                  containerClassName="size-6 shrink-0 rounded-full"
                                 />
                                 <div>
                                   <div className="text-gray-900 font-medium">{bank.label}</div>
@@ -856,12 +858,13 @@ export default function SystemContactInfoTab() {
                   </h4>
                   <div className="flex items-center gap-1.5 bg-orange-100/70 px-2 py-0.5 rounded-md">
                     {selectedBank?.logoSrc && (
-                      <Image
+                      <ImageWithSkeleton
                         src={selectedBank.logoSrc}
                         alt=""
                         width={16}
                         height={16}
                         className="rounded-full shrink-0"
+                        containerClassName="size-4 shrink-0 rounded-full"
                       />
                     )}
                     <span className="text-[11px] font-semibold text-orange-700">

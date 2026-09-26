@@ -1,10 +1,10 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
+import ImageWithSkeleton from "@/components/shared/ImageWithSkeleton";
 
 type LoanFormSelectOption = {
   label: string;
@@ -85,9 +85,10 @@ export default function LoanFormSelect({
       >
         <span className={styles.loanFormSelectValue}>
           {selectedOption?.logoSrc ? (
-            <Image
+            <ImageWithSkeleton
               alt=""
               className={styles.loanFormSelectLogo}
+              containerClassName={styles.loanFormSelectLogo}
               height={24}
               src={selectedOption.logoSrc}
               width={24}
@@ -123,9 +124,10 @@ export default function LoanFormSelect({
             >
               <span className={styles.loanFormSelectValue}>
                 {option.logoSrc ? (
-                  <Image
+                  <ImageWithSkeleton
                     alt=""
                     className={styles.loanFormSelectLogo}
+                    containerClassName={styles.loanFormSelectLogo}
                     height={24}
                     src={option.logoSrc}
                     width={24}

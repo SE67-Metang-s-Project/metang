@@ -71,6 +71,13 @@ export async function POST(request: Request, { params }: Params) {
     if (error instanceof PaymentDecisionError && error.code === "ACCESS_REVOKED") {
       return apiError("CONFLICT", "The request changed; please retry", 409);
     }
+    if (error instanceof PaymentDecisionError && error.code === "OVERPAYMENT_REQUIRES_CONTACT") {
+      return apiError(
+        "CONFLICT",
+        "The payment exceeds the total remaining balance; contact the student to arrange a refund",
+        409,
+      );
+    }
     // Raised while applying a confirmation - the money side, from db/queries/payments.ts.
     if (error instanceof PaymentApplicationError && error.code === "LOAN_NOT_DISBURSED") {
       return apiError("CONFLICT", "The loan is not open for repayment", 409);

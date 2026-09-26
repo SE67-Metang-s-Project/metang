@@ -240,7 +240,14 @@ export default function StudentDashboard({
       }
 
       setActivePaymentAccount(mapPaymentAccount(body.data));
-      setActivePayment(installment);
+      const totalOutstandingAmount = installments?.reduce(
+        (total, item) => total + Number(item.outstandingAmount.replaceAll(",", "")),
+        0,
+      );
+      setActivePayment({
+        ...installment,
+        totalOutstandingAmount: totalOutstandingAmount || installment.totalOutstandingAmount,
+      });
     } catch {
       setDashboardError({
         status: 0,

@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import styles from "@/app/student/student.module.css";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
+import ImageWithSkeleton from "@/components/shared/ImageWithSkeleton";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 
 type TransferSlipModalProps = {
@@ -36,8 +37,11 @@ export default function TransferSlipModal({ imageSrc, onClose }: TransferSlipMod
         </button>
         <h2 id="transfer-proof-title">{title}</h2>
         <div className={styles.transferSlipImageFrame}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img alt={t("รูปสลิปการโอนเงินจากเจ้าหน้าที่", "Transfer proof image")} src={imageSrc} />
+          <ImageWithSkeleton
+            alt={t("รูปสลิปการโอนเงินจากเจ้าหน้าที่", "Transfer proof image")}
+            containerClassName="max-h-full max-w-full"
+            src={imageSrc}
+          />
         </div>
       </section>
     </div>

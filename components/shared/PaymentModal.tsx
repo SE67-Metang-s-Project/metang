@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import {
   Check,
   ChevronDown,
@@ -18,6 +17,7 @@ import type { InstallmentPayment, PaymentAccount } from "@/app/student/studentMo
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { bangkokDateKey, bangkokParts } from "@/lib/date";
+import ImageWithSkeleton from "@/components/shared/ImageWithSkeleton";
 
 export type PaymentSubmission = {
   slip: File;
@@ -41,7 +41,7 @@ type PaymentFormErrors = Partial<Record<PaymentFormField, string>>;
 const thaiWeekdays = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
 const englishWeekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const requiredPaymentFields: PaymentFormField[] = ["receipt", "transferDate", "transferTime", "transferAmount"];
-const maxReceiptFileSize = 500 * 1024;
+const maxReceiptFileSize = 1024 * 1024;
 
 function toDateInputValue(date: Date) {
   const year = date.getFullYear();
@@ -96,6 +96,18 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
   const [hasSelectedTime, setHasSelectedTime] = useState(false);
   const [transferAmount, setTransferAmount] = useState("");
   const [formErrors, setFormErrors] = useState<PaymentFormErrors>({});
+  const transferAmountValue = Number(transferAmount.replaceAll(",", ""));
+  const installmentOutstandingAmount = Number(installment.outstandingAmount.replaceAll(",", ""));
+  const totalOutstandingAmount = installment.totalOutstandingAmount ?? installmentOutstandingAmount;
+  const exceedsInstallmentBalance =
+    transferAmountValue > installmentOutstandingAmount && transferAmountValue <= totalOutstandingAmount;
+  const exceedsTotalBalance = transferAmountValue > totalOutstandingAmount;
+  const isConfirmDisabled =
+    isSubmitting ||
+    !receiptFile ||
+    !transferDate ||
+    !hasSelectedTime ||
+    !transferAmount;
   const hasTransferDetailsError = Boolean(
     formErrors.transferDate || formErrors.transferTime || formErrors.transferAmount,
   );
@@ -217,7 +229,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
     if (!fileName) errors.receipt = requiredFieldMessage;
     if (!transferDate) errors.transferDate = requiredFieldMessage;
     if (!hasSelectedTime) errors.transferTime = requiredFieldMessage;
-    const amount = Number(transferAmount.replaceAll(",", ""));
+    const amount = transferAmountValue;
     if (!transferAmount || amount <= 0) {
       errors.transferAmount = requiredFieldMessage;
     } else if (!Number.isSafeInteger(amount)) {
@@ -313,17 +325,38 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
         <header className="shrink-0 border-b border-gray-100 px-14 py-4 text-center sm:px-16">
           <h2 className="text-xl font-bold leading-tight text-gray-900" id="payment-modal-title">
             {t("ชำระงวดที่", "Pay installment")} {installment.installmentNumber}
+            {installment.paymentAttempt && installment.paymentAttempt > 1
+              ? ` ${t("(ครั้งที่", "(Attempt")} ${installment.paymentAttempt})`
+              : ""}
           </h2>
-          <p className="mt-1 text-sm font-bold text-gray-600">{t("ครบกำหนด", "Due")} {dueDate}</p>
+          <p className="mt-1 text-sm font-normal text-gray-600">
+            {t("ครบกำหนด", "Due")} {dueDate} {t("23:59 น.", "23:59")}
+          </p>
         </header>
 
         <div
           className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] p-5 sm:p-6"
           ref={modalBodyRef}
         >
-          <section className="mb-6 flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <p className="text-sm font-medium text-black">{t("ค้างชำระ", "Outstanding")}</p>
-            <strong className="text-2xl font-bold text-black">{installment.outstandingAmount} {t("บาท", "THB")}</strong>
+          <section className="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm font-medium text-black">{t("ค้างชำระ", "Outstanding")}</p>
+              <strong className="text-2xl font-bold text-black">
+                {installment.outstandingAmount} {t("บาท", "THB")}
+              </strong>
+            </div>
+            {installment.paymentAttempts?.length ? (
+              <div className="mt-3 divide-y divide-gray-200 border-t border-gray-200">
+                {installment.paymentAttempts.map((payment, index) => (
+                  <div className="flex items-center justify-between gap-4 py-3" key={index}>
+                    <span className="text-sm text-gray-500">
+                      {t("ครั้งที่", "Attempt")} {index + 1}
+                    </span>
+                    <span className="text-sm font-normal text-black">{payment.amount}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </section>
 
           <section className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -334,12 +367,13 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
             <dl className="text-sm">
               <div className="flex items-start justify-between gap-5 border-b border-gray-200 py-2.5">
                 <dt className="shrink-0 text-gray-500">{t(account.bankLabel, "Bank")}</dt>
-                <dd className="flex items-center justify-end gap-1.5 text-right font-medium text-gray-900">
+                <dd className="flex items-center justify-end gap-1.5 text-right font-normal text-gray-900">
                   {account.bankLogoSrc ? (
-                    <Image
+                    <ImageWithSkeleton
                       alt=""
                       aria-hidden="true"
                       className="h-5 w-5 shrink-0 object-contain"
+                      containerClassName="h-5 w-5 shrink-0"
                       height={20}
                       src={account.bankLogoSrc}
                       width={20}
@@ -350,12 +384,11 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
               </div>
               <div className="flex items-start justify-between gap-5 border-b border-gray-200 py-2.5">
                 <dt className="shrink-0 text-gray-500">{t(account.accountNameLabel, "Account name")}</dt>
-                <dd className="text-right font-medium text-gray-900">{localizeStudentContent(account.accountName, language)}</dd>
+                <dd className="text-right font-normal text-gray-900">{localizeStudentContent(account.accountName, language)}</dd>
               </div>
               <div className="flex items-start justify-between gap-5 py-2.5">
                 <dt className="shrink-0 text-gray-500">{t(account.accountNumberLabel, "Account number")}</dt>
-                <dd className="flex min-w-0 items-center justify-end gap-2 text-right font-medium text-gray-900">
-                  <span className="break-all">{account.accountNumber}</span>
+                <dd className="flex min-w-0 items-center justify-end gap-2 text-right font-normal text-gray-900">
                   <button
                     aria-label={
                       isAccountNumberCopied
@@ -373,15 +406,17 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                   >
                     {isAccountNumberCopied ? <Check aria-hidden="true" size={16} /> : <Copy aria-hidden="true" size={16} />}
                   </button>
+                  <span className="break-all">{account.accountNumber}</span>
                 </dd>
               </div>
             </dl>
 
             {account.qrImageSrc ? (
               <div className="mt-4 text-center">
-                <Image
+                <ImageWithSkeleton
                   alt={t("QR Code สำหรับชำระเงิน", "Payment QR code")}
                   className="mx-auto h-auto w-full rounded-lg"
+                  containerClassName="mx-auto w-full"
                   height={300}
                   src={account.qrImageSrc}
                   width={300}
@@ -429,9 +464,10 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                 type="button"
               >
                 {receiptPreview ? (
-                  <Image
+                  <ImageWithSkeleton
                     alt={t("ตัวอย่างหลักฐานการโอนเงิน", "Transfer evidence preview")}
                     className="h-auto w-full rounded-lg object-contain"
+                    containerClassName="w-full"
                     height={160}
                     src={receiptPreview}
                     width={240}
@@ -448,8 +484,8 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                     ? t("แตะเพื่ออัปโหลดรูปภาพใหม่", "Tap to upload a new image")
                     : t("แตะเพื่ออัปโหลดหลักฐานการโอน", "Tap to upload transfer evidence")}
                 </span>
-                <span className="mt-1 text-sm font-normal text-gray-500">
-                  {receiptPreview ? fileName : t("รองรับ JPG, PNG (สูงสุด 500 KB)", "JPG or PNG, up to 500 KB")}
+                <span className="mt-1 max-w-full break-all text-sm font-normal text-gray-500">
+                  {receiptPreview ? fileName : t("รองรับ JPG, PNG (สูงสุด 1 MB)", "JPG or PNG, up to 1 MB")}
                 </span>
               </button>
               <input
@@ -468,7 +504,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                   if (file && file.size > maxReceiptFileSize) {
                     setFormErrors((current) => ({
                       ...current,
-                      receipt: t("ไฟล์รูปภาพต้องมีขนาดไม่เกิน 500 KB", "The image file must be 500 KB or smaller."),
+                      receipt: t("ไฟล์รูปภาพต้องมีขนาดไม่เกิน 1 MB", "The image file must be 1 MB or smaller."),
                     }));
                     event.target.value = "";
                     return;
@@ -709,10 +745,12 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                 </span>
                 <span className="relative block">
                   <input
-                    aria-invalid={Boolean(formErrors.transferAmount)}
+                    aria-invalid={Boolean(formErrors.transferAmount) || exceedsTotalBalance}
                     className={`h-11 w-full rounded-lg border bg-white px-3 pr-12 text-sm outline-none transition-colors placeholder:text-gray-400 ${
-                      formErrors.transferAmount
+                      formErrors.transferAmount || exceedsTotalBalance
                         ? "border-red-400 text-red-700 focus:border-red-500"
+                        : exceedsInstallmentBalance
+                          ? "border-green-400 text-gray-800 focus:border-green-500"
                         : "border-gray-300 text-gray-800 focus:border-orange-400"
                     }`}
                     inputMode="decimal"
@@ -739,6 +777,20 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                 </span>
                 {formErrors.transferAmount ? (
                   <span className="mt-1.5 block text-sm text-red-600">{formErrors.transferAmount}</span>
+                ) : exceedsTotalBalance ? (
+                  <span className="mt-1.5 block text-sm text-red-600">
+                    {t(
+                      "จำนวนเงินที่ระบุเกินยอดหนี้คงค้างทั้งหมด หากโอนเงินแล้ว โปรดติดต่อเจ้าหน้าที่เพื่อดำเนินการต่อ",
+                      "The amount exceeds the total remaining balance. If you have already transferred it, please contact an administrator.",
+                    )}
+                  </span>
+                ) : exceedsInstallmentBalance ? (
+                  <span className="mt-1.5 block text-sm text-green-600">
+                    {t(
+                      "ระบบจะนำยอดชำระส่วนเกินไปคำนวณและตัดยอดหนี้คงค้างโดยอัตโนมัติ",
+                      "The system will automatically apply the excess payment to the remaining balance.",
+                    )}
+                  </span>
                 ) : null}
               </label>
             </div>
@@ -759,8 +811,8 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
             {t("ยกเลิก", "Cancel")}
           </button>
           <button
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-green-300"
-            disabled={isSubmitting}
+            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+            disabled={isConfirmDisabled}
             onClick={handleConfirm}
             type="button"
           >

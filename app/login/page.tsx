@@ -1,10 +1,10 @@
 import React from "react";
-import Image from "next/image";
 import { redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { getCmuSession, isCmuAuthConfigured } from "@/lib/cmu-auth";
 import { getUserHomePath } from "@/lib/loan-auth";
 import Grainient from "@/components/ui/Grainient";
+import ImageWithSkeleton from "@/components/shared/ImageWithSkeleton";
 
 const errorMessages: Record<string, string> = {
   configuration: "ยังไม่ได้ตั้งค่า CMU Entra สำหรับแอปนี้",
@@ -56,13 +56,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         {/* ด้านซ้าย: พื้นที่แสดงโลโก้ */}
         <div className="w-full md:w-1/2 flex flex-col items-center justify-center">
           <div className="relative flex items-center justify-center w-48 sm:w-64 md:w-80 lg:w-96 xl:w-[450px]">
-            <Image
+            <ImageWithSkeleton
               alt="METANG Logo"
               className="w-full h-auto object-contain transition-all duration-500 drop-shadow-lg"
+              containerClassName="w-full"
               height={550}
               src="/metang-logo7.png"
               width={550}
-              priority
             />
           </div>
         </div>

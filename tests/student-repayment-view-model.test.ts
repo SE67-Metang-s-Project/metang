@@ -93,6 +93,9 @@ test("a rejected payment shows the current installment's due countdown", () => {
 
   assert.equal(second.paymentNote, undefined);
   assert.equal(second.dueInDays, 12);
+  assert.equal(second.paymentAttempt, 2);
+  assert.deepEqual(second.paymentAttempts, [{ amount: "1,000" }]);
+  assert.equal(second.totalOutstandingAmount, 2000);
   assert.equal(first.dueInDays, undefined);
   assert.equal(third.dueInDays, undefined);
   assert.equal(second.isAwaitingReview, false);

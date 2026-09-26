@@ -9,11 +9,17 @@ export type InstallmentPayment = {
   paidAmountSummary: string;
   dueDateLabel: string;
   outstandingAmount: string;
+  /** Total remaining balance across every installment in the loan. */
+  totalOutstandingAmount?: number;
   paymentNote?: string;
   dueInDays?: number;
   completedPaymentLabel?: string;
   completedPaymentDateLabel?: string;
   completedPaymentTimeLabel?: string;
+  /** Number of the payment submission being made for this installment. */
+  paymentAttempt?: number;
+  /** Previous payment submissions for this installment, oldest first. */
+  paymentAttempts?: { amount: string }[];
   actionLabel?: string;
   // Live-data flags; the Sprint 3 fixtures leave them unset.
   isOverdue?: boolean;

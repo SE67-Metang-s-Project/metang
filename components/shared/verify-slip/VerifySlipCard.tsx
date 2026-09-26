@@ -16,12 +16,14 @@ import {
   CheckCircle2,
   Receipt,
   SearchX,
+  TriangleAlert,
   XCircle,
   ZoomIn,
   FileImage,
   ExternalLink,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
+import ImageWithSkeleton from "@/components/shared/ImageWithSkeleton";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import styles from "@/app/student/student.module.css";
 
@@ -32,8 +34,11 @@ export type PaymentEvidence = {
   id: string;
   installmentNumber: number;
   amount: string;
+  installmentOutstandingAmount?: string;
   paidAt: string;
   paidTime?: string;
+  attemptNumber?: number;
+  isOverpayment?: boolean;
   verifiedAt?: string;
   status: "pending" | "verified" | "rejected";
   slipImageUrl: string;
@@ -290,6 +295,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
   const selectedRequest = requests.find((req) => req.id === selectedRequestId) ?? null;
   const selectedEvidence =
     selectedRequest?.paymentHistory?.find((ev) => ev.id === selectedEvidenceId) ?? null;
+  const isOverpayment = Boolean(selectedEvidence?.isOverpayment);
 
   // A refresh can drop the selected request (its last pending slip was decided) or the slip. Clear
   // the ids so the modal does not reopen by itself when the request comes back later.
@@ -730,7 +736,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                   {selectedEvidence.status === "pending" ? "ตรวจสอบสลิปการชำระเงิน" : "รายละเอียดสลิปการชำระเงิน"}
                 </h2>
                 <p className="text-[13px] text-gray-500 mt-0.5">
-                  คำร้อง {selectedRequest.id} · งวดที่ {selectedEvidence.installmentNumber}
+                  คำร้อง {selectedRequest.id} · งวดที่ {selectedEvidence.installmentNumber} · ครั้งที่ {selectedEvidence.attemptNumber ?? 1}
                 </p>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -769,27 +775,36 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                   กรุณาตรวจสอบความถูกต้องของยอดเงิน วันที่ และเวลาในสลิปกับข้อมูลที่นักศึกษาระบุ
                 </div>
               )}
+              {isOverpayment ? (
+                <div
+                  className="mb-3 flex items-center justify-center gap-2 rounded-xl border-2 border-red-400 bg-red-50 px-2.5 py-1.5 text-center text-sm leading-relaxed text-red-700"
+                  role="alert"
+                >
+                  <TriangleAlert aria-hidden="true" className="shrink-0" size={18} />
+                  <span>รายการนี้มียอดโอนเกินยอดหนี้คงค้างทั้งหมด กรุณาติดต่อนักศึกษาเพื่อดำเนินการคืนเงินก่อนปิดรายการ</span>
+                </div>
+              ) : null}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 {/* ซ้าย: รูปสลิป */}
-                <section className={styles.loanApprovalInfoCard}>
+                <section className={`${styles.loanApprovalInfoCard} flex min-w-0 max-w-full self-start flex-col`}>
                   <CardHeader
                     className={styles.sectionCardHeading}
                     icon={<Receipt aria-hidden="true" size={20} strokeWidth={2.2} />}
                     title="รูปภาพสลิปโอนเงิน"
                   />
-                  <div className="relative rounded-xl border border-gray-200 bg-gray-50/50 p-2 flex justify-center items-center min-h-[260px] mt-2">
+                  <div className="relative -mx-2 mt-2 flex items-center justify-center rounded-xl border border-gray-200 bg-gray-50/50 p-[14px]">
                     {selectedEvidence.slipImageUrl ? (
                       <div
                         onClick={() => setPreviewSlipUrl(selectedEvidence.slipImageUrl)}
-                        className="relative group cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white hover:shadow-md transition-all flex justify-center items-center"
+                        className="relative flex w-full max-w-full items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-white transition-all hover:shadow-md group cursor-pointer"
                         title="คลิกเพื่อดูภาพขนาดเต็ม (Preview)"
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <ImageWithSkeleton
                           src={selectedEvidence.slipImageUrl}
                           alt="สลิปหลักฐานการโอนเงิน"
-                          className="max-h-[48vh] w-auto max-w-full rounded-lg shadow-sm object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+                          containerClassName="w-full max-w-full"
+                          className="h-auto w-full max-w-full rounded-lg shadow-sm object-contain transition-transform duration-200 group-hover:scale-[1.02]"
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-xs sm:text-sm font-semibold rounded-lg">
                           <ZoomIn size={22} className="drop-shadow" />
@@ -816,10 +831,14 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                     />
                     <dl>
                       <div className={styles.loanAmountRow}>
-                        <dt>ยอดเงินที่โอนมา (บาท)</dt>
+                        <dt>ยอดเงินที่โอนมา</dt>
                         <dd className="font-bold text-[#ea580c]">
                           {formatAmount(selectedEvidence.amount)}
                         </dd>
+                      </div>
+                      <div>
+                        <dt>ยอดคงค้างของงวดที่ {selectedEvidence.installmentNumber}</dt>
+                        <dd>{formatAmount(selectedEvidence.installmentOutstandingAmount ?? "0")}</dd>
                       </div>
                       <div>
                         <dt>วันที่โอน</dt>
@@ -827,7 +846,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                       </div>
                       <div>
                         <dt>เวลาที่โอน</dt>
-                        <dd>{selectedEvidence.paidTime ? `${selectedEvidence.paidTime} น.` : "-"}</dd>
+                        <dd>{selectedEvidence.paidTime ?? "-"}</dd>
                       </div>
                       <div>
                         <dt>สถานะการตรวจสอบ</dt>
@@ -896,11 +915,12 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                       className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98] cursor-pointer"
                       type="button"
                     >
-                      ปฏิเสธสลิป
+                      {isOverpayment ? "ปฏิเสธสลิป · ติดต่อนักศึกษา" : "ปฏิเสธสลิป"}
                     </button>
                     <button
                       onClick={() => chooseSlipAction("approve")}
-                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98] cursor-pointer"
+                      disabled={isOverpayment}
+                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-400 disabled:shadow-none"
                       type="button"
                     >
                       อนุมัติสลิป ถูกต้อง
@@ -1033,10 +1053,10 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                   title="สลิปหลักฐานการชำระเงิน"
                 />
               ) : (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
+                <ImageWithSkeleton
                   src={previewSlipUrl}
                   alt="สลิปหลักฐานการชำระเงินขนาดเต็ม"
+                  containerClassName="max-h-[72vh] max-w-full"
                   className="max-h-[72vh] w-auto max-w-full rounded-xl shadow-md object-contain select-none bg-white"
                 />
               )}

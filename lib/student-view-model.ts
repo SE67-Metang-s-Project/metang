@@ -290,6 +290,16 @@ export function mapToInstallmentPayments(
 ): InstallmentPayment[] {
   let nextPayableFound = false;
   const orderedPayments = sortPaymentsOldestFirst(payments);
+  const paymentsByInstallmentId = new Map<string, RawPayment[]>();
+  for (const payment of orderedPayments) {
+    if (payment.installmentId == null) continue;
+
+    const installmentId = String(payment.installmentId);
+    paymentsByInstallmentId.set(installmentId, [
+      ...(paymentsByInstallmentId.get(installmentId) ?? []),
+      payment,
+    ]);
+  }
   // The server accepts one submission awaiting review per loan, not per installment.
   const isAwaitingReview = orderedPayments.some((pay) => pay.status === "pending_review");
   const latestPayment = orderedPayments.at(-1);
@@ -297,8 +307,13 @@ export function mapToInstallmentPayments(
   // Same conduct rule as computePaymentBehavior, so the cards and the conduct summary agree.
   const conduct = deriveInstallmentConduct(installments, payments, now);
   const today = bangkokDateKey(now);
+  const totalOutstandingAmount = installments.reduce(
+    (sum, inst) => sum + Math.max(0, inst.amountDue - inst.amountPaid),
+    0,
+  );
 
   return installments.map((inst, index) => {
+    const installmentPayments = paymentsByInstallmentId.get(String(inst.id)) ?? [];
     const isSettled = Boolean(inst.settledAt) || inst.amountPaid >= inst.amountDue;
 
     let status: InstallmentStatus = "upcoming";
@@ -323,10 +338,16 @@ export function mapToInstallmentPayments(
       paidAmountSummary: `${inst.amountPaid.toLocaleString("th-TH")}/${inst.amountDue.toLocaleString("th-TH")}`,
       dueDateLabel: `ครบกำหนด ${dateLabel}`,
       outstandingAmount: remaining.toLocaleString("th-TH"),
+      totalOutstandingAmount,
       actionLabel: status !== "paid" ? "ชำระเงิน" : undefined,
       completedPaymentLabel: status === "paid" ? "ชำระเรียบร้อยแล้ว" : undefined,
       completedPaymentDateLabel: inst.settledAt ? formatThaiDate(inst.settledAt) : undefined,
       completedPaymentTimeLabel: inst.settledAt ? formatThaiTime(inst.settledAt) : undefined,
+      paymentAttempt: installmentPayments.length > 0 ? installmentPayments.length + 1 : undefined,
+      paymentAttempts:
+        installmentPayments.length > 0
+          ? installmentPayments.map((payment) => ({ amount: payment.amount.toLocaleString("th-TH") }))
+          : undefined,
       dueInDays: status === "current" && hasRejectedPayment && !isOverdue ? dueInDays : undefined,
       // Overdue from the day after the due date, on Bangkok calendar days.
       isOverdue,

@@ -788,8 +788,16 @@ export async function getActionRequests(
           accountName: loan.bankAccountName,
         };
 
+    const totalOutstandingAmount = (loan.installments || []).reduce(
+      (sum, installment) => sum + Math.max(0, installment.amountDue - installment.amountPaid),
+      0,
+    );
+    const paymentAttemptsByInstallment = new Map<number, number>();
     const paymentHistory = (loan.payments || []).map((p) => {
       const matchingInst = (loan.installments || []).find((i) => i.id === p.installmentId);
+      const installmentNumber = matchingInst ? matchingInst.seq : 1;
+      const attemptNumber = (paymentAttemptsByInstallment.get(installmentNumber) ?? 0) + 1;
+      paymentAttemptsByInstallment.set(installmentNumber, attemptNumber);
       const mappedStatus =
         p.status === "confirmed"
           ? "verified"
@@ -799,13 +807,19 @@ export async function getActionRequests(
 
       return {
         id: p.id,
-        installmentNumber: matchingInst ? matchingInst.seq : 1,
+        installmentNumber,
+        attemptNumber,
         amount: String(p.amount),
+        installmentOutstandingAmount: String(
+          matchingInst ? Math.max(0, matchingInst.amountDue - matchingInst.amountPaid) : 0,
+        ),
         paidAt: p.paidAt ? formatThaiDate(p.paidAt) : formatThaiDate(p.createdAt),
+        paidTime: formatThaiTime(p.paidAt ?? p.createdAt),
         reviewedAt: p.confirmedAt ? formatThaiDate(p.confirmedAt) : undefined,
         status: mappedStatus,
         // The reviewer's reason for a rejection, shown in the verify-slip modal.
         reviewNote: p.reviewNote ?? undefined,
+        isOverpayment: p.status === "pending_review" && p.amount > totalOutstandingAmount,
         // The route, not the storage path: these props are serialized to the browser, and a bare
         // bucket path in an <img src> renders nothing. The 302 re-runs authorization per load.
         slipImageUrl: p.slipPath ? `/api/payments/${p.id}/slip` : "",

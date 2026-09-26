@@ -24,6 +24,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
+import ImageWithSkeleton from "@/components/shared/ImageWithSkeleton";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import RequestTimeline from "@/components/shared/RequestTimeline";
 import styles from "@/app/student/student.module.css";
@@ -784,10 +785,10 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                         className="relative group cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white hover:shadow-md transition-all flex justify-center items-center"
                         title="คลิกเพื่อดูภาพขนาดเต็ม (Preview)"
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <ImageWithSkeleton
                           src={selectedRequest.slipUrl}
                           alt="slip proof"
+                          containerClassName="max-h-[45vh] max-w-full"
                           className="max-h-[45vh] rounded-lg shadow-sm object-contain transition-transform duration-200 group-hover:scale-[1.02]"
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-xs sm:text-sm font-semibold rounded-lg">
@@ -806,10 +807,10 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   <div className="mt-2 space-y-3">
                     {uploadedSlip ? (
                       <div className="relative rounded-xl border-2 border-dashed border-green-300 bg-green-50/50 p-2 flex justify-center items-center h-48 group">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <ImageWithSkeleton
                           src={uploadedSlip}
                           alt="slip preview"
+                          containerClassName="max-h-full max-w-full"
                           className="max-h-full rounded-lg shadow-sm object-contain"
                         />
                         <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -1177,10 +1178,10 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   title="สลิปหลักฐานการโอนเงิน"
                 />
               ) : (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
+                <ImageWithSkeleton
                   src={previewSlipUrl}
                   alt="สลิปหลักฐานการโอนเงินขนาดเต็ม"
+                  containerClassName="max-h-[72vh] max-w-full"
                   className="max-h-[72vh] w-auto max-w-full rounded-xl shadow-md object-contain select-none bg-white"
                 />
               )}

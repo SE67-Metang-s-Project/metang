@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, FileText, ImageOff } from "lucide-react";
 import type { LoanPaymentHistoryItem } from "@/app/student/studentMockData";
 import styles from "@/app/student/student.module.css";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
+import ImageWithSkeleton from "@/components/shared/ImageWithSkeleton";
 import TransferSlipModal from "./TransferSlipModal";
 
 type LoanPaymentHistoryProps = {
@@ -92,11 +93,11 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
                 >
                   <span className={styles.paymentEvidenceInstallment}>
                     <strong>
-                      {t("งวด", "Inst.")} {item.installmentNumber}
+                      {t("ชำระงวดที่", "Inst.")} {item.installmentNumber}
                     </strong>
                     {totalAttempts > 1 ? (
                       <span className={styles.paymentEvidenceAttempt}>
-                        {language === "en" ? `(${attemptNumber})` : `(${t("ครั้งที่", "attempt")} ${attemptNumber})`}
+                        ({attemptNumber})
                       </span>
                     ) : null}
                   </span>
@@ -108,20 +109,25 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
                 </button>
                 {isExpanded ? (
                   <div className={styles.paymentEvidenceExpanded}>
-                    <div className={styles.paymentEvidenceReceipt}>
-                      {item.receiptImage ? (
-                        <button
-                          aria-label={t("เปิดหลักฐานการชำระเงิน", "Open payment evidence")}
-                          className={styles.paymentEvidenceReceiptButton}
-                          onClick={() => setSelectedReceiptImage(item.receiptImage)}
-                          type="button"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img alt={t("รูปหลักฐานการชำระเงิน", "Payment evidence image")} src={item.receiptImage} />
-                        </button>
-                      ) : (
-                        <ImageOff aria-hidden="true" size={28} />
-                      )}
+                    <div className={styles.paymentEvidenceReceiptColumn}>
+                      <div className={styles.paymentEvidenceReceipt}>
+                        {item.receiptImage ? (
+                          <button
+                            aria-label={t("เปิดหลักฐานการชำระเงิน", "Open payment evidence")}
+                            className={styles.paymentEvidenceReceiptButton}
+                            onClick={() => setSelectedReceiptImage(item.receiptImage)}
+                            type="button"
+                          >
+                            <ImageWithSkeleton
+                              alt={t("รูปหลักฐานการชำระเงิน", "Payment evidence image")}
+                              containerClassName="size-full"
+                              src={item.receiptImage}
+                            />
+                          </button>
+                        ) : (
+                          <ImageOff aria-hidden="true" size={28} />
+                        )}
+                      </div>
                     </div>
                     <dl className={styles.paymentEvidenceDetails}>
                       <div>
@@ -132,13 +138,13 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
                         <dt>{t("ตรวจสอบเมื่อ", "Reviewed")}</dt>
                         <dd>{localizeStudentContent(withoutTimestampLabel(item.checkedAt), language)}</dd>
                       </div>
-                      {status === "failed" ? (
-                        <div>
-                          <dt>{t("เหตุผลจากผู้ดูแล", "Admin reason")}</dt>
-                          <dd className={styles.paymentEvidenceFailedReason}>{item.reviewNote || "-"}</dd>
-                        </div>
-                      ) : null}
                     </dl>
+                    {status === "failed" ? (
+                      <div className={styles.paymentEvidenceFailedReasonNotice}>
+                        <span>{t("เหตุผลจากเจ้าหน้าที่", "Admin reason")}</span>
+                        <p>{item.reviewNote || "-"}</p>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </article>

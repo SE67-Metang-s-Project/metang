@@ -60,7 +60,11 @@ export async function getAdminPaymentDetail(id: string) {
   return payment ? withSlipFlag(payment) : null;
 }
 
-export type PaymentDecisionErrorCode = "NOT_FOUND" | "STALE_DECISION" | "ACCESS_REVOKED";
+export type PaymentDecisionErrorCode =
+  | "NOT_FOUND"
+  | "STALE_DECISION"
+  | "ACCESS_REVOKED"
+  | "OVERPAYMENT_REQUIRES_CONTACT";
 
 export class PaymentDecisionError extends Error {
   constructor(readonly code: PaymentDecisionErrorCode) {
@@ -102,6 +106,20 @@ export async function decidePayment({
       });
       if (!current) throw new PaymentDecisionError("NOT_FOUND");
       if (current.status !== "pending_review") throw new PaymentDecisionError("STALE_DECISION");
+
+      if (decision === "confirmed") {
+        const installments = await tx.installment.findMany({
+          where: { loanId: current.loanId },
+          select: { amountDue: true, amountPaid: true },
+        });
+        const outstandingAmount = installments.reduce(
+          (sum, installment) => sum + Math.max(0, installment.amountDue - installment.amountPaid),
+          0,
+        );
+        if (current.amount > outstandingAmount) {
+          throw new PaymentDecisionError("OVERPAYMENT_REQUIRES_CONTACT");
+        }
+      }
 
       const changed = await tx.payment.updateMany({
         where: { id: paymentId, status: "pending_review" },

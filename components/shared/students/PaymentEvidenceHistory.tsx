@@ -10,6 +10,7 @@ import {
   ImageOff,
   X,
 } from "lucide-react";
+import ImageWithSkeleton from "@/components/shared/ImageWithSkeleton";
 
 export type PaymentEvidenceRecord = {
   id?: string;
@@ -81,6 +82,13 @@ function StatusPill({ status }: { status: EvidenceStatus }) {
 export default function PaymentEvidenceHistory({ payments = [] }: PaymentEvidenceHistoryProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const attemptsByInstallment = new Map<number, number>();
+  const totalAttemptsByInstallment = new Map<number, number>();
+  payments.forEach((payment) => {
+    totalAttemptsByInstallment.set(
+      payment.installmentNumber,
+      (totalAttemptsByInstallment.get(payment.installmentNumber) ?? 0) + 1,
+    );
+  });
   const verifiedCount = payments.filter((payment) => getEvidenceStatus(payment.status) === "verified").length;
   const failedCount = payments.filter((payment) => getEvidenceStatus(payment.status) === "failed").length;
   const pendingCount = payments.filter((payment) => getEvidenceStatus(payment.status) === "pending").length;
@@ -130,6 +138,7 @@ export default function PaymentEvidenceHistory({ payments = [] }: PaymentEvidenc
           const id = payment.id ?? `${payment.installmentNumber}-${index}`;
           const status = getEvidenceStatus(payment.status);
           const expanded = expandedId === id;
+          const hasMultipleAttempts = (totalAttemptsByInstallment.get(payment.installmentNumber) ?? 0) > 1;
 
           return (
             <div className={`border-b border-gray-100 last:border-b-0 ${expanded && status === "failed" ? "bg-red-50/50" : "bg-white"}`} key={id}>
@@ -145,7 +154,8 @@ export default function PaymentEvidenceHistory({ payments = [] }: PaymentEvidenc
                   </span>
                   <span>
                     <strong className="block text-sm text-gray-900">
-                      งวด {payment.installmentNumber} ({attempt})
+                      ชำระงวดที่ {payment.installmentNumber}
+                      {hasMultipleAttempts ? ` (ครั้งที่ ${attempt})` : ""}
                     </strong>
                     <span className="mt-0.5 block text-xs text-gray-500 sm:hidden">{formatAmount(payment.amount)} บาท</span>
                   </span>
@@ -161,8 +171,12 @@ export default function PaymentEvidenceHistory({ payments = [] }: PaymentEvidenc
                 <div className="grid gap-4 border-t border-gray-100 px-4 py-4 sm:grid-cols-[128px_minmax(0,1fr)]">
                   <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-gray-100">
                     {payment.slipImageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img alt={`หลักฐานการชำระงวด ${payment.installmentNumber}`} className="size-full object-cover" src={payment.slipImageUrl} />
+                      <ImageWithSkeleton
+                        alt={`หลักฐานการชำระงวด ${payment.installmentNumber}`}
+                        className="size-full object-cover"
+                        containerClassName="size-full"
+                        src={payment.slipImageUrl}
+                      />
                     ) : (
                       <ImageOff aria-hidden="true" className="text-gray-400" size={26} />
                     )}
