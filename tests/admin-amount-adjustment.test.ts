@@ -42,11 +42,12 @@ test("RequestsCard enforces loan amount adjustment limit (downward only, <= requ
     "Must display error message when amount is zero or negative",
   );
 
-  // HTML input specifies min and max
+  // The formatted text input still exposes a numeric keypad; its maximum is enforced in
+  // handleEditAmountChange below so comma formatting remains possible.
   assert.match(
     requestsCard,
-    /max=\{originalRequestedAmount/,
-    "Input element must have max bound to originalRequestedAmount",
+    /inputMode="numeric"/,
+    "Amount input must use a numeric input mode",
   );
 
   // handleConfirmDecision validates approvedAmount before submission
@@ -92,6 +93,11 @@ test("Backend loan-requests query enforces approvedAmount <= current.amount and 
     /REDUCTION_COMMENT_REQUIRED/,
     "Backend must require comment when amount is reduced",
   );
+  assert.match(
+    queryFile,
+    /wasReturnedByExecutive && approvedAmount >= current\.amount/,
+    "Executive-returned requests must reduce the approved amount before being re-approved",
+  );
 });
 
 test("RequestsCard enforces system loan limit and prevents typing beyond limits (like student)", () => {
@@ -130,4 +136,3 @@ test("RequestsCard enforces system loan limit and prevents typing beyond limits 
     "handleConfirmDecision must validate parsed > tempLoanApplicationLimit",
   );
 });
-

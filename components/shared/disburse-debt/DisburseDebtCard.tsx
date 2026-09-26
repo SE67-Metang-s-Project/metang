@@ -35,6 +35,7 @@ import LoanPetitionDocument, { downloadLoanPetitionPdf } from "./LoanPetitionDoc
 // ==========================================
 export type StudentInfo = {
   name: string;
+  nameEn?: string;
   studentId: string;
   major: string;
   program?: string;
@@ -548,13 +549,18 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[620px] flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden relative border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
             {/* Header Modal */}
             <div className="flex justify-between items-start px-5 sm:px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
-              <div className="pr-2">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
-                  {isCompleted ? "หลักฐานการเบิกจ่ายเงิน" : "ดำเนินการเบิกจ่ายเงิน"}
-                </h2>
-                <p className="text-[13px] text-gray-500 mt-0.5">
-                  อ้างอิงคำร้อง: {selectedRequest.id}
-                </p>
+              <div className="flex gap-2 pr-2">
+                <span className="flex self-stretch items-center rounded-xl bg-orange-100 px-2 text-[#ea580c]">
+                  <HandCoins aria-hidden="true" size={24} />
+                </span>
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
+                    {isCompleted ? "หลักฐานการเบิกจ่ายเงิน" : "ดำเนินการเบิกจ่ายเงิน"}
+                  </h2>
+                  <p className="text-[13px] text-gray-500 mt-0.5">
+                    อ้างอิงคำร้อง: {selectedRequest.id}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <span

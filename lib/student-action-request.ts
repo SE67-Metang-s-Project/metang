@@ -14,6 +14,7 @@ export function mapStudentLoanToActionRequest(
 ): ActionRequest {
   const effectiveProfile = profile || {
     displayName: details.bankAccountName || "นักศึกษา",
+    displayNameEn: undefined,
     studentId: "-",
     programName: "พยาบาลศาสตรบัณฑิต",
     educationLevel: "ปริญญาตรี",
@@ -131,6 +132,7 @@ export function mapStudentLoanToActionRequest(
   return {
     id: details.requestNumber || details.id || "",
     name: effectiveProfile.displayName || details.bankAccountName || "นักศึกษา",
+    nameEn: effectiveProfile.displayNameEn,
     studentId: effectiveProfile.studentId || "-",
     major: "พยาบาลศาสตร์",
     program: effectiveProfile.programName || "พยาบาลศาสตรบัณฑิต",

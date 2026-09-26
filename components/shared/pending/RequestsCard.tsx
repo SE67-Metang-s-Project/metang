@@ -469,6 +469,7 @@ export default function RequestsCard({
   const selectedDisplayAmount = String(selectedRequest?.approvedAmount ?? selectedRequest?.amount ?? "0");
   const mustReduceAmountBeforeApproval =
     isAdminOrSuperAdmin &&
+    isExecutiveReturned(selectedRequest) &&
     originalRequestedAmount > 0 &&
     Number(String(selectedRequest?.amount ?? "0").replace(/,/g, "")) >= originalRequestedAmount;
 
@@ -552,7 +553,7 @@ export default function RequestsCard({
     if (!selectedRequest || !confirmAction) return;
 
     if (confirmAction === "approve" && mustReduceAmountBeforeApproval) {
-      setErrorMessage("กรุณาปรับลดวงเงินก่อนส่งพิจารณา");
+      setErrorMessage("ผู้บริหารส่งกลับมาแก้ไข กรุณาปรับลดวงเงินก่อนส่งพิจารณาใหม่");
       return;
     }
 
@@ -943,13 +944,18 @@ export default function RequestsCard({
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[620px] flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden relative border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
             {/* Header Modal */}
             <div className="flex justify-between items-start px-5 sm:px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
-              <div className="pr-2">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
-                  คำร้องรอพิจารณา
-                </h2>
-                <p className="text-[13px] text-gray-500 mt-0.5">
-                  อ้างอิงคำร้อง: {selectedRequest.id}
-                </p>
+              <div className="flex gap-2 pr-2">
+                <span className="flex self-stretch items-center rounded-xl bg-orange-100 px-2 text-[#ea580c]">
+                  <FileText aria-hidden="true" size={24} />
+                </span>
+                <div>
+                  <h2 className="text-lg font-bold leading-tight text-gray-900 sm:text-xl">
+                    คำร้องรอพิจารณา
+                  </h2>
+                  <p className="text-[13px] leading-tight text-gray-500">
+                    อ้างอิงคำร้อง: {selectedRequest.id}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <span
@@ -1353,7 +1359,7 @@ export default function RequestsCard({
                       disabled={isAdminOrSuperAdmin && mustReduceAmountBeforeApproval}
                       title={
                         isAdminOrSuperAdmin && mustReduceAmountBeforeApproval
-                          ? "กรุณาปรับลดวงเงินก่อนส่งพิจารณา"
+                          ? "ผู้บริหารส่งกลับมาแก้ไข กรุณาปรับลดวงเงินก่อนส่งพิจารณาใหม่"
                           : undefined
                       }
                       className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1473,7 +1479,7 @@ export default function RequestsCard({
                         disabled={isSubmitting || (confirmAction === "approve" && mustReduceAmountBeforeApproval)}
                         title={
                           confirmAction === "approve" && mustReduceAmountBeforeApproval
-                            ? "กรุณาปรับลดวงเงินก่อนส่งพิจารณา"
+                            ? "ผู้บริหารส่งกลับมาแก้ไข กรุณาปรับลดวงเงินก่อนส่งพิจารณาใหม่"
                             : undefined
                         }
                         className={`px-4 py-2 text-[14px] font-bold text-white rounded-lg shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed ${

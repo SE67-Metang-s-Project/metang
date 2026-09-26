@@ -610,13 +610,18 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
           <div className="relative flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200 sm:max-h-[88vh]">
             {/* Header Modal */}
             <div className="flex justify-between items-start px-5 sm:px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
-              <div className="pr-2">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
-                  ตรวจสอบการชำระเงิน
-                </h2>
-                <p className="text-[13px] text-gray-500 mt-0.5">
-                  อ้างอิงคำร้อง: {selectedRequest.id} • {selectedRequest.name}
-                </p>
+              <div className="flex gap-2 pr-2">
+                <span className="flex self-stretch items-center rounded-xl bg-orange-100 px-2 text-[#ea580c]">
+                    <HandCoins aria-hidden="true" size={24} />
+                </span>
+                <div>
+                  <h2 className="text-lg font-bold leading-tight text-gray-900 sm:text-xl">
+                    ตรวจสอบการชำระเงิน
+                  </h2>
+                  <p className="text-[13px] leading-tight text-gray-500">
+                    อ้างอิงคำร้อง: {selectedRequest.id} • {selectedRequest.name}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <button

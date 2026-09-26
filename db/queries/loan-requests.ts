@@ -338,6 +338,7 @@ export type AdminDecisionErrorCode =
   | "ACCESS_REVOKED"
   | "INVALID_APPROVED_AMOUNT"
   | "AMOUNT_EXCEEDS_REQUEST"
+  | "AMOUNT_CHANGE_REQUIRED"
   | "REDUCTION_COMMENT_REQUIRED";
 
 export class AdminDecisionError extends Error {
@@ -385,6 +386,12 @@ export async function decideAdminLoanRequest({
       }
       if (approvedAmount > current.amount) {
         throw new AdminDecisionError("AMOUNT_EXCEEDS_REQUEST");
+      }
+      const wasReturnedByExecutive = current.approvals.some(
+        (approval) => approval.step === "executive" && approval.decision === "returned",
+      );
+      if (wasReturnedByExecutive && approvedAmount >= current.amount) {
+        throw new AdminDecisionError("AMOUNT_CHANGE_REQUIRED");
       }
       if (approvedAmount < current.amount && !comment?.trim()) {
         throw new AdminDecisionError("REDUCTION_COMMENT_REQUIRED");

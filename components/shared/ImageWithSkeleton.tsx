@@ -4,18 +4,22 @@ import { useState, type ImgHTMLAttributes, type SyntheticEvent } from "react";
 
 type ImageWithSkeletonProps = ImgHTMLAttributes<HTMLImageElement> & {
   containerClassName?: string;
+  loadingAspectRatio?: number;
   loadingContainerClassName?: string;
+  loadingImageClassName?: string;
 };
 
 export default function ImageWithSkeleton(props: ImageWithSkeletonProps) {
-  return <ImageWithSkeletonContent key={props.src} {...props} />;
+  return <ImageWithSkeletonContent key={typeof props.src === "string" ? props.src : undefined} {...props} />;
 }
 
 function ImageWithSkeletonContent({
   alt,
   className,
   containerClassName = "",
+  loadingAspectRatio,
   loadingContainerClassName = "",
+  loadingImageClassName = "",
   onError,
   onLoad,
   src,
@@ -37,6 +41,7 @@ function ImageWithSkeletonContent({
     <span
       aria-busy={isLoading}
       className={`relative block overflow-hidden ${isLoading ? `bg-slate-100 ${loadingContainerClassName}` : "bg-transparent"} ${containerClassName}`}
+      style={isLoading && loadingAspectRatio ? { aspectRatio: loadingAspectRatio } : undefined}
     >
       {isLoading ? (
         <span
@@ -48,7 +53,7 @@ function ImageWithSkeletonContent({
       <img
         {...props}
         alt={alt}
-        className={`relative block transition-opacity duration-200 ${isLoading ? "opacity-0" : "opacity-100"} ${className ?? ""}`}
+        className={`relative block transition-opacity duration-200 ${isLoading ? `opacity-0 ${loadingImageClassName}` : "opacity-100"} ${className ?? ""}`}
         onError={handleError}
         onLoad={finishLoading}
         src={src}

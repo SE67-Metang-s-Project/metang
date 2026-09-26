@@ -327,6 +327,7 @@ export default function StudentDashboard({
     currentActiveLoan && "transferSlipImage" in currentActiveLoan
       ? currentActiveLoan.transferSlipImage
       : undefined;
+  const transferTimelineItem = dashboardTimeline.find((item) => Boolean(item.transferDetails));
   const hasAdminTransferredFunds =
     Boolean(
       currentActiveLoan &&
@@ -460,12 +461,11 @@ export default function StudentDashboard({
                 : undefined
             }
             onDownloadRequest={
-              shouldShowDownload && !isWaitingForTransferConfirmation
-                ? () => setIsPetitionModalOpen(true)
-                : undefined
+              shouldShowDownload ? () => setIsPetitionModalOpen(true) : undefined
             }
             showCancelRequest={Boolean(currentActiveLoan) && !hasExecutiveApproved}
             showEditRequest={isActiveLoanReturned}
+            showHistoryAction={Boolean(currentActiveLoan)}
             requestStatus={timelineRequestStatus}
           />
 
@@ -504,6 +504,8 @@ export default function StudentDashboard({
         <TransferSlipModal
           imageSrc={transferSlipImage}
           onClose={() => setIsTransferSlipOpen(false)}
+          transferDetail={transferTimelineItem?.title}
+          transferredAt={transferTimelineItem?.dateTime}
         />
       ) : null}
       {isPetitionModalOpen && petitionRequest ? (

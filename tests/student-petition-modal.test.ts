@@ -12,10 +12,12 @@ test("mapStudentLoanToActionRequest converts student loan details to ActionReque
   const details = loanDetailsByRequestNumber["SL-2568-0001"];
   assert.ok(details, "Mock loan details for SL-2568-0001 must exist");
 
-  const actionRequest = mapStudentLoanToActionRequest(details, studentProfile);
+  const profileWithEnglishName = { ...studentProfile, displayNameEn: "Nattapong Jaidee" };
+  const actionRequest = mapStudentLoanToActionRequest(details, profileWithEnglishName);
 
   assert.equal(actionRequest.id, "SL-2568-0001");
   assert.equal(actionRequest.name, studentProfile.displayName);
+  assert.equal(actionRequest.nameEn, profileWithEnglishName.displayNameEn);
   assert.equal(actionRequest.studentId, studentProfile.studentId);
   assert.equal(actionRequest.major, "พยาบาลศาสตร์");
   assert.equal(actionRequest.program, studentProfile.programName);
@@ -82,14 +84,23 @@ test("LoanDetailsPage and LoanDetailOverview connect LoanPetitionModal to 'ด�
     /downloadLoanPetitionPdf/,
     "LoanPetitionModal must support downloading the PDF",
   );
+  assert.match(loanPetitionModalContent, /localizeStudentContent/);
+  assert.match(loanPetitionModalContent, /request\.nameEn/);
+  assert.match(loanPetitionModalContent, /t\("แบบขอยืมเงินทุนสวัสดิการ", "Loan Request"\)/);
+  assert.match(loanPetitionModalContent, /t\("ดาวน์โหลด PDF", "Download PDF"\)/);
+  assert.doesNotMatch(
+    loanPetitionModalContent,
+    />\s*\{t\("ปิด", "Close"\)\}\s*</,
+    "LoanPetitionModal should use the header X instead of a second footer Close button",
+  );
 });
 
-test("Download petition PDF button appears only when admin/super admin has successfully transferred funds", () => {
+test("Download petition PDF is available during transfer confirmation and after disbursement", () => {
   const loanDetailsPageContent = read("components/student/loan-details/LoanDetailsPage.tsx");
   assert.match(
     loanDetailsPageContent,
-    /const shouldShowDownload = hasAdminTransferredFunds;/,
-    "LoanDetailsPage must show download button only when admin has transferred funds",
+    /const shouldShowDownload =\s*isWaitingForTransferConfirmation \|\|[\s\S]*?hasAdminTransferredFunds;/,
+    "LoanDetailsPage must expose the petition while confirming a transfer and after disbursement",
   );
 
   const disburseDebtCardContent = read("components/shared/disburse-debt/DisburseDebtCard.tsx");

@@ -29,6 +29,7 @@ type LoanTimelineProps = {
   requestStatus?: string;
   advisorName?: string;
   advisorNameEn?: string;
+  showHistoryAction?: boolean;
 };
 
 function getRequestStatus(items: LoanTimelineItem[], isTransferAccepted: boolean) {
@@ -70,6 +71,7 @@ export default function LoanTimeline({
   requestStatus,
   advisorName: advisorNameProp,
   advisorNameEn,
+  showHistoryAction = false,
 }: LoanTimelineProps) {
   const router = useRouter();
   const { language, t } = useStudentLanguage();
@@ -155,6 +157,7 @@ export default function LoanTimeline({
           "Request status appears after submission",
         )}
         showHistoryAction={items.length > 0}
+        alwaysShowHistoryAction={showHistoryAction}
         showEmptyWhenNoHistory
         splitReturnedStatus
         title={t("ติดตามสถานะคำร้อง", "Request Status")}

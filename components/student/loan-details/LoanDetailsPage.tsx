@@ -57,6 +57,7 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
     () => false,
   );
   const displayedTimeline = details.timeline.filter((item) => !item.isUpcoming);
+  const transferTimelineItem = displayedTimeline.find((item) => Boolean(item.transferDetails));
   const isRepaymentInProgress =
     ["disbursed", "closed", "paid"].includes(details.statusCode ?? "") ||
     details.statusLabel.includes("อยู่ระหว่างการชำระ") ||
@@ -180,6 +181,8 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
         <TransferSlipModal
           imageSrc={details.transferSlipImage}
           onClose={() => setIsSlipModalOpen(false)}
+          transferDetail={transferTimelineItem?.title}
+          transferredAt={transferTimelineItem?.dateTime}
         />
       ) : null}
       {isCancelDialogOpen ? (

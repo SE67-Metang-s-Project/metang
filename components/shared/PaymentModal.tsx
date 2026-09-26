@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Copy,
   Download,
+  HandCoins,
   Landmark,
   ReceiptText,
   UploadCloud,
@@ -322,16 +323,23 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
           <X aria-hidden="true" size={20} />
         </button>
 
-        <header className="shrink-0 border-b border-gray-100 px-14 py-4 text-center sm:px-16">
-          <h2 className="text-xl font-bold leading-tight text-gray-900" id="payment-modal-title">
-            {t("ชำระงวดที่", "Pay installment")} {installment.installmentNumber}
-            {installment.paymentAttempt && installment.paymentAttempt > 1
-              ? ` ${t("(ครั้งที่", "(Attempt")} ${installment.paymentAttempt})`
-              : ""}
-          </h2>
-          <p className="mt-1 text-sm font-normal text-gray-600">
-            {t("ครบกำหนด", "Due")} {dueDate} {t("23:59 น.", "23:59")}
-          </p>
+        <header className="flex shrink-0 items-center border-b border-gray-100 px-5 py-4 pr-14 sm:px-6 sm:pr-16">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+              <HandCoins aria-hidden="true" size={22} />
+            </span>
+            <div className="min-w-0 text-left">
+              <h2 className="text-xl font-bold leading-tight text-gray-900" id="payment-modal-title">
+                {t("ชำระงวดที่", "Pay installment")} {installment.installmentNumber}
+                {installment.paymentAttempt && installment.paymentAttempt > 1
+                  ? ` ${t("(ครั้งที่", "(Attempt")} ${installment.paymentAttempt})`
+                  : ""}
+              </h2>
+              <p className="mt-1 text-sm font-normal text-gray-600">
+                {t("ครบกำหนด", "Due")} {dueDate} {t("23:59 น.", "23:59")}
+              </p>
+            </div>
+          </div>
         </header>
 
         <div

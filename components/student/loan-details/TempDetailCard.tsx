@@ -24,6 +24,9 @@ export default function TempDetailCard({ details, profile }: TempDetailCardProps
     educationLevelsByStudentIdDigit[profile.studentId.charAt(4)] ?? profile.educationLevel ?? "-";
   const displayName = language === "en" ? profile.displayNameEn || profile.displayName : profile.displayName;
   const programName = profile.programName || "พยาบาลศาสตรบัณฑิต";
+  const bankName = details.bankName ? localizeStudentContent(details.bankName, language) : "-";
+  const isLongEnglishBankName =
+    language === "en" && bankName === "Bank for Agriculture and Agricultural Cooperatives";
 
   return (
     <>
@@ -78,9 +81,18 @@ export default function TempDetailCard({ details, profile }: TempDetailCardProps
           </h2>
         </header>
         <dl className={styles.loanDetailDefinitionList}>
-          <div>
+          <div className={styles.bankNameRow}>
             <dt>{t("ธนาคาร", "Bank")}</dt>
-            <dd>{details.bankName ? localizeStudentContent(details.bankName, language) : "-"}</dd>
+            <dd>
+              {isLongEnglishBankName ? (
+                <>
+                  Bank for Agriculture and
+                  <br className={styles.bankNameMobileBreak} /> Agricultural Cooperatives
+                </>
+              ) : (
+                bankName
+              )}
+            </dd>
           </div>
           <div>
             <dt>{t("เลขที่บัญชี", "Account number")}</dt>

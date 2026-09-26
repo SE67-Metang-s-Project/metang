@@ -81,6 +81,13 @@ export async function POST(request: Request, { params }: Params) {
         422,
       );
     }
+    if (error instanceof AdminDecisionError && error.code === "AMOUNT_CHANGE_REQUIRED") {
+      return apiError(
+        "VALIDATION_ERROR",
+        "approvedAmount must be reduced after an executive return",
+        422,
+      );
+    }
     if (error instanceof AdminDecisionError && error.code === "REDUCTION_COMMENT_REQUIRED") {
       return apiError(
         "VALIDATION_ERROR",

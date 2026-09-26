@@ -7,6 +7,10 @@ import LoanPetitionDocument, {
   downloadLoanPetitionPdf,
 } from "@/components/shared/disburse-debt/LoanPetitionDocument";
 import type { ActionRequest } from "@/components/shared/disburse-debt/DisburseDebtCard";
+import {
+  localizeStudentContent,
+  useStudentLanguage,
+} from "@/app/student/StudentLanguageProvider";
 
 export interface LoanPetitionModalProps {
   request: ActionRequest | null;
@@ -23,6 +27,7 @@ export default function LoanPetitionModal({
   hideBankDetails = false,
   userRole,
 }: LoanPetitionModalProps) {
+  const { language, t } = useStudentLanguage();
   const [documentViewTab, setDocumentViewTab] = useState<"official" | "attachment">("official");
   const modalDismiss = useModalDismiss({
     onClose,
@@ -30,6 +35,11 @@ export default function LoanPetitionModal({
   });
 
   if (!isOpen || !request) return null;
+
+  const studentName =
+    language === "en"
+      ? request.nameEn || localizeStudentContent(request.name, language)
+      : request.name;
 
   return (
     <div
@@ -40,16 +50,17 @@ export default function LoanPetitionModal({
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col h-[88vh] sm:h-[92vh] overflow-hidden relative border border-gray-200 animate-in fade-in zoom-in-95 duration-200 print:h-auto print:max-w-full print:border-none print:shadow-none">
         {/* Header ของ Modal เอกสาร */}
         <div className="flex justify-between items-center px-5 sm:px-6 py-4 border-b border-gray-100 bg-white shrink-0 print:hidden">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="bg-orange-100 text-[#ea580c] p-2 rounded-lg">
               <FileText size={22} />
             </div>
-            <div>
+            <div className="min-w-0">
               <h2 className="text-lg font-bold text-gray-900 leading-tight">
-                แบบขอยืมเงินทุนสวัสดิการ
+                {t("แบบขอยืมเงินทุนสวัสดิการ", "Loan Request")}
               </h2>
-              <p className="text-[13px] text-gray-500 mt-0.5">
-                รหัสคำร้อง: {request.id} • {request.name}
+              <p className="mt-0.5 flex flex-col text-[13px] text-gray-500">
+                <span>{t("รหัสคำร้อง:", "Request ID:")} {request.id}</span>
+                <span className="break-words">{studentName}</span>
               </p>
             </div>
           </div>
@@ -67,7 +78,7 @@ export default function LoanPetitionModal({
                       : "text-gray-500 hover:text-gray-900"
                   }`}
                 >
-                  แบบฟอร์มทางการ
+                  {t("แบบฟอร์มทางการ", "Official form")}
                 </button>
                 <button
                   type="button"
@@ -78,7 +89,7 @@ export default function LoanPetitionModal({
                       : "text-gray-500 hover:text-gray-900"
                   }`}
                 >
-                  ไฟล์แนบต้นฉบับ
+                  {t("ไฟล์แนบต้นฉบับ", "Original attachment")}
                 </button>
               </div>
             )}
@@ -86,7 +97,7 @@ export default function LoanPetitionModal({
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
-              aria-label="ปิดหน้าต่าง"
+              aria-label={t("ปิดหน้าต่าง", "Close window")}
             >
               <X size={20} />
             </button>
@@ -99,7 +110,7 @@ export default function LoanPetitionModal({
             <iframe
               src={request.documentUrl}
               className="w-full h-full min-h-[500px] rounded-xl border border-gray-300 shadow-sm bg-white"
-              title="Petition Document"
+              title={t("เอกสารคำร้อง", "Request document")}
             />
           ) : (
             <LoanPetitionDocument
@@ -113,7 +124,10 @@ export default function LoanPetitionModal({
         {/* Footer */}
         <div className="p-3.5 sm:p-4 bg-white border-t border-gray-100 flex justify-between items-center shrink-0 print:hidden">
           <span className="text-[11px] sm:text-xs text-gray-500 hidden sm:inline">
-            แบบฟอร์มทางการกองทุนสวัสดิการนักศึกษา คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่
+            {t(
+              "แบบฟอร์มทางการกองทุนสวัสดิการนักศึกษา คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่",
+              "Official student welfare fund form, Faculty of Nursing, Chiang Mai University",
+            )}
           </span>
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
@@ -124,14 +138,7 @@ export default function LoanPetitionModal({
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white bg-[#ea580c] hover:bg-[#c2410c] shadow-sm hover:shadow transition-all cursor-pointer active:scale-[0.98]"
             >
               <Download size={15} />
-              <span>ดาวน์โหลด PDF</span>
-            </button>
-            <button
-              onClick={onClose}
-              className="flex-1 sm:flex-initial px-5 py-2 rounded-xl text-[13px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer text-center active:scale-[0.98]"
-              type="button"
-            >
-              ปิดหน้าต่าง
+              <span>{t("ดาวน์โหลด PDF", "Download PDF")}</span>
             </button>
           </div>
         </div>

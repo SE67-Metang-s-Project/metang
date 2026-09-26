@@ -67,6 +67,26 @@ function localizeTimelineText(value: string, language: StudentLanguage) {
     .replace(/\(การแก้ไขครั้งที่ (\d+)\)/g, "(Revision $1)");
 }
 
+function splitTransferDetail(detail: string, language: StudentLanguage) {
+  const colonIndex = detail.indexOf(":");
+  if (colonIndex === -1) {
+    return { label: localizeTimelineText(detail, language), value: "" };
+  }
+
+  const rawLabel = detail.slice(0, colonIndex).trim();
+  const label =
+    rawLabel === "ธนาคาร" || rawLabel === "ชื่อธนาคาร"
+      ? language === "en"
+        ? "Bank name"
+        : "ชื่อธนาคาร"
+      : localizeTimelineText(rawLabel, language);
+
+  return {
+    label,
+    value: localizeTimelineText(detail.slice(colonIndex + 1).trim(), language),
+  };
+}
+
 function splitReturnedStatusDate(value: string) {
   const match = value.match(/^ส่งกลับมาแก้ไข \((.+)\)$/);
   return match ? { status: "ส่งกลับมาแก้ไข", date: match[1] } : null;
@@ -114,9 +134,9 @@ function getStatusBadgeConfig(statusType: FullActionHistoryItem["statusType"], l
     case "disbursed":
       return {
         label: label("โอนเงินเรียบร้อย", "Funds transferred"),
-        badgeClass: "bg-teal-50 text-teal-700 border-teal-200",
+        badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
         icon: <HandCoins size={13} className="shrink-0" />,
-        dotClass: "bg-teal-500",
+        dotClass: "bg-blue-500",
       };
     case "cancelled":
       return {
@@ -156,6 +176,7 @@ export interface RequestTimelineProps {
   footer?: React.ReactNode;
   showEmptyWhenNoHistory?: boolean;
   showHistoryAction?: boolean;
+  alwaysShowHistoryAction?: boolean;
   splitReturnedStatus?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
@@ -182,6 +203,7 @@ export default function RequestTimeline({
   footer,
   showEmptyWhenNoHistory = false,
   showHistoryAction = true,
+  alwaysShowHistoryAction = false,
   splitReturnedStatus = false,
   emptyTitle,
   emptyDescription,
@@ -233,7 +255,7 @@ export default function RequestTimeline({
         className={styles.sectionCardHeading}
         icon={<Clock3 aria-hidden="true" size={20} strokeWidth={2.2} />}
         title={title}
-        action={showHistoryAction && hasSourceHistory ? (
+        action={showHistoryAction && (hasSourceHistory || alwaysShowHistoryAction) ? (
           <button
             type="button"
             onClick={() => setIsHistoryModalOpen(true)}
@@ -310,8 +332,7 @@ export default function RequestTimeline({
                     const isTransferStatus = item.action.includes("โอนเงิน");
                     const hasSlipButton = isTransferStatus && Boolean(onShowTransferSlip);
                     const hasConfirmReceiptButton = isTransferStatus && Boolean(onConfirmReceipt);
-                    const hasDownloadButton =
-                      isTransferStatus && !hasConfirmReceiptButton && Boolean(onDownloadRequest);
+                    const hasDownloadButton = isTransferStatus && Boolean(onDownloadRequest);
 
                     if (!hasDetails && !hasSlipButton && !hasConfirmReceiptButton && !hasDownloadButton) {
                       return null;
@@ -322,19 +343,11 @@ export default function RequestTimeline({
                         {hasDetails ? (
                           <dl className={styles.transferDetails}>
                             {filteredDetails.map((detail, dIdx) => {
-                              const colonIndex = detail.indexOf(":");
-                              if (colonIndex === -1) {
-                                return (
-                                  <Fragment key={dIdx}>
-                                    <dt>{localizeTimelineText(detail, language)}</dt>
-                                    <dd></dd>
-                                  </Fragment>
-                                );
-                              }
+                              const { label, value } = splitTransferDetail(detail, language);
                               return (
                                 <Fragment key={dIdx}>
-                                  <dt>{localizeTimelineText(detail.slice(0, colonIndex), language)}</dt>
-                                  <dd>{localizeTimelineText(detail.slice(colonIndex + 1).trim(), language)}</dd>
+                                  <dt>{label}</dt>
+                                  <dd>{value}</dd>
                                 </Fragment>
                               );
                             })}
@@ -358,16 +371,6 @@ export default function RequestTimeline({
                                 {t("ดูหลักฐาน", "View proof")}
                               </button>
                             ) : null}
-                            {hasConfirmReceiptButton ? (
-                              <button
-                                className={`${styles.loanApplicationNext} ${styles.loanDownloadRequestButton}`}
-                                onClick={onConfirmReceipt}
-                                type="button"
-                              >
-                                <CheckCircle2 aria-hidden="true" size={18} />
-                                {t("ยืนยันการรับเงิน", "Confirm receipt")}
-                              </button>
-                            ) : null}
                             {hasDownloadButton ? (
                               <button
                                 className={`${styles.loanApplicationNext} ${styles.loanDownloadRequestButton}`}
@@ -376,6 +379,16 @@ export default function RequestTimeline({
                               >
                                 <Download aria-hidden="true" size={18} />
                                 {t("ดาวน์โหลดแบบคำร้อง", "Download request")}
+                              </button>
+                            ) : null}
+                            {hasConfirmReceiptButton ? (
+                              <button
+                                className={`${styles.loanApplicationNext} ${styles.loanDownloadRequestButton}`}
+                                onClick={onConfirmReceipt}
+                                type="button"
+                              >
+                                <CheckCircle2 aria-hidden="true" size={18} />
+                                {t("ยืนยันการรับเงิน", "Confirm receipt")}
                               </button>
                             ) : null}
                           </div>
@@ -501,15 +514,26 @@ export default function RequestTimeline({
                           )}
 
                           {item.transferDetails && item.transferDetails.length > 0 && (
-                            <div className="space-y-1 rounded-lg border border-gray-200 bg-white p-2.5 text-sm text-gray-600">
-                              <div className="font-semibold text-gray-700 mb-1">
+                            <div className="space-y-1 rounded-lg border border-blue-200 bg-blue-50 p-2.5 text-sm text-blue-800">
+                              <div className="mb-1 font-semibold text-blue-800">
                                 {t("รายละเอียดการโอนเงิน:", "Transfer details:")}
                               </div>
-                              {item.transferDetails.map((detail, dIdx) => (
-                                <div key={dIdx} className="text-sm text-gray-600">
-                                  {localizeTimelineText(detail, language)}
-                                </div>
-                              ))}
+                              <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-4 text-sm text-blue-800">
+                                {item.transferDetails.map((detail, dIdx) => {
+                                  const { label, value } = splitTransferDetail(detail, language);
+                                  return (
+                                    <Fragment key={dIdx}>
+                                      <dt>{label}:</dt>
+                                      <dd
+                                        className="min-w-0 break-words"
+                                        style={{ color: "#1e40af" }}
+                                      >
+                                        {value}
+                                      </dd>
+                                    </Fragment>
+                                  );
+                                })}
+                              </dl>
                             </div>
                           )}
                         </div>

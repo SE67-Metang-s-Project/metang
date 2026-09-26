@@ -1549,6 +1549,14 @@
   grid-template-columns: max-content minmax(0, 1fr);
 }
 
+.loanDetailDefinitionList > .bankNameRow {
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.bankNameMobileBreak {
+  display: none;
+}
+
 .bankAccountNameRow dd {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -5099,8 +5107,13 @@
   }
 
   .paymentNoteText {
+    align-items: flex-end;
     flex-direction: column;
     gap: 0;
+  }
+
+  .bankNameMobileBreak {
+    display: initial;
   }
 
   .installmentNote {
