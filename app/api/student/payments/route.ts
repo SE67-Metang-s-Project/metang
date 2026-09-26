@@ -19,7 +19,7 @@ import {
 /**
  * Submit a repayment slip for the student's own loan (multipart/form-data: a `slip` file -
  * image/jpeg, image/png or application/pdf up to 10MB - plus `amount`, and optionally `paidAt`).
- * @description Takes no loan id: a student may hold only one non-terminal loan, so the server resolves the disbursed one itself and the client needs a single request. The slip is stored privately and read back only through GET /api/payments/{id}/slip. Only one submission may await review at a time. Repayment history is served by GET /api/student/loan-requests/{id}, which returns the loan's payments.
+ * @description Takes no loan id: a student may hold only one non-terminal loan, so the server resolves the disbursed one itself and the client needs a single request. The slip is stored privately and read back only through GET /api/payments/{id}/slip. Only one submission may await review at a time, and the amount may not exceed what is still owed on the loan (422). Repayment history is served by GET /api/student/loan-requests/{id}, which returns the loan's payments.
  * @tag Student payments
  * @body StudentPaymentBody
  * @auth cookieAuth
