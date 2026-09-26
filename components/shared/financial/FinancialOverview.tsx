@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CircleDollarSign, FileCheck2, WalletCards } from "lucide-react";
+import { ChevronDown, CircleDollarSign, FileCheck2, WalletCards } from "lucide-react";
 import type { ExecutiveFinancialOverviewData } from "@/lib/financial-overview-types";
 
 type Period = "monthly" | "quarterly";
@@ -9,6 +9,8 @@ type Period = "monthly" | "quarterly";
 type Overview = ExecutiveFinancialOverviewData;
 
 type Point = Overview["monthly"][number];
+const CURRENT_THAI_YEAR = new Date().getFullYear() + 543;
+const YEAR_OPTIONS = Array.from({ length: 6 }, (_, index) => CURRENT_THAI_YEAR - index);
 
 const money = (value: number) =>
   new Intl.NumberFormat("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
@@ -16,6 +18,8 @@ const money = (value: number) =>
   );
 const wholeMoney = (value: number) =>
   new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(value);
+const compactMoney = (value: number) =>
+  `${(value / 1000).toFixed(value >= 10000 ? 1 : 2).replace(/\.0+$/, "")}k`;
 const pieLabelPosition = (startPercent: number, slicePercent: number) => {
   const angle = (((startPercent + slicePercent / 2) * 3.6 - 90) * Math.PI) / 180;
   const radius = 39;
@@ -26,9 +30,6 @@ const pieLabelPosition = (startPercent: number, slicePercent: number) => {
     transform: "translate(-50%, -50%)",
   };
 };
-const compact = (value: number) =>
-  new Intl.NumberFormat("th-TH", { notation: "compact", maximumFractionDigits: 1 }).format(value);
-
 function Metric({
   title,
   amount,
@@ -82,6 +83,7 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
   const [data, setData] = useState<Overview | null>(initialData ?? null);
   const [error, setError] = useState<string | null>(null);
 
+  const [selectedYear, setSelectedYear] = useState(initialData?.year ?? CURRENT_THAI_YEAR);
   const [period, setPeriod] = useState<Period>("monthly");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [hoveredPieIndex, setHoveredPieIndex] = useState<number | null>(null);
@@ -89,13 +91,11 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
   const pieRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // ถ้ามี initialData มาให้แล้ว หรือไม่ได้ระบุ apiUrl ให้ข้ามการ fetch ไปเลย
-    if (initialData || !apiUrl) return;
+    if (!apiUrl) return;
 
     const controller = new AbortController();
 
-    // 2. ใช้ apiUrl แบบ Dynamic
-    fetch(apiUrl, { signal: controller.signal })
+    fetch(`${apiUrl}?year=${selectedYear}`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Unable to load financial overview");
         return response.json() as Promise<{ data: Overview }>;
@@ -112,7 +112,7 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
       });
 
     return () => controller.abort();
-  }, [initialData, apiUrl]);
+  }, [initialData, apiUrl, selectedYear]);
 
   const points = useMemo<Point[]>(() => {
     if (!data) return [];
@@ -170,20 +170,21 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
       label: "เงินคงเหลือในระบบ",
       amount: data.fundBalance,
       percent: balancePercent,
-      color: "#3f8a58",
+      color: "#0250b0",
     },
     {
-      label: "เงินที่อนุมัติไป",
+      label: "เงินที่ค้างชำระทั้งหมด",
       amount: data.approvedAmount,
       percent: approvedPercent,
-      color: "#ffad16",
+      color: "#dc2626",
     },
   ];
   const balanceLabelPosition = pieLabelPosition(0, balancePercent);
   const approvedLabelPosition = pieLabelPosition(balancePercent, approvedPercent);
-  const max = Math.max(1, ...points.flatMap((point) => [point.loans, point.repayments]));
   const active = hoveredIndex === null ? null : points[hoveredIndex];
   const tooltipLeft = `${(((hoveredIndex ?? 0) + 0.5) / points.length) * 100}%`;
+  const maxTotal = Math.max(1, ...points.map((point) => point.loans + point.repayments));
+  const activeTotal = active ? active.loans + active.repayments : 0;
 
   return (
     <section
@@ -196,25 +197,25 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
           title="เงินทั้งหมดในระบบ"
           amount={data.totalSystem}
           percent="100%"
-          color="#f75c12"
+          color="#ffad16"
           icon={WalletCards}
         />
         <Metric
           title="เงินคงเหลือในระบบ"
           amount={data.fundBalance}
           percent={`${balancePercent.toFixed(2)}%`}
-          color="#3f8a58"
+          color="#0250b0"
           icon={CircleDollarSign}
         />
         <Metric
-          title="เงินที่อนุมัติไป"
+          title="เงินที่ค้างชำระทั้งหมด"
           amount={data.approvedAmount}
           percent={`${approvedPercent.toFixed(2)}%`}
-          color="#ffad16"
+          color="#dc2626"
           icon={FileCheck2}
         />
       </div>
-      <div className="grid gap-5 min-[1363px]:grid-cols-[minmax(290px,.78fr)_minmax(0,1.65fr)]">
+      <div className="grid gap-5 min-[1363px]:grid-cols-[minmax(260px,.6fr)_minmax(0,1.9fr)]">
         <article className="flex flex-col rounded-2xl border border-[#e9e3dc] bg-[#fffefd] p-5 shadow-[0_3px_14px_rgba(69,51,39,0.06)] sm:p-6">
           <div>
             <h3 className="text-lg font-semibold text-slate-800">สัดส่วนเงินในระบบ</h3>
@@ -225,7 +226,7 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
               ref={pieRef}
               className="relative grid aspect-square w-full max-w-[300px] place-items-center mx-auto rounded-full"
               style={{
-                background: `conic-gradient(#3f8a58 0 ${balancePercent}%, #ffad16 ${balancePercent}% 100%)`,
+                background: `conic-gradient(#0250b0 0 ${balancePercent}%, #dc2626 ${balancePercent}% 100%)`,
               }}
             >
               {balancePercent > 0 ? (
@@ -306,20 +307,20 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
           </div>
           <div className="mt-auto space-y-3 border-t border-[#eee8e2] pt-5 text-sm">
             <Legend
-              color="#f75c12"
+              color="#ffad16"
               label="เงินทั้งหมดในระบบ"
               amount={data.totalSystem}
               percent={100}
             />
             <Legend
-              color="#3f8a58"
+              color="#0250b0"
               label="เงินคงเหลือในระบบ"
               amount={data.fundBalance}
               percent={balancePercent}
             />
             <Legend
-              color="#ffad16"
-              label="เงินที่อนุมัติไป"
+              color="#dc2626"
+              label="เงินที่ค้างชำระทั้งหมด"
               amount={data.approvedAmount}
               percent={approvedPercent}
             />
@@ -333,26 +334,57 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
               </h3>
               <UpdatedAt value={data.updatedAt} />
             </div>
-            <div className="flex rounded-lg bg-[#f4f0ec] p-1 text-sm font-medium">
-              <button
-                type="button"
-                onClick={() => setPeriod("monthly")}
-                className={`rounded-md px-3 py-1.5 ${period === "monthly" ? "bg-[#f75c12] text-white shadow-sm" : "text-slate-600"}`}
-              >
-                รายเดือน
-              </button>
-              <button
-                type="button"
-                onClick={() => setPeriod("quarterly")}
-                className={`rounded-md px-3 py-1.5 ${period === "quarterly" ? "bg-[#f75c12] text-white shadow-sm" : "text-slate-600"}`}
-              >
-                รายไตรมาส
-              </button>
+            <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+              <label className="sr-only" htmlFor="loan-repayment-year">
+                เลือกปี
+              </label>
+              <YearFilter
+                id="loan-repayment-year"
+                value={selectedYear}
+                onChange={(year) => {
+                  setSelectedYear(year);
+                  setHoveredIndex(null);
+                }}
+              />
+              <div className="flex rounded-lg bg-[#f4f0ec] p-1">
+                <button
+                  type="button"
+                  onClick={() => setPeriod("monthly")}
+                  className={`rounded-md px-3 py-1.5 ${period === "monthly" ? "bg-[#f75c12] text-white shadow-sm" : "text-slate-600"}`}
+                >
+                  รายเดือน
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriod("quarterly")}
+                  className={`rounded-md px-3 py-1.5 ${period === "quarterly" ? "bg-[#f75c12] text-white shadow-sm" : "text-slate-600"}`}
+                >
+                  รายไตรมาส
+                </button>
+              </div>
             </div>
+          </div>
+          <div className="mt-6 grid gap-3 text-center sm:grid-cols-3">
+            <Summary
+              label="รวมยอดการกู้ยืมทั้งปี"
+              value={money(data.totalLoans)}
+              detail={`จำนวนรายการ ${data.totalLoanCount} รายการ`}
+            />
+            <Summary
+              label="รวมยอดการคืนเงินทั้งปี"
+              value={money(data.totalRepayments)}
+              detail={`จำนวนรายการ ${data.totalRepaymentCount} รายการ`}
+            />
+            <Summary
+              label="อัตราการคืนเงินเฉลี่ยทั้งปี"
+              value={`${data.totalLoans + data.totalRepayments > 0 ? ((data.totalRepayments / (data.totalLoans + data.totalRepayments)) * 100).toFixed(2) : "0.00"}%`}
+              detail="ของยอดรวมการกู้ยืมและการคืนเงิน"
+              blue
+            />
           </div>
           <div className="mt-5 flex gap-5 text-sm text-slate-600">
             <span>
-              <i className="mr-2 inline-block size-3 rounded-sm bg-[#3f8a58]" />
+              <i className="mr-2 inline-block size-3 rounded-sm bg-[#ff8800]" />
               ยอดการกู้ยืม
             </span>
             <span>
@@ -362,10 +394,10 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
           </div>
           <div className="mt-5 grid h-64 grid-cols-[auto_1fr] gap-3 sm:h-72">
             <div className="flex flex-col justify-between pb-7 text-xs text-slate-500">
-              <span>{compact(max)}</span>
-              <span>{compact(max * 0.75)}</span>
-              <span>{compact(max * 0.5)}</span>
-              <span>{compact(max * 0.25)}</span>
+              <span>{compactMoney(maxTotal)}</span>
+              <span>{compactMoney(maxTotal * 0.75)}</span>
+              <span>{compactMoney(maxTotal * 0.5)}</span>
+              <span>{compactMoney(maxTotal * 0.25)}</span>
               <span>0</span>
             </div>
             <div className="relative grid grid-rows-[1fr_auto]">
@@ -376,24 +408,33 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
               </div>
               <div className="relative flex items-end justify-around gap-1 border-b border-[#e5ddd5] px-1 pt-3">
                 {points.map((point, index) => (
-                  <div
-                    key={point.label}
-                    className="flex h-full min-w-0 flex-1 items-end justify-center gap-1 sm:gap-1.5"
-                  >
-                    <Pole
-                      color="#3f8a58"
-                      height={(point.loans / max) * 100}
-                      label={`${point.label}: ยอดการกู้ยืม ${money(point.loans)}`}
-                      onEnter={() => setHoveredIndex(index)}
-                      onLeave={() => setHoveredIndex(null)}
-                    />
-                    <Pole
-                      color="#0ea5e9"
-                      height={(point.repayments / max) * 100}
-                      label={`${point.label}: ยอดการคืนเงิน ${money(point.repayments)}`}
-                      onEnter={() => setHoveredIndex(index)}
-                      onLeave={() => setHoveredIndex(null)}
-                    />
+                  <div key={point.label} className="relative flex h-full min-w-0 flex-1 items-end justify-center">
+                    {point.loans + point.repayments > 0 ? (
+                      <span
+                        className="pointer-events-none absolute z-10 -translate-y-1 whitespace-nowrap text-[10px] font-semibold text-black sm:text-xs"
+                        style={{ bottom: `${((point.loans + point.repayments) / maxTotal) * 100}%` }}
+                      >
+                        {compactMoney(point.loans + point.repayments)}
+                      </span>
+                    ) : null}
+                    <div className="flex h-full w-7 flex-col justify-end sm:w-10">
+                      <Pole
+                        color="#ff8800"
+                        height={(point.loans / maxTotal) * 100}
+                        valueLabel={compactMoney(point.loans)}
+                        label={`${point.label}: ยอดการกู้ยืม ${money(point.loans)}`}
+                        onEnter={() => setHoveredIndex(index)}
+                        onLeave={() => setHoveredIndex(null)}
+                      />
+                      <Pole
+                        color="#0ea5e9"
+                        height={(point.repayments / maxTotal) * 100}
+                        valueLabel={compactMoney(point.repayments)}
+                        label={`${point.label}: ยอดการคืนเงิน ${money(point.repayments)}`}
+                        onEnter={() => setHoveredIndex(index)}
+                        onLeave={() => setHoveredIndex(null)}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -419,44 +460,30 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
                     {active.label} {data.year}
                   </p>
                   <Tooltip
-                    color="#3f8a58"
+                    color="#ff8800"
                     label="ยอดการกู้ยืม"
                     amount={active.loans}
                     count={active.loanCount}
+                    percent={activeTotal > 0 ? (active.loans / activeTotal) * 100 : 0}
                   />
                   <Tooltip
                     color="#0ea5e9"
                     label="ยอดการคืนเงิน"
                     amount={active.repayments}
                     count={active.repaymentCount}
+                    percent={activeTotal > 0 ? (active.repayments / activeTotal) * 100 : 0}
                   />
                 </div>
               )}
             </div>
-          </div>
-          <div className="mt-6 grid gap-3 border-t border-[#eee8e2] pt-5 text-center sm:grid-cols-3">
-            <Summary
-              label="รวมยอดการกู้ยืมทั้งปี"
-              value={money(data.totalLoans)}
-              detail={`จำนวนรายการ ${data.totalLoanCount} รายการ`}
-            />
-            <Summary
-              label="รวมยอดการคืนเงินทั้งปี"
-              value={money(data.totalRepayments)}
-              detail={`จำนวนรายการ ${data.totalRepaymentCount} รายการ`}
-            />
-            <Summary
-              label="อัตราการคืนเงินเฉลี่ยทั้งปี"
-              value={`${data.totalLoans > 0 ? ((data.totalRepayments / data.totalLoans) * 100).toFixed(2) : "0.00"}%`}
-              detail="ของยอดการกู้ยืม"
-              blue
-            />
           </div>
         </article>
       </div>
       <TransferredRequestsChart
         year={data.year}
         updatedAt={data.updatedAt}
+        selectedYear={selectedYear}
+        onYearChange={setSelectedYear}
         requests={data.monthly.map(
           ({ label, loanCount, transferredCount, rejectedCount, cancelledCount }) => ({
             label,
@@ -474,10 +501,14 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
 function TransferredRequestsChart({
   year,
   updatedAt,
+  selectedYear,
+  onYearChange,
   requests,
 }: {
   year: number;
   updatedAt: string;
+  selectedYear: number;
+  onYearChange: (year: number) => void;
   requests: Array<{
     label: string;
     totalRequestCount: number;
@@ -541,27 +572,40 @@ function TransferredRequestsChart({
           <h3 className="text-lg font-semibold text-slate-800">จำนวนคำร้องประจำปี {year}</h3>
           <UpdatedAt value={updatedAt} />
         </div>
-        <div className="flex rounded-lg bg-[#f4f0ec] p-1 text-sm font-medium">
-          <button
-            type="button"
-            onClick={() => {
-              setPeriod("monthly");
+        <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+          <label className="sr-only" htmlFor="request-year">
+            เลือกปี
+          </label>
+          <YearFilter
+            id="request-year"
+            value={selectedYear}
+            onChange={(nextYear) => {
+              onYearChange(nextYear);
               setHoveredIndex(null);
             }}
-            className={`rounded-md px-3 py-1.5 ${period === "monthly" ? "bg-[#f75c12] text-white shadow-sm" : "text-slate-600"}`}
-          >
-            รายเดือน
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setPeriod("quarterly");
-              setHoveredIndex(null);
-            }}
-            className={`rounded-md px-3 py-1.5 ${period === "quarterly" ? "bg-[#f75c12] text-white shadow-sm" : "text-slate-600"}`}
-          >
-            รายไตรมาส
-          </button>
+          />
+          <div className="flex rounded-lg bg-[#f4f0ec] p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setPeriod("monthly");
+                setHoveredIndex(null);
+              }}
+              className={`rounded-md px-3 py-1.5 ${period === "monthly" ? "bg-[#f75c12] text-white shadow-sm" : "text-slate-600"}`}
+            >
+              รายเดือน
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPeriod("quarterly");
+                setHoveredIndex(null);
+              }}
+              className={`rounded-md px-3 py-1.5 ${period === "quarterly" ? "bg-[#f75c12] text-white shadow-sm" : "text-slate-600"}`}
+            >
+              รายไตรมาส
+            </button>
+          </div>
         </div>
       </div>
 
@@ -683,15 +727,89 @@ function TransferredRequestsChart({
 function UpdatedAt({ value }: { value: string }) {
   return <p className="text-xs text-slate-400">อัปเดตล่าสุด {value}</p>;
 }
+
+function YearFilter({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: number;
+  onChange: (year: number) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!filterRef.current?.contains(event.target as Node)) setIsOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
+
+  return (
+    <div className="relative" ref={filterRef}>
+      <button
+        id={id}
+        type="button"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        onClick={() => setIsOpen((current) => !current)}
+        className={`flex min-w-[82px] items-center justify-between gap-2 rounded-lg border px-3 py-1.5 outline-none transition-colors focus:ring-2 focus:ring-[#f75c12]/20 ${isOpen ? "border-[#ffedd5] bg-[#fff7ed] text-[#ea580c]" : "border-[#e5ddd5] bg-white text-slate-700 hover:bg-slate-50"}`}
+      >
+        <span>ปี {value}</span>
+        <ChevronDown
+          aria-hidden="true"
+          className={`size-4 shrink-0 text-slate-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+      {isOpen ? (
+        <div
+          className="absolute right-0 top-full z-20 mt-1.5 max-h-56 min-w-full overflow-y-auto rounded-xl border border-gray-100 bg-white py-1.5 shadow-lg"
+          role="listbox"
+          aria-labelledby={id}
+        >
+          {YEAR_OPTIONS.map((year) => (
+            <button
+              key={year}
+              type="button"
+              role="option"
+              aria-selected={year === value}
+              onClick={() => {
+                onChange(year);
+                setIsOpen(false);
+              }}
+              className={`w-full whitespace-nowrap px-4 py-2 text-left text-sm transition-colors hover:bg-orange-50 ${year === value ? "bg-orange-50/50 font-medium text-[#ea580c]" : "text-gray-700"}`}
+            >
+              ปี {year}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function Pole({
   color,
   height,
+  valueLabel,
   label,
   onEnter,
   onLeave,
 }: {
   color: string;
   height: number;
+  valueLabel?: string;
   label: string;
   onEnter: () => void;
   onLeave: () => void;
@@ -704,9 +822,11 @@ function Pole({
       onMouseLeave={onLeave}
       onFocus={onEnter}
       onBlur={onLeave}
-      className="w-2 rounded-t outline-none focus-visible:ring-2 focus-visible:ring-[#3f8a58] sm:w-3"
+      className="flex w-full items-center justify-center overflow-hidden rounded-none text-[10px] font-semibold leading-none text-white outline-none focus-visible:ring-2 focus-visible:ring-[#3f8a58] sm:text-xs"
       style={{ height: `${height}%`, backgroundColor: color }}
-    />
+    >
+      {valueLabel && height >= 12 ? valueLabel : null}
+    </button>
   );
 }
 function Legend({
@@ -740,16 +860,23 @@ function Tooltip({
   label,
   amount,
   count,
+  percent,
 }: {
   color: string;
   label: string;
   amount: number;
   count: number;
+  percent: number;
 }) {
   return (
     <div className="mt-3 border-l-4 pl-3" style={{ borderColor: color }}>
       <p className="text-xs text-slate-500">{label}</p>
-      <p className="text-sm font-semibold text-slate-800">{money(amount)}</p>
+      <p className="text-sm font-semibold text-slate-800">
+        {money(amount)}{" "}
+        <span className="text-xs" style={{ color }}>
+          ({percent.toFixed(2)}%)
+        </span>
+      </p>
       <p className="text-xs text-slate-500">จำนวนรายการ {count} รายการ</p>
     </div>
   );

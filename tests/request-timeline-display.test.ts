@@ -44,8 +44,8 @@ test("transfer proof popup receives timeline metadata and reserves portrait load
     assert.match(source, /transferredAt=\{transferTimelineItem\?\.dateTime\}/);
   }
   assert.match(modal, /FileText/);
-  assert.match(modal, /loadingAspectRatio=\{3 \/ 4\}/);
-  assert.match(modal, /loadingContainerClassName="!w-80 sm:!w-96"/);
+  assert.match(modal, /loadingAspectRatio=\{342 \/ 400\}/);
+  assert.match(modal, /loadingContainerClassName="!w-\[342px\] sm:!w-96"/);
   assert.match(image, /loadingImageClassName\?: string/);
   assert.match(image, /aspectRatio: loadingAspectRatio/);
 });

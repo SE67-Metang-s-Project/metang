@@ -167,9 +167,20 @@ const formatAmount = (amountStr: string | number) => {
   return num.toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
 
+const formatStudentDetails = (request: StudentInfo) =>
+  [request.studentId, request.major, request.degree, `ปี ${request.year}`]
+    .filter(Boolean)
+    .join(" • ");
+
 export const hasPendingSlip = (history?: PaymentEvidence[]) => {
   if (!history) return false;
   return history.some((ev) => ev.status === "pending");
+};
+
+const getSubmittedTime = (req: ActionRequest) => {
+  const submittedAt = req.history?.[0]?.date ?? req.submitDate;
+  const time = submittedAt?.match(/\d{1,2}:\d{2}/)?.[0];
+  return time ? `${time} น.` : null;
 };
 
 
@@ -472,7 +483,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                     {req.name}
                   </div>
                   <div className="text-[13px] text-gray-500 mt-1">
-                    {req.studentId} • {req.major} • ปี {req.year}
+                    {formatStudentDetails(req)}
                   </div>
                 </div>
                 <span className="text-[11px] text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md shrink-0 border border-gray-200">
@@ -512,37 +523,42 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
       {/* 2. มุมมอง Desktop/Tablet (แสดงเป็นตาราง) */}
       {/* ========================================== */}
       <div className="hidden md:block overflow-x-auto relative rounded-xl border border-gray-300 shadow-sm">
-        <table className="w-full table-fixed text-left border-collapse min-w-[1050px] bg-white">
+        <table className="w-full table-auto text-left border-collapse min-w-[1050px] max-[1299px]:min-w-[1300px] bg-white">
           <colgroup>
+            <col className="w-[140px]" />
+            <col className="w-[25%]" />
             <col className="w-[130px]" />
-            <col className="w-[28%]" />
-            <col className="w-[12%]" />
-            <col className="w-[21%]" />
-            <col className="w-[7.5%]" />
-            <col className="w-[7.5%]" />
-            <col className="w-[14%]" />
+            <col className="w-[25%]" />
+            <col className="w-[100px]" />
+            <col className="w-[100px]" />
+            <col className="w-px" />
           </colgroup>
           <thead>
             <tr className="bg-gray-100/70 border-b border-gray-300 text-gray-700 text-[14px]">
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 text-center whitespace-nowrap">
-                รหัสคำร้อง
+              <th className="min-w-[140px] py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
+                <span className="lg:hidden">
+                  รหัส
+                  <br />
+                  คำร้อง
+                </span>
+                <span className="hidden lg:inline">รหัสคำร้อง</span>
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 text-center min-w-[200px]">
+              <th className="w-[25%] py-3.5 px-4 text-center font-semibold border-r border-gray-300">
                 ชื่อ - ข้อมูลนักศึกษา
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 text-center whitespace-nowrap">
-                วันที่ยื่น
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
+                วันที่-เวลายื่นคำร้อง
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 min-w-[200px] text-center">
-                รายละเอียดเพื่อนำไปใช้
+              <th className="w-[25%] py-3.5 px-4 text-center font-semibold border-r border-gray-300">
+                วัตถุประสงค์การกู้ยืม
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 text-center whitespace-nowrap">
-                ยอดกู้ยืมรวม
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
+                จำนวนเงิน
               </th>
-              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 text-center whitespace-nowrap">
+              <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 จำนวนงวด
               </th>
-              <th className="py-3.5 px-4 font-bold text-center whitespace-nowrap">จัดการ</th>
+              <th className="w-px py-3.5 px-4 text-center font-bold whitespace-nowrap">จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -558,21 +574,26 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                   key={idx}
                   className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
                 >
-                  <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
-                    {req.id}
-                  </td>
-                  <td className="py-4 px-4 border-r border-gray-200">
-                    <div className="font-bold text-gray-900 max-[1201px]:line-clamp-1">
-                      {req.name}
-                    </div>
-                    <div className="mt-0.5 text-[13px] text-gray-500 max-[1201px]:truncate">
-                      {req.studentId} • {req.major} • ปี {req.year}
+                  <td className="w-[140px] min-w-[140px] py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>{req.id}</span>
                     </div>
                   </td>
-                  <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
-                    {req.submitDate?.split(" ")[0]}
+                  <td className="w-[25%] py-4 px-4 border-r border-gray-200">
+                    <div className="font-bold text-gray-900 flex items-center gap-2 flex-wrap">
+                      <span>{req.name}</span>
+                    </div>
+                    <div className="mt-0.5 text-[13px] text-gray-500">
+                      {formatStudentDetails(req)}
+                    </div>
                   </td>
-                  <td className="py-4 px-4 text-left font-normal text-gray-700 border-r border-gray-200">
+                  <td className="py-4 px-4 text-center font-normal text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                    <div className="flex flex-col items-center leading-relaxed">
+                      <span>{req.submitDate?.split(" ").slice(0, 3).join(" ")}</span>
+                      {getSubmittedTime(req) && <span>{getSubmittedTime(req)}</span>}
+                    </div>
+                  </td>
+                  <td className="w-[25%] py-4 px-4 text-left font-normal text-gray-700 border-r border-gray-200">
                     <div className="line-clamp-2">{req.objective}</div>
                   </td>
                   <td className="py-4 px-4 text-center font-normal text-gray-900 border-r border-gray-200 whitespace-nowrap">
@@ -581,7 +602,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                   <td className="py-4 px-4 text-center font-normal text-gray-700 border-r border-gray-200 whitespace-nowrap">
                     {req.term} งวด
                   </td>
-                  <td className="py-4 px-4 align-middle">
+                  <td className="w-px py-4 px-4 align-middle whitespace-nowrap">
                     <div className="flex justify-center">
                       <button
                         onClick={() => setSelectedRequestId(req.id)}

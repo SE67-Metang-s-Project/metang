@@ -23,9 +23,11 @@ export default function ExecutiveDashboard({
       </div>
 
       <div className="w-full">
-        <ExecutiveFinancialOverview initialData={financialOverview} />
+        <ExecutiveFinancialOverview
+          initialData={financialOverview}
+          apiUrl="/api/executive/financial-overview"
+        />
       </div>
     </div>
   );
 }
-
