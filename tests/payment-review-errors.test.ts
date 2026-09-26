@@ -30,7 +30,7 @@ test("maps validation, auth, and not-found responses", () => {
     paymentDecisionErrorMessage(422, "A note is required when rejecting a payment"),
     "กรุณาระบุเหตุผลที่ปฏิเสธสลิป",
   );
-  assert.match(paymentDecisionErrorMessage(422, "note is invalid"), /2,000/);
+  assert.match(paymentDecisionErrorMessage(422, "note is invalid"), /500/);
   assert.equal(paymentDecisionErrorMessage(422, "decision is invalid"), "ข้อมูลที่ส่งไม่ถูกต้อง");
   assert.match(paymentDecisionErrorMessage(401), /เข้าสู่ระบบใหม่/);
   assert.match(paymentDecisionErrorMessage(403), /ไม่มีสิทธิ์/);

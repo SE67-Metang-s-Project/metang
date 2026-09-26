@@ -4,6 +4,7 @@ import { useState, type ImgHTMLAttributes, type SyntheticEvent } from "react";
 
 type ImageWithSkeletonProps = ImgHTMLAttributes<HTMLImageElement> & {
   containerClassName?: string;
+  loadingContainerClassName?: string;
 };
 
 export default function ImageWithSkeleton(props: ImageWithSkeletonProps) {
@@ -14,6 +15,7 @@ function ImageWithSkeletonContent({
   alt,
   className,
   containerClassName = "",
+  loadingContainerClassName = "",
   onError,
   onLoad,
   src,
@@ -34,7 +36,7 @@ function ImageWithSkeletonContent({
   return (
     <span
       aria-busy={isLoading}
-      className={`relative block overflow-hidden ${isLoading ? "bg-slate-100" : "bg-transparent"} ${containerClassName}`}
+      className={`relative block overflow-hidden ${isLoading ? `bg-slate-100 ${loadingContainerClassName}` : "bg-transparent"} ${containerClassName}`}
     >
       {isLoading ? (
         <span

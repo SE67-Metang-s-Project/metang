@@ -29,7 +29,7 @@ export function paymentDecisionErrorMessage(status: number, apiMessage?: string 
   }
   if (status === 422) {
     if (apiMessage === "A note is required when rejecting a payment") return REJECT_NOTE_REQUIRED;
-    if (apiMessage === "note is invalid") return "เหตุผลต้องมีความยาวไม่เกิน 2,000 ตัวอักษร";
+    if (apiMessage === "note is invalid") return "เหตุผลต้องมีความยาวไม่เกิน 500 ตัวอักษร";
     return "ข้อมูลที่ส่งไม่ถูกต้อง";
   }
   return "เกิดข้อผิดพลาดในการบันทึกผลการตรวจสอบสลิป";

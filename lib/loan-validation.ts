@@ -258,7 +258,7 @@ export function parsePaymentDecisionInput(value: unknown): PaymentDecisionInput 
   }
   const decision = input.decision;
 
-  const note = optionalText(input.note, "note", 2000);
+  const note = optionalText(input.note, "note", 500);
   // Same rule as a returned/rejected loan decision: any negative outcome states its reason, so the
   // student is told what to fix before submitting a new slip.
   if (decision === "rejected" && !note) {

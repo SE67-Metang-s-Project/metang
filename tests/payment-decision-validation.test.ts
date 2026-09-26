@@ -39,12 +39,12 @@ test("the note is trimmed and capped", () => {
     "ยอดไม่ตรง",
   );
   assert.throws(
-    () => parsePaymentDecisionInput({ decision: "rejected", note: "x".repeat(2001) }),
+    () => parsePaymentDecisionInput({ decision: "rejected", note: "x".repeat(501) }),
     /note is invalid/,
   );
   assert.equal(
-    parsePaymentDecisionInput({ decision: "rejected", note: "x".repeat(2000) }).note?.length,
-    2000,
+    parsePaymentDecisionInput({ decision: "rejected", note: "x".repeat(500) }).note?.length,
+    500,
   );
 });
 

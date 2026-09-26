@@ -223,43 +223,50 @@ function calculateInstallments(
       paidAmount: 0,
       evidence: null as PaymentEvidence | null,
       evidences: [] as PaymentEvidence[],
+      billedAmountByEvidenceId: new Map<string, number>(),
     };
   });
 
-  // 2. ดึงประวัติสลิปมาผูกกับงวด
+  // 2. ดึงประวัติสลิปมาผูกกับงวด และคำนวณยอดเรียกเก็บ ณ เวลาที่ส่งสลิป
+  // ยอดเกินที่ยืนยันแล้วของงวดก่อนหน้าจะถูกหักจากยอดเริ่มต้นของงวดสุดท้าย
+  // เพื่อให้สลิปครั้งแรกของงวดสุดท้ายแสดงยอดคงเหลือจริง ไม่ใช่ยอดเต็มหรือศูนย์.
   if (paymentHistory && Array.isArray(paymentHistory)) {
     paymentHistory.forEach((p) => {
       const idx = p.installmentNumber - 1;
       if (schedule[idx]) {
         schedule[idx].evidences.push(p);
         schedule[idx].evidence = p;
-        if (p.status === "verified") {
-          schedule[idx].isPaid = true;
-          schedule[idx].paidAmount += Number(p.amount);
-        }
       }
     });
 
-    if (!installments) {
-      let totalExcess = 0;
-      schedule.forEach((s) => {
-        if (s.isPaid && s.paidAmount > s.baseAmount) {
-          totalExcess += s.paidAmount - s.baseAmount;
+    const lastInstallmentIndex = schedule.length - 1;
+    const advancePaidToLastInstallment = schedule
+      .slice(0, lastInstallmentIndex)
+      .reduce((total, installment) => {
+        const verifiedAmount = installment.evidences.reduce(
+          (sum, evidence) =>
+            evidence.status === "verified" ? sum + Number(evidence.amount) : sum,
+          0,
+        );
+        return total + Math.max(0, verifiedAmount - installment.baseAmount);
+      }, 0);
+
+    schedule.forEach((installment, index) => {
+      let remainingAmount = Math.max(
+        0,
+        installment.baseAmount - (index === lastInstallmentIndex ? advancePaidToLastInstallment : 0),
+      );
+
+      installment.evidences.forEach((evidence) => {
+        installment.billedAmountByEvidenceId.set(evidence.id, remainingAmount);
+
+        if (evidence.status === "verified") {
+          remainingAmount = Math.max(0, remainingAmount - Number(evidence.amount));
         }
       });
 
-      for (let i = termsCount - 1; i >= 0 && totalExcess > 0; i--) {
-        if (!schedule[i].isPaid) {
-          if (schedule[i].expectedAmount >= totalExcess) {
-            schedule[i].expectedAmount -= totalExcess;
-            totalExcess = 0;
-          } else {
-            totalExcess -= schedule[i].expectedAmount;
-            schedule[i].expectedAmount = 0;
-          }
-        }
-      }
-    }
+      installment.expectedAmount = remainingAmount;
+    });
   }
 
   // 3. หาวันที่
@@ -287,6 +294,28 @@ function calculateInstallments(
   });
 }
 
+// Keep the slip detail modal aligned with the "ยอดเรียกเก็บ" value in the payment table.
+// A payment is charged against the amount that remained immediately before that payment was
+// reviewed, including advance payments from earlier installments against the final installment.
+function getEvidenceBilledAmount(request: ActionRequest, evidenceId: string) {
+  const installments = calculateInstallments(
+    request.submitDate,
+    request.term,
+    request.amount,
+    request.paymentHistory,
+    request.installments,
+  );
+
+  for (const installment of installments) {
+    const billedAmount = installment.billedAmountByEvidenceId.get(evidenceId);
+    if (billedAmount !== undefined) {
+      return billedAmount;
+    }
+  }
+
+  return 0;
+}
+
 // ==========================================
 // Main Component
 // ==========================================
@@ -309,6 +338,10 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
   const selectedRequest = requests.find((req) => req.id === selectedRequestId) ?? null;
   const selectedEvidence =
     selectedRequest?.paymentHistory?.find((ev) => ev.id === selectedEvidenceId) ?? null;
+  const selectedEvidenceBilledAmount =
+    selectedRequest && selectedEvidence
+      ? getEvidenceBilledAmount(selectedRequest, selectedEvidence.id)
+      : 0;
   const isOverpayment = Boolean(selectedEvidence?.isOverpayment);
 
   // A refresh can drop the selected request (its last pending slip was decided) or the slip. Clear
@@ -632,14 +665,11 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                       )
                         .flatMap((inst) => {
                           const evidences = inst.evidences.length > 0 ? inst.evidences : [null];
-                          let remainingAmount = inst.baseAmount;
 
                           return evidences.map((evidence, index) => {
-                            const expectedAmount = evidence ? remainingAmount : inst.expectedAmount;
-
-                            if (evidence?.status === "verified") {
-                              remainingAmount = Math.max(0, remainingAmount - Number(evidence.amount));
-                            }
+                            const expectedAmount = evidence
+                              ? (inst.billedAmountByEvidenceId.get(evidence.id) ?? 0)
+                              : inst.expectedAmount;
 
                             return {
                               attemptNumber: evidence?.attemptNumber ?? index + 1,
@@ -696,11 +726,6 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                                 >
                                   {formatAmount(evidence.amount)}
                                 </span>
-                                {evidence.paidTime && (
-                                  <span className="mt-0.5 text-sm text-gray-500">
-                                    {evidence.paidTime} น.
-                                  </span>
-                                )}
                               </div>
                             ) : (
                               <span className="text-gray-400 font-normal">-</span>
@@ -824,8 +849,9 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                       <ImageWithSkeleton
                         src={selectedEvidence.slipImageUrl}
                         alt="สลิปหลักฐานการโอนเงิน"
-                        containerClassName="w-full max-w-full"
-                        className="h-auto w-full max-w-full rounded-lg object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+                        containerClassName="w-full max-w-full rounded-xl"
+                        loadingContainerClassName="min-h-64"
+                        className="h-auto w-full max-w-full rounded-xl border border-gray-100 object-contain transition-transform duration-200 group-hover:scale-[1.02]"
                       />
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 sm:text-sm">
                         <ZoomIn size={22} className="drop-shadow" />
@@ -856,9 +882,9 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                           {formatAmount(selectedEvidence.amount)}
                         </dd>
                       </div>
-                      <div>
+                      <div className={styles.loanAmountRow}>
                         <dt>ยอดคงค้างของงวดที่ {selectedEvidence.installmentNumber}</dt>
-                        <dd>{formatAmount(selectedEvidence.installmentOutstandingAmount ?? "0")}</dd>
+                        <dd>{formatAmount(selectedEvidenceBilledAmount)}</dd>
                       </div>
                       <div>
                         <dt>วันที่โอน</dt>
@@ -889,7 +915,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                         </dd>
                       </div>
                       {selectedEvidence.status === "rejected" && selectedEvidence.reviewNote && (
-                        <div>
+                        <div className={styles.loanApprovalPurposeRow}>
                           <dt>เหตุผลที่ปฏิเสธ</dt>
                           <dd>{selectedEvidence.reviewNote}</dd>
                         </div>
@@ -991,17 +1017,22 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                       ) : null}
                     </div>
                     {slipConfirmAction === "reject" && (
-                      <textarea
-                        className="w-full border border-gray-300 rounded-xl p-3 text-[13px] mb-3 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
-                        placeholder="ระบุเหตุผล เช่น ยอดเงินไม่ตรงกับยอดที่เรียกเก็บ, รูปภาพไม่ชัดเจน..."
-                        rows={3}
-                        maxLength={2000}
-                        value={slipRemark}
-                        onChange={(e) => setSlipRemark(e.target.value)}
-                        disabled={isBusy}
-                        aria-labelledby="slip-decision-title"
-                        aria-invalid={errorMessage === REJECT_NOTE_REQUIRED}
-                      />
+                      <>
+                        <textarea
+                          className="w-full border border-gray-300 rounded-xl p-3 text-[13px] mb-3 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
+                          placeholder="ระบุเหตุผล เช่น ยอดเงินไม่ตรงกับยอดที่เรียกเก็บ, รูปภาพไม่ชัดเจน..."
+                          rows={3}
+                          maxLength={500}
+                          value={slipRemark}
+                          onChange={(e) => setSlipRemark(e.target.value)}
+                          disabled={isBusy}
+                          aria-labelledby="slip-decision-title"
+                          aria-invalid={errorMessage === REJECT_NOTE_REQUIRED}
+                        />
+                        <p className="-mt-1 mb-3 text-right text-xs text-gray-500" aria-live="polite">
+                          {slipRemark.length}/500
+                        </p>
+                      </>
                     )}
                     {errorBox}
                     {slipConfirmAction === "reject" ? (
@@ -1077,7 +1108,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
             </div>
 
             {/* ส่วนแสดงภาพสลิป */}
-            <div className="p-4 sm:p-6 overflow-auto flex-1 flex items-center justify-center bg-gray-100/70 min-h-[300px]">
+            <div className="flex min-h-[300px] flex-1 items-start justify-center overflow-auto bg-gray-100/70 p-4 sm:p-6">
               {previewSlipUrl.toLowerCase().includes(".pdf") ||
               previewSlipUrl.startsWith("data:application/pdf") ? (
                 <iframe
@@ -1089,7 +1120,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                 <ImageWithSkeleton
                   src={previewSlipUrl}
                   alt="สลิปหลักฐานการชำระเงินขนาดเต็ม"
-                  containerClassName="w-1/2 max-w-full"
+                  containerClassName="w-full max-w-full shrink-0"
                   className="h-auto w-full rounded-xl shadow-md object-contain select-none bg-white"
                 />
               )}
