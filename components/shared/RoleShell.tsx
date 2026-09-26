@@ -39,6 +39,7 @@ export default function RoleShell({
           role={role}
           userRole={userRole}
           userEmail={userEmail}
+          hasPersistentSidebar
         />
 
         <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">

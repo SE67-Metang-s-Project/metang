@@ -2,10 +2,10 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, Mail, Menu } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import type { UserRole } from "@/components/shared/SidebarNav";
 import type { StudentLanguage } from "@/app/student/StudentLanguageProvider";
-import ImageWithSkeleton from "@/components/shared/ImageWithSkeleton";
 
 export const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   student: "นักศึกษา",
@@ -27,6 +27,7 @@ export interface TopNavProps {
   onLanguageChange?: (language: StudentLanguage) => void;
   logoutLabel?: string;
   dashboardHref?: string;
+  hasPersistentSidebar?: boolean;
 }
 
 export default function TopNav({
@@ -41,6 +42,7 @@ export default function TopNav({
   onLanguageChange,
   logoutLabel = "ออกจากระบบ",
   dashboardHref,
+  hasPersistentSidebar = false,
 }: TopNavProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -75,17 +77,19 @@ export default function TopNav({
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white sm:h-20">
+      <header
+        className={`fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white sm:h-20 ${hasPersistentSidebar ? "min-[1576px]:left-64" : ""}`}
+      >
         <Link
           aria-label="กลับไปยังหน้าแดชบอร์ด"
           className="ml-6 flex shrink-0 items-center rounded-lg transition-all duration-200 hover:scale-105 hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
           href={logoHref}
         >
-          <ImageWithSkeleton
+          <Image
             alt="METANG"
             className="h-12 w-12 object-contain sm:h-14 sm:w-14"
-            containerClassName="h-12 w-12 sm:h-14 sm:w-14"
             height={56}
+            priority
             src="/metang-logo7.png"
             width={56}
           />
