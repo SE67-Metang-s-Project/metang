@@ -1,4 +1,5 @@
 import { Prisma } from "@/lib/generated/prisma/client";
+import { allocatePayment } from "@/lib/loan-validation";
 import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/serialization";
 import { withSlipFlag } from "./loan-requests";
@@ -39,10 +40,14 @@ export type StudentPaymentErrorCode =
   | "LOAN_NOT_FOUND"
   | "LOAN_NOT_DISBURSED"
   | "REVIEW_IN_PROGRESS"
-  | "NOTHING_OUTSTANDING";
+  | "NOTHING_OUTSTANDING"
+  | "AMOUNT_EXCEEDS_REMAINING";
 
 export class StudentPaymentError extends Error {
-  constructor(readonly code: StudentPaymentErrorCode) {
+  constructor(
+    readonly code: StudentPaymentErrorCode,
+    readonly remaining?: number,
+  ) {
     super(code);
   }
 }
@@ -85,12 +90,19 @@ export async function createStudentPayment({
 
       // Recorded for the reviewer's context only. The money itself is allocated oldest-first at
       // confirmation time (see allocatePayment), which need not be this installment.
-      const nextDue = await tx.installment.findFirst({
+      const unsettled = await tx.installment.findMany({
         where: { loanId, settledAt: null },
         orderBy: { seq: "asc" },
-        select: { id: true },
+        select: { id: true, seq: true, amountDue: true, amountPaid: true },
       });
+      const nextDue = unsettled[0];
       if (!nextDue) throw new StudentPaymentError("NOTHING_OUTSTANDING");
+
+      // Capped at what is still owed: decidePayment refuses to confirm an overpayment, and while one
+      // waited for review it would block every corrected submission. A surplus exists only once
+      // every installment is filled, so amount - surplus is the whole remaining balance.
+      const { surplus } = allocatePayment(unsettled, amount);
+      if (surplus > 0) throw new StudentPaymentError("AMOUNT_EXCEEDS_REMAINING", amount - surplus);
 
       const payment = await tx.payment.create({
         data: {

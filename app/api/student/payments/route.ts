@@ -110,6 +110,13 @@ export async function POST(request: Request) {
     if (error instanceof StudentPaymentError && error.code === "REVIEW_IN_PROGRESS") {
       return apiError("CONFLICT", "A payment is already awaiting review", 409);
     }
+    if (error instanceof StudentPaymentError && error.code === "AMOUNT_EXCEEDS_REMAINING") {
+      return apiError(
+        "VALIDATION_ERROR",
+        `amount exceeds the remaining repayment (${error.remaining})`,
+        422,
+      );
+    }
     if (error instanceof StudentPaymentError && error.code === "NOTHING_OUTSTANDING") {
       return apiError("CONFLICT", "This loan has nothing left to repay", 409);
     }
