@@ -1,7 +1,7 @@
 "use client";
 
 import { studentProfile } from "@/app/student/studentMockData";
-import type { LoanDetails } from "@/app/student/studentMockData";
+import type { InstallmentPayment, LoanDetails } from "@/app/student/studentMockData";
 import StudentTopNav from "@/components/student/StudentTopNav";
 import LoanDetailsPage from "./LoanDetailsPage";
 import styles from "@/app/student/student.module.css";
@@ -10,10 +10,15 @@ import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanS
 
 type StudentRequestDetailPageProps = {
   details: LoanDetails;
+  installments?: InstallmentPayment[];
   profile?: StudentProfileDisplay & { phoneNumber?: string };
 };
 
-export default function StudentRequestDetailPage({ details, profile }: StudentRequestDetailPageProps) {
+export default function StudentRequestDetailPage({
+  details,
+  installments = [],
+  profile,
+}: StudentRequestDetailPageProps) {
   const currentProfile: StudentProfileDisplay & { phoneNumber?: string } = profile ?? studentProfile;
 
   return (
@@ -30,7 +35,7 @@ export default function StudentRequestDetailPage({ details, profile }: StudentRe
         userRole="นักศึกษา"
       />
       <div className={`${styles.studentPageContent} ${styles.studentDetailPageContent}`}>
-        <LoanDetailsPage details={details} profile={currentProfile} />
+        <LoanDetailsPage details={details} installments={installments} profile={currentProfile} />
       </div>
     </main>
   );

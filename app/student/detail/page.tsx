@@ -2,7 +2,11 @@ import Link from "next/link";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { requireStudentAccess } from "@/lib/loan-auth";
 import { getStudentCurrentLoan, getStudentLoanDetail } from "@/db/queries/loan-requests";
-import { mapToLoanDetails, type RawStudentLoan } from "@/lib/student-view-model";
+import {
+  mapToInstallmentPayments,
+  mapToLoanDetails,
+  type RawStudentLoan,
+} from "@/lib/student-view-model";
 import StudentRequestDetailPage from "@/components/student/loan-details/StudentRequestDetailPage";
 import StudentTopNav from "@/components/student/StudentTopNav";
 import styles from "@/app/student/student.module.css";
@@ -36,6 +40,7 @@ export default async function StudentDetailPage({ searchParams }: StudentDetailP
   };
 
   const details = loan ? mapToLoanDetails(loan) : null;
+  const installments = loan ? mapToInstallmentPayments(loan.installments, loan.payments) : [];
 
   if (!details) {
     return (
@@ -72,5 +77,5 @@ export default async function StudentDetailPage({ searchParams }: StudentDetailP
     );
   }
 
-  return <StudentRequestDetailPage details={details} profile={profile} />;
+  return <StudentRequestDetailPage details={details} installments={installments} profile={profile} />;
 }

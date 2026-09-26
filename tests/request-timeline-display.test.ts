@@ -62,3 +62,21 @@ test("receiving bank and installment popup retain their restored responsive layo
   assert.match(paymentModal, /HandCoins/);
   assert.match(paymentModal, /bg-orange-50 text-orange-600/);
 });
+
+test("student detail shows the interactive installment card below repayment schedule", () => {
+  const details = read("components/student/loan-details/LoanDetailsPage.tsx");
+  const detailRoute = read("app/student/detail/page.tsx");
+
+  assert.match(detailRoute, /mapToInstallmentPayments\(loan\.installments, loan\.payments\)/);
+  assert.match(details, /<InstallmentList/);
+  assert.match(details, /<PaymentModal/);
+  assert.match(details, /const canShowInstallments =/);
+  assert.ok(
+    details.indexOf("<LoanDetailSchedule items={details.schedule} />") < details.indexOf("<InstallmentList"),
+    "Installments should appear below Repayment Schedule",
+  );
+  assert.ok(
+    details.indexOf("<InstallmentList") < details.indexOf("<LoanPaymentHistory items={details.paymentHistory} />"),
+    "Payment Evidence History should remain after Installments",
+  );
+});

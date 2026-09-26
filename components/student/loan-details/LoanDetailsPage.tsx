@@ -3,17 +3,21 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { X } from "lucide-react";
-import type { LoanDetails } from "@/app/student/studentMockData";
+import type { InstallmentPayment, LoanDetails, PaymentAccount } from "@/app/student/studentMockData";
 import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
 import ContactFooter from "./ContactFooter";
 import LoanDetailSchedule from "./LoanDetailSchedule";
 import LoanDetailOverview from "./LoanDetailOverview";
 import LoanPaymentHistory from "./LoanPaymentHistory";
+import InstallmentList from "../payments/InstallmentList";
+import PaymentModal, { type PaymentSubmission } from "@/components/shared/PaymentModal";
 import LoanTimeline from "./LoanTimeline";
 import TempDetailCard from "./TempDetailCard";
 import TransferSlipModal from "./TransferSlipModal";
 import LoanPetitionModal from "@/components/shared/LoanPetitionModal";
 import { mapStudentLoanToActionRequest } from "@/lib/student-action-request";
+import { getBankLogoSrc } from "@/lib/bank-name";
+import { mapNetworkError, mapStudentPaymentError } from "@/lib/student-error-mapper";
 import {
   hasConfirmedTransfer,
   saveTransferConfirmation,
@@ -25,16 +29,37 @@ import styles from "@/app/student/student.module.css";
 
 type LoanDetailsPageProps = {
   details: LoanDetails;
+  installments?: InstallmentPayment[];
   profile: StudentProfileDisplay & { phoneNumber?: string };
 };
 
-export default function LoanDetailsPage({ details, profile }: LoanDetailsPageProps) {
+type PaymentAccountSettings = {
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+};
+
+function mapPaymentAccount(settings: PaymentAccountSettings): PaymentAccount {
+  return {
+    bankLabel: "ธนาคาร",
+    bankName: settings.bankName,
+    bankLogoSrc: getBankLogoSrc(settings.bankName),
+    accountNameLabel: "ชื่อบัญชี",
+    accountName: settings.accountName,
+    accountNumberLabel: "เลขที่บัญชี",
+    accountNumber: settings.accountNumber,
+  };
+}
+
+export default function LoanDetailsPage({ details, installments = [], profile }: LoanDetailsPageProps) {
   const router = useRouter();
   const { t } = useStudentLanguage();
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isPetitionModalOpen, setIsPetitionModalOpen] = useState(false);
+  const [activePayment, setActivePayment] = useState<InstallmentPayment | null>(null);
+  const [activePaymentAccount, setActivePaymentAccount] = useState<PaymentAccount | null>(null);
   const cancelDialogDismiss = useModalDismiss({
     onClose: () => {
       if (!isCancelling) setIsCancelDialogOpen(false);
@@ -82,6 +107,56 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
   const canCancelRequest = !["pending_disbursement", "disbursed", "closed", "rejected", "cancelled"].includes(
     details.statusCode ?? "",
   );
+  const canShowInstallments =
+    installments.length > 0 && (isRepaymentInProgress || (isWaitingForTransferConfirmation && isTransferAccepted));
+
+  const openPayment = async (installment: InstallmentPayment) => {
+    try {
+      const response = await fetch("/api/system-settings", { cache: "no-store" });
+      const body = (await response.json().catch(() => null)) as { data?: PaymentAccountSettings } | null;
+      if (!response.ok || !body?.data) throw new Error("Payment account unavailable");
+
+      const totalOutstandingAmount = installments.reduce(
+        (total, item) => total + Number(item.outstandingAmount.replaceAll(",", "")),
+        0,
+      );
+      setActivePaymentAccount(mapPaymentAccount(body.data));
+      setActivePayment({
+        ...installment,
+        totalOutstandingAmount: totalOutstandingAmount || installment.totalOutstandingAmount,
+      });
+    } catch {
+      window.alert(
+        t(
+          "ระบบยังไม่สามารถแสดงบัญชีสำหรับชำระเงินได้ กรุณาลองใหม่ภายหลังหรือติดต่อเจ้าหน้าที่",
+          "The payment account cannot be shown right now. Please try again later or contact the office.",
+        ),
+      );
+    }
+  };
+
+  const submitPayment = async ({ slip, amount, paidAt }: PaymentSubmission) => {
+    const formData = new FormData();
+    formData.append("slip", slip);
+    formData.append("amount", String(amount));
+    formData.append("paidAt", paidAt);
+
+    let response: Response;
+    try {
+      response = await fetch("/api/student/payments", { method: "POST", body: formData });
+    } catch (error) {
+      throw new Error(mapNetworkError(error).message);
+    }
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(mapStudentPaymentError(response.status, errorBody).message);
+    }
+
+    setActivePayment(null);
+    setActivePaymentAccount(null);
+    router.refresh();
+  };
 
   const handleCancelRequest = async () => {
     if (!details.id) return;
@@ -168,6 +243,13 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
       />
       <TempDetailCard details={details} profile={profile} />
       <LoanDetailSchedule items={details.schedule} />
+      {canShowInstallments ? (
+        <InstallmentList
+          installments={installments}
+          isPaymentLocked={hasAdminTransferredFunds && !isTransferAccepted}
+          onPay={openPayment}
+        />
+      ) : null}
       {isRepaymentInProgress ? <LoanPaymentHistory items={details.paymentHistory} /> : null}
       <ContactFooter />
       {isPetitionModalOpen ? (
@@ -175,6 +257,17 @@ export default function LoanDetailsPage({ details, profile }: LoanDetailsPagePro
           isOpen={isPetitionModalOpen}
           onClose={() => setIsPetitionModalOpen(false)}
           request={petitionRequest}
+        />
+      ) : null}
+      {activePayment && activePaymentAccount ? (
+        <PaymentModal
+          account={activePaymentAccount}
+          installment={activePayment}
+          onClose={() => {
+            setActivePayment(null);
+            setActivePaymentAccount(null);
+          }}
+          onConfirm={submitPayment}
         />
       ) : null}
       {isSlipModalOpen ? (
