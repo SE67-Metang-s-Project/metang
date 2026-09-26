@@ -13,14 +13,12 @@ import {
   UserRound,
   HandCoins,
   CalendarDays,
-  CheckCircle2,
   Receipt,
   SearchX,
   TriangleAlert,
   XCircle,
   ZoomIn,
   FileImage,
-  ExternalLink,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
 import ImageWithSkeleton from "@/components/shared/ImageWithSkeleton";
@@ -68,6 +66,11 @@ export type LoanDetails = {
   objective: string;
   amount: string;
   term: string;
+  installments?: {
+    installmentNumber: number;
+    amount: string;
+    paidAmount: string;
+  }[];
   expectedReturnDate?: string;
   bankDetails?: BankDetails;
   additionalNote?: string;
@@ -192,6 +195,7 @@ function calculateInstallments(
   termStr: string,
   amountStr: string,
   paymentHistory?: PaymentEvidence[],
+  installments?: LoanDetails["installments"],
 ) {
   const termsCount = parseInt(termStr, 10) || 0;
   const totalAmount = parseFloat(String(amountStr).replace(/,/g, "")) || 0;
@@ -202,14 +206,23 @@ function calculateInstallments(
   // 1. สร้างโครงสร้าง
   const schedule = Array.from({ length: termsCount }, (_, i) => {
     const isLast = i === termsCount - 1;
-    const initialExpected = isLast ? totalAmount - baseAmount * (termsCount - 1) : baseAmount;
+    const actualInstallment = installments?.find((installment) => installment.installmentNumber === i + 1);
+    const baseInstallmentAmount = actualInstallment
+      ? Number(actualInstallment.amount)
+      : isLast
+        ? totalAmount - baseAmount * (termsCount - 1)
+        : baseAmount;
+    const initialExpected = actualInstallment
+      ? Math.max(0, baseInstallmentAmount - Number(actualInstallment.paidAmount))
+      : baseInstallmentAmount;
     return {
       installmentNumber: i + 1,
       expectedAmount: initialExpected,
-      baseAmount: initialExpected,
+      baseAmount: baseInstallmentAmount,
       isPaid: false,
       paidAmount: 0,
       evidence: null as PaymentEvidence | null,
+      evidences: [] as PaymentEvidence[],
     };
   });
 
@@ -218,6 +231,7 @@ function calculateInstallments(
     paymentHistory.forEach((p) => {
       const idx = p.installmentNumber - 1;
       if (schedule[idx]) {
+        schedule[idx].evidences.push(p);
         schedule[idx].evidence = p;
         if (p.status === "verified") {
           schedule[idx].isPaid = true;
@@ -226,23 +240,23 @@ function calculateInstallments(
       }
     });
 
-    let totalExcess = 0;
-    schedule.forEach((s) => {
-      if (s.isPaid) {
-        if (s.paidAmount > s.baseAmount) {
+    if (!installments) {
+      let totalExcess = 0;
+      schedule.forEach((s) => {
+        if (s.isPaid && s.paidAmount > s.baseAmount) {
           totalExcess += s.paidAmount - s.baseAmount;
         }
-      }
-    });
+      });
 
-    for (let i = termsCount - 1; i >= 0 && totalExcess > 0; i--) {
-      if (!schedule[i].isPaid) {
-        if (schedule[i].expectedAmount >= totalExcess) {
-          schedule[i].expectedAmount -= totalExcess;
-          totalExcess = 0;
-        } else {
-          totalExcess -= schedule[i].expectedAmount;
-          schedule[i].expectedAmount = 0;
+      for (let i = termsCount - 1; i >= 0 && totalExcess > 0; i--) {
+        if (!schedule[i].isPaid) {
+          if (schedule[i].expectedAmount >= totalExcess) {
+            schedule[i].expectedAmount -= totalExcess;
+            totalExcess = 0;
+          } else {
+            totalExcess -= schedule[i].expectedAmount;
+            schedule[i].expectedAmount = 0;
+          }
         }
       }
     }
@@ -560,7 +574,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
           {...requestModalDismiss}
           role="presentation"
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[620px] flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden relative border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200 sm:max-h-[88vh]">
             {/* Header Modal */}
             <div className="flex justify-between items-start px-5 sm:px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
               <div className="pr-2">
@@ -598,14 +612,14 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                 />
 
                 <div className="overflow-x-auto rounded-xl border border-gray-200 mt-2">
-                  <table className="w-full text-left border-collapse text-[13px]">
+                  <table className="w-full border-collapse text-left text-sm">
                     <thead>
-                      <tr className="bg-gray-50 text-gray-600 border-b border-gray-200 text-[13px]">
-                        <th className="py-2.5 px-3 font-semibold text-center w-[12%]">งวดที่</th>
-                        <th className="py-2.5 px-3 font-semibold text-center w-[23%]">กำหนดชำระ</th>
-                        <th className="py-2.5 px-3 font-semibold text-right w-[20%]">ยอดเรียกเก็บ</th>
-                        <th className="py-2.5 px-3 font-semibold text-right w-[20%]">ยอดที่ชำระ</th>
-                        <th className="py-2.5 px-3 font-semibold text-center w-[25%]">สถานะ / สลิป</th>
+                      <tr className="border-b border-gray-200 bg-gray-50 text-sm text-gray-600">
+                        <th className="w-[22%] border-r border-gray-200 px-3 py-2.5 text-center font-semibold">งวดที่ / กำหนดชำระ</th>
+                        <th className="w-[14%] px-3 py-2.5 text-center font-semibold">ครั้งที่</th>
+                        <th className="w-[21%] px-3 py-2.5 text-center font-semibold">ยอดเรียกเก็บ</th>
+                        <th className="w-[21%] px-3 py-2.5 text-center font-semibold">ยอดที่ชำระ</th>
+                        <th className="w-[22%] px-3 py-2.5 text-center font-semibold">สถานะ / สลิป</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -614,58 +628,77 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                         selectedRequest.term,
                         selectedRequest.amount,
                         selectedRequest.paymentHistory,
-                      ).map((inst) => (
+                        selectedRequest.installments,
+                      )
+                        .flatMap((inst) => {
+                          const evidences = inst.evidences.length > 0 ? inst.evidences : [null];
+                          let remainingAmount = inst.baseAmount;
+
+                          return evidences.map((evidence, index) => {
+                            const expectedAmount = evidence ? remainingAmount : inst.expectedAmount;
+
+                            if (evidence?.status === "verified") {
+                              remainingAmount = Math.max(0, remainingAmount - Number(evidence.amount));
+                            }
+
+                            return {
+                              attemptNumber: evidence?.attemptNumber ?? index + 1,
+                              attemptRows: evidences.length,
+                              evidence,
+                              expectedAmount,
+                              isFirstAttempt: index === 0,
+                              inst,
+                            };
+                          });
+                        })
+                        .map(({ attemptNumber, attemptRows, evidence, expectedAmount, isFirstAttempt, inst }) => (
                         <tr
-                          key={inst.installmentNumber}
+                          key={evidence?.id ?? `${inst.installmentNumber}-unpaid`}
                           className={`border-b border-gray-100 last:border-0 ${
-                            inst.isPaid ? "bg-emerald-50/30" : ""
+                            evidence?.status === "verified" ? "bg-emerald-50/30" : ""
+                          } ${
+                            evidence?.status === "rejected" ? "bg-red-50/70" : ""
                           }`}
                         >
-                          <td className="py-3 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <span
-                                className={`font-medium ${
-                                  inst.isPaid ? "text-emerald-700 font-bold" : "text-gray-700"
-                                }`}
-                              >
-                                {inst.installmentNumber}
-                              </span>
-                              {inst.isPaid && (
-                                <CheckCircle2 size={14} className="text-emerald-600" />
-                              )}
-                            </div>
+                          {isFirstAttempt ? (
+                            <td className="border-r border-gray-200 bg-white px-3 py-3 text-center" rowSpan={attemptRows}>
+                              <div className="flex flex-col items-center gap-1 text-gray-600">
+                                <span className="font-medium text-gray-700">งวดที่ {inst.installmentNumber}</span>
+                                <span className="whitespace-nowrap text-sm">{inst.dateString}</span>
+                              </div>
+                            </td>
+                          ) : null}
+                          <td className="px-3 py-3 text-center text-gray-700">
+                            {evidence ? attemptNumber : "-"}
                           </td>
-                          <td className="py-3 px-3 text-center text-gray-600 whitespace-nowrap">
-                            {inst.dateString}
-                          </td>
-                          <td className="py-3 px-3 text-right">
+                          <td className="px-3 py-3 text-center">
                             <span
                               className={`font-semibold ${
-                                inst.expectedAmount === 0 ? "text-gray-400" : "text-gray-700"
+                                expectedAmount === 0 ? "text-gray-400" : "text-gray-700"
                               }`}
                             >
-                              {formatAmount(inst.expectedAmount)}
+                              {formatAmount(expectedAmount)}
                             </span>
                           </td>
 
                           {/* ยอดเงินที่ชำระ */}
-                          <td className="py-3 px-3 text-right">
-                            {inst.evidence ? (
-                              <div className="flex flex-col items-end">
+                          <td className="px-3 py-3 text-center">
+                            {evidence ? (
+                              <div className="flex flex-col items-center">
                                 <span
                                   className={`font-bold ${
-                                    inst.evidence.status === "verified"
+                                    evidence.status === "verified"
                                       ? "text-emerald-700"
-                                      : inst.evidence.status === "rejected"
+                                      : evidence.status === "rejected"
                                         ? "text-red-700"
                                         : "text-[#ea580c]"
                                   }`}
                                 >
-                                  {formatAmount(inst.evidence.amount)}
+                                  {formatAmount(evidence.amount)}
                                 </span>
-                                {inst.evidence.paidTime && (
-                                  <span className="text-[10px] text-gray-500 mt-0.5">
-                                    {inst.evidence.paidTime} น.
+                                {evidence.paidTime && (
+                                  <span className="mt-0.5 text-sm text-gray-500">
+                                    {evidence.paidTime} น.
                                   </span>
                                 )}
                               </div>
@@ -676,25 +709,25 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
 
                           {/* ปุ่มสถานะ / ตรวจสอบสลิป */}
                           <td className="py-2.5 px-3 text-center">
-                            {inst.evidence ? (
+                            {evidence ? (
                               <button
-                                onClick={() => setSelectedEvidenceId(inst.evidence!.id)}
-                                className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-lg border transition-all hover:shadow-sm cursor-pointer ${
-                                  inst.evidence.status === "verified"
+                                onClick={() => setSelectedEvidenceId(evidence.id)}
+                                className={`inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-bold transition-all hover:shadow-sm ${
+                                  evidence.status === "verified"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                    : inst.evidence.status === "pending"
+                                    : evidence.status === "pending"
                                       ? "bg-orange-50 text-[#ea580c] border-orange-200 hover:bg-orange-100"
                                       : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
                                 }`}
                                 type="button"
                               >
                                 <Receipt size={13} className="shrink-0" />
-                                {inst.evidence.status === "verified" && "ตรวจสอบแล้ว"}
-                                {inst.evidence.status === "pending" && "รอตรวจสอบ"}
-                                {inst.evidence.status === "rejected" && "ไม่อนุมัติ"}
+                                {evidence.status === "verified" && "ตรวจสอบแล้ว"}
+                                {evidence.status === "pending" && "รอตรวจสอบ"}
+                                {evidence.status === "rejected" && "ไม่อนุมัติ"}
                               </button>
                             ) : (
-                              <span className="text-gray-400 text-[12px]">ยังไม่ชำระ</span>
+                              <span className="text-sm text-gray-400">ยังไม่ชำระ</span>
                             )}
                           </td>
                         </tr>
@@ -703,17 +736,6 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                   </table>
                 </div>
               </section>
-            </div>
-
-            {/* Footer Modal 1 */}
-            <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex shrink-0">
-              <button
-                onClick={closeAllModals}
-                className="w-full py-3 flex items-center justify-center rounded-xl text-[14px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
-                type="button"
-              >
-                ปิดหน้าต่าง
-              </button>
             </div>
           </div>
         </div>
@@ -793,31 +815,29 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                     icon={<Receipt aria-hidden="true" size={20} strokeWidth={2.2} />}
                     title="รูปภาพสลิปโอนเงิน"
                   />
-                  <div className="relative -mx-2 mt-2 flex items-center justify-center rounded-xl border border-gray-200 bg-gray-50/50 p-[14px]">
-                    {selectedEvidence.slipImageUrl ? (
-                      <div
-                        onClick={() => setPreviewSlipUrl(selectedEvidence.slipImageUrl)}
-                        className="relative flex w-full max-w-full items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-white transition-all hover:shadow-md group cursor-pointer"
-                        title="คลิกเพื่อดูภาพขนาดเต็ม (Preview)"
-                      >
-                        <ImageWithSkeleton
-                          src={selectedEvidence.slipImageUrl}
-                          alt="สลิปหลักฐานการโอนเงิน"
-                          containerClassName="w-full max-w-full"
-                          className="h-auto w-full max-w-full rounded-lg shadow-sm object-contain transition-transform duration-200 group-hover:scale-[1.02]"
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-xs sm:text-sm font-semibold rounded-lg">
-                          <ZoomIn size={22} className="drop-shadow" />
-                          <span className="drop-shadow">คลิกเพื่อดูภาพขนาดเต็ม</span>
-                        </div>
+                  {selectedEvidence.slipImageUrl ? (
+                    <div
+                      onClick={() => setPreviewSlipUrl(selectedEvidence.slipImageUrl)}
+                      className="relative m-1.5 flex max-w-full items-center justify-center overflow-hidden rounded-lg transition-all group cursor-pointer"
+                      title="คลิกเพื่อดูภาพขนาดเต็ม (Preview)"
+                    >
+                      <ImageWithSkeleton
+                        src={selectedEvidence.slipImageUrl}
+                        alt="สลิปหลักฐานการโอนเงิน"
+                        containerClassName="w-full max-w-full"
+                        className="h-auto w-full max-w-full rounded-lg object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+                      />
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 sm:text-sm">
+                        <ZoomIn size={22} className="drop-shadow" />
+                        <span className="drop-shadow">คลิกเพื่อดูภาพขนาดเต็ม</span>
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-gray-400 py-8">
-                        <FileImage size={36} className="mb-2 opacity-50" />
-                        <p className="text-sm">ไม่พบรูปภาพหลักฐานการโอนเงิน</p>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                      <FileImage size={36} className="mb-2 opacity-50" />
+                      <p className="text-sm">ไม่พบรูปภาพหลักฐานการโอนเงิน</p>
+                    </div>
+                  )}
                 </section>
 
                 {/* ขวา: ข้อมูลสลิปและนักศึกษา */}
@@ -894,6 +914,10 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                         <dd>{selectedRequest.studentId}</dd>
                       </div>
                       <div>
+                        <dt>เบอร์โทรศัพท์</dt>
+                        <dd>{selectedRequest.phone || "-"}</dd>
+                      </div>
+                      <div>
                         <dt>งวดที่ชำระ</dt>
                         <dd>
                           งวดที่ {selectedEvidence.installmentNumber} จาก {selectedRequest.term} งวด
@@ -928,16 +952,44 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                   </div>
                 ) : (
                   <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2">
-                    <h4
-                      id="slip-decision-title"
-                      className={`font-bold text-[14px] mb-2 flex items-center gap-2 ${
-                        slipConfirmAction === "approve" ? "text-emerald-700" : "text-red-700"
-                      }`}
+                    <div
+                      className={
+                        slipConfirmAction === "approve"
+                          ? "flex items-center justify-between gap-3"
+                          : undefined
+                      }
                     >
-                      {slipConfirmAction === "approve"
-                        ? "ยืนยันการอนุมัติสลิป"
-                        : "เหตุผลที่ปฏิเสธสลิป"}
-                    </h4>
+                      <h4
+                        id="slip-decision-title"
+                        className={`flex items-center gap-2 text-[14px] font-bold ${
+                          slipConfirmAction === "approve" ? "mb-0 text-emerald-700" : "mb-2 text-red-700"
+                        }`}
+                      >
+                        {slipConfirmAction === "approve"
+                          ? "ยืนยันการอนุมัติสลิป"
+                          : "เหตุผลที่ปฏิเสธสลิป"}
+                      </h4>
+                      {slipConfirmAction === "approve" ? (
+                        <div className="flex shrink-0 justify-end gap-2">
+                          <button
+                            onClick={() => chooseSlipAction(null)}
+                            disabled={isBusy}
+                            className="cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-2 text-[13px] font-semibold text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            type="button"
+                          >
+                            ยกเลิก
+                          </button>
+                          <button
+                            onClick={handleConfirmSlipDecision}
+                            disabled={isBusy}
+                            className="cursor-pointer rounded-xl bg-[#059669] px-5 py-2 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-[#047857] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                            type="button"
+                          >
+                            {isBusy ? "กำลังบันทึก..." : "ยืนยัน"}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
                     {slipConfirmAction === "reject" && (
                       <textarea
                         className="w-full border border-gray-300 rounded-xl p-3 text-[13px] mb-3 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
@@ -952,7 +1004,8 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                       />
                     )}
                     {errorBox}
-                    <div className="flex gap-2 justify-end">
+                    {slipConfirmAction === "reject" ? (
+                      <div className="flex justify-end gap-2">
                       <button
                         onClick={() => chooseSlipAction(null)}
                         disabled={isBusy}
@@ -973,21 +1026,13 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                       >
                         {isBusy ? "กำลังบันทึก..." : "ยืนยัน"}
                       </button>
-                    </div>
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </div>
             ) : (
-              <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex flex-col shrink-0">
-                {errorBox}
-                <button
-                  onClick={closeEvidenceModal}
-                  className="w-full py-3 flex items-center justify-center rounded-xl text-[14px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
-                  type="button"
-                >
-                  ปิดหน้าต่าง
-                </button>
-              </div>
+              errorBox
             )}
           </div>
         </div>
@@ -1021,26 +1066,14 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <a
-                  href={previewSlipUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-[#ea580c] bg-gray-50 hover:bg-orange-50 px-2.5 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 text-xs font-semibold"
-                  title="เปิดรูปภาพในแท็บใหม่"
-                >
-                  <ExternalLink size={15} />
-                  <span className="hidden sm:inline">เปิดในแท็บใหม่</span>
-                </a>
-                <button
-                  onClick={() => setPreviewSlipUrl(null)}
-                  className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
-                  aria-label="ปิดหน้าต่างพรีวิว"
-                  type="button"
-                >
-                  <X size={20} />
-                </button>
-              </div>
+              <button
+                onClick={() => setPreviewSlipUrl(null)}
+                className="cursor-pointer rounded-full bg-gray-50 p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                aria-label="ปิดหน้าต่างพรีวิว"
+                type="button"
+              >
+                <X size={20} />
+              </button>
             </div>
 
             {/* ส่วนแสดงภาพสลิป */}
@@ -1056,35 +1089,10 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                 <ImageWithSkeleton
                   src={previewSlipUrl}
                   alt="สลิปหลักฐานการชำระเงินขนาดเต็ม"
-                  containerClassName="max-h-[72vh] max-w-full"
-                  className="max-h-[72vh] w-auto max-w-full rounded-xl shadow-md object-contain select-none bg-white"
+                  containerClassName="w-1/2 max-w-full"
+                  className="h-auto w-full rounded-xl shadow-md object-contain select-none bg-white"
                 />
               )}
-            </div>
-
-            {/* Footer ของ Modal พรีวิวสลิป */}
-            <div className="p-3.5 sm:p-4 bg-white border-t border-gray-100 flex justify-between items-center shrink-0">
-              <span className="text-[12px] text-gray-500 hidden sm:inline">
-                กด Esc หรือคลิกพื้นที่ภายนอกเพื่อปิด
-              </span>
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                <a
-                  href={previewSlipUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white bg-[#ea580c] hover:bg-[#c2410c] shadow-sm transition-all cursor-pointer active:scale-[0.98]"
-                >
-                  <ExternalLink size={15} />
-                  <span>ดูภาพต้นฉบับ</span>
-                </a>
-                <button
-                  onClick={() => setPreviewSlipUrl(null)}
-                  className="px-5 py-2 rounded-xl text-[13px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer active:scale-[0.98]"
-                  type="button"
-                >
-                  ปิด
-                </button>
-              </div>
             </div>
           </div>
         </div>
