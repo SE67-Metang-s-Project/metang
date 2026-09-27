@@ -27,7 +27,7 @@ function getPaymentStatus(status: LoanPaymentHistoryItem["status"]): PaymentEvid
 export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
   const { language, t } = useStudentLanguage();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
-  const [selectedReceiptImage, setSelectedReceiptImage] = useState<string | null>(null);
+  const [selectedPaymentEvidence, setSelectedPaymentEvidence] = useState<LoanPaymentHistoryItem | null>(null);
   const verifiedCount = items.filter((item) => getPaymentStatus(item.status) === "verified").length;
   const failedCount = items.filter((item) => getPaymentStatus(item.status) === "failed").length;
   const pendingCount = items.filter((item) => getPaymentStatus(item.status) === "pending").length;
@@ -115,7 +115,7 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
                           <button
                             aria-label={t("เปิดหลักฐานการชำระเงิน", "Open payment evidence")}
                             className={styles.paymentEvidenceReceiptButton}
-                            onClick={() => setSelectedReceiptImage(item.receiptImage)}
+                            onClick={() => setSelectedPaymentEvidence(item)}
                             type="button"
                           >
                             <ImageWithSkeleton
@@ -159,8 +159,19 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
           </div>
         )}
       </div>
-      {selectedReceiptImage ? (
-        <TransferSlipModal imageSrc={selectedReceiptImage} onClose={() => setSelectedReceiptImage(null)} />
+      {selectedPaymentEvidence ? (
+        <TransferSlipModal
+          imageSrc={selectedPaymentEvidence.receiptImage}
+          onClose={() => setSelectedPaymentEvidence(null)}
+          paymentEvidence={{
+            installmentNumber: selectedPaymentEvidence.installmentNumber,
+            amount: selectedPaymentEvidence.amount,
+            paidAt: selectedPaymentEvidence.paidAt,
+            checkedAt: selectedPaymentEvidence.checkedAt,
+            status: getPaymentStatus(selectedPaymentEvidence.status),
+            reviewNote: selectedPaymentEvidence.reviewNote,
+          }}
+        />
       ) : null}
     </section>
   );
