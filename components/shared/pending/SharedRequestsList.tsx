@@ -127,7 +127,10 @@ export default function SharedRequestsList({
           isStatusMatch = ["pending_disbursement", "disbursed", "closed"].includes(req.requestStatus);
         }
       } else if (filter === "rejected") {
-        isStatusMatch = ["returned", "rejected"].includes(req.requestStatus);
+        isStatusMatch =
+          userRole === "advisor"
+            ? req.requestStatus === "rejected"
+            : ["returned", "rejected"].includes(req.requestStatus);
       } else if (filter === "cancelled") {
         isStatusMatch = req.requestStatus === "cancelled";
       } else {
@@ -148,8 +151,15 @@ export default function SharedRequestsList({
   }, [requests, dashboardMode, targetPendingStatus, filter, userRole, searchQuery]);
 
   const advisorStatusOptions = [
-    { id: "approved" as const, label: "อนุมัติแล้ว" },
-    { id: "rejected" as const, label: "ไม่อนุมัติ / ส่งกลับแก้ไข" },
+    { id: "draft" as const, label: "แบบร่าง" },
+    { id: "pending" as const, label: "รอพิจารณา" },
+    { id: "pending_admin" as const, label: "รอเจ้าหน้าที่ตรวจสอบ" },
+    { id: "pending_executive" as const, label: "รอผู้บริหารอนุมัติ" },
+    { id: "pending_disbursement" as const, label: "รอเบิกจ่ายเงิน" },
+    { id: "disbursed" as const, label: "โอนเงินแล้ว" },
+    { id: "closed" as const, label: "เสร็จสิ้น" },
+    { id: "returned" as const, label: "ส่งกลับแก้ไข" },
+    { id: "rejected" as const, label: "ไม่อนุมัติ" },
     { id: "cancelled" as const, label: "นักศึกษายกเลิกคำร้อง" },
   ];
 
@@ -173,6 +183,10 @@ export default function SharedRequestsList({
             showExecutivePending={showExecutivePending}
             // เปลี่ยน Label ให้ตรงกับ Role แบบอัตโนมัติ
             pendingLabel={getPendingLabel(userRole)}
+            showAllStatusOption={userRole === "advisor"}
+            searchPlaceholder={
+              userRole === "advisor" ? "ค้นหารหัสคำร้อง ชื่อ..." : undefined
+            }
             statusOptions={
               userRole === "advisor"
                 ? advisorStatusOptions

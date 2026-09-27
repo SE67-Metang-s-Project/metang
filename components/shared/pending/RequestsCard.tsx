@@ -953,14 +953,14 @@ export default function RequestsCard({
                   <h2 className="text-lg font-semibold leading-tight text-gray-900 sm:text-xl">
                     คำร้องรอพิจารณา
                   </h2>
-                  <p className="text-[13px] leading-tight text-gray-500">
+                  <p className="text-[14px] leading-tight text-gray-500">
                     อ้างอิงคำร้อง: {selectedRequest.id}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <span
-                  className={`text-[12px] font-semibold px-3 py-1 rounded-full border ${
+                  className={`text-[14px] font-semibold px-3 py-1 rounded-full border ${
                     isExecutiveReturned(selectedRequest)
                       ? "bg-amber-50 text-amber-700 border-amber-300"
                       : getStatusBadgeClass(selectedRequest.requestStatus)
@@ -983,7 +983,7 @@ export default function RequestsCard({
 
             <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 bg-gray-50/50">
               {isExecutiveReturned(selectedRequest) && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-2.5 text-amber-800 text-[13px]">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-2.5 text-[14px] text-amber-800">
                   <RotateCcw className="size-4 shrink-0 text-amber-600 mt-0.5" />
                   <div>
                     <p className="font-semibold text-amber-900">ผู้บริหารส่งกลับมาแก้ไข</p>
@@ -1102,7 +1102,7 @@ export default function RequestsCard({
                             setAmountError(null);
                             setIsEditingAmount(true);
                           }}
-                          className="text-blue-500 hover:text-blue-700 inline-flex items-center gap-1 text-[11px] bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md transition-colors font-normal cursor-pointer"
+                          className="text-blue-500 hover:text-blue-700 inline-flex items-center gap-1 text-[14px] bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md transition-colors font-normal cursor-pointer"
                         >
                           <Pencil size={12} /> ปรับวงเงิน
                         </button>
@@ -1153,9 +1153,9 @@ export default function RequestsCard({
                             </button>
                           </div>
                           {amountError ? (
-                            <p className="text-[11px] text-red-500 text-right">{amountError}</p>
+                            <p className="text-[14px] text-red-500 text-right">{amountError}</p>
                           ) : (
-                            <p className="text-[11px] text-gray-400 text-right">
+                            <p className="text-[14px] text-gray-400 text-right">
                               (ปรับลดได้สูงสุด {maxAllowedAmount.toLocaleString("th-TH")})
                             </p>
                           )}
@@ -1164,7 +1164,7 @@ export default function RequestsCard({
                         <div className="flex items-center justify-end gap-2">
                           {originalRequestedAmount > 0 &&
                             Number(selectedRequest.amount) < originalRequestedAmount && (
-                              <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-medium">
+                              <span className="text-[14px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-medium">
                                 ปรับลดจาก {formatAmount(originalRequestedAmount)}
                               </span>
                             )}
@@ -1205,7 +1205,7 @@ export default function RequestsCard({
                       <div className="flex items-center gap-1.5 justify-end">
                         {inst.isPaid ? (
                           <>
-                            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                            <span className="text-[14px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
                               ชำระแล้ว
                             </span>
                             <strong className="text-emerald-700">
@@ -1243,7 +1243,7 @@ export default function RequestsCard({
                   </header>
                   {(selectedRequest.paymentBehavior?.totalInstallments ?? 0) > 0 && (
                     <span
-                      className={`text-[12px] font-semibold px-2.5 py-0.5 rounded-full ${
+                      className={`text-[14px] font-semibold px-2.5 py-0.5 rounded-full ${
                         (selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0
                           ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                           : "bg-red-50 text-red-700 border border-red-200"
@@ -1258,7 +1258,7 @@ export default function RequestsCard({
                 </div>
                 <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
                   <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <div className="text-[11px] text-gray-500">ประวัติกู้ยืม</div>
+                    <div className="text-[14px] text-gray-500">ประวัติกู้ยืม</div>
                     <div className="font-semibold text-[15px] text-gray-900 mt-0.5">
                       {selectedRequest.paymentBehavior?.totalLoanRequests ?? 0} ครั้ง
                     </div>
@@ -1275,8 +1275,8 @@ export default function RequestsCard({
                       className={
                         (selectedRequest.paymentBehavior?.totalInstallments ?? 0) > 0 &&
                         (selectedRequest.paymentBehavior?.onTimeInstallments ?? 0) > 0
-                          ? "text-[11px] text-emerald-700 font-medium"
-                          : "text-[11px] text-gray-500"
+                          ? "text-[14px] text-emerald-700 font-medium"
+                          : "text-[14px] text-gray-500"
                       }
                     >
                       ตรงเวลา
@@ -1293,7 +1293,7 @@ export default function RequestsCard({
                     </div>
                   </div>
                   <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <div className="text-[11px] text-gray-500">ล่าช้า</div>
+                    <div className="text-[14px] text-gray-500">ล่าช้า</div>
                     <div className="font-semibold text-[15px] text-gray-900 mt-0.5">
                       {selectedRequest.paymentBehavior?.lateInstallments ?? 0} งวด
                     </div>
@@ -1338,7 +1338,7 @@ export default function RequestsCard({
                         setConfirmAction("reject");
                         setErrorMessage(null);
                       }}
-                      className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-white border-2 border-red-100 text-red-600 font-semibold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98]"
+                      className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl border-2 border-red-300 bg-white text-[14px] font-semibold text-red-700 transition-all hover:border-red-400 hover:bg-red-100 active:scale-[0.98]"
                     >
                       {isAdminOrSuperAdmin ? "ยกเลิกคำร้อง" : "ไม่อนุมัติ"}
                     </button>
@@ -1348,7 +1348,7 @@ export default function RequestsCard({
                           setConfirmAction("return");
                           setErrorMessage(null);
                         }}
-                        className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-semibold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
+                        className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-white border-2 border-amber-200 text-[14px] text-amber-600 font-semibold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
                       >
                         ส่งกลับแก้ไข
                       </button>
@@ -1364,7 +1364,7 @@ export default function RequestsCard({
                           ? "ผู้บริหารส่งกลับมาแก้ไข กรุณาปรับลดวงเงินก่อนส่งพิจารณาใหม่"
                           : undefined
                       }
-                      className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-[#059669] text-white font-semibold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-[#059669] text-[14px] text-white font-semibold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isAdminOrSuperAdmin ? "ส่งพิจารณา" : "อนุมัติ"}
                     </button>
@@ -1372,7 +1372,7 @@ export default function RequestsCard({
                 ) : (
                   <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2">
                     <h4
-                      className={`font-semibold text-[14px] mb-2 flex items-center gap-2 ${
+                      className={`mb-2 text-[14px] font-semibold ${
                         confirmAction === "approve"
                           ? "text-green-700"
                           : confirmAction === "return"
@@ -1380,23 +1380,16 @@ export default function RequestsCard({
                             : "text-red-600"
                       }`}
                     >
-                      {confirmAction === "approve" ? (
-                        <CheckCircle2 size={16} />
-                      ) : confirmAction === "return" ? (
-                        <ShieldAlert size={16} />
-                      ) : (
-                        <XCircle size={16} />
-                      )}
                       <span>
                         {confirmAction === "approve"
                           ? "ความเห็นประกอบการพิจารณา"
                           : confirmAction === "return"
-                            ? "ระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข (เช่น แนบเอกสารใหม่)"
+                            ? "ระบุสิ่งที่ต้องการให้นักศึกษาแก้ไข"
                             : isAdminOrSuperAdmin
                               ? "ระบุเหตุผลในการยกเลิกคำร้อง"
                               : "ระบุเหตุผลเพื่อแจ้งกลับให้นักศึกษาทราบ"}
                       </span>
-                      <span className="text-red-500 font-semibold" title="จำเป็น">
+                      <span className="ml-1 text-red-500 font-semibold" title="จำเป็น">
                         *
                       </span>
                     </h4>
@@ -1424,14 +1417,10 @@ export default function RequestsCard({
                         maxLength={500}
                         placeholder={
                           confirmAction === "approve"
-                            ? isAdminOrSuperAdmin
-                              ? "ระบุความเห็นเพื่อส่งพิจารณา เช่น ตรวจสอบเอกสารครบถ้วน เห็นควรส่งผู้บริหารพิจารณา..."
-                              : "ระบุความเห็นประกอบการพิจารณา เช่น เห็นสมควรให้กู้ยืมเพื่อนำไปใช้จ่าย..."
+                            ? "เช่น เห็นสมควรให้กู้ยืมเพื่อนำไปจ่าย..."
                             : confirmAction === "return"
-                              ? "เช่น ใบแจ้งหนี้ไม่ชัดเจน กรุณาถ่ายรูปและแนบไฟล์มาใหม่..."
-                              : isAdminOrSuperAdmin
-                                ? "เช่น ไม่ตรงตามเกณฑ์ หรือขอยกเลิกคำร้อง..."
-                                : "เช่น เอกสารหรือเหตุผลไม่เพียงพอต่อการกู้ยืม..."
+                              ? "เช่น แก้ไขวัตถุประสงค์การกู้ยืมให้ชัดเจน"
+                              : "เช่น เหตุผลไม่เพียงพอต่อการกู้ยืม"
                         }
                         className={`w-full border rounded-lg p-3 text-[14px] focus:outline-none resize-none h-20 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors ${
                           errorMessage

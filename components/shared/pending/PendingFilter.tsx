@@ -11,10 +11,15 @@ export type FilterStatus =
   | "rejected"
   | "pending_admin"
   | "cancelled"
-  | "pending_executive";
+  | "pending_executive"
+  | "pending_disbursement"
+  | "disbursed"
+  | "closed"
+  | "returned"
+  | "draft";
 
 export type DropdownStatusOption = {
-  id: Exclude<FilterStatus, "all" | "pending">;
+  id: Exclude<FilterStatus, "all">;
   label: string;
 };
 
@@ -29,6 +34,7 @@ interface PendingFilterProps {
   searchPlaceholder?: string;
   pendingLabel?: string; // เพิ่ม Prop นี้เพื่อให้แต่ละ Role ตั้งชื่อแท็บได้เอง
   statusOptions?: DropdownStatusOption[];
+  showAllStatusOption?: boolean;
 }
 
 export default function PendingFilter({
@@ -42,6 +48,7 @@ export default function PendingFilter({
   searchPlaceholder = "ค้นหารหัสคำร้อง ชื่อ วันที่...",
   pendingLabel = "รอพิจารณา", // ค่าเริ่มต้น
   statusOptions: customStatusOptions,
+  showAllStatusOption = false,
 }: PendingFilterProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -90,8 +97,14 @@ export default function PendingFilter({
     { id: "cancelled", label: "นักศึกษายกเลิกคำร้อง" },
   ];
   const rawStatusOptions = customStatusOptions ?? defaultStatusOptions;
-  const statusOptions = rawStatusOptions.filter((option) => option.id !== "pending_executive");
-  const selectedStatus = statusOptions.find((option) => option.id === currentFilter);
+  const statusOptions = rawStatusOptions.filter(
+    (option) => option.id !== "pending_executive" || customStatusOptions !== undefined,
+  );
+  const dropdownOptions: { id: FilterStatus; label: string }[] = [
+    ...(showAllStatusOption ? [{ id: "all" as const, label: "ทั้งหมด" }] : []),
+    ...statusOptions,
+  ];
+  const selectedStatus = dropdownOptions.find((option) => option.id === currentFilter);
   const isDropdownActive = selectedStatus !== undefined;
 
   return (
@@ -159,7 +172,7 @@ export default function PendingFilter({
 
           {isDropdownOpen && (
             <div className="absolute top-full mt-1.5 right-0 w-full bg-white border border-gray-100 rounded-xl shadow-lg z-10 py-1.5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-              {statusOptions.map((option) => (
+              {dropdownOptions.map((option) => (
                 <button
                   key={option.id}
                   onClick={() => handleDropdownSelect(option.id)}
