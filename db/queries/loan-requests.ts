@@ -888,26 +888,13 @@ export async function getAdvisorActionRequests(advisorId: string): Promise<Actio
 }
 
 export async function getAdvisorStudentRequests(advisorId: string): Promise<ActionRequest[]> {
-  const requests = await getActionRequests(
+  return getActionRequests(
     {
       advisorId,
-      status: "disbursed",
+      status: { not: "draft" },
     },
     { hideBankDetails: true },
   );
-
-  return requests.filter((req) => {
-    const totalDue =
-      req.installments && req.installments.length > 0
-        ? req.installments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0)
-        : Number(req.approvedAmount ?? req.amount ?? 0);
-    const totalPaid =
-      req.installments && req.installments.length > 0
-        ? req.installments.reduce((sum, inst) => sum + Number(inst.paidAmount || 0), 0)
-        : 0;
-    const remainingBalance = Math.max(0, totalDue - totalPaid);
-    return remainingBalance > 0;
-  });
 }
 
 export async function getAdminActionRequests(): Promise<ActionRequest[]> {

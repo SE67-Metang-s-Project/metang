@@ -2,7 +2,10 @@
 "use client";
 
 import React, { useState } from "react";
-import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
+import PendingFilter, {
+  COMPLETE_REQUEST_STATUS_OPTIONS,
+  FilterStatus,
+} from "@/components/shared/pending/PendingFilter";
 import RequestsCard, {
   ActionRequest,
   UserRole,
@@ -127,10 +130,7 @@ export default function SharedRequestsList({
           isStatusMatch = ["pending_disbursement", "disbursed", "closed"].includes(req.requestStatus);
         }
       } else if (filter === "rejected") {
-        isStatusMatch =
-          userRole === "advisor"
-            ? req.requestStatus === "rejected"
-            : ["returned", "rejected"].includes(req.requestStatus);
+        isStatusMatch = req.requestStatus === "rejected";
       } else if (filter === "cancelled") {
         isStatusMatch = req.requestStatus === "cancelled";
       } else {
@@ -150,25 +150,6 @@ export default function SharedRequestsList({
     return sortRequestsBySubmissionDateDesc(list);
   }, [requests, dashboardMode, targetPendingStatus, filter, userRole, searchQuery]);
 
-  const advisorStatusOptions = [
-    { id: "draft" as const, label: "แบบร่าง" },
-    { id: "pending" as const, label: "รอพิจารณา" },
-    { id: "pending_admin" as const, label: "รอเจ้าหน้าที่ตรวจสอบ" },
-    { id: "pending_executive" as const, label: "รอผู้บริหารอนุมัติ" },
-    { id: "pending_disbursement" as const, label: "รอเบิกจ่ายเงิน" },
-    { id: "disbursed" as const, label: "โอนเงินแล้ว" },
-    { id: "closed" as const, label: "เสร็จสิ้น" },
-    { id: "returned" as const, label: "ส่งกลับแก้ไข" },
-    { id: "rejected" as const, label: "ไม่อนุมัติ" },
-    { id: "cancelled" as const, label: "นักศึกษายกเลิกคำร้อง" },
-  ];
-
-  const adminStatusOptions = [
-    { id: "approved" as const, label: "อนุมัติแล้ว" },
-    { id: "rejected" as const, label: "ไม่อนุมัติ / ส่งกลับแก้ไข" },
-    { id: "cancelled" as const, label: "นักศึกษายกเลิกคำร้อง" },
-  ];
-
   return (
     <div className="w-full">
       {!hideFilters && (
@@ -183,17 +164,11 @@ export default function SharedRequestsList({
             showExecutivePending={showExecutivePending}
             // เปลี่ยน Label ให้ตรงกับ Role แบบอัตโนมัติ
             pendingLabel={getPendingLabel(userRole)}
-            showAllStatusOption={userRole === "advisor"}
+            showAllStatusOption
             searchPlaceholder={
               userRole === "advisor" ? "ค้นหารหัสคำร้อง ชื่อ..." : undefined
             }
-            statusOptions={
-              userRole === "advisor"
-                ? advisorStatusOptions
-                : userRole === "admin" || userRole === "super_admin"
-                  ? adminStatusOptions
-                  : undefined
-            }
+            statusOptions={COMPLETE_REQUEST_STATUS_OPTIONS}
           />
         </div>
       )}

@@ -727,7 +727,7 @@ export default function RequestsCard({
       );
     }
 
-    if (isExecutiveReturned(req)) {
+    if (isExecutiveReturned(req) && s !== "pending_disbursement") {
       return (
         <button
           onClick={() => openRequestModal(req)}
@@ -743,15 +743,17 @@ export default function RequestsCard({
 
     let colorClass = "bg-gray-50 hover:bg-gray-100 text-gray-600 border-gray-200";
 
-    if (
+    if (s.includes("return") || s.includes("แก้ไข")) {
+      colorClass = "bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200";
+    } else if (
       s.includes("reject") ||
       s.includes("cancel") ||
-      s.includes("return") ||
       s.includes("ไม่อนุมัติ") ||
-      s.includes("ยกเลิก") ||
-      s.includes("แก้ไข")
+      s.includes("ยกเลิก")
     ) {
       colorClass = "bg-red-50 hover:bg-red-100 text-red-600 border-red-200";
+    } else if (s === "pending_disbursement") {
+      colorClass = "bg-purple-50 hover:bg-purple-100 text-purple-600 border-purple-200";
     } else if (s.includes("pending") || s.includes("รอ")) {
       colorClass = "bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200";
     } else if (

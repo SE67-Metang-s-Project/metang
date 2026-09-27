@@ -16,12 +16,26 @@ export type FilterStatus =
   | "disbursed"
   | "closed"
   | "returned"
-  | "draft";
+  | "draft"
+  | "pending_advisor";
 
 export type DropdownStatusOption = {
   id: Exclude<FilterStatus, "all">;
   label: string;
 };
+
+export const COMPLETE_REQUEST_STATUS_OPTIONS: DropdownStatusOption[] = [
+  { id: "pending_advisor", label: "รออาจารย์พิจารณา" },
+  { id: "pending_admin", label: "รอเจ้าหน้าที่ตรวจสอบ" },
+  { id: "pending_executive", label: "รอผู้บริหารอนุมัติ" },
+  { id: "pending_disbursement", label: "รอเบิกจ่ายเงิน" },
+  { id: "disbursed", label: "โอนเงินแล้ว" },
+  { id: "closed", label: "เสร็จสิ้น" },
+  { id: "returned", label: "ส่งกลับแก้ไข" },
+  { id: "rejected", label: "ไม่อนุมัติ" },
+  { id: "cancelled", label: "ยกเลิกคำร้อง" },
+  { id: "draft", label: "แบบร่าง" },
+];
 
 interface PendingFilterProps {
   currentFilter: FilterStatus;
@@ -94,7 +108,7 @@ export default function PendingFilter({
     ...(!isExecutivePendingEnabled
       ? [{ id: "pending_admin" as const, label: "รอเจ้าหน้าที่ตรวจสอบ" }]
       : []),
-    { id: "cancelled", label: "นักศึกษายกเลิกคำร้อง" },
+    { id: "cancelled", label: "ยกเลิกคำร้อง" },
   ];
   const rawStatusOptions = customStatusOptions ?? defaultStatusOptions;
   const statusOptions = rawStatusOptions.filter(

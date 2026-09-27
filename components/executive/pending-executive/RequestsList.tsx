@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
+import PendingFilter, {
+  COMPLETE_REQUEST_STATUS_OPTIONS,
+  FilterStatus,
+} from "@/components/shared/pending/PendingFilter";
 import RequestsCard, {
   ActionRequest,
   sortRequestsBySubmissionDateDesc,
@@ -61,11 +64,11 @@ export default function RequestsListExecutive({
         // สำหรับผู้บริหาร ถ้าอนุมัติแล้วจะไปรอโอนเงิน หรือโอนเสร็จแล้ว
         isStatusMatch = ["pending_disbursement", "disbursed", "closed"].includes(req.requestStatus);
       } else if (filter === "rejected") {
-        isStatusMatch = ["returned", "rejected", "cancelled"].includes(req.requestStatus);
+        isStatusMatch = req.requestStatus === "rejected";
       } else if (filter === "cancelled") {
         isStatusMatch = req.requestStatus === "cancelled";
-      } else if (filter === "pending_admin") {
-        isStatusMatch = req.requestStatus === "pending_admin";
+      } else {
+        isStatusMatch = req.requestStatus === filter;
       }
 
       const lowerQuery = searchQuery.toLowerCase();
@@ -97,12 +100,8 @@ export default function RequestsListExecutive({
         searchPlaceholder="ค้นหารหัสคำร้อง ชื่อ วันที่..."
         pendingCount={pendingCount} 
         pendingLabel="รออนุมัติ" 
-        statusOptions={[
-          { id: "approved", label: "อนุมัติแล้ว" },
-          { id: "rejected", label: "ไม่อนุมัติ" },
-          { id: "cancelled", label: "นักศึกษายกเลิกคำร้อง" },
-          { id: "pending_admin", label: "รอเจ้าหน้าที่ตรวจสอบ" },
-        ]}
+        showAllStatusOption
+        statusOptions={COMPLETE_REQUEST_STATUS_OPTIONS}
       />
 
       {/* 

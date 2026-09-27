@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
+import PendingFilter, {
+  COMPLETE_REQUEST_STATUS_OPTIONS,
+  FilterStatus,
+} from "@/components/shared/pending/PendingFilter";
 import RequestsCard, {
   ActionRequest,
   sortRequestsBySubmissionDateDesc,
@@ -70,7 +73,7 @@ export default function SuperAdminRequestsList({
           "closed",
         ].includes(req.requestStatus);
       else if (filter === "rejected")
-        isStatusMatch = ["returned", "rejected"].includes(req.requestStatus);
+        isStatusMatch = req.requestStatus === "rejected";
       else if (filter === "cancelled")
         isStatusMatch = req.requestStatus === "cancelled";
       else
@@ -86,12 +89,6 @@ export default function SuperAdminRequestsList({
     return sortRequestsBySubmissionDateDesc(list);
   }, [requests, dashboardMode, filter, searchQuery]);
 
-  const statusOptions = [
-    { id: "approved" as const, label: "อนุมัติแล้ว" },
-    { id: "rejected" as const, label: "ไม่อนุมัติ / ส่งกลับแก้ไข" },
-    { id: "cancelled" as const, label: "นักศึกษายกเลิกคำร้อง" },
-  ];
-
   return (
     <div className="w-full">
       {!hideFilters && (
@@ -105,7 +102,8 @@ export default function SuperAdminRequestsList({
             pendingExecutiveCount={pendingExecutiveCount}
             showExecutivePending={true}
             pendingLabel="รอตรวจสอบ (Admin)"
-            statusOptions={statusOptions}
+            showAllStatusOption
+            statusOptions={COMPLETE_REQUEST_STATUS_OPTIONS}
           />
         </div>
       )}

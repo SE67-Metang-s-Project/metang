@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import PendingFilter, { FilterStatus } from "@/components/shared/pending/PendingFilter";
+import PendingFilter, {
+  COMPLETE_REQUEST_STATUS_OPTIONS,
+  FilterStatus,
+} from "@/components/shared/pending/PendingFilter";
 import RequestsCard, {
   ActionRequest,
   sortRequestsBySubmissionDateDesc,
@@ -67,11 +70,11 @@ export default function RequestsList({ initialRequests }: RequestsListProps = {}
           "closed",
         ].includes(req.requestStatus);
       } else if (filter === "rejected") {
-        isStatusMatch = ["returned", "rejected", "cancelled"].includes(req.requestStatus);
-      } else if (filter === "pending_admin") {
-        isStatusMatch = req.requestStatus === "pending_admin";
+        isStatusMatch = req.requestStatus === "rejected";
       } else if (filter === "cancelled") {
         isStatusMatch = req.requestStatus === "cancelled";
+      } else {
+        isStatusMatch = req.requestStatus === filter;
       }
 
       const lowerQuery = searchQuery.toLowerCase();
@@ -93,11 +96,8 @@ export default function RequestsList({ initialRequests }: RequestsListProps = {}
         onSearchChange={setSearchQuery}
         pendingCount={pendingCount} // ส่งจำนวนเข้าไปแสดงบน Badge
         pendingLabel="รอพิจารณา" // ตั้งชื่อแท็บให้เข้ากับ Advisor
-        statusOptions={[
-          { id: "approved", label: "อนุมัติแล้ว" },
-          { id: "rejected", label: "ไม่อนุมัติ" },
-          { id: "cancelled", label: "นักศึกษายกเลิกคำร้อง" },
-        ]}
+        showAllStatusOption
+        statusOptions={COMPLETE_REQUEST_STATUS_OPTIONS}
       />
 
       <RequestsCard
