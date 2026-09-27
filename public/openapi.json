@@ -8596,6 +8596,16 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
@@ -8843,6 +8853,28 @@
             }
           }
         }
+      }
+    },
+    "/superadmin/financial-overview": {
+      "get": {
+        "operationId": "get-superadmin-financial-overview",
+        "summary": "Financial summary and activity for the Super Admin dashboard.",
+        "description": "",
+        "tags": [
+          "Superadmin"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "example"
+          }
+        ],
+        "responses": {}
       }
     },
     "/super-admin/fund-transactions": {
@@ -9393,6 +9425,9 @@
     },
     {
       "name": "Student payments"
+    },
+    {
+      "name": "Superadmin"
     },
     {
       "name": "SuperAdmin fund"
