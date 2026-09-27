@@ -1,0 +1,36 @@
+info:
+  name: 09_1 cancel from another origin is refused
+  type: http
+  seq: 9
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/student/loan-requests/{{walkLoanId}}/cancel"
+  headers:
+    - name: Origin
+      value: https://evil.example
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+    - expression: res.body.error.code
+      operator: eq
+      value: "FORBIDDEN"
+  scripts:
+    - type: before-request
+      code: |-
+        // The walk degrades instead of cascading when an earlier step failed to produce an id.
+        if (!bru.getVar("walkLoanId")) bru.runner.skipRequest();
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  Cancel sends no body, so it checks the Origin header directly (isSameOrigin) before auth.

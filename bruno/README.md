@@ -52,7 +52,7 @@ requests then write to the **real dev database** — the isolation only exists u
 |---|---|
 | Route handlers in `app/api/**` | 40 |
 | Operations in `public/openapi.json` | 33 |
-| Requests in this collection | 33 + 20 workflow steps |
+| Requests in this collection | 33 + 22 workflow steps |
 | **Executed by `npm run api:test`** | **31 requests, 85 assertions, 1 test** |
 
 ### What runs
@@ -80,6 +80,7 @@ requests then write to the **real dev database** — the isolation only exists u
 | 06-09 | advisor → admin (reduced amount + mandatory comment) → executive → `pending_disbursement` |
 | 07 | `approvedAmount` above the requested amount → 422 |
 | 08_1-08_3 | executive returns → admin return to the student → 409 → admin re-approves a lower amount |
+| 09_1-09_2 | cancel from another origin → 403 · cancel while `pending_disbursement` → 409 |
 | 10-12 | replayed decision → 409 · unknown id → 404 · non-JSON content type → 403 |
 | 13 | **two simultaneous admin decisions → exactly one 200 and one 409** |
 
