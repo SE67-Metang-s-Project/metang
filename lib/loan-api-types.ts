@@ -543,6 +543,10 @@ export type SystemSettingBody = {
   contactPhone?: string;
   contactExt?: string | null;
   contactEmail?: string;
+  contactHoursTh?: string;
+  contactHoursEn?: string;
+  contactClosedTh?: string;
+  contactClosedEn?: string;
 };
 
 export type SystemSettingItem = {
@@ -554,6 +558,10 @@ export type SystemSettingItem = {
   contactPhone: string;
   contactExt: string | null;
   contactEmail: string;
+  contactHoursTh: string;
+  contactHoursEn: string;
+  contactClosedTh: string;
+  contactClosedEn: string;
   updatedById: string | null;
   updatedAt: string;
 };
@@ -571,6 +579,10 @@ export type SystemSettingPublicFields = {
   contactPhone: string;
   contactExt: string | null;
   contactEmail: string;
+  contactHoursTh: string;
+  contactHoursEn: string;
+  contactClosedTh: string;
+  contactClosedEn: string;
 };
 
 export type SystemSettingPublicResponse = {

@@ -2,17 +2,31 @@
 
 import { useEffect, useState } from "react";
 import { Check, Clock3, Copy, Headphones, Mail, MapPin, Phone } from "lucide-react";
-import { loanContact, type LoanContact } from "@/app/student/studentMockData";
-import {
-  getSystemAddress,
-  systemAddressUpdatedEvent,
-} from "@/components/shared/mock-data/mockSystemSettings";
 import styles from "@/app/student/student.module.css";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 
+type ContactSettings = {
+  contactLocationTh: string;
+  contactLocationEn: string | null;
+  contactPhone: string;
+  contactExt: string | null;
+  contactEmail: string;
+  contactHoursTh: string;
+  contactHoursEn: string;
+  contactClosedTh: string;
+  contactClosedEn: string;
+};
+
+function formatPhone(phone: string, extension: string | null, language: "th" | "en") {
+  const formattedPhone = phone.replace(/^(0\d{2})(\d{3})(\d{3,4})$/, "$1-$2-$3");
+  const formattedExtension = extension?.trim().replace(/[;,]+/g, "/").replace(/\s+/g, "");
+  if (!formattedExtension) return formattedPhone;
+  return `${formattedPhone} ${language === "th" ? "ต่อ" : "ext."} ${formattedExtension}`;
+}
+
 export default function ContactFooter() {
-  const { t } = useStudentLanguage();
-  const [contact, setContact] = useState<LoanContact>(loanContact);
+  const { language, t } = useStudentLanguage();
+  const [contact, setContact] = useState<ContactSettings | null>(null);
   const [isPhoneCopied, setIsPhoneCopied] = useState(false);
   const [isEmailCopied, setIsEmailCopied] = useState(false);
 
@@ -20,35 +34,32 @@ export default function ContactFooter() {
     let isMounted = true;
 
     const loadSystemContact = async () => {
-      // Phone, email and location come from the system settings row; opening hours has no column
-      // yet, so it still comes from the fixture.
-      const [address, stored] = await Promise.all([
-        getSystemAddress(),
-        fetch("/api/system-settings")
-          .then((res) => (res.ok ? res.json() : null))
-          .then((body) => body?.data ?? null)
-          .catch(() => null),
-      ]);
-      if (!isMounted) return;
-
-      setContact({
-        phone: stored?.contactPhone ?? address.phone,
-        email: stored?.contactEmail ?? address.email,
-        location: stored?.contactLocationTh ?? address.submissionLocation,
-        openingHours: address.openingHours,
-      });
+      const stored = await fetch("/api/system-settings")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((body) => body?.data ?? null)
+        .catch(() => null);
+      if (isMounted) setContact(stored);
     };
 
     void loadSystemContact();
-    window.addEventListener(systemAddressUpdatedEvent, loadSystemContact);
-    window.addEventListener("storage", loadSystemContact);
 
     return () => {
       isMounted = false;
-      window.removeEventListener(systemAddressUpdatedEvent, loadSystemContact);
-      window.removeEventListener("storage", loadSystemContact);
     };
   }, []);
+
+  const phone = contact ? formatPhone(contact.contactPhone, contact.contactExt, language) : "—";
+  const location = contact
+    ? language === "th"
+      ? contact.contactLocationTh
+      : contact.contactLocationEn || contact.contactLocationTh
+    : "—";
+  const openingHours = contact ? (language === "th" ? contact.contactHoursTh : contact.contactHoursEn) : "—";
+  const closedDays = contact
+    ? language === "th"
+      ? contact.contactClosedTh
+      : contact.contactClosedEn
+    : "";
 
   const copyContactValue = async (
     value: string,
@@ -79,7 +90,7 @@ export default function ContactFooter() {
       <div className={styles.contactFooterGrid}>
         <div className={`${styles.contactFooterItem} ${styles.contactFooterPrimaryItem}`}>
           <Phone aria-hidden="true" />
-          <a href={`tel:${contact.phone}`}>{contact.phone}</a>
+          {contact ? <a href={`tel:${contact.contactPhone}`}>{phone}</a> : <span>{phone}</span>}
           <button
             aria-label={
               isPhoneCopied
@@ -87,7 +98,8 @@ export default function ContactFooter() {
                 : t("คัดลอกเบอร์โทรศัพท์", "Copy phone number")
             }
             className={styles.contactFooterCopyButton}
-            onClick={() => copyContactValue(contact.phone, setIsPhoneCopied)}
+            onClick={() => contact && copyContactValue(phone, setIsPhoneCopied)}
+            disabled={!contact}
             title={
               isPhoneCopied
                 ? t("คัดลอกเบอร์โทรศัพท์แล้ว", "Phone number copied")
@@ -100,7 +112,7 @@ export default function ContactFooter() {
         </div>
         <div className={`${styles.contactFooterItem} ${styles.contactFooterPrimaryItem}`}>
           <Mail aria-hidden="true" />
-          <a href={`mailto:${contact.email}`}>{contact.email}</a>
+          {contact ? <a href={`mailto:${contact.contactEmail}`}>{contact.contactEmail}</a> : <span>—</span>}
           <button
             aria-label={
               isEmailCopied
@@ -108,7 +120,8 @@ export default function ContactFooter() {
                 : t("คัดลอกอีเมล", "Copy email")
             }
             className={styles.contactFooterCopyButton}
-            onClick={() => copyContactValue(contact.email, setIsEmailCopied)}
+            onClick={() => contact && copyContactValue(contact.contactEmail, setIsEmailCopied)}
+            disabled={!contact}
             title={
               isEmailCopied
                 ? t("คัดลอกอีเมลแล้ว", "Email copied")
@@ -122,13 +135,14 @@ export default function ContactFooter() {
         <div className={`${styles.contactFooterItem} ${styles.contactFooterTwoLineItem}`}>
           <MapPin aria-hidden="true" />
           <span>
-            {contact.location}
+            {location}
           </span>
         </div>
         <div className={`${styles.contactFooterItem} ${styles.contactFooterTwoLineItem}`}>
           <Clock3 aria-hidden="true" />
           <span>
-            {contact.openingHours}
+            {openingHours}
+            {closedDays && <span className={styles.contactFooterClosedDays}>{closedDays}</span>}
           </span>
         </div>
       </div>

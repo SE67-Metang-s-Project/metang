@@ -15,6 +15,10 @@ export const systemSettingSelect = {
   contactPhone: true,
   contactExt: true,
   contactEmail: true,
+  contactHoursTh: true,
+  contactHoursEn: true,
+  contactClosedTh: true,
+  contactClosedEn: true,
   updatedById: true,
   updatedAt: true,
 } satisfies Prisma.SystemSettingSelect;
@@ -29,6 +33,10 @@ export const systemSettingPublicSelect = {
   contactPhone: true,
   contactExt: true,
   contactEmail: true,
+  contactHoursTh: true,
+  contactHoursEn: true,
+  contactClosedTh: true,
+  contactClosedEn: true,
 } satisfies Prisma.SystemSettingSelect;
 
 export async function getSystemSetting() {
@@ -61,6 +69,10 @@ function pickEditable(row: EditableFields) {
     contactPhone: row.contactPhone,
     contactExt: row.contactExt,
     contactEmail: row.contactEmail,
+    contactHoursTh: row.contactHoursTh,
+    contactHoursEn: row.contactHoursEn,
+    contactClosedTh: row.contactClosedTh,
+    contactClosedEn: row.contactClosedEn,
   };
 }
 

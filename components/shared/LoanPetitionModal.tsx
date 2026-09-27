@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { FileText, Download, X } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { FileText, Download, Minus, RotateCcw, Plus, X } from "lucide-react";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import LoanPetitionDocument, {
   downloadLoanPetitionPdf,
@@ -29,10 +29,32 @@ export default function LoanPetitionModal({
 }: LoanPetitionModalProps) {
   const { language, t } = useStudentLanguage();
   const [documentViewTab, setDocumentViewTab] = useState<"official" | "attachment">("official");
+  const [zoom, setZoom] = useState(0.5);
+  const previewViewportRef = useRef<HTMLDivElement>(null);
   const modalDismiss = useModalDismiss({
     onClose,
     isOpen,
   });
+
+  useEffect(() => {
+    const viewport = previewViewportRef.current;
+    if (!isOpen || !viewport || documentViewTab !== "official") return;
+
+    const fitDocument = () => {
+      // CSS A4 is 793.7 × 1122.5 pixels. Leave room for the viewport padding so the entire
+      // document is visible initially, rather than requiring a side-scroll to reach its edge.
+      const nextZoom = Math.min(
+        1,
+        Math.max(0.25, (viewport.clientWidth - 16) / 793.7, (viewport.clientHeight - 76) / 1122.5),
+      );
+      setZoom(nextZoom);
+    };
+
+    fitDocument();
+    const observer = new ResizeObserver(fitDocument);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [documentViewTab, isOpen]);
 
   if (!isOpen || !request) return null;
 
@@ -105,7 +127,10 @@ export default function LoanPetitionModal({
         </div>
 
         {/* ส่วนแสดงเนื้อหาเอกสาร */}
-        <div className="flex-1 bg-gray-100/90 p-4 sm:p-6 overflow-y-auto print:bg-white print:p-0">
+        <div
+          ref={previewViewportRef}
+          className="relative flex-1 overflow-auto bg-gray-100/90 p-4 sm:p-6 print:bg-white print:p-0"
+        >
           {request.documentUrl && documentViewTab === "attachment" ? (
             <iframe
               src={request.documentUrl}
@@ -113,11 +138,67 @@ export default function LoanPetitionModal({
               title={t("เอกสารคำร้อง", "Request document")}
             />
           ) : (
-            <LoanPetitionDocument
-              request={request}
-              hideBankDetails={hideBankDetails}
-              userRole={userRole}
-            />
+            <div
+              className="mx-auto shrink-0"
+              style={{ height: `${1122.5 * zoom}px`, width: `${793.7 * zoom}px` }}
+            >
+              <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", width: "210mm" }}>
+                <LoanPetitionDocument
+                  request={request}
+                  hideBankDetails={hideBankDetails}
+                  userRole={userRole}
+                />
+              </div>
+            </div>
+          )}
+
+          {documentViewTab === "official" && (
+            <div className="sticky bottom-0 mt-3 flex justify-center print:hidden">
+              <div className="flex items-center gap-1 rounded-xl border border-gray-200 bg-white/95 p-1 shadow-lg backdrop-blur">
+                <button
+                  aria-label={t("ซูมออก", "Zoom out")}
+                  className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                  disabled={zoom <= 0.25}
+                  onClick={() => setZoom((value) => Math.max(0.25, value - 0.1))}
+                  type="button"
+                >
+                  <Minus size={16} />
+                </button>
+                <span className="min-w-12 text-center text-xs font-semibold text-gray-600">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <button
+                  aria-label={t("ซูมเข้า", "Zoom in")}
+                  className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                  disabled={zoom >= 1.5}
+                  onClick={() => setZoom((value) => Math.min(1.5, value + 0.1))}
+                  type="button"
+                >
+                  <Plus size={16} />
+                </button>
+                <button
+                  aria-label={t("พอดีหน้าต่าง", "Fit to window")}
+                  className="rounded-lg p-2 text-gray-600 hover:bg-gray-100"
+                  onClick={() => {
+                    const viewport = previewViewportRef.current;
+                    if (!viewport) return;
+                    setZoom(
+                      Math.min(
+                        1,
+                        Math.max(
+                          0.25,
+                          (viewport.clientWidth - 16) / 793.7,
+                          (viewport.clientHeight - 76) / 1122.5,
+                        ),
+                      ),
+                    );
+                  }}
+                  type="button"
+                >
+                  <RotateCcw size={16} />
+                </button>
+              </div>
+            </div>
           )}
         </div>
 

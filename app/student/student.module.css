@@ -3057,6 +3057,13 @@
   overflow-wrap: anywhere;
 }
 
+.contactFooterClosedDays {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-contact-footer-text);
+  font-size: 12px;
+}
+
 .contactFooterPrimaryItem {
   white-space: normal;
 }

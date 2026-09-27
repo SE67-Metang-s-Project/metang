@@ -10,6 +10,10 @@ export type StoredSystemSetting = {
   contactPhone: string;
   contactExt: string | null;
   contactEmail: string;
+  contactHoursTh: string;
+  contactHoursEn: string;
+  contactClosedTh: string;
+  contactClosedEn: string;
 };
 
 export type SystemSettingPatch = Partial<StoredSystemSetting>;
@@ -23,6 +27,10 @@ const fieldMessages: Record<string, string> = {
   contactPhone: "เบอร์โทรศัพท์ไม่ถูกต้อง",
   contactExt: "เบอร์ภายในไม่ถูกต้อง",
   contactEmail: "อีเมลไม่ถูกต้อง",
+  contactHoursTh: "เวลาทำการ (ภาษาไทย) ไม่ถูกต้อง",
+  contactHoursEn: "เวลาทำการ (ภาษาอังกฤษ) ไม่ถูกต้อง",
+  contactClosedTh: "หมายเหตุวันหยุด (ภาษาไทย) ไม่ถูกต้อง",
+  contactClosedEn: "หมายเหตุวันหยุด (ภาษาอังกฤษ) ไม่ถูกต้อง",
 };
 
 export function systemSettingErrorMessage(status: number, apiMessage?: string | null): string {

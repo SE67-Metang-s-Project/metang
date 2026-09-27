@@ -381,6 +381,10 @@ export type SystemSettingPatch = {
   contactPhone?: string;
   contactExt?: string | null;
   contactEmail?: string;
+  contactHoursTh?: string;
+  contactHoursEn?: string;
+  contactClosedTh?: string;
+  contactClosedEn?: string;
 };
 
 // A display string, not a dialable mobile - keep separators as typed. Do not reuse
@@ -424,6 +428,10 @@ export function parseSystemSettingPatch(value: unknown): SystemSettingPatch {
   if ("contactPhone" in input) patch.contactPhone = parseContactPhone(input.contactPhone);
   if ("contactExt" in input) patch.contactExt = optionalText(input.contactExt, "contactExt", 50);
   if ("contactEmail" in input) patch.contactEmail = parseContactEmail(input.contactEmail);
+  if ("contactHoursTh" in input) patch.contactHoursTh = requiredText(input.contactHoursTh, "contactHoursTh", 200);
+  if ("contactHoursEn" in input) patch.contactHoursEn = requiredText(input.contactHoursEn, "contactHoursEn", 200);
+  if ("contactClosedTh" in input) patch.contactClosedTh = requiredText(input.contactClosedTh, "contactClosedTh", 200);
+  if ("contactClosedEn" in input) patch.contactClosedEn = requiredText(input.contactClosedEn, "contactClosedEn", 200);
 
   if (Object.keys(patch).length === 0) {
     throw new Error("at least one field is required");

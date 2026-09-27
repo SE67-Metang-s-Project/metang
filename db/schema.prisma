@@ -283,6 +283,10 @@ model SystemSetting {
   contactPhone      String   @map("contact_phone") @db.Text
   contactExt        String?  @map("contact_ext") @db.Text
   contactEmail      String   @map("contact_email") @db.Text
+  contactHoursTh    String   @map("contact_hours_th") @db.Text
+  contactHoursEn    String   @map("contact_hours_en") @db.Text
+  contactClosedTh   String   @map("contact_closed_th") @db.Text
+  contactClosedEn   String   @map("contact_closed_en") @db.Text
   updatedById       String?  @map("updated_by_id") @db.Uuid
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
