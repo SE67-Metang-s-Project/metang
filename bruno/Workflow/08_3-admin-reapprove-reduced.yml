@@ -1,0 +1,45 @@
+info:
+  name: 08_3 admin re-approves a reduced amount after the executive return
+  type: http
+  seq: 8
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/loan-requests/{{walkLoanId}}/decision"
+  body:
+    type: json
+    data: |-
+      {
+        "decision": "approved",
+        "approvedAmount": 19000,
+        "comment": "ปรับลดตามที่ผู้บริหารแนะนำ"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.status
+      operator: eq
+      value: "pending_executive"
+    - expression: res.body.data.approvedAmount
+      operator: matches
+      value: "^19000$"
+  scripts:
+    - type: before-request
+      code: |-
+        // The walk degrades instead of cascading when an earlier step failed to produce an id.
+        if (!bru.getVar("walkLoanId")) bru.runner.skipRequest();
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  The refused return in 08_2 left the loan pending_admin, so the walk resumes here and step 09
+  finds it pending_executive as before.

@@ -1,0 +1,41 @@
+info:
+  name: 08_2 admin cannot return to the student after an executive return
+  type: http
+  seq: 8
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/loan-requests/{{walkLoanId}}/decision"
+  body:
+    type: json
+    data: |-
+      {
+        "decision": "returned",
+        "comment": "ส่งกลับให้นักศึกษาแก้ไข"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+    - expression: res.body.error.code
+      operator: eq
+      value: "CONFLICT"
+  scripts:
+    - type: before-request
+      code: |-
+        // The walk degrades instead of cascading when an earlier step failed to produce an id.
+        if (!bru.getVar("walkLoanId")) bru.runner.skipRequest();
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  After an executive return the loan never goes back to the student: the admin may approve a
+  lower amount or reject, but a return is refused and the loan stays pending_admin.
