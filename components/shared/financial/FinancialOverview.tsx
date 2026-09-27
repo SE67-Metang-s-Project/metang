@@ -13,9 +13,7 @@ const CURRENT_THAI_YEAR = new Date().getFullYear() + 543;
 const YEAR_OPTIONS = Array.from({ length: 6 }, (_, index) => CURRENT_THAI_YEAR - index);
 
 const money = (value: number) =>
-  new Intl.NumberFormat("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-    value,
-  );
+  new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(value);
 const wholeMoney = (value: number) =>
   new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(value);
 const compactMoney = (value: number) =>
@@ -129,6 +127,10 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
           transferredCount: total.transferredCount + point.transferredCount,
           rejectedCount: total.rejectedCount + point.rejectedCount,
           cancelledCount: total.cancelledCount + point.cancelledCount,
+          totalRequestAmount: total.totalRequestAmount + point.totalRequestAmount,
+          transferredAmount: total.transferredAmount + point.transferredAmount,
+          rejectedAmount: total.rejectedAmount + point.rejectedAmount,
+          cancelledAmount: total.cancelledAmount + point.cancelledAmount,
         }),
         {
           label: `ไตรมาส ${quarter + 1}`,
@@ -139,6 +141,10 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
           transferredCount: 0,
           rejectedCount: 0,
           cancelledCount: 0,
+          totalRequestAmount: 0,
+          transferredAmount: 0,
+          rejectedAmount: 0,
+          cancelledAmount: 0,
         },
       ),
     );
@@ -185,6 +191,11 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
   const tooltipLeft = `${(((hoveredIndex ?? 0) + 0.5) / points.length) * 100}%`;
   const maxTotal = Math.max(1, ...points.map((point) => point.loans + point.repayments));
   const activeTotal = active ? active.loans + active.repayments : 0;
+  const tooltipOnRight = (hoveredIndex ?? 0) < points.length / 2;
+  const tooltipTop = `${100 - (activeTotal / maxTotal) * 50}%`;
+  const tooltipTransform = tooltipOnRight
+    ? "translate(14px, -50%)"
+    : "translate(calc(-100% - 14px), -50%)";
 
   return (
     <section
@@ -215,8 +226,8 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
           icon={FileCheck2}
         />
       </div>
-      <div className="grid gap-5 min-[1363px]:grid-cols-[minmax(260px,.6fr)_minmax(0,1.9fr)]">
-        <article className="flex flex-col rounded-2xl border border-[#e9e3dc] bg-[#fffefd] p-5 shadow-[0_3px_14px_rgba(69,51,39,0.06)] sm:p-6">
+      <div className="grid gap-5 min-[1405px]:grid-cols-[minmax(350px,.6fr)_minmax(0,1.9fr)]">
+        <article className="flex min-w-[350px] flex-col rounded-2xl border border-[#e9e3dc] bg-[#fffefd] p-5 shadow-[0_3px_14px_rgba(69,51,39,0.06)] sm:p-6">
           <div>
             <h3 className="text-lg font-semibold text-slate-800">สัดส่วนเงินในระบบ</h3>
             <UpdatedAt value={data.updatedAt} />
@@ -326,7 +337,7 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
             />
           </div>
         </article>
-        <article className="rounded-2xl border border-[#e9e3dc] bg-[#fffefd] p-5 shadow-[0_3px_14px_rgba(69,51,39,0.06)] sm:p-6">
+        <article className="min-w-0 rounded-2xl border border-[#e9e3dc] bg-[#fffefd] p-5 shadow-[0_3px_14px_rgba(69,51,39,0.06)] sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-slate-800">
@@ -364,35 +375,33 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
               </div>
             </div>
           </div>
-          <div className="mt-6 grid gap-3 text-center sm:grid-cols-3">
+          <div className="mt-6 grid gap-3 text-center sm:grid-cols-2 lg:grid-cols-4">
             <Summary
               label="รวมยอดการกู้ยืมทั้งปี"
               value={money(data.totalLoans)}
               detail={`จำนวนรายการ ${data.totalLoanCount} รายการ`}
+              markerColor="#6173f4"
             />
             <Summary
               label="รวมยอดการคืนเงินทั้งปี"
               value={money(data.totalRepayments)}
               detail={`จำนวนรายการ ${data.totalRepaymentCount} รายการ`}
+              markerColor="#5345ba"
+            />
+            <Summary
+              label="อัตราการกู้ยืมเฉลี่ยทั้งปี"
+              value={`${data.totalLoans + data.totalRepayments > 0 ? ((data.totalLoans / (data.totalLoans + data.totalRepayments)) * 100).toFixed(2) : "0.00"}%`}
+              detail="ของยอดรวมการกู้ยืมและการคืนเงิน"
+              valueColor="#6173f4"
             />
             <Summary
               label="อัตราการคืนเงินเฉลี่ยทั้งปี"
               value={`${data.totalLoans + data.totalRepayments > 0 ? ((data.totalRepayments / (data.totalLoans + data.totalRepayments)) * 100).toFixed(2) : "0.00"}%`}
               detail="ของยอดรวมการกู้ยืมและการคืนเงิน"
-              blue
+              valueColor="#5345ba"
             />
           </div>
-          <div className="mt-5 flex gap-5 text-sm text-slate-600">
-            <span>
-              <i className="mr-2 inline-block size-3 rounded-sm bg-[#ff8800]" />
-              ยอดการกู้ยืม
-            </span>
-            <span>
-              <i className="mr-2 inline-block size-3 rounded-sm bg-[#0ea5e9]" />
-              ยอดการคืนเงิน
-            </span>
-          </div>
-          <div className="mt-5 grid h-64 grid-cols-[auto_1fr] gap-3 sm:h-72">
+          <div className="mt-8 grid h-64 grid-cols-[auto_minmax(0,1fr)] gap-3 sm:h-72">
             <div className="flex flex-col justify-between pb-7 text-xs text-slate-500">
               <span>{compactMoney(maxTotal)}</span>
               <span>{compactMoney(maxTotal * 0.75)}</span>
@@ -400,13 +409,14 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
               <span>{compactMoney(maxTotal * 0.25)}</span>
               <span>0</span>
             </div>
-            <div className="relative grid grid-rows-[1fr_auto]">
+            <div className="min-w-0 overflow-x-auto pb-2">
+              <div className="relative grid h-full grid-rows-[1fr_auto] max-[1144px]:min-w-[1100px]">
               <div className="pointer-events-none absolute inset-x-0 top-0 bottom-7 flex flex-col justify-between">
                 {[0, 1, 2, 3].map((line) => (
                   <span key={line} className="border-t border-[#eee8e2]" />
                 ))}
               </div>
-              <div className="relative flex items-end justify-around gap-1 border-b border-[#e5ddd5] px-1 pt-3">
+              <div className="relative flex items-end justify-around gap-1 border-b border-[#e5ddd5] px-1">
                 {points.map((point, index) => (
                   <div key={point.label} className="relative flex h-full min-w-0 flex-1 items-end justify-center">
                     {point.loans + point.repayments > 0 ? (
@@ -417,17 +427,18 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
                         {compactMoney(point.loans + point.repayments)}
                       </span>
                     ) : null}
-                    <div className="flex h-full w-7 flex-col justify-end sm:w-10">
+                    <div className="flex h-full w-[70px] flex-col justify-end">
                       <Pole
-                        color="#ff8800"
+                        color="#6173f4"
                         height={(point.loans / maxTotal) * 100}
+                        roundedTop
                         valueLabel={compactMoney(point.loans)}
                         label={`${point.label}: ยอดการกู้ยืม ${money(point.loans)}`}
                         onEnter={() => setHoveredIndex(index)}
                         onLeave={() => setHoveredIndex(null)}
                       />
                       <Pole
-                        color="#0ea5e9"
+                        color="#5345ba"
                         height={(point.repayments / maxTotal) * 100}
                         valueLabel={compactMoney(point.repayments)}
                         label={`${point.label}: ยอดการคืนเงิน ${money(point.repayments)}`}
@@ -453,21 +464,21 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
               </div>
               {active && (
                 <div
-                  className="pointer-events-none absolute top-3 z-10 w-52 -translate-x-1/2 rounded-xl border border-[#e5ddd5] bg-white p-4 shadow-lg"
-                  style={{ left: tooltipLeft }}
+                  className="pointer-events-none absolute z-10 w-52 rounded-xl border border-[#e5ddd5] bg-white p-4 shadow-lg"
+                  style={{ left: tooltipLeft, top: tooltipTop, transform: tooltipTransform }}
                 >
                   <p className="font-semibold text-slate-800">
                     {active.label} {data.year}
                   </p>
                   <Tooltip
-                    color="#ff8800"
+                    color="#6173f4"
                     label="ยอดการกู้ยืม"
                     amount={active.loans}
                     count={active.loanCount}
                     percent={activeTotal > 0 ? (active.loans / activeTotal) * 100 : 0}
                   />
                   <Tooltip
-                    color="#0ea5e9"
+                    color="#5345ba"
                     label="ยอดการคืนเงิน"
                     amount={active.repayments}
                     count={active.repaymentCount}
@@ -475,6 +486,7 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
                   />
                 </div>
               )}
+            </div>
             </div>
           </div>
         </article>
@@ -485,12 +497,26 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
         selectedYear={selectedYear}
         onYearChange={setSelectedYear}
         requests={data.monthly.map(
-          ({ label, loanCount, transferredCount, rejectedCount, cancelledCount }) => ({
+          ({
+            label,
+            loanCount,
+            transferredCount,
+            rejectedCount,
+            cancelledCount,
+            totalRequestAmount,
+            transferredAmount,
+            rejectedAmount,
+            cancelledAmount,
+          }) => ({
             label,
             totalRequestCount: loanCount,
             transferredCount,
             rejectedCount,
             cancelledCount,
+            totalRequestAmount,
+            transferredAmount,
+            rejectedAmount,
+            cancelledAmount,
           }),
         )}
       />
@@ -515,6 +541,10 @@ function TransferredRequestsChart({
     transferredCount: number;
     rejectedCount: number;
     cancelledCount: number;
+    totalRequestAmount: number;
+    transferredAmount: number;
+    rejectedAmount: number;
+    cancelledAmount: number;
   }>;
 }) {
   const [period, setPeriod] = useState<Period>("monthly");
@@ -530,6 +560,10 @@ function TransferredRequestsChart({
           transferredCount: total.transferredCount + request.transferredCount,
           rejectedCount: total.rejectedCount + request.rejectedCount,
           cancelledCount: total.cancelledCount + request.cancelledCount,
+          totalRequestAmount: total.totalRequestAmount + request.totalRequestAmount,
+          transferredAmount: total.transferredAmount + request.transferredAmount,
+          rejectedAmount: total.rejectedAmount + request.rejectedAmount,
+          cancelledAmount: total.cancelledAmount + request.cancelledAmount,
         }),
         {
           label: `ไตรมาส ${quarter + 1}`,
@@ -537,17 +571,17 @@ function TransferredRequestsChart({
           transferredCount: 0,
           rejectedCount: 0,
           cancelledCount: 0,
+          totalRequestAmount: 0,
+          transferredAmount: 0,
+          rejectedAmount: 0,
+          cancelledAmount: 0,
         },
       ),
     );
   }, [period, requests]);
   const max = Math.max(
     1,
-    ...points.flatMap((request) => [
-      request.transferredCount,
-      request.rejectedCount,
-      request.cancelledCount,
-    ]),
+    ...points.map((request) => request.totalRequestCount),
   );
   const totals = points.reduce(
     (sum, request) => ({
@@ -555,18 +589,44 @@ function TransferredRequestsChart({
       transferredCount: sum.transferredCount + request.transferredCount,
       rejectedCount: sum.rejectedCount + request.rejectedCount,
       cancelledCount: sum.cancelledCount + request.cancelledCount,
+      totalRequestAmount: sum.totalRequestAmount + request.totalRequestAmount,
+      transferredAmount: sum.transferredAmount + request.transferredAmount,
+      rejectedAmount: sum.rejectedAmount + request.rejectedAmount,
+      cancelledAmount: sum.cancelledAmount + request.cancelledAmount,
     }),
-    { totalRequestCount: 0, transferredCount: 0, rejectedCount: 0, cancelledCount: 0 },
+    {
+      totalRequestCount: 0,
+      transferredCount: 0,
+      rejectedCount: 0,
+      cancelledCount: 0,
+      totalRequestAmount: 0,
+      transferredAmount: 0,
+      rejectedAmount: 0,
+      cancelledAmount: 0,
+    },
   );
-  const otherRequestCount = Math.max(
+  const pendingRequestCount = Math.max(
     0,
     totals.totalRequestCount - totals.transferredCount - totals.rejectedCount - totals.cancelledCount,
   );
+  const pendingRequestAmount = Math.max(
+    0,
+    totals.totalRequestAmount -
+      totals.transferredAmount -
+      totals.rejectedAmount -
+      totals.cancelledAmount,
+  );
   const active = hoveredIndex === null ? null : points[hoveredIndex];
   const tooltipLeft = `${(((hoveredIndex ?? 0) + 0.5) / points.length) * 100}%`;
+  const tooltipOnRight = (hoveredIndex ?? 0) < points.length / 2;
+  const activeTotal = active?.totalRequestCount ?? 0;
+  const tooltipTop = `${100 - (activeTotal / max) * 50}%`;
+  const tooltipTransform = tooltipOnRight
+    ? "translate(14px, -50%)"
+    : "translate(calc(-100% - 14px), -50%)";
 
   return (
-    <article className="rounded-2xl border border-[#e9e3dc] bg-[#fffefd] p-5 shadow-[0_3px_14px_rgba(69,51,39,0.06)] sm:p-6">
+    <article className="mb-12 rounded-2xl border border-[#e9e3dc] bg-[#fffefd] p-5 shadow-[0_3px_14px_rgba(69,51,39,0.06)] sm:mb-16 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-slate-800">จำนวนคำร้องประจำปี {year}</h3>
@@ -609,22 +669,7 @@ function TransferredRequestsChart({
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
-        <span>
-          <i className="mr-2 inline-block size-3 rounded-sm bg-[#ffad16]" />
-          คำร้องที่โอนเงินแล้ว
-        </span>
-        <span>
-          <i className="mr-2 inline-block size-3 rounded-sm bg-[#f75c12]" />
-          คำร้องที่ไม่ผ่านการอนุมัติ
-        </span>
-        <span>
-          <i className="mr-2 inline-block size-3 rounded-sm bg-[#dc2626]" />
-          คำร้องที่ถูกยกเลิกโดยนักศึกษา
-        </span>
-      </div>
-
-      <div className="mt-5 grid h-64 grid-cols-[auto_1fr] gap-3 sm:h-72">
+      <div className="mt-8 grid h-64 grid-cols-[auto_minmax(0,1fr)] gap-3 sm:h-72">
         <div className="flex flex-col justify-between pb-7 text-xs text-slate-500">
           <span>{max}</span>
           <span>{Math.ceil(max * 0.75)}</span>
@@ -633,39 +678,77 @@ function TransferredRequestsChart({
           <span>0</span>
         </div>
 
-        <div className="relative grid grid-rows-[1fr_auto]">
+        <div className="min-w-0 overflow-x-auto pb-2">
+          <div className="relative grid h-full grid-rows-[1fr_auto] max-[1144px]:min-w-[1100px]">
           <div className="pointer-events-none absolute inset-x-0 top-0 bottom-7 flex flex-col justify-between">
             {[0, 1, 2, 3].map((line) => (
               <span key={line} className="border-t border-[#eee8e2]" />
             ))}
           </div>
-          <div className="relative flex items-end justify-around gap-1 border-b border-[#e5ddd5] px-1 pt-3">
+          <div className="relative flex items-end justify-around gap-1 border-b border-[#e5ddd5] px-1">
             {points.map((request, index) => (
               <div
                 key={request.label}
-                className="flex h-full min-w-0 flex-1 items-end justify-center gap-1 sm:gap-1.5"
+                className="relative flex h-full min-w-0 flex-1 items-end justify-center"
               >
-                <Pole
-                  color="#ffad16"
-                  height={(request.transferredCount / max) * 100}
-                  label={`${request.label}: โอนเงินแล้ว ${request.transferredCount} คำร้อง`}
-                  onEnter={() => setHoveredIndex(index)}
-                  onLeave={() => setHoveredIndex(null)}
-                />
-                <Pole
-                  color="#f75c12"
-                  height={(request.rejectedCount / max) * 100}
-                  label={`${request.label}: ไม่ผ่านการอนุมัติ ${request.rejectedCount} คำร้อง`}
-                  onEnter={() => setHoveredIndex(index)}
-                  onLeave={() => setHoveredIndex(null)}
-                />
-                <Pole
-                  color="#dc2626"
-                  height={(request.cancelledCount / max) * 100}
-                  label={`${request.label}: ยกเลิกโดยนักศึกษา ${request.cancelledCount} คำร้อง`}
-                  onEnter={() => setHoveredIndex(index)}
-                  onLeave={() => setHoveredIndex(null)}
-                />
+                {request.totalRequestCount > 0 ? (
+                  <span
+                    className="pointer-events-none absolute z-10 -translate-y-1 whitespace-nowrap text-[10px] font-semibold text-black sm:text-xs"
+                    style={{ bottom: `${(request.totalRequestCount / max) * 100}%` }}
+                  >
+                    {request.totalRequestCount}
+                  </span>
+                ) : null}
+                <div className="flex h-full w-[70px] flex-col justify-end">
+                  <Pole
+                    color="#007284"
+                    height={(request.transferredCount / max) * 100}
+                    roundedTop={request.transferredCount > 0}
+                    label={`${request.label}: โอนเงินแล้ว ${request.transferredCount} คำร้อง`}
+                    onEnter={() => setHoveredIndex(index)}
+                    onLeave={() => setHoveredIndex(null)}
+                  />
+                  <Pole
+                    color="#00a58a"
+                    height={(request.rejectedCount / max) * 100}
+                    roundedTop={request.transferredCount === 0 && request.rejectedCount > 0}
+                    label={`${request.label}: ไม่ผ่านการอนุมัติ ${request.rejectedCount} คำร้อง`}
+                    onEnter={() => setHoveredIndex(index)}
+                    onLeave={() => setHoveredIndex(null)}
+                  />
+                  <Pole
+                    color="#7dd37b"
+                    height={(request.cancelledCount / max) * 100}
+                    roundedTop={
+                      request.transferredCount === 0 &&
+                      request.rejectedCount === 0 &&
+                      request.cancelledCount > 0
+                    }
+                    label={`${request.label}: ยกเลิกโดยนักศึกษา ${request.cancelledCount} คำร้อง`}
+                    onEnter={() => setHoveredIndex(index)}
+                    onLeave={() => setHoveredIndex(null)}
+                  />
+                  <Pole
+                    color="#ffd72d"
+                    height={
+                      ((request.totalRequestCount -
+                        request.transferredCount -
+                        request.rejectedCount -
+                        request.cancelledCount) /
+                        max) *
+                      100
+                    }
+                    roundedTop={
+                      request.transferredCount === 0 &&
+                      request.rejectedCount === 0 &&
+                      request.cancelledCount === 0 &&
+                      request.totalRequestCount > 0
+                    }
+                    label={`${request.label}: รอดำเนินการ ${Math.max(0, request.totalRequestCount - request.transferredCount - request.rejectedCount - request.cancelledCount)} คำร้อง`}
+                    onEnter={() => setHoveredIndex(index)}
+                    onLeave={() => setHoveredIndex(null)}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -684,41 +767,102 @@ function TransferredRequestsChart({
           </div>
           {active && (
             <div
-              className="pointer-events-none absolute top-3 z-10 w-[264px] -translate-x-1/2 rounded-xl border border-[#e5ddd5] bg-white p-4 shadow-lg"
-              style={{ left: tooltipLeft }}
+              className="pointer-events-none absolute z-10 w-[244px] rounded-xl border border-[#e5ddd5] bg-white p-4 shadow-lg"
+              style={{ left: tooltipLeft, top: tooltipTop, transform: tooltipTransform }}
             >
               <p className="font-semibold text-slate-800">
                 {active.label} {year}
               </p>
               <RequestTooltip
-                color="#ffad16"
+                color="#007284"
                 label="คำร้องที่โอนเงินแล้ว"
                 count={active.transferredCount}
+                percent={
+                  active.totalRequestCount > 0
+                    ? (active.transferredCount / active.totalRequestCount) * 100
+                    : 0
+                }
               />
               <RequestTooltip
-                color="#f75c12"
+                color="#00a58a"
                 label="คำร้องที่ไม่ผ่านการอนุมัติ"
                 count={active.rejectedCount}
+                percent={
+                  active.totalRequestCount > 0
+                    ? (active.rejectedCount / active.totalRequestCount) * 100
+                    : 0
+                }
               />
               <RequestTooltip
-                color="#dc2626"
+                color="#7dd37b"
                 label="คำร้องที่ถูกยกเลิกโดยนักศึกษา"
                 count={active.cancelledCount}
+                percent={
+                  active.totalRequestCount > 0
+                    ? (active.cancelledCount / active.totalRequestCount) * 100
+                    : 0
+                }
+              />
+              <RequestTooltip
+                color="#ffd72d"
+                label="คำร้องที่รอดำเนินการ"
+                count={Math.max(
+                  0,
+                  active.totalRequestCount -
+                    active.transferredCount -
+                    active.rejectedCount -
+                    active.cancelledCount,
+                )}
+                percent={
+                  active.totalRequestCount > 0
+                    ? (Math.max(
+                        0,
+                        active.totalRequestCount -
+                          active.transferredCount -
+                          active.rejectedCount -
+                          active.cancelledCount,
+                      ) /
+                        active.totalRequestCount) *
+                      100
+                    : 0
+                }
               />
             </div>
           )}
         </div>
+        </div>
       </div>
 
       <div className="mt-6 grid gap-3 border-t border-[#eee8e2] pt-5 text-center sm:grid-cols-2 lg:grid-cols-5">
-        <Summary label="รวมคำร้องทั้งหมด" value={`${totals.totalRequestCount} คำร้อง`} />
-        <Summary label="รวมคำร้องที่โอนเงินแล้ว" value={`${totals.transferredCount} คำร้อง`} />
-        <Summary label="รวมคำร้องที่ไม่ผ่านการอนุมัติ" value={`${totals.rejectedCount} คำร้อง`} />
         <Summary
-          label="รวมคำร้องที่ถูกยกเลิกโดยนักศึกษา"
-          value={`${totals.cancelledCount} คำร้อง`}
+          label="รวมคำร้องทั้งหมด"
+          value={`${totals.totalRequestCount} คำร้อง`}
+          detail={`ยอดเงินรวม ${wholeMoney(totals.totalRequestAmount)}`}
         />
-        <Summary label="คำร้องอื่นๆ" value={`${otherRequestCount} คำร้อง`} />
+        <Summary
+          label="รวมคำร้องที่โอนเงินแล้ว"
+          value={`${totals.transferredCount} คำร้อง`}
+          detail={`ยอดเงินรวม ${wholeMoney(totals.transferredAmount)}`}
+          markerColor="#007284"
+        />
+        <Summary
+          label="รวมคำร้องที่ไม่ผ่านการอนุมัติ"
+          value={`${totals.rejectedCount} คำร้อง`}
+          detail={`ยอดเงินรวม ${wholeMoney(totals.rejectedAmount)}`}
+          markerColor="#00a58a"
+        />
+        <Summary
+          label="รวมคำร้องที่ถูกยกเลิก"
+          value={`${totals.cancelledCount} คำร้อง`}
+          detail={`ยอดเงินรวม ${wholeMoney(totals.cancelledAmount)}`}
+          markerColor="#7dd37b"
+        />
+        <Summary
+          label="คำร้องที่รอดำเนินการ"
+          value={`${pendingRequestCount} คำร้อง`}
+          detail={`ยอดเงินรวม ${wholeMoney(pendingRequestAmount)}`}
+          markerColor="#ffd72d"
+        />
       </div>
     </article>
   );
@@ -802,6 +946,7 @@ function YearFilter({
 function Pole({
   color,
   height,
+  roundedTop = false,
   valueLabel,
   label,
   onEnter,
@@ -809,6 +954,7 @@ function Pole({
 }: {
   color: string;
   height: number;
+  roundedTop?: boolean;
   valueLabel?: string;
   label: string;
   onEnter: () => void;
@@ -822,7 +968,7 @@ function Pole({
       onMouseLeave={onLeave}
       onFocus={onEnter}
       onBlur={onLeave}
-      className="flex w-full items-center justify-center overflow-hidden rounded-none text-[10px] font-semibold leading-none text-white outline-none focus-visible:ring-2 focus-visible:ring-[#3f8a58] sm:text-xs"
+      className={`flex w-full items-center justify-center overflow-hidden ${roundedTop ? "rounded-t-sm" : "rounded-none"} text-[10px] font-semibold leading-none text-white outline-none focus-visible:ring-2 focus-visible:ring-[#3f8a58] sm:text-xs`}
       style={{ height: `${height}%`, backgroundColor: color }}
     >
       {valueLabel && height >= 12 ? valueLabel : null}
@@ -882,11 +1028,23 @@ function Tooltip({
   );
 }
 
-function RequestTooltip({ color, label, count }: { color: string; label: string; count: number }) {
+function RequestTooltip({
+  color,
+  label,
+  count,
+  percent,
+}: {
+  color: string;
+  label: string;
+  count: number;
+  percent: number;
+}) {
   return (
     <p className="mt-2 border-l-4 pl-3 text-sm text-slate-500" style={{ borderColor: color }}>
       <span className="block">{label}</span>
-      <span className="mt-1 block font-semibold text-slate-800">{count} คำร้อง</span>
+      <span className="mt-1 block font-semibold text-slate-800">
+        {count} คำร้อง <span style={{ color }}>({percent.toFixed(2)}%)</span>
+      </span>
     </p>
   );
 }
@@ -895,21 +1053,28 @@ function Summary({
   label,
   value,
   detail,
-  orange = false,
-  blue = false,
+  markerColor,
+  valueColor,
 }: {
   label: string;
   value: string;
   detail?: string;
-  orange?: boolean;
-  blue?: boolean;
+  markerColor?: string;
+  valueColor?: string;
 }) {
   return (
     <div>
-      <p className="text-xs text-slate-500">{label}</p>
-      <p
-        className={`mt-1 text-base font-semibold ${blue ? "text-[#0ea5e9]" : orange ? "text-[#f75c12]" : "text-slate-800"}`}
-      >
+      <p className="text-xs text-slate-500">
+        {markerColor ? (
+          <i
+            aria-hidden="true"
+            className="mr-2 inline-block size-3 rounded-sm align-[-0.1em]"
+            style={{ backgroundColor: markerColor }}
+          />
+        ) : null}
+        {label}
+      </p>
+      <p className="mt-1 text-base font-semibold text-slate-800" style={{ color: valueColor }}>
         {value}
       </p>
       {detail && <p className="text-xs text-slate-500">{detail}</p>}

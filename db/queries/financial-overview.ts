@@ -48,6 +48,10 @@ export function getZeroFinancialOverview(
     transferredCount: 0,
     rejectedCount: 0,
     cancelledCount: 0,
+    totalRequestAmount: 0,
+    transferredAmount: 0,
+    rejectedAmount: 0,
+    cancelledAmount: 0,
   }));
 
   const quarterly: FinancialOverviewPoint[] = [0, 1, 2, 3].map((quarterIndex) => ({
@@ -59,6 +63,10 @@ export function getZeroFinancialOverview(
     transferredCount: 0,
     rejectedCount: 0,
     cancelledCount: 0,
+    totalRequestAmount: 0,
+    transferredAmount: 0,
+    rejectedAmount: 0,
+    cancelledAmount: 0,
   }));
 
   return {
@@ -133,12 +141,18 @@ export async function getExecutiveFinancialOverviewData(
     transferredCount: 0,
     rejectedCount: 0,
     cancelledCount: 0,
+    totalRequestAmount: 0,
+    transferredAmount: 0,
+    rejectedAmount: 0,
+    cancelledAmount: 0,
   }));
 
   for (const loan of yearLoans) {
     const month = new Date(loan.createdAt).getMonth();
     if (month >= 0 && month < 12) {
       monthly[month].loanCount += 1;
+      const requestAmount = loan.approvedAmount ?? loan.amount;
+      monthly[month].totalRequestAmount += requestAmount;
 
       if (
         loan.status === "disbursed" ||
@@ -150,10 +164,13 @@ export async function getExecutiveFinancialOverviewData(
 
       if (loan.status === "disbursed" || loan.status === "closed") {
         monthly[month].transferredCount += 1;
+        monthly[month].transferredAmount += requestAmount;
       } else if (loan.status === "rejected") {
         monthly[month].rejectedCount += 1;
+        monthly[month].rejectedAmount += requestAmount;
       } else if (loan.status === "cancelled") {
         monthly[month].cancelledCount += 1;
+        monthly[month].cancelledAmount += requestAmount;
       }
     }
   }
@@ -180,6 +197,10 @@ export async function getExecutiveFinancialOverviewData(
         transferredCount: total.transferredCount + month.transferredCount,
         rejectedCount: total.rejectedCount + month.rejectedCount,
         cancelledCount: total.cancelledCount + month.cancelledCount,
+        totalRequestAmount: total.totalRequestAmount + month.totalRequestAmount,
+        transferredAmount: total.transferredAmount + month.transferredAmount,
+        rejectedAmount: total.rejectedAmount + month.rejectedAmount,
+        cancelledAmount: total.cancelledAmount + month.cancelledAmount,
       }),
       {
         label: `ไตรมาส ${quarterIndex + 1}`,
@@ -190,6 +211,10 @@ export async function getExecutiveFinancialOverviewData(
         transferredCount: 0,
         rejectedCount: 0,
         cancelledCount: 0,
+        totalRequestAmount: 0,
+        transferredAmount: 0,
+        rejectedAmount: 0,
+        cancelledAmount: 0,
       },
     );
   });

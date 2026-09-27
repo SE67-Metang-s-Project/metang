@@ -8,7 +8,7 @@ import { requireSuperAdminAccess } from "@/lib/loan-auth";
 export const dynamic = "force-dynamic";
 
 export default async function SuperAdminPage() {
-  await requireSuperAdminAccess();
+  const context = await requireSuperAdminAccess();
 
   const financialOverview = await getExecutiveFinancialOverviewData().catch((error) => {
     console.error("Unable to load financial overview from DB for SuperAdmin", error);
@@ -16,6 +16,9 @@ export default async function SuperAdminPage() {
   });
 
   return (
-    <SuperAdminDashboard financialOverview={financialOverview} />
+    <SuperAdminDashboard
+      financialOverview={financialOverview}
+      userName={context.user.fullNameTh || context.identity.displayName || "ผู้ดูแลระบบระดับสูง"}
+    />
   );
 }

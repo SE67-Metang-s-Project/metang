@@ -7,6 +7,10 @@ export type FinancialOverviewPoint = {
   transferredCount: number;
   rejectedCount: number;
   cancelledCount: number;
+  totalRequestAmount: number;
+  transferredAmount: number;
+  rejectedAmount: number;
+  cancelledAmount: number;
 };
 
 export type ExecutiveFinancialOverviewData = {
