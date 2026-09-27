@@ -1001,10 +1001,10 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     <button
                       onClick={closeAllModals}
                       disabled={isSubmitting}
-                      className="flex-1 py-3 text-[14px] font-bold text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 py-3 flex items-center justify-center text-[14px] font-bold text-red-600 bg-white border-2 border-red-100 rounded-xl hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       type="button"
                     >
-                      ยกเลิก
+                      ยกเลิกคำร้อง
                     </button>
                     <button
                       disabled={!uploadedSlip || isSubmitting}
