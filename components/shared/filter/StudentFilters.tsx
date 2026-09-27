@@ -40,9 +40,9 @@ const StudentFilters: React.FC<StudentFiltersProps> = ({
   // รายการตัวเลือกระดับการศึกษา
   const degreeOptions = [
     { value: "ประกาศนียบัตรผู้ช่วยพยาบาล", label: "ประกาศนียบัตรผู้ช่วยพยาบาล" },
-    { value: "ป.ตรี", label: "ป.ตรี" },
-    { value: "ป.โท", label: "ป.โท" },
-    { value: "ป.เอก", label: "ป.เอก" },
+    { value: "ปริญญาตรี", label: "ปริญญาตรี" },
+    { value: "ปริญญาโท", label: "ปริญญาโท" },
+    { value: "ปริญญาเอก", label: "ปริญญาเอก" },
   ];
 
   // ฟังก์ชันจัดการเมื่อคลิกเลือก
@@ -71,7 +71,7 @@ const StudentFilters: React.FC<StudentFiltersProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-[8px] bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#ea580c] text-[13px] transition-all"
-            placeholder="ค้นหารหัสคำร้อง ชื่อ วันที่..."
+            placeholder="ค้นหารหัสคำร้อง ชื่อ..."
           />
         </div>
 

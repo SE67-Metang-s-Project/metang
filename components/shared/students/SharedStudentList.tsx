@@ -97,9 +97,9 @@ export default function SharedStudentList({
     if (degreeFilter !== "ทั้งหมด") {
       const degreeCode = student.studentId.charAt(4);
       if (degreeFilter === "ประกาศนียบัตรผู้ช่วยพยาบาล") matchesDegree = degreeCode === "0";
-      else if (degreeFilter === "ป.ตรี") matchesDegree = degreeCode === "1";
-      else if (degreeFilter === "ป.โท") matchesDegree = degreeCode === "3";
-      else if (degreeFilter === "ป.เอก") matchesDegree = degreeCode === "5";
+      else if (degreeFilter === "ปริญญาตรี") matchesDegree = degreeCode === "1";
+      else if (degreeFilter === "ปริญญาโท") matchesDegree = degreeCode === "3";
+      else if (degreeFilter === "ปริญญาเอก") matchesDegree = degreeCode === "5";
     }
 
     let matchesTab = true;

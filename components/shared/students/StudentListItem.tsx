@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { SearchX } from "lucide-react";
 import type { PaymentEvidenceRecord } from "./PaymentEvidenceHistory";
 
 // ==========================================
@@ -60,15 +61,25 @@ const getBadgeDotColor = (colorTheme: string) => {
   }
 };
 
+function EmptyStudentsState() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 bg-white py-10 text-center">
+      <div className="rounded-full bg-gray-100 p-3 text-gray-400">
+        <SearchX aria-hidden="true" className="size-6" />
+      </div>
+      <p className="text-[14px] font-medium text-gray-700">ไม่พบข้อมูลที่ค้นหา</p>
+      <p className="text-[14px] text-gray-500">ยังไม่มีข้อมูลในขณะนี้ หรือลองเปลี่ยนคำค้นหาอีกครั้ง</p>
+    </div>
+  );
+}
+
 export default function StudentListTable({ students, onStudentSelect }: StudentListTableProps) {
   return (
     <div className="w-full">
       {/* 1. มุมมองสำหรับ Mobile */}
       <div className="md:hidden space-y-4">
         {students.length === 0 ? (
-          <div className="bg-white border border-gray-100 rounded-xl p-8 text-center text-gray-500 text-sm">
-            ไม่พบข้อมูลนักศึกษา
-          </div>
+          <EmptyStudentsState />
         ) : (
           students.map((student, idx) => (
             <div
@@ -170,8 +181,8 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
           <tbody>
             {students.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-gray-500 text-[14px]">
-                  ไม่พบข้อมูลนักศึกษา
+                <td className="p-0" colSpan={5}>
+                  <EmptyStudentsState />
                 </td>
               </tr>
             ) : (
