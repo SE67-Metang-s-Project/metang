@@ -5,6 +5,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   buildSlipPath,
+  SLIP_REDIRECT_CACHE_CONTROL,
+  SLIP_URL_TTL_SECONDS,
   signSlipUrl,
   SlipStorageError,
   uploadSlip,
@@ -103,6 +105,25 @@ test("signSlipUrl prefixes the returned signedURL with the storage v1 base", asy
   } finally {
     restore();
   }
+});
+
+test("a cached slip redirect expires at least 60s before the signed URL it points at", async () => {
+  const match = /^private, max-age=(\d+)$/.exec(SLIP_REDIRECT_CACHE_CONTROL);
+  assert.ok(match, "the redirect is cacheable by the browser only (private), with an explicit max-age");
+  assert.ok(Number(match[1]) > 0);
+  assert.ok(Number(match[1]) <= SLIP_URL_TTL_SECONDS - 60);
+
+  let requestedTtl: unknown;
+  const restore = mockFetch((_url, init) => {
+    requestedTtl = JSON.parse(String(init?.body)).expiresIn;
+    return new Response(JSON.stringify({ signedURL: "/object/sign/b/x.jpg?token=abc" }), { status: 200 });
+  });
+  try {
+    await signSlipUrl({ path: "repayment/L001/x.jpg" });
+  } finally {
+    restore();
+  }
+  assert.equal(requestedTtl, SLIP_URL_TTL_SECONDS);
 });
 
 test("signSlipUrl throws when Supabase Storage returns a non-OK response", async () => {
