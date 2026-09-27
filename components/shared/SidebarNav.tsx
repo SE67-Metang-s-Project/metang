@@ -1,17 +1,14 @@
 "use client";
 
 import React, { useState, useSyncExternalStore } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   FileCheck,
-  GraduationCap,
   X,
-  FileText,
   Users,
-  History,
-  Wallet,
   FileSignature,
   FileSearch,
   Settings,
@@ -131,9 +128,20 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
       >
         <div className="h-16 sm:h-20 flex items-center justify-between px-6 border-b border-gray-100 shrink-0">
           <div className="flex items-center">
-            <div className="bg-[#ea580c] text-white p-2.5 rounded-xl mr-3 shadow-sm">
-              <GraduationCap size={24} />
-            </div>
+            <Link
+              href={`/${activeRole}`}
+              className="mr-3 shrink-0 rounded-lg transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+              aria-label="หน้าหลัก"
+            >
+              <Image
+                src="/metang-logo7.png"
+                alt="METANG"
+                width={44}
+                height={44}
+                className="h-10 w-10 sm:h-11 sm:w-11 object-contain"
+                priority
+              />
+            </Link>
             <div>
               <h1 className="font-bold text-[15px] text-gray-900 leading-tight">
                 CMU Student Loan

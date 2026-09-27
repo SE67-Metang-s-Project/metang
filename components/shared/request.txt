@@ -50,3 +50,10 @@
 
 สิ่งที่ admin ออกความเห็น จะเป็น คำว่า ความคิดเห็นของเจ้าหน้าที่ / พยาน ทั้ง card และ PDF
 
+หน้า pdf เอาเป็น html css fix size a4 กำหนดขนาดกระดาษ A4 ด้วยหน่วย mm (width: 210mm, height: 297mm) เพื่อให้ขนาดเป๊ะทั้งการแสดงผลบนจอและตอนสั่ง Print / Save เป็น PDF ทั้งตอน ที่เป็น card และ pdf
+ 
+logo metang ใน sidebar และ navbar
+- ถ้าเป็น hamberger จะไม่มีโลดก้ขึ้นข้าง hamberger 
+- logo metang เอาไปขึ้นแทน สัญลักษณ์ ที่อยู่ตรง sidebar CMU Student Loan ระบบทุนกู้ยืม
+
+ไม่ว่าตอนเต็มจอหรือตอนขนาดเล็ก navbar ก็ไม่ต้องมีโลโก้metang
