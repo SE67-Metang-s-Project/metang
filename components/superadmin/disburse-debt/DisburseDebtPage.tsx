@@ -14,7 +14,7 @@ export default function DisburseDebtPage({
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">
+        <h1 className="text-xl sm:text-2xl font-semibold text-[#1e293b] mb-1">
           เบิกจ่ายเงินให้นักศึกษา (Disbursement)
         </h1>
         <p className="text-[13px] text-gray-500">

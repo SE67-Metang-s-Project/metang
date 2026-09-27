@@ -329,7 +329,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
               <HandCoins aria-hidden="true" size={22} />
             </span>
             <div className="min-w-0 text-left">
-              <h2 className="text-xl font-bold leading-tight text-gray-900" id="payment-modal-title">
+              <h2 className="text-xl font-semibold leading-tight text-gray-900" id="payment-modal-title">
                 {t("ชำระงวดที่", "Pay installment")} {installment.installmentNumber}
                 {installment.paymentAttempt && installment.paymentAttempt > 1
                   ? ` ${t("(ครั้งที่", "(Attempt")} ${installment.paymentAttempt})`
@@ -349,7 +349,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
           <section className="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
             <div className="flex items-center justify-between gap-4">
               <p className="text-sm font-medium text-black">{t("ค้างชำระ", "Outstanding")}</p>
-              <strong className="text-2xl font-bold text-black">
+              <strong className="text-2xl font-semibold text-black">
                 {installment.outstandingAmount} {t("บาท", "THB")}
               </strong>
             </div>
@@ -368,7 +368,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
           </section>
 
           <section className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <h3 className="mb-0 flex items-center gap-2 border-b border-gray-200 pb-3 text-lg font-bold text-gray-900">
+            <h3 className="mb-0 flex items-center gap-2 border-b border-gray-200 pb-3 text-lg font-semibold text-gray-900">
               <Landmark aria-hidden="true" className="text-gray-400" size={21} />
               {t("ข้อมูลบัญชีสำหรับชำระเงิน", "Payment Account Details")}
             </h3>
@@ -451,7 +451,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
               formErrors.receipt ? "border-red-400" : "border-gray-200"
             }`}
           >
-            <h3 className="mb-3 flex items-center gap-2 text-lg font-bold text-gray-900">
+            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
               <ReceiptText aria-hidden="true" className="text-gray-400" size={21} />
               {t("หลักฐานการโอนเงิน", "Transfer Evidence")}
               <span aria-hidden="true" className="text-red-500">*</span>
@@ -542,7 +542,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
               hasTransferDetailsError ? "border-red-400" : "border-gray-200"
             }`}
           >
-            <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
               <ReceiptText aria-hidden="true" className="text-gray-400" size={21} />
               {t("รายละเอียดการโอนเงิน", "Transfer Details")}
               <span aria-hidden="true" className="text-red-500">*</span>
@@ -616,7 +616,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                             aria-disabled={isFuture}
                             className={`rounded-lg py-1.5 transition-colors disabled:cursor-not-allowed disabled:text-gray-300 ${
                               isSelected
-                                ? "border border-orange-300 bg-orange-50 font-bold text-orange-700"
+                                ? "border border-orange-300 bg-orange-50 font-semibold text-orange-700"
                                 : isToday
                                   ? "bg-gray-100 font-semibold text-gray-800 hover:bg-orange-50"
                                   : "text-gray-700 hover:bg-orange-50"
@@ -682,7 +682,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                               aria-selected={selectedHour === hour}
                               className={`mb-1 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                                 selectedHour === hour
-                                  ? "border border-orange-300 bg-orange-50 font-bold text-orange-700"
+                                  ? "border border-orange-300 bg-orange-50 font-semibold text-orange-700"
                                   : "text-gray-700 hover:bg-gray-100"
                               }`}
                               data-time-value={hour}
@@ -716,7 +716,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                               aria-selected={selectedMinute === minute}
                               className={`mb-1 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                                 selectedMinute === minute
-                                  ? "border border-orange-300 bg-orange-50 font-bold text-orange-700"
+                                  ? "border border-orange-300 bg-orange-50 font-semibold text-orange-700"
                                   : "text-gray-700 hover:bg-gray-100"
                               }`}
                               data-time-value={minute}
@@ -819,7 +819,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
             {t("ยกเลิก", "Cancel")}
           </button>
           <button
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-400"
             disabled={isConfirmDisabled}
             onClick={handleConfirm}
             type="button"
@@ -845,12 +845,12 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
             className="w-full max-w-xs rounded-2xl bg-white p-6 text-center shadow-2xl"
             role="alertdialog"
           >
-            <h2 className="text-xl font-bold text-gray-900" id="qr-save-notice-title">
+            <h2 className="text-xl font-semibold text-gray-900" id="qr-save-notice-title">
               {t("บันทึกรูปภาพแล้ว", "Image saved")}
             </h2>
             <p className="mt-2 text-sm text-gray-600">{t("ดาวน์โหลด QR Code สำหรับชำระงเงินสำเร็จ", "The payment QR code has been downloaded.")}</p>
             <button
-              className="mt-5 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-green-700"
+              className="mt-5 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-700"
               onClick={() => setIsQrSaveNoticeOpen(false)}
               type="button"
             >

@@ -26,7 +26,7 @@ export default function SettingsPage({
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#0f172a] mb-1">ศูนย์ควบคุมระบบ</h1>
+        <h1 className="text-2xl font-semibold text-[#0f172a] mb-1">ศูนย์ควบคุมระบบ</h1>
         <p className="text-sm text-gray-500">
           SuperAdmin · จัดการผู้ใช้ บทบาท วงเงิน ข้อมูลและการติดต่อ
         </p>

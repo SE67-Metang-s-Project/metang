@@ -1,6 +1,7 @@
 import type { LoanRequestHistoryItem } from "@/app/student/studentMockData";
 import styles from "@/app/student/student.module.css";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
+import AdaptiveKeyValueRow from "@/components/shared/AdaptiveKeyValueRow";
 
 type LoanHistoryCardProps = {
   onCorrectRequest?: (requestNumber: string) => void;
@@ -50,8 +51,14 @@ export default function LoanHistoryCard({
           <span>{t("ยื่นเมื่อ", "Submitted")}</span>{" "}
           <span className={styles.historySubmittedDate}>{localizeStudentContent(submittedAt, language)}</span>
         </p>
-        <small>{t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}</small>
-        <strong className={styles.historyPurpose}>{localizeStudentContent(request.purpose, language)}</strong>
+        <AdaptiveKeyValueRow
+          className={styles.historyPurposeRow}
+          label={t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}
+          labelAs="small"
+          value={localizeStudentContent(request.purpose, language)}
+          valueAs="strong"
+          valueClassName={styles.historyPurpose}
+        />
         {canCorrect ? (
           <button
             className={styles.historyCorrectionButton}

@@ -153,7 +153,7 @@ export default function SystemBudgetTab() {
       {/* ส่วนฟอร์มปรับวงเงิน (ซ้าย) */}
       {/* ========================================== */}
       <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-        <h2 className="text-base font-bold text-gray-900 mb-6 flex items-center gap-2">
+        <h2 className="text-base font-semibold text-gray-900 mb-6 flex items-center gap-2">
           <Wallet size={20} className="text-[#ea580c]" />
           ปรับวงเงินรวมของระบบ
         </h2>
@@ -178,7 +178,7 @@ export default function SystemBudgetTab() {
                 value={budgetAmount}
                 onChange={handleInputChange}
                 disabled={isSubmitting}
-                className="w-full h-12 px-4 bg-white border-y border-gray-300 text-center text-lg font-bold text-[#ea580c] focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all z-10 disabled:bg-gray-100"
+                className="w-full h-12 px-4 bg-white border-y border-gray-300 text-center text-lg font-semibold text-[#ea580c] focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all z-10 disabled:bg-gray-100"
                 placeholder="0"
               />
               <button
@@ -192,7 +192,7 @@ export default function SystemBudgetTab() {
             </div>
             <p className="text-sm text-gray-500 mt-2 font-medium">
               ยอดวงเงินรวม:{" "}
-              <span className="font-bold text-gray-800">{formatCurrency(Number(budgetAmount) || 0)}</span>
+              <span className="font-semibold text-gray-800">{formatCurrency(Number(budgetAmount) || 0)}</span>
             </p>
           </div>
 
@@ -225,7 +225,7 @@ export default function SystemBudgetTab() {
             <button
               onClick={handleSave}
               disabled={isSubmitting || budgetAmount === "" || Number(budgetAmount) === currentTotal}
-              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#ea580c] hover:bg-[#c2410c] text-white font-bold rounded-lg transition-colors shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#ea580c] hover:bg-[#c2410c] text-white font-semibold rounded-lg transition-colors shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save size={18} />
               {isSubmitting ? "กำลังบันทึก..." : "บันทึกวงเงิน"}
@@ -233,7 +233,7 @@ export default function SystemBudgetTab() {
             <button
               onClick={handleReset}
               disabled={isSubmitting}
-              className="px-6 py-2.5 bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-bold rounded-lg transition-colors text-sm disabled:opacity-50"
+              className="px-6 py-2.5 bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-semibold rounded-lg transition-colors text-sm disabled:opacity-50"
             >
               รีเซ็ต
             </button>
@@ -245,23 +245,23 @@ export default function SystemBudgetTab() {
       {/* ส่วนสรุปการใช้วงเงิน (ขวา) */}
       {/* ========================================== */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm h-fit">
-        <h2 className="text-base font-bold text-gray-900 mb-6 flex items-center gap-2">สรุปการใช้วงเงิน</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-6 flex items-center gap-2">สรุปการใช้วงเงิน</h2>
 
         <div className="space-y-4">
           <div className="flex justify-between items-center pb-4 border-b border-gray-100">
             <span className="text-[13px] text-gray-600">วงเงินที่ปรับปรุง</span>
-            <span className="text-[15px] font-bold text-gray-900">{formatCurrency(currentTotal)}</span>
+            <span className="text-[15px] font-semibold text-gray-900">{formatCurrency(currentTotal)}</span>
           </div>
           <div className="flex justify-between items-center pb-4 border-b border-gray-100">
             <span className="text-[13px] text-gray-600">เบิกจ่ายแล้ว</span>
-            <span className="text-[14px] font-bold text-green-600">{formatCurrency(spentAmount)}</span>
+            <span className="text-[14px] font-semibold text-green-600">{formatCurrency(spentAmount)}</span>
           </div>
           <div className="flex justify-between items-center pb-4 border-b border-gray-100">
             <span className="text-[13px] text-gray-600">รออนุมัติ / ตรวจสอบ</span>
-            <span className="text-[14px] font-bold text-amber-500">{formatCurrency(pendingAmount)}</span>
+            <span className="text-[14px] font-semibold text-amber-500">{formatCurrency(pendingAmount)}</span>
           </div>
           <div className="flex justify-between items-center pb-4">
-            <span className="text-[14px] font-bold text-gray-900">คงเหลือใช้งานได้</span>
+            <span className="text-[14px] font-semibold text-gray-900">คงเหลือใช้งานได้</span>
             <span
               className={`text-lg font-black ${remainingBudget < 0 ? "text-red-500" : "text-[#ea580c]"}`}
             >
@@ -273,7 +273,7 @@ export default function SystemBudgetTab() {
           <div className="pt-2">
             <div className="flex justify-between items-center mb-2">
               <span className="text-[11px] text-gray-500">อัตราการใช้ระบบ</span>
-              <span className="text-[11px] font-bold text-gray-700">{usagePercentage.toFixed(1)}%</span>
+              <span className="text-[11px] font-semibold text-gray-700">{usagePercentage.toFixed(1)}%</span>
             </div>
             <div className="w-full bg-orange-100/50 rounded-full h-2 overflow-hidden">
               <div

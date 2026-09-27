@@ -51,8 +51,9 @@ export default function RoleShell({
           showLogo={isStudent}
         />
 
-        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
+        <main className="p-4 pb-0 sm:p-6 sm:pb-0 lg:p-8 lg:pb-0 max-w-[1600px] w-full mx-auto">
           {children}
+          <footer aria-hidden="true" className="h-20" />
         </main>
       </div>
     </div>

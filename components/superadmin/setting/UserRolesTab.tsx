@@ -291,7 +291,7 @@ export default function UserRolesTab({
       {/* User List Container */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-4 py-4 border-b border-gray-100 bg-white flex items-center justify-between">
-          <h2 className="text-sm font-bold text-gray-900">
+          <h2 className="text-sm font-semibold text-gray-900">
             ผู้ใช้ ({filteredUsers.length})
           </h2>
           {isLoading && (
@@ -343,7 +343,7 @@ export default function UserRolesTab({
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-900 text-[14px] leading-tight">
+                          <span className="font-semibold text-gray-900 text-[14px] leading-tight">
                             {displayName}
                           </span>
                           {isStarred && (
@@ -475,7 +475,7 @@ export default function UserRolesTab({
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-gray-900 text-[14px]">
+                              <span className="font-semibold text-gray-900 text-[14px]">
                                 {displayName}
                               </span>
                               {isStarred && (

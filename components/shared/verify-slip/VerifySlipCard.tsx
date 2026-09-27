@@ -479,7 +479,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
             >
               <div className="flex justify-between items-start gap-2">
                 <div>
-                  <div className="font-bold text-gray-900 text-[15px] leading-tight">
+                  <div className="font-semibold text-gray-900 text-[15px] leading-tight">
                     {req.name}
                   </div>
                   <div className="text-[13px] text-gray-500 mt-1">
@@ -500,7 +500,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                 <div className="flex gap-4">
                   <div>
                     <div className="text-[11px] text-gray-500 mb-0.5">ยอดกู้ยืมรวม</div>
-                    <div className="font-bold text-[#ea580c]">{formatAmount(req.amount)}</div>
+                    <div className="font-semibold text-[#ea580c]">{formatAmount(req.amount)}</div>
                   </div>
                   <div>
                     <div className="text-[11px] text-gray-500 mb-0.5">จำนวนงวด</div>
@@ -558,7 +558,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
               <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 จำนวนงวด
               </th>
-              <th className="w-px py-3.5 px-4 text-center font-bold whitespace-nowrap">จัดการ</th>
+              <th className="w-px py-3.5 px-4 text-center font-semibold whitespace-nowrap">จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -580,7 +580,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                     </div>
                   </td>
                   <td className="w-[25%] py-4 px-4 border-r border-gray-200">
-                    <div className="font-bold text-gray-900 flex items-center gap-2 flex-wrap">
+                    <div className="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
                       <span>{req.name}</span>
                     </div>
                     <div className="mt-0.5 text-[13px] text-gray-500">
@@ -636,7 +636,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                     <HandCoins aria-hidden="true" size={24} />
                 </span>
                 <div>
-                  <h2 className="text-lg font-bold leading-tight text-gray-900 sm:text-xl">
+                  <h2 className="text-lg font-semibold leading-tight text-gray-900 sm:text-xl">
                     ตรวจสอบการชำระเงิน
                   </h2>
                   <p className="text-[13px] leading-tight text-gray-500">
@@ -742,7 +742,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                             {evidence ? (
                               <div className="flex flex-col items-center">
                                 <span
-                                  className={`font-bold ${
+                                  className={`font-semibold ${
                                     evidence.status === "verified"
                                       ? "text-emerald-700"
                                       : evidence.status === "rejected"
@@ -763,7 +763,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                             {evidence ? (
                               <button
                                 onClick={() => setSelectedEvidenceId(evidence.id)}
-                                className={`inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-bold transition-all hover:shadow-sm ${
+                                className={`inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all hover:shadow-sm ${
                                   evidence.status === "verified"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                                     : evidence.status === "pending"
@@ -805,7 +805,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
             {/* Header Modal 2 */}
             <div className="flex justify-between items-center px-5 sm:px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10 shrink-0">
               <div className="pr-2">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 leading-tight">
                   {selectedEvidence.status === "pending" ? "ตรวจสอบสลิปการชำระเงิน" : "รายละเอียดสลิปการชำระเงิน"}
                 </h2>
                 <p className="text-[13px] text-gray-500 mt-0.5">
@@ -814,7 +814,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <span
-                  className={`text-[12px] font-bold px-3 py-1 rounded-full border ${
+                  className={`text-[12px] font-semibold px-3 py-1 rounded-full border ${
                     selectedEvidence.status === "verified"
                       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                       : selectedEvidence.status === "pending"
@@ -904,7 +904,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                     <dl>
                       <div className={styles.loanAmountRow}>
                         <dt>ยอดเงินที่โอนมา</dt>
-                        <dd className="font-bold text-[#ea580c]">
+                        <dd className="font-semibold text-[#ea580c]">
                           {formatAmount(selectedEvidence.amount)}
                         </dd>
                       </div>
@@ -988,7 +988,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                   <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <button
                       onClick={() => chooseSlipAction("reject")}
-                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98] cursor-pointer"
+                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-white border-2 border-red-100 text-red-600 font-semibold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98] cursor-pointer"
                       type="button"
                     >
                       {isOverpayment ? "ปฏิเสธสลิป · ติดต่อนักศึกษา" : "ปฏิเสธสลิป"}
@@ -996,7 +996,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                     <button
                       onClick={() => chooseSlipAction("approve")}
                       disabled={isOverpayment}
-                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-400 disabled:shadow-none"
+                      className="w-full sm:flex-1 py-3 flex items-center justify-center rounded-xl bg-[#059669] text-white font-semibold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-400 disabled:shadow-none"
                       type="button"
                     >
                       อนุมัติสลิป ถูกต้อง
@@ -1013,7 +1013,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                     >
                       <h4
                         id="slip-decision-title"
-                        className={`flex items-center gap-2 text-[14px] font-bold ${
+                        className={`flex items-center gap-2 text-[14px] font-semibold ${
                           slipConfirmAction === "approve" ? "mb-0 text-emerald-700" : "mb-2 text-red-700"
                         }`}
                       >
@@ -1034,7 +1034,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                           <button
                             onClick={handleConfirmSlipDecision}
                             disabled={isBusy}
-                            className="cursor-pointer rounded-xl bg-[#059669] px-5 py-2 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-[#047857] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                            className="cursor-pointer rounded-xl bg-[#059669] px-5 py-2 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-[#047857] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                             type="button"
                           >
                             {isBusy ? "กำลังบันทึก..." : "ยืนยัน"}
@@ -1074,7 +1074,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                       <button
                         onClick={handleConfirmSlipDecision}
                         disabled={isBusy}
-                        className="px-5 py-2 text-white font-bold rounded-xl text-[13px] shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-red-600 hover:bg-red-700"
+                        className="px-5 py-2 text-white font-semibold rounded-xl text-[13px] shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-red-600 hover:bg-red-700"
                         type="button"
                       >
                         {isBusy ? "กำลังบันทึก..." : "ยืนยัน"}
@@ -1108,7 +1108,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                   <FileImage size={22} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 leading-tight">
+                  <h3 className="text-lg font-semibold text-gray-900 leading-tight">
                     สลิปหลักฐานการชำระเงิน
                   </h3>
                   {selectedRequest && selectedEvidence && (

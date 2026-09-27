@@ -16,7 +16,7 @@ export default function PendingExecutivePage({
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-semibold text-gray-900">
           คำร้องรอพิจารณา (ในฐานะผู้บริหาร)
         </h1>
         <p className="text-gray-500 mt-1 text-sm">
@@ -31,4 +31,3 @@ export default function PendingExecutivePage({
     </div>
   );
 }
-

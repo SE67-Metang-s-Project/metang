@@ -21,6 +21,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
+import AdaptiveKeyValueRow from "@/components/shared/AdaptiveKeyValueRow";
 import LoanPetitionDocument, {
   downloadLoanPetitionPdf,
 } from "@/components/shared/disburse-debt/LoanPetitionDocument";
@@ -787,7 +788,7 @@ export default function RequestsCard({
             >
               <div className="flex justify-between items-start gap-2">
                 <div>
-                  <div className="font-bold text-gray-900 text-[15px] leading-tight flex items-center gap-2 flex-wrap">
+                  <div className="font-semibold text-gray-900 text-[15px] leading-tight flex items-center gap-2 flex-wrap">
                     <span>{req.name}</span>
                     {isExecutiveReturned(req) && (
                       <span
@@ -818,7 +819,7 @@ export default function RequestsCard({
                 <div className="flex gap-4">
                   <div>
                     <div className="text-[11px] text-gray-500 mb-0.5">จำนวนที่ขอ</div>
-                    <div className="font-bold text-[#ea580c]">
+                    <div className="font-semibold text-[#ea580c]">
                       {formatAmount(req.approvedAmount ?? req.amount)}
                     </div>
                   </div>
@@ -871,7 +872,7 @@ export default function RequestsCard({
               <th className="py-3.5 px-4 text-center font-semibold border-r border-gray-300 whitespace-nowrap">
                 จำนวนงวด
               </th>
-              <th className="w-px py-3.5 px-4 text-center font-bold whitespace-nowrap">จัดการ</th>
+              <th className="w-px py-3.5 px-4 text-center font-semibold whitespace-nowrap">จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -902,7 +903,7 @@ export default function RequestsCard({
                     </div>
                   </td>
                   <td className="w-[25%] py-4 px-4 border-r border-gray-200">
-                    <div className="font-bold text-gray-900 flex items-center gap-2 flex-wrap">
+                    <div className="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
                       <span>{req.name}</span>
                     </div>
                     <div className="mt-0.5 text-[13px] text-gray-500">
@@ -949,7 +950,7 @@ export default function RequestsCard({
                   <FileText aria-hidden="true" size={24} />
                 </span>
                 <div>
-                  <h2 className="text-lg font-bold leading-tight text-gray-900 sm:text-xl">
+                  <h2 className="text-lg font-semibold leading-tight text-gray-900 sm:text-xl">
                     คำร้องรอพิจารณา
                   </h2>
                   <p className="text-[13px] leading-tight text-gray-500">
@@ -959,7 +960,7 @@ export default function RequestsCard({
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <span
-                  className={`text-[12px] font-bold px-3 py-1 rounded-full border ${
+                  className={`text-[12px] font-semibold px-3 py-1 rounded-full border ${
                     isExecutiveReturned(selectedRequest)
                       ? "bg-amber-50 text-amber-700 border-amber-300"
                       : getStatusBadgeClass(selectedRequest.requestStatus)
@@ -1074,10 +1075,11 @@ export default function RequestsCard({
                   title="ข้อมูลการกู้ยืม"
                 />
                 <dl>
-                  <div className={styles.loanApprovalPurposeRow}>
-                    <dt>วัตถุประสงค์การกู้ยืม</dt>
-                    <dd>{selectedRequest.objective || "-"}</dd>
-                  </div>
+                  <AdaptiveKeyValueRow
+                    className={styles.loanApprovalPurposeRow}
+                    label="วัตถุประสงค์การกู้ยืม"
+                    value={selectedRequest.objective || "-"}
+                  />
                   <div>
                     <dt>ยื่นเมื่อ</dt>
                     <dd>
@@ -1241,7 +1243,7 @@ export default function RequestsCard({
                   </header>
                   {(selectedRequest.paymentBehavior?.totalInstallments ?? 0) > 0 && (
                     <span
-                      className={`text-[12px] font-bold px-2.5 py-0.5 rounded-full ${
+                      className={`text-[12px] font-semibold px-2.5 py-0.5 rounded-full ${
                         (selectedRequest.paymentBehavior?.lateInstallments ?? 0) === 0
                           ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                           : "bg-red-50 text-red-700 border border-red-200"
@@ -1257,7 +1259,7 @@ export default function RequestsCard({
                 <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
                   <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                     <div className="text-[11px] text-gray-500">ประวัติกู้ยืม</div>
-                    <div className="font-bold text-[15px] text-gray-900 mt-0.5">
+                    <div className="font-semibold text-[15px] text-gray-900 mt-0.5">
                       {selectedRequest.paymentBehavior?.totalLoanRequests ?? 0} ครั้ง
                     </div>
                   </div>
@@ -1283,8 +1285,8 @@ export default function RequestsCard({
                       className={
                         (selectedRequest.paymentBehavior?.totalInstallments ?? 0) > 0 &&
                         (selectedRequest.paymentBehavior?.onTimeInstallments ?? 0) > 0
-                          ? "font-bold text-[15px] text-emerald-800 mt-0.5"
-                          : "font-bold text-[15px] text-gray-900 mt-0.5"
+                          ? "font-semibold text-[15px] text-emerald-800 mt-0.5"
+                          : "font-semibold text-[15px] text-gray-900 mt-0.5"
                       }
                     >
                       {selectedRequest.paymentBehavior?.onTimeInstallments ?? 0} งวด
@@ -1292,7 +1294,7 @@ export default function RequestsCard({
                   </div>
                   <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                     <div className="text-[11px] text-gray-500">ล่าช้า</div>
-                    <div className="font-bold text-[15px] text-gray-900 mt-0.5">
+                    <div className="font-semibold text-[15px] text-gray-900 mt-0.5">
                       {selectedRequest.paymentBehavior?.lateInstallments ?? 0} งวด
                     </div>
                   </div>
@@ -1336,7 +1338,7 @@ export default function RequestsCard({
                         setConfirmAction("reject");
                         setErrorMessage(null);
                       }}
-                      className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-white border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98]"
+                      className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-white border-2 border-red-100 text-red-600 font-semibold hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98]"
                     >
                       {isAdminOrSuperAdmin ? "ยกเลิกคำร้อง" : "ไม่อนุมัติ"}
                     </button>
@@ -1346,7 +1348,7 @@ export default function RequestsCard({
                           setConfirmAction("return");
                           setErrorMessage(null);
                         }}
-                        className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-bold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
+                        className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-white border-2 border-amber-200 text-amber-600 font-semibold hover:bg-amber-50 hover:border-amber-300 transition-all active:scale-[0.98]"
                       >
                         ส่งกลับแก้ไข
                       </button>
@@ -1362,7 +1364,7 @@ export default function RequestsCard({
                           ? "ผู้บริหารส่งกลับมาแก้ไข กรุณาปรับลดวงเงินก่อนส่งพิจารณาใหม่"
                           : undefined
                       }
-                      className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full sm:flex-1 py-2.5 flex items-center justify-center rounded-xl bg-[#059669] text-white font-semibold hover:bg-[#047857] shadow-sm shadow-green-600/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isAdminOrSuperAdmin ? "ส่งพิจารณา" : "อนุมัติ"}
                     </button>
@@ -1370,7 +1372,7 @@ export default function RequestsCard({
                 ) : (
                   <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2">
                     <h4
-                      className={`font-bold text-[14px] mb-2 flex items-center gap-2 ${
+                      className={`font-semibold text-[14px] mb-2 flex items-center gap-2 ${
                         confirmAction === "approve"
                           ? "text-green-700"
                           : confirmAction === "return"
@@ -1394,7 +1396,7 @@ export default function RequestsCard({
                               ? "ระบุเหตุผลในการยกเลิกคำร้อง"
                               : "ระบุเหตุผลเพื่อแจ้งกลับให้นักศึกษาทราบ"}
                       </span>
-                      <span className="text-red-500 font-bold" title="จำเป็น">
+                      <span className="text-red-500 font-semibold" title="จำเป็น">
                         *
                       </span>
                     </h4>
@@ -1408,7 +1410,7 @@ export default function RequestsCard({
                               ? "วงเงินที่ส่งพิจารณา (ปรับลดลง):"
                               : "วงเงินที่อนุมัติ (ปรับลดลง):"}
                           </span>
-                          <span className="font-bold text-[#ea580c]">
+                          <span className="font-semibold text-[#ea580c]">
                             {formatAmount(selectedRequest.amount)}{" "}
                             <span className="text-amber-800 font-normal text-[14px]">
                               (จาก {formatAmount(originalRequestedAmount)})
@@ -1482,7 +1484,7 @@ export default function RequestsCard({
                             ? "ผู้บริหารส่งกลับมาแก้ไข กรุณาปรับลดวงเงินก่อนส่งพิจารณาใหม่"
                             : undefined
                         }
-                        className={`px-4 py-2 text-[14px] font-bold text-white rounded-lg shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed ${
+                        className={`px-4 py-2 text-[14px] font-semibold text-white rounded-lg shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed ${
                           confirmAction === "approve"
                             ? "bg-[#059669] hover:bg-[#047857]"
                             : confirmAction === "return"
@@ -1547,7 +1549,7 @@ export default function RequestsCard({
                 <XCircle size={30} />
               )}
             </div>
-            <h2 id="completion-modal-title" className="mt-4 text-xl font-bold text-gray-900">
+            <h2 id="completion-modal-title" className="mt-4 text-xl font-semibold text-gray-900">
               ดำเนินการคำร้องเสร็จสิ้น
             </h2>
             <p className="mt-2 text-sm text-gray-600">
@@ -1573,7 +1575,7 @@ export default function RequestsCard({
             <button
               type="button"
               onClick={closeCompletionModal}
-              className={`mt-6 w-full rounded-xl py-2.5 text-sm font-bold text-white transition-colors ${
+              className={`mt-6 w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-colors ${
                 completedDecision.action === "approve"
                   ? "bg-emerald-600 hover:bg-emerald-700"
                   : completedDecision.action === "return"
@@ -1601,7 +1603,7 @@ export default function RequestsCard({
                   <FileText size={22} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 leading-tight">
+                  <h2 className="text-lg font-semibold text-gray-900 leading-tight">
                     แบบขอยืมเงินทุนสวัสดิการ
                   </h2>
                   <p className="text-[13px] text-gray-500 mt-0.5">
@@ -1680,14 +1682,14 @@ export default function RequestsCard({
                       documentViewTab === "attachment",
                     )
                   }
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white bg-[#ea580c] hover:bg-[#c2410c] shadow-sm hover:shadow transition-all cursor-pointer active:scale-[0.98]"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-[#ea580c] hover:bg-[#c2410c] shadow-sm hover:shadow transition-all cursor-pointer active:scale-[0.98]"
                 >
                   <Download size={15} />
                   <span>ดาวน์โหลด PDF</span>
                 </button>
                 <button
                   onClick={() => setViewDocumentReq(null)}
-                  className="flex-1 sm:flex-initial px-5 py-2 rounded-xl text-[13px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer text-center active:scale-[0.98]"
+                  className="flex-1 sm:flex-initial px-5 py-2 rounded-xl text-[13px] font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer text-center active:scale-[0.98]"
                   type="button"
                 >
                   ปิดหน้าต่าง

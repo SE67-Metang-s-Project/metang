@@ -106,11 +106,11 @@ export default function TopNav({
           >
             <Image
               alt="METANG"
-              className="h-12 w-12 object-contain sm:h-14 sm:w-14"
-              height={56}
+              className="h-[60px] w-[60px] object-contain"
+              height={60}
               priority
               src="/metang-logo7.png"
-              width={56}
+              width={60}
             />
           </Link>
         ) : null}
@@ -131,7 +131,7 @@ export default function TopNav({
             </span>
             <span className="flex flex-col">
               <span
-                className={`${language === "en" ? "text-[14px]" : "text-[15px]"} font-bold leading-tight text-gray-900`}
+                className={`${language === "en" ? "text-[14px]" : "text-[15px]"} font-semibold leading-tight text-gray-900`}
               >
                 {userName}
               </span>
@@ -200,7 +200,7 @@ export default function TopNav({
           </div>
         </div>
       </header>
-      <div aria-hidden="true" className="h-16 shrink-0 sm:h-20" />
+      <div aria-hidden="true" className="h-20 shrink-0" />
     </>
   );
 }

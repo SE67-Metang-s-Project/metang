@@ -152,7 +152,7 @@ export default function SharedStudentList({
           >
             <header className="sticky top-0 z-10 flex items-start justify-between border-b border-gray-100 bg-white px-5 py-4 sm:px-6">
               <div>
-                <h2 className="text-lg font-bold text-gray-900" id="student-detail-title">{selectedStudent.name}</h2>
+                <h2 className="text-lg font-semibold text-gray-900" id="student-detail-title">{selectedStudent.name}</h2>
                 <p className="mt-0.5 text-sm text-gray-500">
                   {selectedStudent.studentId} · {selectedStudent.major} · ชั้นปี {selectedStudent.year}
                 </p>

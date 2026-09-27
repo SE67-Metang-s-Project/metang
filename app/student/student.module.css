@@ -2603,7 +2603,8 @@
   font-size: 14px;
 }
 
-.historyCard > div > strong:last-child {
+.historyCard > div > strong:last-child,
+.historyPurposeRow .historyPurpose {
   color: var(--color-history-description);
   font-size: 14px;
 }
@@ -2612,6 +2613,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.historyPurposeRow[data-layout="stacked"] .historyPurpose {
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .historyCorrectionButton,

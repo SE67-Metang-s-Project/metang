@@ -130,7 +130,7 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="h-16 sm:h-20 flex items-center justify-between px-6 border-b border-gray-100 shrink-0">
+        <div className="h-20 flex items-center justify-between px-6 border-b border-gray-100 shrink-0">
           <div className="flex items-center">
             <Link
               href={`/${activeRole}`}
@@ -140,14 +140,14 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
               <Image
                 src="/metang-logo7.png"
                 alt="METANG"
-                width={44}
-                height={44}
-                className="h-10 w-10 sm:h-11 sm:w-11 object-contain"
+                width={60}
+                height={60}
+                className="h-[60px] w-[60px] object-contain"
                 priority
               />
             </Link>
             <div>
-              <h1 className="font-bold text-[15px] text-gray-900 leading-tight">
+              <h1 className="font-semibold text-[15px] text-gray-900 leading-tight">
                 CMU Student Loan
               </h1>
               <p className="text-[12px] text-gray-500">ระบบทุนกู้ยืม</p>
@@ -192,7 +192,7 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
 
         {process.env.NODE_ENV === "development" && (
           <div className="p-4 bg-orange-50/50 border-t border-orange-100 shrink-0">
-            <div className="flex items-center gap-2 text-xs font-bold text-orange-600 mb-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-orange-600 mb-2">
               <Bug size={14} /> DEBUG: Switch Role
             </div>
             <select

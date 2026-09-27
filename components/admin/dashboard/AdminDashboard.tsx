@@ -99,7 +99,7 @@ export default function AdminDashboard({
       {/* =====================================================
           3. Verify Slip
       ===================================================== */}
-      <section className="mb-10">
+      <section className="mb-0">
         <SectionHeader
           title="ตรวจสอบสลิปชำระเงิน"
           description="หลักฐานการโอนเงินที่นักศึกษาแนบเข้ามาและรอตรวจสอบ"
@@ -139,7 +139,7 @@ function SectionHeader({
   return (
     <div className="flex items-end justify-between mb-4">
       <div>
-        <h2 className="text-lg font-bold text-[#1e293b]">{title}</h2>
+        <h2 className="text-2xl font-semibold text-[#1e293b]">{title}</h2>
 
         <p className="text-sm text-gray-500 mt-1">{description}</p>
       </div>

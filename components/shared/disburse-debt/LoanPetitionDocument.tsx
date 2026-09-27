@@ -455,7 +455,7 @@ export default function LoanPetitionDocument({
           <button
             type="button"
             onClick={() => downloadLoanPetitionPdf(request)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white bg-[#ea580c] hover:bg-[#c2410c] shadow-sm hover:shadow transition-all cursor-pointer active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-[#ea580c] hover:bg-[#c2410c] shadow-sm hover:shadow transition-all cursor-pointer active:scale-[0.98]"
           >
             <Download size={15} />
             <span>ดาวน์โหลด PDF</span>
@@ -485,7 +485,7 @@ export default function LoanPetitionDocument({
           <div className="text-[11.5px] font-medium text-gray-500 tracking-wider mb-0.5">
             คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่
           </div>
-          <h1 className="text-[17px] font-bold text-gray-900 tracking-tight">
+          <h1 className="text-[17px] font-semibold text-gray-900 tracking-tight">
             แบบขอยืมเงินทุนสวัสดิการนักศึกษาคณะพยาบาลศาสตร์
           </h1>
           <div className="flex justify-between items-center text-[10.5px] text-gray-500 mt-1">
@@ -569,7 +569,7 @@ export default function LoanPetitionDocument({
 
         {/* ตารางกำหนดการผ่อนชำระ */}
         <div className="mt-2 mb-1.5">
-          <div className="text-[12.5px] font-bold text-gray-900 mb-1 flex items-center justify-between">
+          <div className="text-[12.5px] font-semibold text-gray-900 mb-1 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <span>กำหนดการผ่อนชำระ</span>
               <span className="text-[11.5px] font-normal text-gray-600">
@@ -612,7 +612,7 @@ export default function LoanPetitionDocument({
               <tfoot>
                 <tr className="bg-gray-50 text-gray-900 border-t border-gray-300 font-semibold text-[11.5px]">
                   <td colSpan={2} className="py-1 px-3 text-right border-r border-gray-200">รวมทั้งสิ้น</td>
-                  <td className="py-1 px-3 text-right font-bold text-gray-900">
+                  <td className="py-1 px-3 text-right font-semibold text-gray-900">
                     {formatAmount(request.amount)}
                   </td>
                 </tr>
@@ -668,7 +668,7 @@ export default function LoanPetitionDocument({
           <div className="space-y-3">
             {/* 1. ความคิดเห็นของอาจารย์ที่ปรึกษา */}
             <div className="space-y-1">
-              <div className="font-bold text-gray-900 text-[13px]">
+              <div className="font-semibold text-gray-900 text-[13px]">
                 ความคิดเห็นของอาจารย์ที่ปรึกษา
               </div>
               <p className="text-[12px] text-gray-800 italic min-h-[26px] py-0.5 break-words whitespace-pre-wrap leading-tight">
@@ -692,7 +692,7 @@ export default function LoanPetitionDocument({
 
             {/* 2. ความคิดเห็นของเจ้าหน้าที่ / พยาน */}
             <div className="space-y-1">
-              <div className="font-bold text-gray-900 text-[13px]">
+              <div className="font-semibold text-gray-900 text-[13px]">
                 ความคิดเห็นของเจ้าหน้าที่ / พยาน
               </div>
               <p className="text-[12px] text-gray-800 italic min-h-[26px] py-0.5 break-words whitespace-pre-wrap leading-tight">
@@ -719,7 +719,7 @@ export default function LoanPetitionDocument({
           <div className="space-y-3">
             {/* 3. ความคิดเห็นของผู้บริหาร */}
             <div className="space-y-1">
-              <div className="font-bold text-gray-900 text-[13px]">
+              <div className="font-semibold text-gray-900 text-[13px]">
                 ความคิดเห็นของผู้บริหาร
               </div>
               <p className="text-[12px] text-gray-800 italic min-h-[26px] py-0.5 break-words whitespace-pre-wrap leading-tight">
@@ -744,7 +744,7 @@ export default function LoanPetitionDocument({
 
             {/* 4. ได้รับเงินเรียบร้อยแล้ว */}
             <div className="space-y-1">
-              <div className="font-bold text-gray-900 text-[13px]">
+              <div className="font-semibold text-gray-900 text-[13px]">
                 ได้รับเงินเรียบร้อยแล้ว
               </div>
 

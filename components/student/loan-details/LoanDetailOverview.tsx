@@ -5,6 +5,7 @@ import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanS
 import styles from "@/app/student/student.module.css";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import LoanPetitionModal from "@/components/shared/LoanPetitionModal";
+import AdaptiveKeyValueRow from "@/components/shared/AdaptiveKeyValueRow";
 import { mapStudentLoanToActionRequest } from "@/lib/student-action-request";
 
 type LoanDetailOverviewProps = {
@@ -117,10 +118,11 @@ export default function LoanDetailOverview({
               {localizeStudentContent(details.submittedAt.replace(/^ยื่นเมื่อ\s*/, ""), language)}
             </dd>
           </div>
-          <div className={styles.loanDetailPurposeLong}>
-            <dt>{t(details.purposeLabel, "Loan purpose")}</dt>
-            <dd>{localizeStudentContent(details.purpose, language)}</dd>
-          </div>
+          <AdaptiveKeyValueRow
+            className={styles.loanDetailPurposeLong}
+            label={t(details.purposeLabel, "Loan purpose")}
+            value={localizeStudentContent(details.purpose, language)}
+          />
         </dl>
         {showDownload && details.downloadLabel ? (
           <button

@@ -14,6 +14,7 @@ import styles from "@/app/student/student.module.css";
 import BahtCoinIcon from "@/components/shared/BahtCoinIcon";
 import { parseLoanAmount } from "@/app/student/studentFormatters";
 import CardHeader from "@/components/shared/CardHeader";
+import AdaptiveKeyValueRow from "@/components/shared/AdaptiveKeyValueRow";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import LoanDetailOverview from "../loan-details/LoanDetailOverview";
 import LoanTimeline from "../loan-details/LoanTimeline";
@@ -245,10 +246,11 @@ export default function TempLoanDetailsStep({
           title={t("ข้อมูลการกู้ยืม", "Loan Information")}
         />
         <dl className={styles.tempDetailDefinitionList}>
-          <div className={styles.loanPurposeRow}>
-            <dt>{t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}</dt>
-            <dd>{formData.purpose || t("จ่ายค่าเทอม", "Pay tuition fee")}</dd>
-          </div>
+          <AdaptiveKeyValueRow
+            className={styles.loanPurposeRow}
+            label={t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}
+            value={formData.purpose || t("จ่ายค่าเทอม", "Pay tuition fee")}
+          />
           <div className={styles.loanAmountRow}>
             <dt>{t("จำนวนเงินที่ขอกู้ยืม (บาท)", "Requested loan amount (baht)")}</dt>
             <dd>{formData.loanAmount || "0"}</dd>

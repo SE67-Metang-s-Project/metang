@@ -70,7 +70,7 @@ function StatusPill({ status }: { status: EvidenceStatus }) {
   const Icon = status === "verified" ? Check : status === "failed" ? X : Clock3;
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${config.cardClass}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${config.cardClass}`}>
       <span className={`flex size-5 items-center justify-center rounded-full ${config.iconClass}`}>
         <Icon aria-hidden="true" size={13} strokeWidth={3} />
       </span>
@@ -114,7 +114,7 @@ export default function PaymentEvidenceHistory({ payments = [] }: PaymentEvidenc
                 <Icon aria-hidden="true" size={17} strokeWidth={3} />
               </span>
               <div className="min-w-0">
-                <p className="text-lg font-bold leading-none">{count}</p>
+                <p className="text-lg font-semibold leading-none">{count}</p>
                 <p className="mt-1 text-[11px] font-semibold leading-none sm:text-xs">{config.label}</p>
               </div>
             </div>
@@ -123,7 +123,7 @@ export default function PaymentEvidenceHistory({ payments = [] }: PaymentEvidenc
       </div>
 
       <div className="overflow-hidden rounded-xl border border-gray-200">
-        <div className="hidden grid-cols-[minmax(0,1fr)_auto_auto] gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-600 sm:grid">
+        <div className="hidden grid-cols-[minmax(0,1fr)_auto_auto] gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600 sm:grid">
           <span>งวด</span>
           <span>จำนวนเงิน</span>
           <span className="min-w-28 text-right">สถานะ</span>

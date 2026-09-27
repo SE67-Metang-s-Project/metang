@@ -85,11 +85,11 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
               tabIndex={onStudentSelect ? 0 : undefined}
             >
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-[10px] bg-[#fff7ed] flex items-center justify-center font-bold text-[#ea580c] text-[18px] shrink-0 border border-[#ffedd5]">
+              <div className="w-12 h-12 rounded-[10px] bg-[#fff7ed] flex items-center justify-center font-semibold text-[#ea580c] text-[18px] shrink-0 border border-[#ffedd5]">
                 {student.initial}
               </div>
               <div className="flex-1">
-                <h4 className="font-bold text-[#1e293b] text-[15px] mb-0.5">{student.name}</h4>
+                <h4 className="font-semibold text-[#1e293b] text-[15px] mb-0.5">{student.name}</h4>
                 <p className="text-[12px] text-gray-400 font-medium">
                   {student.studentId} • {student.major} • {student.degree} • ปี {student.year}
                 </p>
@@ -118,7 +118,7 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
             <div className="flex flex-wrap gap-2">
               {/* ป้ายแสดงสถานะคำร้อง */}
               <span
-                className={`px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5 border w-fit ${getBadgeStyles(student.requestStatusColor)}`}
+                className={`px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 border w-fit ${getBadgeStyles(student.requestStatusColor)}`}
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${getBadgeDotColor(student.requestStatusColor)}`}
@@ -128,12 +128,12 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
 
               {/* ป้ายพฤติกรรมการชำระเงิน */}
               {student.paymentStatusType === "good" ? (
-                <span className="bg-[#dcfce7] text-[#16a34a] px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5 border border-[#bbf7d0] w-fit">
+                <span className="bg-[#dcfce7] text-[#16a34a] px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 border border-[#bbf7d0] w-fit">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
                   {student.paymentStatus}
                 </span>
               ) : (
-                <span className="bg-[#fee2e2] text-[#dc2626] px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5 border border-[#fecaca] w-fit">
+                <span className="bg-[#fee2e2] text-[#dc2626] px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 border border-[#fecaca] w-fit">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>
                   {student.paymentStatus}
                 </span>
@@ -192,11 +192,11 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
                   {/* ข้อมูลชื่อและรหัสนักศึกษา */}
                   <td className="py-3 px-4 border-r border-gray-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-[10px] bg-[#fff7ed] flex items-center justify-center font-bold text-[#ea580c] text-[16px] shrink-0 border border-[#ffedd5]">
+                      <div className="w-10 h-10 rounded-[10px] bg-[#fff7ed] flex items-center justify-center font-semibold text-[#ea580c] text-[16px] shrink-0 border border-[#ffedd5]">
                         {student.initial}
                       </div>
                       <div>
-                        <div className="font-bold text-gray-900">{student.name}</div>
+                        <div className="font-semibold text-gray-900">{student.name}</div>
                         <div className="text-[13px] text-gray-500 mt-0.5">
                           {student.studentId} • {student.major} • {student.degree} • ปี {student.year}
                         </div>
@@ -207,7 +207,7 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
                   {/* คอลัมน์สถานะคำร้องปัจจุบัน */}
                   <td className="py-3 px-4 border-r border-gray-200 whitespace-nowrap text-center">
                     <span
-                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border ${getBadgeStyles(student.requestStatusColor)}`}
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1.5 border ${getBadgeStyles(student.requestStatusColor)}`}
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${getBadgeDotColor(student.requestStatusColor)}`}
@@ -219,13 +219,13 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
                   {/* คอลัมน์พฤติกรรมชำระเงิน */}
                   <td className="py-3 px-4 border-r border-gray-200 whitespace-nowrap text-center">
                     {student.paymentStatusType === "good" ? (
-                      <span className="bg-[#dcfce7] text-[#16a34a] px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border border-[#bbf7d0]">
+                      <span className="bg-[#dcfce7] text-[#16a34a] px-3 py-1.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1.5 border border-[#bbf7d0]">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
                         {student.paymentStatus}
                       </span>
                     ) : (
                       <div className="flex flex-col items-center justify-center gap-1">
-                        <span className="bg-[#fee2e2] text-[#dc2626] px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border border-[#fecaca]">
+                        <span className="bg-[#fee2e2] text-[#dc2626] px-3 py-1.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1.5 border border-[#fecaca]">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>
                           {student.paymentStatus}
                         </span>
@@ -242,7 +242,7 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
                   </td>
 
                   {/* คอลัมน์หนี้คงเหลือ */}
-                  <td className="py-3 px-4 text-[#dc2626] font-bold whitespace-nowrap text-center">
+                  <td className="py-3 px-4 text-[#dc2626] font-semibold whitespace-nowrap text-center">
                     {student.balance}
                   </td>
                 </tr>

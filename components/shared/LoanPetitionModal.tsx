@@ -77,7 +77,7 @@ export default function LoanPetitionModal({
               <FileText size={22} />
             </div>
             <div className="min-w-0">
-              <h2 className="text-lg font-bold text-gray-900 leading-tight">
+              <h2 className="text-lg font-semibold text-gray-900 leading-tight">
                 {t("แบบขอยืมเงินทุนสวัสดิการ", "Loan Request")}
               </h2>
               <p className="mt-0.5 flex flex-col text-[13px] text-gray-500">
@@ -216,7 +216,7 @@ export default function LoanPetitionModal({
               onClick={() =>
                 downloadLoanPetitionPdf(request, documentViewTab === "attachment")
               }
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white bg-[#ea580c] hover:bg-[#c2410c] shadow-sm hover:shadow transition-all cursor-pointer active:scale-[0.98]"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-[#ea580c] hover:bg-[#c2410c] shadow-sm hover:shadow transition-all cursor-pointer active:scale-[0.98]"
             >
               <Download size={15} />
               <span>{t("ดาวน์โหลด PDF", "Download PDF")}</span>

@@ -30,7 +30,7 @@ export default function AdvisorStudentPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">นักศึกษาในความดูแล</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">นักศึกษาในความดูแล</h1>
         <p className="text-sm text-gray-500 mt-1">
           รายชื่อและประวัติการกู้ยืมของนักศึกษาภายใต้การดูแลที่ได้รับการโอนเงินแล้วและอยู่ระหว่างผ่อนชำระ
         </p>

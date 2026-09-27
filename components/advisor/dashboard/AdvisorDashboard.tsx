@@ -154,14 +154,17 @@ export default function AdvisorDashboard({
       <WelcomeCard
         name={userName}
         description="อาจารย์ที่ปรึกษา คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่"
+        titleClassName="font-semibold"
       />
 
       {/* ส่วนที่ 1: รายการคำร้องรอพิจารณา (ล่าสุด) */}
       <section className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-              คำร้องรอพิจารณา (ในฐานะอาจารย์ที่ปรึกษา)
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
+              คำร้องรอพิจารณา
+              <span aria-hidden="true" className="mx-2 inline-block size-2 rounded-full bg-current align-middle" />
+              ในฐานะอาจารย์ที่ปรึกษา
             </h2>
             <p className="text-gray-500 mt-1 text-sm">
               รายการคำขอขอกู้ยืมจากนักศึกษาที่อยู่ในความดูแลของท่าน
@@ -206,7 +209,7 @@ export default function AdvisorDashboard({
       <section className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">นักศึกษาในความดูแล</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">นักศึกษาในความดูแล</h2>
             <p className="text-sm text-gray-500 mt-0.5">
               รายชื่อและประวัติการกู้ยืมของนักศึกษาภายใต้การดูแล
             </p>

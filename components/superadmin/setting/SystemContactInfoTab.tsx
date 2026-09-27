@@ -430,13 +430,13 @@ export default function SystemContactInfoTab() {
       ) : errorMessage || !formData ? (
         <div className="bg-white rounded-2xl border border-red-200 p-10 text-center shadow-sm">
           <AlertCircle size={36} className="text-red-500 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-gray-900">
+          <h3 className="text-base font-semibold text-gray-900">
             {errorMessage || "เกิดข้อผิดพลาดในการโหลดข้อมูล"}
           </h3>
           <p className="text-sm text-gray-500 mt-1 mb-4">ไม่สามารถแสดงข้อมูลและการติดต่อได้</p>
           <button
             onClick={handleRefresh}
-            className="px-4 py-2 bg-[#ea580c] text-white text-sm font-bold rounded-lg hover:bg-[#c2410c] transition-colors"
+            className="px-4 py-2 bg-[#ea580c] text-white text-sm font-semibold rounded-lg hover:bg-[#c2410c] transition-colors"
           >
             ลองใหม่อีกครั้ง
           </button>
@@ -449,7 +449,7 @@ export default function SystemContactInfoTab() {
           <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
             <div className="pb-5 mb-6 border-b border-gray-100 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                   <Landmark size={22} className="text-[#ea580c]" />
                   ข้อมูลธนาคาร
                 </h3>
@@ -462,7 +462,7 @@ export default function SystemContactInfoTab() {
             <div className="space-y-5">
               {/* ชื่อธนาคาร (ใช้ตัวเลือกธนาคารของนักศึกษา) */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   ชื่อธนาคาร <span className="text-red-500">*</span>
                 </label>
                 <div className="space-y-3">
@@ -607,7 +607,7 @@ export default function SystemContactInfoTab() {
 
               {/* ชื่อเลขบัญชี (ชื่อบัญชี) */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   ชื่อเลขบัญชี / ชื่อบัญชี <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -624,7 +624,7 @@ export default function SystemContactInfoTab() {
 
               {/* หมายเลขบัญชี */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   หมายเลขบัญชี <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -647,7 +647,7 @@ export default function SystemContactInfoTab() {
           <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
             <div className="pb-5 mb-6 border-b border-gray-100 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                   <Building size={22} className="text-[#ea580c]" />
                   ที่อยู่และการติดต่อ
                 </h3>
@@ -661,7 +661,7 @@ export default function SystemContactInfoTab() {
               {/* ข้อมูลคณะและหน่วยงานสังกัด - FIXED ไม่สามารถแก้ไขได้ */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-bold text-gray-700">
+                  <label className="block text-sm font-semibold text-gray-700">
                     ข้อมูลคณะและหน่วยงานสังกัด <span className="text-red-500">*</span>
                   </label>
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
@@ -681,7 +681,7 @@ export default function SystemContactInfoTab() {
               {/* จุดติดต่อเจ้าหน้าที่ (TH - EN) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                     จุดติดต่อเจ้าหน้าที่ (ภาษาไทย) <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -696,7 +696,7 @@ export default function SystemContactInfoTab() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                     Contact Location (English)
                   </label>
                   <input
@@ -714,7 +714,7 @@ export default function SystemContactInfoTab() {
               {/* เบอร์โทรศัพท์หลัก, เบอร์ต่อภายใน, อีเมลติดต่อทางการ */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                     เบอร์โทรศัพท์หลัก <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -729,7 +729,7 @@ export default function SystemContactInfoTab() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                     เบอร์ต่อภายใน (Ext.)
                   </label>
                   <input
@@ -741,7 +741,7 @@ export default function SystemContactInfoTab() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                     อีเมลติดต่อทางการ <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -762,7 +762,7 @@ export default function SystemContactInfoTab() {
               {/* วันทำการ และ เวลาทำการ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                     วันทำการ (ภาษาไทย) <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -777,7 +777,7 @@ export default function SystemContactInfoTab() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                     Working Days (Auto Map)
                   </label>
                   <input
@@ -790,7 +790,7 @@ export default function SystemContactInfoTab() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                     เวลาทำการ (ภาษาไทย) <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -805,7 +805,7 @@ export default function SystemContactInfoTab() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                     Working Hours (Auto Map)
                   </label>
                   <input
@@ -820,7 +820,7 @@ export default function SystemContactInfoTab() {
 
               {/* หมายเหตุวันหยุด */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                   หมายเหตุวันหยุด
                 </label>
                 <input
@@ -839,7 +839,7 @@ export default function SystemContactInfoTab() {
           =================================================== */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles size={14} className="text-[#ea580c]" />
                 ตัวอย่างการแสดงผลบนหน้านักศึกษา
               </span>
@@ -852,7 +852,7 @@ export default function SystemContactInfoTab() {
               {/* บัญชีรับชำระเงิน */}
               <div className="bg-gradient-to-br from-orange-500/5 via-amber-500/5 to-orange-500/10 rounded-xl p-5 border border-orange-200/80 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                  <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
                     <CreditCard size={16} className="text-[#ea580c]" />
                     บัญชีรับชำระเงินคืนกองทุน
                   </h4>
@@ -879,7 +879,7 @@ export default function SystemContactInfoTab() {
                   </div>
                   <div>
                     <span className="text-gray-500">เลขที่บัญชี: </span>
-                    <span className="font-mono font-bold text-orange-700 text-sm">
+                    <span className="font-mono font-semibold text-orange-700 text-sm">
                       {formData.accountNumber || "-"}
                     </span>
                   </div>
@@ -889,7 +889,7 @@ export default function SystemContactInfoTab() {
               {/* ติดต่อเจ้าหน้าที่กองทุน */}
               <div className="bg-gradient-to-br from-slate-500/5 via-gray-500/5 to-slate-500/10 rounded-xl p-5 border border-gray-200/80 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                  <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
                     <ShieldCheck size={16} className="text-[#ea580c]" />
                     ติดต่อเจ้าหน้าที่กองทุน
                   </h4>
@@ -974,7 +974,7 @@ export default function SystemContactInfoTab() {
                 type="button"
                 onClick={() => handleSave()}
                 disabled={isSaving}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 text-sm font-bold text-white bg-[#ea580c] hover:bg-[#c2410c] rounded-lg shadow-sm transition-all disabled:opacity-50"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-[#ea580c] hover:bg-[#c2410c] rounded-lg shadow-sm transition-all disabled:opacity-50"
               >
                 {isSaving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
                 บันทึกข้อมูล

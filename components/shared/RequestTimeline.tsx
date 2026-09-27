@@ -436,7 +436,7 @@ export default function RequestTimeline({
                 <div>
                   <h2
                     id="history-modal-title"
-                    className="text-base sm:text-lg font-bold text-gray-900 leading-tight"
+                    className="text-base sm:text-lg font-semibold text-gray-900 leading-tight"
                   >
                     {t("ประวัติการดำเนินการทั้งหมด", "Full activity log")}
                   </h2>
@@ -478,7 +478,7 @@ export default function RequestTimeline({
                               {badge.icon}
                               {badge.label}
                             </span>
-                            <strong className="block text-sm text-gray-900 font-bold">
+                            <strong className="block text-sm text-gray-900 font-semibold">
                               {localizeTimelineText(item.action, language)}
                             </strong>
                             <span className="text-sm text-gray-500 whitespace-nowrap">

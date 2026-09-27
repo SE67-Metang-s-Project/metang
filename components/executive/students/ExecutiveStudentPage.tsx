@@ -18,7 +18,7 @@ export default function ExecutiveStudentPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] mb-1">
+        <h1 className="text-xl sm:text-2xl font-semibold text-[#1e293b] mb-1">
           ข้อมูลนักศึกษาทั้งหมด
         </h1>
         <p className="text-[13px] text-gray-500">
@@ -31,4 +31,3 @@ export default function ExecutiveStudentPage({
     </div>
   );
 }
-

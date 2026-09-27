@@ -7,6 +7,7 @@ import { localizeStudentContent, useStudentLanguage } from "@/app/student/Studen
 import styles from "@/app/student/student.module.css";
 import BahtCoinIcon from "@/components/shared/BahtCoinIcon";
 import CardHeader from "@/components/shared/CardHeader";
+import AdaptiveKeyValueRow from "@/components/shared/AdaptiveKeyValueRow";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 
@@ -292,10 +293,10 @@ export default function TempLoanApprovalModal({
             title={t("ข้อมูลการกู้ยืม", "Loan Information")}
           />
           <dl>
-            <div>
-              <dt>{t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}</dt>
-              <dd>{formData.purpose || "-"}</dd>
-            </div>
+            <AdaptiveKeyValueRow
+              label={t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}
+              value={formData.purpose || "-"}
+            />
             <div className={styles.loanAmountRow}>
               <dt>{t("จำนวนเงินที่ขอกู้ยืม", "Requested loan amount")}</dt>
               <dd>{formData.loanAmount || "0"}</dd>

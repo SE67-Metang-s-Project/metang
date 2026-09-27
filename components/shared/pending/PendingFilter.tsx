@@ -118,7 +118,7 @@ export default function PendingFilter({
 
               {option.count !== undefined && option.count > 0 && (
                 <span
-                  className={`ml-2 inline-flex items-center justify-center px-1.5 min-w-[20px] h-5 text-[11px] font-bold rounded-full 
+                  className={`ml-2 inline-flex items-center justify-center px-1.5 min-w-[20px] h-5 text-[11px] font-semibold rounded-full
                     ${
                       isActive
                         ? "bg-[#ea580c] text-white"
