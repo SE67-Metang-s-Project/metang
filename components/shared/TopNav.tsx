@@ -48,8 +48,10 @@ export default function TopNav({
 }: TopNavProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const hasSidebar = Boolean(hasPersistentSidebar || onOpenSidebar);
+  const isStudentRole = role === "student" || userRole === "นักศึกษา";
+  const hasSidebar = !isStudentRole && Boolean(hasPersistentSidebar || onOpenSidebar);
   const shouldShowLogo = showLogo ?? !hasSidebar;
+  const canShowSidebarButton = !isStudentRole && showSidebarButton && Boolean(onOpenSidebar);
   const displayRole = userRole ?? (role ? ROLE_DISPLAY_NAMES[role] : undefined) ?? "ผู้ใช้งาน";
   const displayCode = userId ?? displayRole;
   const displayEmail = userEmail ?? (userId ? `${userId.toLowerCase()}@cmu.ac.th` : "user@cmu.ac.th");
@@ -82,9 +84,9 @@ export default function TopNav({
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white sm:h-20 ${hasPersistentSidebar ? "min-[1576px]:left-64" : ""}`}
+        className={`fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white sm:h-20 ${hasSidebar && hasPersistentSidebar ? "min-[1576px]:left-64" : ""}`}
       >
-        {showSidebarButton && onOpenSidebar ? (
+        {canShowSidebarButton ? (
           <div className="flex items-center pl-4 sm:pl-6 min-[1576px]:hidden">
             <button
               onClick={onOpenSidebar}

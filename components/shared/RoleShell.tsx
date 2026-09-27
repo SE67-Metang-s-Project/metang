@@ -22,25 +22,33 @@ export default function RoleShell({
   children,
 }: RoleShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isStudent = role === "student";
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-800">
-      <SideNav
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        role={role}
-      />
+      {!isStudent && (
+        <SideNav
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          role={role}
+        />
+      )}
 
-      <div className="flex-1 flex flex-col w-full min-h-screen min-[1576px]:ml-64 transition-all duration-300">
+      <div
+        className={`flex-1 flex flex-col w-full min-h-screen ${
+          !isStudent ? "min-[1576px]:ml-64" : ""
+        } transition-all duration-300`}
+      >
         <TopNav
-          onOpenSidebar={() => setIsSidebarOpen(true)}
+          onOpenSidebar={!isStudent ? () => setIsSidebarOpen(true) : undefined}
           userName={userName}
           userId={userId}
           role={role}
           userRole={userRole}
           userEmail={userEmail}
-          hasPersistentSidebar
-          showLogo={false}
+          hasPersistentSidebar={!isStudent}
+          showSidebarButton={!isStudent}
+          showLogo={isStudent}
         />
 
         <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">

@@ -37,7 +37,7 @@ const ALL_MENU_ITEMS: MenuItem[] = [
     title: "หน้าหลัก",
     icon: LayoutDashboard,
     href: (role) => `/${role}`,
-    roles: ["student", "advisor", "admin", "executive", "superadmin"],
+    roles: ["advisor", "admin", "executive", "superadmin"],
   },
 
   // ==========================================
@@ -111,6 +111,10 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
   const allowedMenus = ALL_MENU_ITEMS.filter((item) => item.roles.includes(activeRole));
 
   useBodyScrollLock(isOpen);
+
+  if (activeRole === "student" || role === "student") {
+    return null;
+  }
 
   return (
     <>
@@ -196,7 +200,6 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
               onChange={(e) => setDebugRole(e.target.value as UserRole)}
               className="w-full bg-white border border-orange-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block px-3 py-2 cursor-pointer shadow-sm"
             >
-              <option value="student">Student</option>
               <option value="advisor">Advisor</option>
               <option value="admin">Admin</option>
               <option value="executive">Executive</option>

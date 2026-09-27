@@ -19,6 +19,10 @@ export default function StudentTopNav({ userNameEn, ...props }: StudentTopNavPro
       onLanguageChange={setLanguage}
       userName={language === "en" && userNameEn ? userNameEn : props.userName}
       userRole={props.userRole === "นักศึกษา" ? t("นักศึกษา", "Student") : props.userRole}
+      showSidebarButton={false}
+      hasPersistentSidebar={false}
+      onOpenSidebar={undefined}
+      showLogo={true}
     />
   );
 }
