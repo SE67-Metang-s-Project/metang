@@ -234,10 +234,6 @@ async function main() {
           contactPhone: "053-935025",
           contactExt: "5025, 5026",
           contactEmail: "loan@nurse.cmu.ac.th",
-          contactHoursTh: "วันจันทร์ - วันศุกร์ เวลา 08:30 - 16:30 น.",
-          contactHoursEn: "Monday - Friday, 08:30 - 16:30",
-          contactClosedTh: "เว้นวันหยุดราชการและวันหยุดนักขัตฤกษ์",
-          contactClosedEn: "Excluding public and national holidays",
         },
       });
 

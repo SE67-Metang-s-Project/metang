@@ -98,7 +98,6 @@ export interface SystemContactInfoData {
   openingTimeTh: string; // เวลาทำการ (ภาษาไทย)
   openingTimeEn: string; // Working Hours (English)
   closedDaysNote: string; // หมายเหตุวันหยุด
-  closedDaysNoteEn: string; // Holiday note (English)
   updatedAt: string;
   updatedBy: string;
 }
@@ -122,8 +121,8 @@ async function loadCombinedData(): Promise<{
   const accountName = stored.accountName || primaryAcc?.accountName || FIXED_FACULTY_NAME;
   const accountNumber = stored.accountNumber || primaryAcc?.accountNumber || "";
 
-  const [openingDaysTh, openingTimeTh = ""] = stored.contactHoursTh.split(" เวลา ");
-  const [openingDaysEn, openingTimeEn = ""] = stored.contactHoursEn.split(", ");
+  const openingDaysTh = addressData.openingHours?.split(" เวลา ")[0] || "วันจันทร์ - วันศุกร์";
+  const openingTimeTh = addressData.openingHours?.split(" เวลา ")[1] || "08:30 - 16:30 น.";
 
   const combined: SystemContactInfoData = {
     bankName,
@@ -137,11 +136,10 @@ async function loadCombinedData(): Promise<{
     internalExt: stored.contactExt ?? addressData.internalExt ?? "",
     email: stored.contactEmail || addressData.email || "",
     openingDaysTh,
-    openingDaysEn,
+    openingDaysEn: translateDays(openingDaysTh),
     openingTimeTh,
-    openingTimeEn,
-    closedDaysNote: stored.contactClosedTh,
-    closedDaysNoteEn: stored.contactClosedEn,
+    openingTimeEn: translateTime(openingTimeTh),
+    closedDaysNote: addressData.closedDaysNote || "",
     updatedAt: addressData.updatedAt || primaryAcc?.updatedAt || "เมื่อสักครู่",
     updatedBy: addressData.updatedBy || primaryAcc?.updatedBy || "SuperAdmin",
   };
@@ -319,10 +317,6 @@ export default function SystemContactInfoTab() {
         contactPhone: formData.phone.trim(),
         contactExt: formData.internalExt?.trim() ?? "",
         contactEmail: formData.email.trim(),
-        contactHoursTh: `${formData.openingDaysTh.trim()} เวลา ${formData.openingTimeTh.trim()}`,
-        contactHoursEn: `${formData.openingDaysEn.trim()}, ${formData.openingTimeEn.trim()}`,
-        contactClosedTh: formData.closedDaysNote.trim(),
-        contactClosedEn: formData.closedDaysNoteEn.trim(),
       });
 
       if (saveError) {
@@ -825,10 +819,9 @@ export default function SystemContactInfoTab() {
               </div>
 
               {/* หมายเหตุวันหยุด */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+              <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                  หมายเหตุวันหยุด (ภาษาไทย)
+                  หมายเหตุวันหยุด
                 </label>
                 <input
                   type="text"
@@ -837,19 +830,6 @@ export default function SystemContactInfoTab() {
                   className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                   placeholder="เช่น เว้นวันหยุดราชการและวันหยุดนักขัตฤกษ์"
                 />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                    Holiday note (English)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.closedDaysNoteEn}
-                    onChange={(e) => handleFieldChange("closedDaysNoteEn", e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                    placeholder="e.g. Excluding public and national holidays"
-                  />
-                </div>
               </div>
             </div>
           </div>
