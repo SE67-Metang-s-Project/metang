@@ -3,12 +3,15 @@ import { getSignedInContext } from "@/lib/loan-auth";
 import { isUuid } from "@/lib/loan-validation";
 import { prisma } from "@/lib/prisma";
 import { canReadRepaymentSlip } from "@/lib/slip-access";
-import { signSlipUrl } from "@/lib/slip-storage";
+import { SLIP_REDIRECT_CACHE_CONTROL, signSlipUrl } from "@/lib/slip-storage";
 
 type Params = { params: Promise<{ id: string }> };
 
 // The slip bucket is private, so this route is the only way to read a repayment slip: the signed
-// URL is minted per request and never stored, and authorization re-runs on every image load.
+// URL is minted per request and never stored. Authorization runs on every request that reaches
+// the server; the browser may reuse a 302 for up to SLIP_REDIRECT_CACHE_CONTROL's max-age, keyed
+// on the session cookie (Vary: Cookie), so a revoked role keeps access to an already-opened slip
+// for at most that long - within the signed URL's own lifetime anyway.
 // Mirrors app/api/fund-transactions/[id]/slip/route.ts, which does the same for disbursement
 // evidence - the only differences are the id space (uuid, not BigInt) and the access rule.
 /**
@@ -25,21 +28,30 @@ type Params = { params: Promise<{ id: string }> };
  * @add 500:ApiErrorResponse
  */
 export async function GET(_request: Request, { params }: Params) {
+  const { id } = await params;
+  // Start the lookup now so it overlaps auth: one DB round trip per image instead of two. A
+  // PrismaPromise is lazy until .then/.catch, so this .catch starts it and keeps a rejection
+  // handled on the early returns; awaiting it below still rethrows. Only a well-formed uuid is
+  // looked up - Prisma rejects anything else (P2007).
+  const lookup = isUuid(id)
+    ? prisma.payment.findUnique({
+        where: { id },
+        select: { slipPath: true, loan: { select: { studentId: true } } },
+      })
+    : null;
+  lookup?.catch(() => {});
+
   // Authenticate before validating: unlike the admin routes, anyone signed in can reach this one,
-  // so an anonymous caller gets 401 rather than a hint about the expected id shape.
+  // so an anonymous caller gets 401 rather than a hint about the expected id shape. The lookup is
+  // not awaited until after this, so nothing about it (result, error, timing) reaches that caller.
   const context = await getSignedInContext();
   if (!context) return apiError("UNAUTHORIZED", "Authentication required", 401);
-
-  const { id } = await params;
-  if (!isUuid(id)) {
+  if (!lookup) {
     return apiError("VALIDATION_ERROR", "id must be a payment uuid, not an installment id", 422);
   }
 
   try {
-    const payment = await prisma.payment.findUnique({
-      where: { id },
-      select: { slipPath: true, loan: { select: { studentId: true } } },
-    });
+    const payment = await lookup;
     if (!payment?.slipPath) return apiError("NOT_FOUND", "Slip not found", 404);
 
     // A user can hold several roles; any one of them granting read is enough.
@@ -51,7 +63,7 @@ export async function GET(_request: Request, { params }: Params) {
     const url = await signSlipUrl({ path: payment.slipPath });
     return new Response(null, {
       status: 302,
-      headers: { Location: url, "Cache-Control": "no-store" },
+      headers: { Location: url, "Cache-Control": SLIP_REDIRECT_CACHE_CONTROL, Vary: "Cookie" },
     });
   } catch (error) {
     console.error("Unable to sign repayment slip URL", error);

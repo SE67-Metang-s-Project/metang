@@ -98,9 +98,20 @@ export async function uploadSlip({
   }
 }
 
+/** How long a signed slip URL stays valid. */
+export const SLIP_URL_TTL_SECONDS = 300;
+
+/**
+ * Cache-Control for the slip routes' 302. The browser may reuse the redirect (and so the signed
+ * URL it points at) for a while, but it must expire at least 60s before the token does, or a
+ * cached redirect would lead to an expired URL. Pair it with `Vary: Cookie` so a different or
+ * missing session - the next user on a shared browser - misses the cache and is re-authorized.
+ */
+export const SLIP_REDIRECT_CACHE_CONTROL = `private, max-age=${SLIP_URL_TTL_SECONDS - 60}`;
+
 export async function signSlipUrl({
   path,
-  expiresInSeconds = 300,
+  expiresInSeconds = SLIP_URL_TTL_SECONDS,
 }: {
   path: string;
   expiresInSeconds?: number;

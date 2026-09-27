@@ -14,7 +14,13 @@ test("the storage path is never returned - the route 302s to a freshly signed UR
   // The bucket is private and has no RLS, so this route is the only way to read a repayment slip.
   assert.match(route, /const url = await signSlipUrl\(\{ path: payment\.slipPath \}\);/);
   assert.match(route, /status: 302/);
-  assert.match(route, /headers: \{ Location: url, "Cache-Control": "no-store" \}/);
+  // The browser may reuse the redirect briefly, keyed on the session cookie so the next user on a
+  // shared browser misses the cache and is re-authorized (lib/slip-storage.ts ties the max-age to
+  // the signed URL's lifetime).
+  assert.match(
+    route,
+    /headers: \{ Location: url, "Cache-Control": SLIP_REDIRECT_CACHE_CONTROL, Vary: "Cookie" \}/,
+  );
 
   // A signed URL is minted per request and never persisted, so nothing may echo the raw path.
   assert.doesNotMatch(route, /apiOk\(/);
@@ -51,22 +57,38 @@ test("a malformed id is 422 and names the id; a missing slip is 404", () => {
   assert.match(route, /select: \{ slipPath: true, loan: \{ select: \{ studentId: true \} \} \}/);
 
   // Anyone signed in can reach this route, so authentication precedes validation - an anonymous
-  // caller gets 401, not a hint about the id format.
-  assert.ok(route.indexOf("getSignedInContext()") < route.indexOf("isUuid(id)"));
+  // caller gets 401, not a hint about the id format. The lookup starts before auth so the two
+  // overlap, but only for a well-formed uuid: Prisma rejects anything else (P2007).
+  assert.match(route, /const lookup = isUuid\(id\)\s*\? prisma\.payment\.findUnique\(/);
+  assert.ok(route.indexOf('"UNAUTHORIZED"') < route.indexOf('"VALIDATION_ERROR"'));
 });
 
 test("stays in step with the disbursement slip route it mirrors", () => {
   // Both routes solve the same problem; if one gains a guard the other should too.
   for (const shared of [
     /const context = await getSignedInContext\(\);/,
-    /"Cache-Control": "no-store"/,
+    /"Cache-Control": SLIP_REDIRECT_CACHE_CONTROL, Vary: "Cookie"/,
     /status: 302/,
     /roles\.some\(/,
     /return apiError\("INTERNAL_ERROR", "Unable to read slip", 500\);/,
+    // Starts the lazy PrismaPromise so it overlaps auth, and keeps an early return from leaving
+    // an unhandled rejection behind.
+    /lookup\??\.catch\(\(\) => \{\}\);/,
   ]) {
     assert.match(route, shared);
     assert.match(fundRoute, shared);
   }
+
+  // Lookup started, then auth awaited, then the lookup awaited inside the try (so a DB error is
+  // still the JSON 500) - and a 401 never waits on or reads the lookup.
+  for (const source of [route, fundRoute]) {
+    assert.ok(source.indexOf("const lookup =") < source.indexOf("await getSignedInContext()"));
+    assert.ok(source.indexOf("await getSignedInContext()") < source.indexOf("= await lookup;"));
+    assert.ok(source.indexOf("try {") < source.indexOf("= await lookup;"));
+  }
+  // BigInt(id) now runs outside the try, so the digits-only guard must come first.
+  assert.match(fundRoute, /const lookup = prisma\.fundTransaction\.findUnique\(/);
+  assert.ok(fundRoute.indexOf("/^\\d{1,18}$/.test(id)") < fundRoute.indexOf("id: BigInt(id)"));
 });
 
 test("the OpenAPI contract documents a 302, not a JSON body", () => {
