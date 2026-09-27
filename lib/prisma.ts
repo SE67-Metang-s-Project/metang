@@ -19,7 +19,11 @@ const readOperations = new Set([
 
 const createPrismaClient = () => {
   const base = new PrismaClient({
-    adapter: new PrismaPg({ connectionString, idleTimeoutMillis: 60_000 }),
+    // A cold connection to the Supabase pooler costs ~1.3s (DNS + TCP + TLS + SASL to Singapore),
+    // so keep idle ones for 5 minutes rather than reconnecting after a short pause. If the pooler
+    // drops an idle connection first, the adapter's pool "error" listener absorbs it and pg-pool
+    // discards the client - the next query just reconnects, as it would after a timeout.
+    adapter: new PrismaPg({ connectionString, idleTimeoutMillis: 300_000 }),
     transactionOptions: { maxWait: 10_000 },
   });
 
