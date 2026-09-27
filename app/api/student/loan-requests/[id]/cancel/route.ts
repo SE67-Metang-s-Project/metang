@@ -2,13 +2,22 @@ import { apiError, apiOk } from "@/lib/api-response";
 import { LoanStatus } from "@/lib/generated/prisma/client";
 import { getStudentContext } from "@/lib/loan-auth";
 import { isLoanId } from "@/lib/loan-validation";
+import { isSameOrigin } from "@/lib/request-security";
 import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/serialization";
 import { studentLoanSelect } from "@/db/queries/loan-requests";
 
 type Params = { params: Promise<{ id: string }> };
 
-const terminalStatuses: LoanStatus[] = ["disbursed", "closed", "rejected", "cancelled"];
+// pending_disbursement is included: once the executive approves, the admin may already be sending
+// the transfer, so the student can no longer pull the request out from under it.
+const terminalStatuses: LoanStatus[] = [
+  "pending_disbursement",
+  "disbursed",
+  "closed",
+  "rejected",
+  "cancelled",
+];
 
 /**
  * Cancel the current student's active loan request.
@@ -17,10 +26,17 @@ const terminalStatuses: LoanStatus[] = ["disbursed", "closed", "rejected", "canc
  * @auth cookieAuth
  * @response 200:LoanRequestDetailResponse
  * @add 401:ApiErrorResponse
+ * @add 403:ApiErrorResponse
  * @add 404:ApiErrorResponse
  * @add 409:ApiErrorResponse
  */
-export async function POST(_request: Request, { params }: Params) {
+export async function POST(request: Request, { params }: Params) {
+  // Cancel sends no body, so validateJsonRequest (which requires application/json) does not
+  // apply - check same-origin directly instead.
+  if (!isSameOrigin(request)) {
+    return apiError("FORBIDDEN", "A same-origin request is required", 403);
+  }
+
   const context = await getStudentContext();
   if (!context) return apiError("UNAUTHORIZED", "Authentication required", 401);
 
