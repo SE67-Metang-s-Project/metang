@@ -73,30 +73,45 @@ export function downloadLoanPetitionPdf(
         ${styles}
         <style>
           @page {
-            size: A4 portrait;
-            margin: 8mm 10mm;
+            size: 210mm 297mm;
+            margin: 0;
           }
           *, *::before, *::after {
-            box-sizing: border-box;
+            box-sizing: border-box !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           html, body {
             background: white !important;
             margin: 0 !important;
             padding: 0 !important;
-            width: 100% !important;
-            height: auto !important;
-            overflow: visible !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            min-height: 297mm !important;
+            max-height: 297mm !important;
+            overflow: hidden !important;
           }
           #loan-petition-document-paper {
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 auto !important;
-            padding: 0 !important;
+            width: 210mm !important;
+            min-width: 210mm !important;
+            max-width: 210mm !important;
+            height: 297mm !important;
+            min-height: 297mm !important;
+            max-height: 297mm !important;
+            margin: 0 !important;
+            padding: 10mm 14mm !important;
+            box-sizing: border-box !important;
             border: none !important;
             box-shadow: none !important;
             background: white !important;
-            position: static !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
             transform: none !important;
+            overflow: hidden !important;
+            page-break-inside: avoid !important;
+            page-break-after: avoid !important;
+            page-break-before: avoid !important;
           }
           table {
             border-collapse: collapse !important;
@@ -106,10 +121,8 @@ export function downloadLoanPetitionPdf(
           }
         </style>
       </head>
-      <body class="${document.body.className}" style="background: white !important; margin: 0 !important; padding: 0 !important;">
-        <div style="width: 100%; display: flex; justify-content: center; background: white;">
-          ${paperEl.outerHTML}
-        </div>
+      <body class="${document.body.className}" style="background: white !important; margin: 0 !important; padding: 0 !important; width: 210mm !important; height: 297mm !important; overflow: hidden !important;">
+        ${paperEl.outerHTML}
       </body>
     </html>
   `);
@@ -378,13 +391,23 @@ export default function LoanPetitionDocument({
       <style>{`
         @media print {
           @page {
-            size: A4 portrait;
-            margin: 8mm 10mm;
+            size: 210mm 297mm;
+            margin: 0;
+          }
+          *, *::before, *::after {
+            box-sizing: border-box !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           html, body {
             background: white !important;
-            height: auto !important;
-            overflow: visible !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            min-height: 297mm !important;
+            max-height: 297mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
           }
           body * {
             visibility: hidden !important;
@@ -397,14 +420,23 @@ export default function LoanPetitionDocument({
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
+            width: 210mm !important;
+            min-width: 210mm !important;
+            max-width: 210mm !important;
+            height: 297mm !important;
+            min-height: 297mm !important;
+            max-height: 297mm !important;
             margin: 0 !important;
-            padding: 0 !important;
+            padding: 10mm 14mm !important;
             border: none !important;
             box-shadow: none !important;
             background: white !important;
             transform: none !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            page-break-inside: avoid !important;
+            page-break-after: avoid !important;
+            page-break-before: avoid !important;
           }
           table {
             border-collapse: collapse !important;
@@ -416,7 +448,10 @@ export default function LoanPetitionDocument({
       `}</style>
 
       {showDownloadButton && (
-        <div className="w-[794px] mb-3 flex justify-end print:hidden">
+        <div
+          className="w-[210mm] max-w-full mb-3 flex justify-end print:hidden"
+          style={{ width: "210mm", maxWidth: "100%" }}
+        >
           <button
             type="button"
             onClick={() => downloadLoanPetitionPdf(request)}
@@ -428,20 +463,32 @@ export default function LoanPetitionDocument({
         </div>
       )}
 
-      {/* แผ่นเอกสารจำลอง A4: กำหนดความกว้างตายตัวที่ 794px (ประมาณ A4 @ 96dpi) ไม่ให้ย่อขยาย */}
+      {/* แผ่นเอกสารจำลอง A4: กำหนดขนาดตายตัว A4 (width: 210mm, height: 297mm) เพื่อให้ขนาดเป๊ะทั้งบนจอและพิมพ์ PDF */}
       <div
         id="loan-petition-document-paper"
-        className="w-[794px] min-w-[794px] bg-white border border-gray-200 rounded-xl shadow-md p-10 md:p-12 text-gray-900 font-sans text-[14px] leading-[2.1] shrink-0 print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-full print:rounded-none"
+        className="w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] max-h-[297mm] bg-white border border-gray-200 rounded-xl shadow-md text-gray-900 font-sans text-[13px] leading-[1.85] shrink-0 box-border print:shadow-none print:border-none print:m-0 print:rounded-none"
+        style={{
+          width: "210mm",
+          minWidth: "210mm",
+          maxWidth: "210mm",
+          height: "297mm",
+          minHeight: "297mm",
+          maxHeight: "297mm",
+          boxSizing: "border-box",
+          padding: "10mm 14mm",
+          margin: "0 auto",
+          overflow: "hidden",
+        }}
       >
         {/* หัวกระดาษ */}
-        <div className="text-center mb-6 pb-2 border-b border-gray-100">
-          <div className="text-[12px] font-medium text-gray-500 tracking-wider mb-1">
+        <div className="text-center mb-3 pb-1.5 border-b border-gray-100">
+          <div className="text-[11.5px] font-medium text-gray-500 tracking-wider mb-0.5">
             คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่
           </div>
-          <h1 className="text-[19px] font-bold text-gray-900 tracking-tight">
+          <h1 className="text-[17px] font-bold text-gray-900 tracking-tight">
             แบบขอยืมเงินทุนสวัสดิการนักศึกษาคณะพยาบาลศาสตร์
           </h1>
-          <div className="flex justify-between items-center text-[11px] text-gray-500 mt-2">
+          <div className="flex justify-between items-center text-[10.5px] text-gray-500 mt-1">
             <span>รหัสคำร้อง: {request.id}</span>
             <span>วันที่ยื่นคำร้อง: {request.submitDate}</span>
           </div>
@@ -495,7 +542,7 @@ export default function LoanPetitionDocument({
         </div>
 
         {/* ย่อหน้าที่ 2: ระเบียบและข้อตกลงการยืมเงิน */}
-        <div className="mt-4 text-justify">
+        <div className="mt-2.5 text-justify">
           <p>
             ข้าพเจ้าได้ทราบระเบียบการยืมเงินกองทุนสวัสดิการ และยินดีปฏิบัติตามทุกประการ ข้าพเจ้าจะนำเงิน
             จำนวน{" "}
@@ -521,28 +568,28 @@ export default function LoanPetitionDocument({
         </div>
 
         {/* ตารางกำหนดการผ่อนชำระ */}
-        <div className="mt-3.5 mb-3">
-          <div className="text-[13.5px] font-bold text-gray-900 mb-1.5 flex items-center justify-between">
+        <div className="mt-2 mb-1.5">
+          <div className="text-[12.5px] font-bold text-gray-900 mb-1 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <span>กำหนดการผ่อนชำระ</span>
-              <span className="text-[12px] font-normal text-gray-600">
+              <span className="text-[11.5px] font-normal text-gray-600">
                 (จำนวน {termsCount} งวด)
               </span>
             </span>
-            <span className="text-[12px] font-normal text-gray-500">
+            <span className="text-[11.5px] font-normal text-gray-500">
               ยอดรวมทั้งสิ้น {formatAmount(request.amount)} บาท
             </span>
           </div>
 
           <div className="overflow-hidden border border-gray-300 rounded-md">
-            <table className="w-full text-left border-collapse text-[13px] leading-relaxed">
+            <table className="w-full text-left border-collapse text-[12px] leading-snug">
               <thead>
                 <tr className="bg-gray-50 text-gray-700 border-b border-gray-300 font-semibold text-center">
-                  <th className="py-1.5 px-3 w-[20%] border-r border-gray-200">งวดที่</th>
-                  <th className="py-1.5 px-4 text-left w-[50%] border-r border-gray-200">
+                  <th className="py-1 px-3 w-[20%] border-r border-gray-200">งวดที่</th>
+                  <th className="py-1 px-3 text-left w-[50%] border-r border-gray-200">
                     กำหนดชำระภายในวันที่
                   </th>
-                  <th className="py-1.5 px-4 text-right w-[30%]">
+                  <th className="py-1 px-3 text-right w-[30%]">
                     จำนวนเงิน (บาท)
                   </th>
                 </tr>
@@ -550,22 +597,22 @@ export default function LoanPetitionDocument({
               <tbody className="divide-y divide-gray-200 bg-white">
                 {installments.map((inst) => (
                   <tr key={inst.installmentNumber} className="hover:bg-gray-50/50">
-                    <td className="py-1.5 px-3 text-center font-medium text-gray-800 border-r border-gray-200">
+                    <td className="py-1 px-3 text-center font-medium text-gray-800 border-r border-gray-200">
                       งวดที่ {inst.installmentNumber}
                     </td>
-                    <td className="py-1.5 px-4 text-gray-800 border-r border-gray-200">
+                    <td className="py-1 px-3 text-gray-800 border-r border-gray-200">
                       {inst.dueDate}
                     </td>
-                    <td className="py-1.5 px-4 text-right font-semibold text-gray-900">
+                    <td className="py-1 px-3 text-right font-semibold text-gray-900">
                       {formatAmount(inst.expectedAmount)}
                     </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr className="bg-gray-50 text-gray-900 border-t border-gray-300 font-semibold text-[12.5px]">
-                  <td colSpan={2} className="py-1.5 px-4 text-right border-r border-gray-200">รวมทั้งสิ้น</td>
-                  <td className="py-1.5 px-4 text-right font-bold text-gray-900">
+                <tr className="bg-gray-50 text-gray-900 border-t border-gray-300 font-semibold text-[11.5px]">
+                  <td colSpan={2} className="py-1 px-3 text-right border-r border-gray-200">รวมทั้งสิ้น</td>
+                  <td className="py-1 px-3 text-right font-bold text-gray-900">
                     {formatAmount(request.amount)}
                   </td>
                 </tr>
@@ -574,7 +621,7 @@ export default function LoanPetitionDocument({
           </div>
         </div>
 
-        <div className="mt-2 text-justify">
+        <div className="mt-1.5 text-justify">
           <p>
             หากข้าพเจ้ามิได้นำเงินจำนวนดังกล่าวมาคืนให้ตามกำหนดเวลาแล้ว
             ข้าพเจ้ายินดีให้คณะพยาบาลศาสตร์ดำเนินการตามที่เห็นสมควร
@@ -582,8 +629,8 @@ export default function LoanPetitionDocument({
         </div>
 
         {/* ส่วนลายมือชื่อ (ใต้ข้อตกลง) */}
-        <div className="mt-4 flex justify-end">
-          <div className="text-left min-w-[280px] space-y-3">
+        <div className="mt-2.5 flex justify-end">
+          <div className="text-left min-w-[280px] space-y-1.5">
             <div>
               <div className="flex items-center justify-start gap-1">
                 <span>(ลงชื่อ)</span>
@@ -592,7 +639,7 @@ export default function LoanPetitionDocument({
                 </span>
                 <span>ผู้ยืม</span>
               </div>
-              <div className="text-[12px] text-gray-500 pl-10 text-left">
+              <div className="text-[11px] text-gray-500 pl-10 text-left">
                 วันที่ {request.submitDate}
               </div>
             </div>
@@ -605,7 +652,7 @@ export default function LoanPetitionDocument({
                 </span>
                 <span>พยาน</span>
               </div>
-              <div className="text-[12px] text-gray-500 pl-10 text-left">
+              <div className="text-[11px] text-gray-500 pl-10 text-left">
                 วันที่ {adminApproval?.date || request.submitDate}
               </div>
             </div>
@@ -613,55 +660,55 @@ export default function LoanPetitionDocument({
         </div>
 
         {/* เส้นประคั่นกลางหน้ากระดาษ */}
-        <hr className="border-t-2 border-dotted border-gray-300 my-6" />
+        <hr className="border-t-2 border-dotted border-gray-300 my-3" />
 
         {/* ส่วนล่าง: ความคิดเห็นการพิจารณา & หลักฐานการรับเงิน (ไม่ทำเป็นกล่อง) */}
-        <div className="grid grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-2 gap-6 items-start">
           {/* คอลัมน์ซ้าย: ความคิดเห็นอาจารย์ที่ปรึกษา & เจ้าหน้าที่ / พยาน */}
-          <div className="space-y-8">
+          <div className="space-y-3">
             {/* 1. ความคิดเห็นของอาจารย์ที่ปรึกษา */}
-            <div className="space-y-2">
-              <div className="font-bold text-gray-900 text-[14px]">
+            <div className="space-y-1">
+              <div className="font-bold text-gray-900 text-[13px]">
                 ความคิดเห็นของอาจารย์ที่ปรึกษา
               </div>
-              <p className="text-[13px] text-gray-800 italic min-h-[36px] py-1 break-words whitespace-pre-wrap">
+              <p className="text-[12px] text-gray-800 italic min-h-[26px] py-0.5 break-words whitespace-pre-wrap leading-tight">
                 &ldquo;{advisorApproval?.comment || "เห็นควรให้การสนับสนุนการขอยืมเงินทุนสวัสดิการเพื่อการศึกษา"}&rdquo;
               </p>
-              <div className="text-center pt-1">
+              <div className="text-center pt-0.5">
                 <div className="flex items-center justify-center gap-1">
                   <span>(ลงชื่อ)</span>
                   <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[140px] inline-block">
                     {advisorName}
                   </span>
                 </div>
-                <div className="text-[12px] text-gray-600 mt-0.5">
+                <div className="text-[11px] text-gray-600 mt-0.5">
                   ({advisorName})
                 </div>
-                <div className="text-[11px] text-gray-500">
+                <div className="text-[10px] text-gray-500">
                   อาจารย์ที่ปรึกษา · วันที่ {advisorApproval?.date || request.submitDate}
                 </div>
               </div>
             </div>
 
             {/* 2. ความคิดเห็นของเจ้าหน้าที่ / พยาน */}
-            <div className="space-y-2">
-              <div className="font-bold text-gray-900 text-[14px]">
+            <div className="space-y-1">
+              <div className="font-bold text-gray-900 text-[13px]">
                 ความคิดเห็นของเจ้าหน้าที่ / พยาน
               </div>
-              <p className="text-[13px] text-gray-800 italic min-h-[36px] py-1 break-words whitespace-pre-wrap">
+              <p className="text-[12px] text-gray-800 italic min-h-[26px] py-0.5 break-words whitespace-pre-wrap leading-tight">
                 &ldquo;{adminApproval?.comment || "ตรวจสอบเอกสารและคุณสมบัติครบถ้วน ถูกต้องตามระเบียบ"}&rdquo;
               </p>
-              <div className="text-center pt-1">
+              <div className="text-center pt-0.5">
                 <div className="flex items-center justify-center gap-1">
                   <span>(ลงชื่อ)</span>
                   <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[140px] inline-block">
                     {adminName}
                   </span>
                 </div>
-                <div className="text-[12px] text-gray-600 mt-0.5">
+                <div className="text-[11px] text-gray-600 mt-0.5">
                   ({adminName})
                 </div>
-                <div className="text-[11px] text-gray-500">
+                <div className="text-[10px] text-gray-500">
                   เจ้าหน้าที่ · วันที่ {adminApproval?.date || request.submitDate}
                 </div>
               </div>
@@ -669,61 +716,61 @@ export default function LoanPetitionDocument({
           </div>
 
           {/* คอลัมน์ขวา: ความคิดเห็นของผู้บริหาร & ได้รับเงินเรียบร้อยแล้ว */}
-          <div className="space-y-8">
+          <div className="space-y-3">
             {/* 3. ความคิดเห็นของผู้บริหาร */}
-            <div className="space-y-2">
-              <div className="font-bold text-gray-900 text-[14px]">
+            <div className="space-y-1">
+              <div className="font-bold text-gray-900 text-[13px]">
                 ความคิดเห็นของผู้บริหาร
               </div>
-              <p className="text-[13px] text-gray-800 italic min-h-[36px] py-1 break-words whitespace-pre-wrap">
+              <p className="text-[12px] text-gray-800 italic min-h-[26px] py-0.5 break-words whitespace-pre-wrap leading-tight">
                 &ldquo;{executiveApproval?.comment || "อนุมัติให้ขอยืมเงินทุนสวัสดิการนักศึกษาตามระเบียบ"}&rdquo;
               </p>
-              <div className="text-center pt-1">
+              <div className="text-center pt-0.5">
                 <div className="flex items-center justify-center gap-1">
                   <span>(ลงชื่อ)</span>
                   <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[150px] inline-block">
                     {executiveName}
                   </span>
                 </div>
-                <div className="text-[12px] font-semibold text-gray-800 mt-0.5">
+                <div className="text-[11px] font-semibold text-gray-800 mt-0.5">
                   ({executiveName})
                 </div>
-                <div className="text-[11px] text-gray-600">ผู้บริหารคณะพยาบาลศาสตร์</div>
-                <div className="text-[11px] text-gray-500">
+                <div className="text-[10px] text-gray-600">ผู้บริหารคณะพยาบาลศาสตร์</div>
+                <div className="text-[10px] text-gray-500">
                   วันที่ {executiveApproval?.date || request.submitDate}
                 </div>
               </div>
             </div>
 
             {/* 4. ได้รับเงินเรียบร้อยแล้ว */}
-            <div className="space-y-2">
-              <div className="font-bold text-gray-900 text-[14px]">
+            <div className="space-y-1">
+              <div className="font-bold text-gray-900 text-[13px]">
                 ได้รับเงินเรียบร้อยแล้ว
               </div>
 
-              <div className="space-y-2.5 pt-1">
+              <div className="space-y-1.5 pt-0.5">
                 <div>
-                  <div className="flex items-center justify-between text-[13px]">
+                  <div className="flex items-center justify-between text-[12px]">
                     <span className="text-gray-700">(ลงชื่อ)</span>
                     <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[130px] text-center">
                       {request.name}
                     </span>
                     <span className="text-gray-700">ผู้ยืม</span>
                   </div>
-                  <div className="text-[11px] text-gray-500 text-right pr-8 mt-0.5">
+                  <div className="text-[10px] text-gray-500 text-right pr-8 mt-0.5">
                     วันที่ {disburseDate}
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between text-[13px]">
+                  <div className="flex items-center justify-between text-[12px]">
                     <span className="text-gray-700">(ลงชื่อ)</span>
                     <span className="font-semibold text-gray-900 border-b border-dotted border-gray-400 px-2 min-w-[130px] text-center">
                       {disburseActor}
                     </span>
                     <span className="text-gray-700">ผู้จ่าย</span>
                   </div>
-                  <div className="text-[11px] text-gray-500 text-right pr-8 mt-0.5">
+                  <div className="text-[10px] text-gray-500 text-right pr-8 mt-0.5">
                     วันที่ {disburseDate}
                   </div>
                 </div>

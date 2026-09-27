@@ -128,4 +128,19 @@ test("Download petition PDF is available during transfer confirmation and after 
     /ความคิดเห็นของ admin/,
     "LoanPetitionDocument must not display 'ความคิดเห็นของ admin'",
   );
+  assert.match(
+    loanPetitionDocContent,
+    /210mm/,
+    "LoanPetitionDocument must define width 210mm for A4",
+  );
+  assert.match(
+    loanPetitionDocContent,
+    /297mm/,
+    "LoanPetitionDocument must define height 297mm for A4",
+  );
+  assert.match(
+    loanPetitionDocContent,
+    /@page\s*\{\s*size:\s*210mm\s+297mm/,
+    "LoanPetitionDocument must set @page size to 210mm 297mm for exact print / save PDF",
+  );
 });
