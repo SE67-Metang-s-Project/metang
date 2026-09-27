@@ -100,6 +100,22 @@ test("Backend loan-requests query enforces approvedAmount <= current.amount and 
   );
 });
 
+test("Admin cannot return an executive-returned request to the student", () => {
+  const queryFile = read("db/queries/loan-requests.ts");
+  const route = read("app/api/admin/loan-requests/[id]/decision/route.ts");
+
+  assert.match(
+    queryFile,
+    /wasReturnedByExecutive && decision === "returned"[\s\S]{0,80}RETURN_AFTER_EXECUTIVE_RETURN/,
+    "The guard must cover the returned decision, before the approval branch",
+  );
+  assert.match(
+    route,
+    /RETURN_AFTER_EXECUTIVE_RETURN[\s\S]{0,200}"CONFLICT"[\s\S]{0,120}409/,
+    "The route must map the guard to 409 CONFLICT",
+  );
+});
+
 test("RequestsCard enforces system loan limit and prevents typing beyond limits (like student)", () => {
   const requestsCard = read("components/shared/pending/RequestsCard.tsx");
 

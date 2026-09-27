@@ -339,6 +339,7 @@ export type AdminDecisionErrorCode =
   | "INVALID_APPROVED_AMOUNT"
   | "AMOUNT_EXCEEDS_REQUEST"
   | "AMOUNT_CHANGE_REQUIRED"
+  | "RETURN_AFTER_EXECUTIVE_RETURN"
   | "REDUCTION_COMMENT_REQUIRED";
 
 export class AdminDecisionError extends Error {
@@ -380,6 +381,15 @@ export async function decideAdminLoanRequest({
     const pending = latestPendingApproval(current.approvals, "admin");
     if (!pending) throw new AdminDecisionError("STALE_DECISION");
 
+    // An executive return only asks the admin to change the amount; the loan never goes back to
+    // the student after one, so the admin may approve a lower amount or reject, but not return.
+    const wasReturnedByExecutive = current.approvals.some(
+      (approval) => approval.step === "executive" && approval.decision === "returned",
+    );
+    if (wasReturnedByExecutive && decision === "returned") {
+      throw new AdminDecisionError("RETURN_AFTER_EXECUTIVE_RETURN");
+    }
+
     if (decision === "approved") {
       if (approvedAmount === null || approvedAmount <= 0 || !Number.isSafeInteger(approvedAmount)) {
         throw new AdminDecisionError("INVALID_APPROVED_AMOUNT");
@@ -387,9 +397,6 @@ export async function decideAdminLoanRequest({
       if (approvedAmount > current.amount) {
         throw new AdminDecisionError("AMOUNT_EXCEEDS_REQUEST");
       }
-      const wasReturnedByExecutive = current.approvals.some(
-        (approval) => approval.step === "executive" && approval.decision === "returned",
-      );
       if (wasReturnedByExecutive && approvedAmount >= current.amount) {
         throw new AdminDecisionError("AMOUNT_CHANGE_REQUIRED");
       }

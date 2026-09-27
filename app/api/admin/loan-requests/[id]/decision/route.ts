@@ -88,6 +88,13 @@ export async function POST(request: Request, { params }: Params) {
         422,
       );
     }
+    if (error instanceof AdminDecisionError && error.code === "RETURN_AFTER_EXECUTIVE_RETURN") {
+      return apiError(
+        "CONFLICT",
+        "A request returned by the executive cannot be returned to the student",
+        409,
+      );
+    }
     if (error instanceof AdminDecisionError && error.code === "REDUCTION_COMMENT_REQUIRED") {
       return apiError(
         "VALIDATION_ERROR",
