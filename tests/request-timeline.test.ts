@@ -356,7 +356,7 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   });
   assert.equal(stepWithComments[1].commentTitle, "ความคิดเห็นของอาจารย์ที่ปรึกษา");
   assert.equal(stepWithComments[1].comment, "เห็นชอบตามที่ร้องขอ");
-  assert.equal(stepWithComments[2].commentTitle, "ความคิดเห็นของเจ้าหน้าที่");
+  assert.equal(stepWithComments[2].commentTitle, "ความคิดเห็นของเจ้าหน้าที่ / พยาน");
   assert.equal(stepWithComments[2].comment, "เอกสารครบถ้วนสมบูรณ์");
   assert.equal(stepWithComments[3].commentTitle, "ความคิดเห็นของผู้บริหาร");
   assert.equal(stepWithComments[3].comment, "อนุมัติเงินกู้ยืม");

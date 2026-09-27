@@ -617,7 +617,7 @@ export default function LoanPetitionDocument({
 
         {/* ส่วนล่าง: ความคิดเห็นการพิจารณา & หลักฐานการรับเงิน (ไม่ทำเป็นกล่อง) */}
         <div className="grid grid-cols-2 gap-8 items-start">
-          {/* คอลัมน์ซ้าย: ความคิดเห็นอาจารย์ที่ปรึกษา & admin */}
+          {/* คอลัมน์ซ้าย: ความคิดเห็นอาจารย์ที่ปรึกษา & เจ้าหน้าที่ / พยาน */}
           <div className="space-y-8">
             {/* 1. ความคิดเห็นของอาจารย์ที่ปรึกษา */}
             <div className="space-y-2">
@@ -643,10 +643,10 @@ export default function LoanPetitionDocument({
               </div>
             </div>
 
-            {/* 2. ความคิดเห็นของ admin */}
+            {/* 2. ความคิดเห็นของเจ้าหน้าที่ / พยาน */}
             <div className="space-y-2">
               <div className="font-bold text-gray-900 text-[14px]">
-                ความคิดเห็นของ admin
+                ความคิดเห็นของเจ้าหน้าที่ / พยาน
               </div>
               <p className="text-[13px] text-gray-800 italic min-h-[36px] py-1 break-words whitespace-pre-wrap">
                 &ldquo;{adminApproval?.comment || "ตรวจสอบเอกสารและคุณสมบัติครบถ้วน ถูกต้องตามระเบียบ"}&rdquo;

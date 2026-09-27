@@ -53,6 +53,7 @@ const timelineEnglishText: Record<string, string> = {
   "กรุณายืนยันการรับเงิน": "Please confirm receipt of funds",
   "เจ้าหน้าที่การเงิน": "Finance officer",
   "ความคิดเห็นของเจ้าหน้าที่การเงิน": "Finance officer's comment",
+  "ความคิดเห็นของเจ้าหน้าที่ / พยาน": "Admin / Witness comment",
 };
 
 function localizeTimelineText(value: string, language: StudentLanguage) {

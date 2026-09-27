@@ -11,6 +11,7 @@ import type {
   LoanRequestStatus,
   LoanScheduleItem,
   LoanTimelineItem,
+  PaymentAccount,
 } from "@/app/student/studentMockData";
 import { normalizeBankName } from "@/lib/bank-name";
 
@@ -499,7 +500,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
       actorName = app.decider?.fullNameTh ?? "เจ้าหน้าที่";
       if (app.decision === "approved") {
         stepTitle = "เจ้าหน้าที่ตรวจสอบเอกสารผ่านการอนุมัติ";
-        commentTitle = "ความคิดเห็นของเจ้าหน้าที่";
+        commentTitle = "ความคิดเห็นของเจ้าหน้าที่ / พยาน";
       } else if (app.decision === "returned") {
         stepTitle = "เจ้าหน้าที่ส่งกลับแก้ไข";
         commentTitle = getRevisionCommentTitle(
@@ -711,6 +712,21 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
       location: "คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่",
       openingHours: "จันทร์ - ศุกร์ 08:30 - 16:30 น.",
     },
+  };
+}
+
+/** The public system-settings read (GET /api/system-settings) as the payment modal's account. */
+export function mapToPaymentAccount(
+  setting: { bankName: string; accountName: string; accountNumber: string } | null,
+): PaymentAccount | null {
+  if (!setting) return null;
+  return {
+    bankLabel: "ธนาคาร",
+    bankName: setting.bankName,
+    accountNameLabel: "ชื่อบัญชี",
+    accountName: setting.accountName,
+    accountNumberLabel: "เลขที่บัญชี",
+    accountNumber: setting.accountNumber,
   };
 }
 

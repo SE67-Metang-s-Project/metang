@@ -300,7 +300,7 @@ export function buildFiveStepTimeline({
       actor: admHistApproved?.actor || adminApproval?.actorName || "เจ้าหน้าที่",
       isCompleted: true,
       comment: hideComments ? undefined : adminApproval?.comment || admHistApproved?.comment,
-      commentTitle: hideComments ? undefined : "ความคิดเห็นของเจ้าหน้าที่",
+      commentTitle: hideComments ? undefined : "ความคิดเห็นของเจ้าหน้าที่ / พยาน",
     };
   } else if (isStep3Pending) {
     step3Item = {
@@ -618,7 +618,7 @@ export function buildFullActionHistory({
         commentTitle = item.action.includes("อาจารย์")
           ? "ความคิดเห็นของอาจารย์ที่ปรึกษา"
           : item.action.includes("เจ้าหน้าที่")
-            ? "ความคิดเห็นของเจ้าหน้าที่"
+            ? "ความคิดเห็นของเจ้าหน้าที่ / พยาน"
             : item.action.includes("ผู้บริหาร")
               ? "ความคิดเห็นของผู้บริหาร"
               : "ความคิดเห็น";
@@ -759,7 +759,7 @@ export function buildFullActionHistory({
             )
           : adminApproval.decision === "rejected"
             ? "เหตุผลที่ไม่อนุมัติ"
-            : "ความคิดเห็นของเจ้าหน้าที่",
+            : "ความคิดเห็นของเจ้าหน้าที่ / พยาน",
       statusType:
         adminApproval.decision === "approved"
           ? "approved"

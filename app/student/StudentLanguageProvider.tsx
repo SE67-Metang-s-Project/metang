@@ -105,6 +105,7 @@ const studentTranslations: Record<string, string> = {
   "ผู้บริหารไม่อนุมัติคำร้อง": "Executive rejected the request",
   "ความคิดเห็นของอาจารย์ที่ปรึกษา": "Advisor's comment",
   "ความคิดเห็นของเจ้าหน้าที่": "Admin's comment",
+  "ความคิดเห็นของเจ้าหน้าที่ / พยาน": "Admin / Witness comment",
   "ความคิดเห็นของผู้บริหาร": "Executive's comment",
   "ข้อความจากอาจารย์ที่ปรึกษา": "Message from the advisor",
   "ข้อความจากเจ้าหน้าที่": "Message from admin",

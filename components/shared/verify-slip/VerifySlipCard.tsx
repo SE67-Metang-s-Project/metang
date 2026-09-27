@@ -1074,11 +1074,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                       <button
                         onClick={handleConfirmSlipDecision}
                         disabled={isBusy}
-                        className={`px-5 py-2 text-white font-bold rounded-xl text-[13px] shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
-                          slipConfirmAction === "approve"
-                            ? "bg-[#059669] hover:bg-[#047857]"
-                            : "bg-red-600 hover:bg-red-700"
-                        }`}
+                        className="px-5 py-2 text-white font-bold rounded-xl text-[13px] shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-red-600 hover:bg-red-700"
                         type="button"
                       >
                         {isBusy ? "กำลังบันทึก..." : "ยืนยัน"}

@@ -116,4 +116,16 @@ test("Download petition PDF is available during transfer confirmation and after 
     /\{isDisbursed && \(\s*<button[\s\S]*?ดาวน์โหลดแบบคำร้อง \(PDF\)[\s\S]*?<\/button>\s*\)\}/,
     "RequestsCard must guard download button so it only appears when disbursement is completed",
   );
+
+  const loanPetitionDocContent = read("components/shared/disburse-debt/LoanPetitionDocument.tsx");
+  assert.match(
+    loanPetitionDocContent,
+    /ความคิดเห็นของเจ้าหน้าที่ \/ พยาน/,
+    "LoanPetitionDocument must display 'ความคิดเห็นของเจ้าหน้าที่ / พยาน' for admin comments",
+  );
+  assert.doesNotMatch(
+    loanPetitionDocContent,
+    /ความคิดเห็นของ admin/,
+    "LoanPetitionDocument must not display 'ความคิดเห็นของ admin'",
+  );
 });
