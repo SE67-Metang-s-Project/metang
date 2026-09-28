@@ -40,7 +40,7 @@ Updates and upgrades (Section 6) need a copy of the source repository and Node.j
 | Framework | Next.js `16.2.10`, React `19.2.4` |
 | Database access | Prisma `7.9.1` with PostgreSQL |
 | Node.js | `24` (from `.nvmrc`) |
-| Database migrations | 18, the latest is `20260927130000_loan_request_id_cycle` |
+| Database migrations | 19, the latest is `20260929120000_loan_request_transfer_confirmed` |
 
 ### 1.4 Conventions
 
@@ -817,7 +817,7 @@ before you need them in an incident.]`
    ```
 
    Expected result: the value recorded at backup time (Section 5.2, step 4). For version
-   0.1.0 with all migrations applied, it is `20260927130000_loan_request_id_cycle`.
+   0.1.0 with all migrations applied, it is `20260929120000_loan_request_transfer_confirmed`.
 2. Run:
 
    ```sql
@@ -1193,9 +1193,11 @@ cannot reach.
 | `CONFLICT`: `The request is no longer available for resubmission` (409) / `คำร้องมีการเปลี่ยนแปลง`: `คำร้องนี้ได้รับการเปลี่ยนแปลงหรือไม่อยู่ในสถานะที่แก้ไขได้แล้ว กรุณาตรวจสอบสถานะล่าสุด` | The request is no longer in `returned` status. | Reload the page. |
 | `CONFLICT`: `The request can no longer be cancelled` (409) | The request is already approved by the executive (`pending_disbursement`), disbursed, closed, rejected, or cancelled. | Expected. |
 | `ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง` / `Unable to cancel the request. Please try again.` | Cancel failed. | Retry. Check logs if it repeats. |
+| `CONFLICT`: `The loan transfer cannot be confirmed in its current status` (409) | The student confirmed receipt of a loan that is not `disbursed`, for example one still `pending_disbursement`. A loan that is already confirmed returns 200 and is not changed. | Expected. The student confirms after the admin records the transfer. |
+| `ไม่สามารถยืนยันการรับเงินได้ กรุณาลองใหม่อีกครั้ง` / `Unable to confirm receipt. Please try again.` | Confirm receipt failed. | Retry. Check logs if it repeats. |
 | `ยังเตรียมข้อมูลไม่สำเร็จ กรุณาลองอีกครั้ง` / `The request could not be prepared. Please try again.` | The correction form could not load. | Retry. |
 | `CONFLICT`: `The request changed; please try again` (409) | Another change happened at the same time. | Retry. |
-| `INTERNAL_ERROR`: `Unable to list loan requests`, `Unable to create loan request`, `Unable to resubmit loan request`, `Unable to cancel loan request`, `Unable to list advisors` (500) | Server error. | Check Vercel logs. |
+| `INTERNAL_ERROR`: `Unable to list loan requests`, `Unable to create loan request`, `Unable to resubmit loan request`, `Unable to cancel loan request`, `Unable to confirm loan transfer`, `Unable to list advisors` (500) | Server error. | Check Vercel logs. |
 | `เกิดข้อผิดพลาดจากเซิร์ฟเวอร์`: `ระบบเซิร์ฟเวอร์ขัดข้องชั่วคราว กรุณารอสักครู่แล้วลองใหม่อีกครั้ง` / `The server is temporarily unavailable. Please wait a moment and try again.` | Student page received a 5xx error. | Check Vercel logs. |
 | `การเชื่อมต่อขัดข้อง`: `ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต` / `Unable to reach the server. Please check your internet connection.` (or `ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: <browser error>` / `Unable to reach the server <browser error>`) | The browser could not reach the server. | Check the network and site status. |
 | `เกิดข้อผิดพลาด`: `เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ กรุณาลองใหม่อีกครั้ง` / `An unexpected error occurred. Please try again.` | Other error. | Retry. Check logs. |
@@ -1214,6 +1216,7 @@ cannot reach.
 | `VALIDATION_ERROR`: `paidAt is invalid` / `paidAt cannot be in the future` (422) | The transfer date is missing, not a date, or in the future. | Enter the real transfer date. |
 | `INTERNAL_ERROR`: `Unable to upload slip` (500) | Supabase Storage refused the upload. | Check Storage settings (Section 9). |
 | `CONFLICT`: `You have no loan open for repayment` (409) / `ไม่มีสัญญาที่ต้องชำระคืน`: `ไม่พบสัญญากู้ยืมที่อยู่ระหว่างชำระคืน กรุณาตรวจสอบสถานะล่าสุด` | The student has no disbursed loan. | Expected. |
+| `CONFLICT`: `Confirm receipt of the loan transfer before repaying` (409, internal code `TRANSFER_NOT_CONFIRMED`) / `ยังไม่ได้ยืนยันการรับเงิน`: `กรุณายืนยันการรับเงินก่อนชำระ` / `Please confirm receipt before paying` | The student has not confirmed receipt of the disbursed loan. The check runs after the slip upload, so the uploaded file is then unused (Section 4.8). | The student clicks **ยืนยันการรับเงิน** first. |
 | `CONFLICT`: `A payment is already awaiting review` (409) / `มีหลักฐานการชำระรอตรวจสอบอยู่แล้ว`: `กรุณารอเจ้าหน้าที่ตรวจสอบหลักฐานการชำระครั้งก่อนให้เสร็จสิ้น แล้วจึงส่งหลักฐานใหม่` | A previous slip waits for review. | An admin reviews the earlier slip first. |
 | `VALIDATION_ERROR`: `amount exceeds the remaining repayment (<amount>)` (422) | The amount is more than the balance. | Enter the remaining amount or less. |
 | `CONFLICT`: `This loan has nothing left to repay` (409) / `ชำระครบแล้ว`: `สัญญากู้ยืมนี้ไม่มียอดค้างชำระแล้ว` | The loan is fully repaid. | Expected. |

@@ -22,6 +22,7 @@ const studentTranslations: Record<string, string> = {
   "กรุณารอเจ้าหน้าที่ตรวจสอบหลักฐานการชำระครั้งก่อนให้เสร็จสิ้น แล้วจึงส่งหลักฐานใหม่":
     "Please wait until the office reviews your previous payment evidence, then send new evidence.",
   "สัญญากู้ยืมนี้ไม่มียอดค้างชำระแล้ว": "This loan has no outstanding balance.",
+  "กรุณายืนยันการรับเงินก่อนชำระ": "Please confirm receipt before paying",
   "ไม่พบสัญญากู้ยืมที่อยู่ระหว่างชำระคืน กรุณาตรวจสอบสถานะล่าสุด":
     "No loan is open for repayment. Please check its latest status.",
   "ท่านมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว ระบบอนุญาตให้เปิดได้ครั้งละ 1 คำร้อง":

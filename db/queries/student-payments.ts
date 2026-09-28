@@ -39,6 +39,7 @@ export async function findRepayableLoanId(studentId: string) {
 export type StudentPaymentErrorCode =
   | "LOAN_NOT_FOUND"
   | "LOAN_NOT_DISBURSED"
+  | "TRANSFER_NOT_CONFIRMED"
   | "REVIEW_IN_PROGRESS"
   | "NOTHING_OUTSTANDING"
   | "AMOUNT_EXCEEDS_REMAINING";
@@ -77,10 +78,12 @@ export async function createStudentPayment({
     async (tx) => {
       const loan = await tx.loanRequest.findFirst({
         where: { id: loanId, studentId },
-        select: { id: true, status: true },
+        select: { id: true, status: true, transferConfirmedAt: true },
       });
       if (!loan) throw new StudentPaymentError("LOAN_NOT_FOUND");
       if (loan.status !== "disbursed") throw new StudentPaymentError("LOAN_NOT_DISBURSED");
+      // The student must first confirm they received the money (confirm-transfer).
+      if (!loan.transferConfirmedAt) throw new StudentPaymentError("TRANSFER_NOT_CONFIRMED");
 
       const alreadyUnderReview = await tx.payment.findFirst({
         where: { loanId, status: "pending_review" },

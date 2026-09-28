@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, LogIn, RefreshCw, X } from "lucide-react";
 import {
@@ -46,11 +46,6 @@ import {
   mapStudentPaymentError,
   type StudentUiError,
 } from "@/lib/student-error-mapper";
-import {
-  hasConfirmedTransfer,
-  saveTransferConfirmation,
-  subscribeToTransferConfirmation,
-} from "@/lib/student-transfer-confirmation";
 import { mapStudentLoanToActionRequest } from "@/lib/student-action-request";
 import { getBankLogoSrc } from "@/lib/bank-name";
 import styles from "@/app/student/student.module.css";
@@ -312,6 +307,20 @@ export default function StudentDashboard({
     }
   };
 
+  // Throws so LoanTimeline can show the error and keep the confirm button for a retry.
+  const confirmTransfer = async () => {
+    const response = await fetch(`/api/student/loan-requests/${currentLoanKey}/confirm-transfer`, {
+      method: "POST",
+    });
+    if (!response.ok) {
+      // A 409 means the loan moved on (no longer disbursed): show the latest.
+      if (response.status === 409) setRefreshKey((key) => key + 1);
+      throw new Error("Unable to confirm receipt");
+    }
+
+    setRefreshKey((key) => key + 1);
+  };
+
   const currentActiveLoan = activeLoanData === undefined ? defaultActiveLoan : activeLoanData;
   const currentInstallments = installments ?? [];
   const currentRequestStatus =
@@ -344,10 +353,10 @@ export default function StudentDashboard({
     currentActiveLoan && "id" in currentActiveLoan && currentActiveLoan.id
       ? currentActiveLoan.id
       : currentActiveLoan?.requestNumber;
-  const isTransferAccepted = useSyncExternalStore(
-    (onChange) => subscribeToTransferConfirmation(currentLoanKey, onChange),
-    () => hasConfirmedTransfer(currentLoanKey),
-    () => false,
+  const isTransferAccepted = Boolean(
+    currentActiveLoan &&
+      "isTransferConfirmed" in currentActiveLoan &&
+      currentActiveLoan.isTransferConfirmed,
   );
   const displayedActiveLoan =
     isTransferAccepted && currentActiveLoan
@@ -446,7 +455,7 @@ export default function StudentDashboard({
             onEditRequest={isActiveLoanReturned ? () => router.push("/student/loan/apply") : undefined}
             onConfirmTransfer={
               isWaitingForTransferConfirmation && hasAdminTransferredFunds
-                ? () => saveTransferConfirmation(currentLoanKey)
+                ? confirmTransfer
                 : undefined
             }
             onShowTransferSlip={

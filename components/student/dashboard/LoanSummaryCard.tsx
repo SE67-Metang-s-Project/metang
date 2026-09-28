@@ -16,6 +16,7 @@ export type ActiveLoanDisplay = {
   nextInstallmentNumber?: number | string;
   nextDueDate?: string;
   isDisbursed?: boolean;
+  isTransferConfirmed?: boolean;
   transferSlipImage?: string;
 };
 

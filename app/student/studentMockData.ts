@@ -123,6 +123,7 @@ export type LoanDetails = {
   additionalReason: string;
   downloadLabel: string;
   transferSlipImage: string;
+  isTransferConfirmed?: boolean;
   timeline: LoanTimelineItem[];
   schedule: LoanScheduleItem[];
   paymentHistory: LoanPaymentHistoryItem[];

@@ -171,6 +171,7 @@ export type RawStudentLoan = {
   submittedAt?: string | Date | null;
   cancelledAt?: string | Date | null;
   disbursedAt?: string | Date | null;
+  transferConfirmedAt?: string | Date | null;
   closedAt?: string | Date | null;
   createdAt?: string | Date;
   advisor?: {
@@ -253,6 +254,8 @@ export type ActiveLoanSummary = {
   nextInstallmentNumber: number;
   nextDueDate: string;
   isDisbursed: boolean;
+  // The student confirmed receipt of the transfer (stored server-side, not per browser).
+  isTransferConfirmed: boolean;
   transferSlipImage?: string;
 };
 
@@ -278,6 +281,7 @@ export function mapToActiveLoanSummary(loan: RawStudentLoan | null): ActiveLoanS
     nextInstallmentNumber: nextNumber,
     nextDueDate: nextDue,
     isDisbursed: loan.status === "disbursed",
+    isTransferConfirmed: Boolean(loan.transferConfirmedAt),
     transferSlipImage: loan.fundTransactions?.[0]?.id
       ? `/api/fund-transactions/${loan.fundTransactions[0].id}/slip`
       : undefined,
@@ -702,6 +706,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     transferSlipImage: disbursementTransactionId
       ? `/api/fund-transactions/${disbursementTransactionId}/slip`
       : "",
+    isTransferConfirmed: Boolean(loan.transferConfirmedAt),
     timeline,
     schedule,
     paymentHistory,

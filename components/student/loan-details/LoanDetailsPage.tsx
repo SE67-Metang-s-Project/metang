@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import type { InstallmentPayment, LoanDetails, PaymentAccount } from "@/app/student/studentMockData";
 import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
@@ -18,11 +18,6 @@ import LoanPetitionModal from "@/components/shared/LoanPetitionModal";
 import { mapStudentLoanToActionRequest } from "@/lib/student-action-request";
 import { getBankLogoSrc } from "@/lib/bank-name";
 import { mapNetworkError, mapStudentPaymentError } from "@/lib/student-error-mapper";
-import {
-  hasConfirmedTransfer,
-  saveTransferConfirmation,
-  subscribeToTransferConfirmation,
-} from "@/lib/student-transfer-confirmation";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
@@ -76,11 +71,7 @@ export default function LoanDetailsPage({ details, installments = [], profile }:
     Boolean(details.transferSlipImage && details.transferSlipImage.trim() !== "") ||
     details.timeline.some((item) => Boolean(item.transferDetails));
   const transferConfirmationKey = details.id ?? details.requestNumber;
-  const isTransferAccepted = useSyncExternalStore(
-    (onChange) => subscribeToTransferConfirmation(transferConfirmationKey, onChange),
-    () => hasConfirmedTransfer(transferConfirmationKey),
-    () => false,
-  );
+  const isTransferAccepted = Boolean(details.isTransferConfirmed);
   const displayedTimeline = details.timeline.filter((item) => !item.isUpcoming);
   const transferTimelineItem = displayedTimeline.find((item) => Boolean(item.transferDetails));
   const isRepaymentInProgress =
@@ -158,6 +149,18 @@ export default function LoanDetailsPage({ details, installments = [], profile }:
     router.refresh();
   };
 
+  // Throws so LoanTimeline can show the error and keep the confirm button for a retry.
+  const confirmTransfer = async () => {
+    const response = await fetch(
+      `/api/student/loan-requests/${transferConfirmationKey}/confirm-transfer`,
+      { method: "POST" },
+    );
+    // Refresh either way: on success the server now holds the confirmation, and a 409 means the
+    // loan moved on.
+    router.refresh();
+    if (!response.ok) throw new Error("Unable to confirm receipt");
+  };
+
   const handleCancelRequest = async () => {
     if (!details.id) return;
 
@@ -231,7 +234,7 @@ export default function LoanDetailsPage({ details, installments = [], profile }:
         isTransferAccepted={isTransferAccepted}
         onConfirmTransfer={
           isWaitingForTransferConfirmation && hasAdminTransferredFunds
-            ? () => saveTransferConfirmation(details.id ?? details.requestNumber)
+            ? confirmTransfer
             : undefined
         }
         onShowTransferSlip={hasAdminTransferredFunds ? () => setIsSlipModalOpen(true) : undefined}

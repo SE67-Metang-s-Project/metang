@@ -1,0 +1,34 @@
+info:
+  name: 09_3 receipt cannot be confirmed before the money is sent
+  type: http
+  seq: 9
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/student/loan-requests/{{walkLoanId}}/confirm-transfer"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+    - expression: res.body.error.code
+      operator: eq
+      value: "CONFLICT"
+  scripts:
+    - type: before-request
+      code: |-
+        // The walk degrades instead of cascading when an earlier step failed to produce an id.
+        if (!bru.getVar("walkLoanId")) bru.runner.skipRequest();
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  Step 09 left the walk loan pending_disbursement. Only a disbursed loan can have its receipt
+  confirmed, so the route answers 409 and writes nothing.

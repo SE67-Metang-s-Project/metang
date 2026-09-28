@@ -132,6 +132,9 @@ const loans: Prisma.LoanRequestCreateManyInput[] = loanScenarios.map(
     cancelledBy: number === 210 ? id(110) : number === 211 ? id(3) : null,
     disbursedAt:
       status === LoanStatus.disbursed || status === LoanStatus.closed ? dateFromNow(-60) : null,
+    // Both have payments, so the migration's backfill rule counts them as received.
+    transferConfirmedAt:
+      status === LoanStatus.disbursed || status === LoanStatus.closed ? dateFromNow(-60) : null,
     closedAt: status === LoanStatus.closed ? dateFromNow(-10) : null,
     createdAt: dateFromNow(-14),
   }),

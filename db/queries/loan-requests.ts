@@ -55,6 +55,7 @@ const loanSummarySelect = {
   cancelledAt: true,
   cancelledBy: true,
   disbursedAt: true,
+  transferConfirmedAt: true,
   closedAt: true,
   createdAt: true,
   updatedAt: true,

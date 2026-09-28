@@ -132,6 +132,10 @@
             "type": "string",
             "nullable": true
           },
+          "transferConfirmedAt": {
+            "type": "string",
+            "nullable": true
+          },
           "closedAt": {
             "type": "string",
             "nullable": true
@@ -308,6 +312,7 @@
           "cancelledAt",
           "cancelledBy",
           "disbursedAt",
+          "transferConfirmedAt",
           "closedAt",
           "createdAt",
           "updatedAt",
@@ -392,6 +397,10 @@
                 "nullable": true
               },
               "disbursedAt": {
+                "type": "string",
+                "nullable": true
+              },
+              "transferConfirmedAt": {
                 "type": "string",
                 "nullable": true
               },
@@ -571,6 +580,7 @@
               "cancelledAt",
               "cancelledBy",
               "disbursedAt",
+              "transferConfirmedAt",
               "closedAt",
               "createdAt",
               "updatedAt",
@@ -1123,6 +1133,10 @@
             "type": "string",
             "nullable": true
           },
+          "transferConfirmedAt": {
+            "type": "string",
+            "nullable": true
+          },
           "closedAt": {
             "type": "string",
             "nullable": true
@@ -1282,6 +1296,7 @@
           "cancelledAt",
           "cancelledBy",
           "disbursedAt",
+          "transferConfirmedAt",
           "closedAt",
           "createdAt",
           "updatedAt",
@@ -1358,6 +1373,10 @@
                   "nullable": true
                 },
                 "disbursedAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "transferConfirmedAt": {
                   "type": "string",
                   "nullable": true
                 },
@@ -1520,6 +1539,7 @@
                 "cancelledAt",
                 "cancelledBy",
                 "disbursedAt",
+                "transferConfirmedAt",
                 "closedAt",
                 "createdAt",
                 "updatedAt",
@@ -1619,6 +1639,10 @@
             "nullable": true
           },
           "disbursedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "transferConfirmedAt": {
             "type": "string",
             "nullable": true
           },
@@ -1772,6 +1796,7 @@
           "cancelledAt",
           "cancelledBy",
           "disbursedAt",
+          "transferConfirmedAt",
           "closedAt",
           "createdAt",
           "updatedAt",
@@ -1846,6 +1871,10 @@
                 "nullable": true
               },
               "disbursedAt": {
+                "type": "string",
+                "nullable": true
+              },
+              "transferConfirmedAt": {
                 "type": "string",
                 "nullable": true
               },
@@ -1999,6 +2028,7 @@
               "cancelledAt",
               "cancelledBy",
               "disbursedAt",
+              "transferConfirmedAt",
               "closedAt",
               "createdAt",
               "updatedAt",
@@ -2075,6 +2105,10 @@
             "nullable": true
           },
           "disbursedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "transferConfirmedAt": {
             "type": "string",
             "nullable": true
           },
@@ -2208,6 +2242,7 @@
           "cancelledAt",
           "cancelledBy",
           "disbursedAt",
+          "transferConfirmedAt",
           "closedAt",
           "createdAt",
           "updatedAt",
@@ -2283,6 +2318,10 @@
                   "nullable": true
                 },
                 "disbursedAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "transferConfirmedAt": {
                   "type": "string",
                   "nullable": true
                 },
@@ -2416,6 +2455,7 @@
                 "cancelledAt",
                 "cancelledBy",
                 "disbursedAt",
+                "transferConfirmedAt",
                 "closedAt",
                 "createdAt",
                 "updatedAt",
@@ -2593,6 +2633,10 @@
             "type": "string",
             "nullable": true
           },
+          "transferConfirmedAt": {
+            "type": "string",
+            "nullable": true
+          },
           "closedAt": {
             "type": "string",
             "nullable": true
@@ -2752,6 +2796,7 @@
           "cancelledAt",
           "cancelledBy",
           "disbursedAt",
+          "transferConfirmedAt",
           "closedAt",
           "createdAt",
           "updatedAt",
@@ -2826,6 +2871,10 @@
                 "nullable": true
               },
               "disbursedAt": {
+                "type": "string",
+                "nullable": true
+              },
+              "transferConfirmedAt": {
                 "type": "string",
                 "nullable": true
               },
@@ -2988,6 +3037,7 @@
               "cancelledAt",
               "cancelledBy",
               "disbursedAt",
+              "transferConfirmedAt",
               "closedAt",
               "createdAt",
               "updatedAt",
@@ -3064,6 +3114,10 @@
             "nullable": true
           },
           "disbursedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "transferConfirmedAt": {
             "type": "string",
             "nullable": true
           },
@@ -3226,6 +3280,7 @@
           "cancelledAt",
           "cancelledBy",
           "disbursedAt",
+          "transferConfirmedAt",
           "closedAt",
           "createdAt",
           "updatedAt",
@@ -3302,6 +3357,10 @@
                   "nullable": true
                 },
                 "disbursedAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "transferConfirmedAt": {
                   "type": "string",
                   "nullable": true
                 },
@@ -3464,6 +3523,7 @@
                 "cancelledAt",
                 "cancelledBy",
                 "disbursedAt",
+                "transferConfirmedAt",
                 "closedAt",
                 "createdAt",
                 "updatedAt",
@@ -3918,6 +3978,10 @@
                 "type": "string",
                 "nullable": true
               },
+              "transferConfirmedAt": {
+                "type": "string",
+                "nullable": true
+              },
               "closedAt": {
                 "type": "string",
                 "nullable": true
@@ -4038,6 +4102,7 @@
               "cancelledAt",
               "cancelledBy",
               "disbursedAt",
+              "transferConfirmedAt",
               "closedAt",
               "createdAt",
               "updatedAt",
@@ -4124,6 +4189,10 @@
             "nullable": true
           },
           "disbursedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "transferConfirmedAt": {
             "type": "string",
             "nullable": true
           },
@@ -4247,6 +4316,7 @@
           "cancelledAt",
           "cancelledBy",
           "disbursedAt",
+          "transferConfirmedAt",
           "closedAt",
           "createdAt",
           "updatedAt",
@@ -4332,6 +4402,10 @@
                   "nullable": true
                 },
                 "disbursedAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "transferConfirmedAt": {
                   "type": "string",
                   "nullable": true
                 },
@@ -4455,6 +4529,7 @@
                 "cancelledAt",
                 "cancelledBy",
                 "disbursedAt",
+                "transferConfirmedAt",
                 "closedAt",
                 "createdAt",
                 "updatedAt",
@@ -4544,6 +4619,10 @@
                 "nullable": true
               },
               "disbursedAt": {
+                "type": "string",
+                "nullable": true
+              },
+              "transferConfirmedAt": {
                 "type": "string",
                 "nullable": true
               },
@@ -4667,6 +4746,7 @@
               "cancelledAt",
               "cancelledBy",
               "disbursedAt",
+              "transferConfirmedAt",
               "closedAt",
               "createdAt",
               "updatedAt",
@@ -4865,6 +4945,10 @@
             "nullable": true
           },
           "disbursedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "transferConfirmedAt": {
             "type": "string",
             "nullable": true
           },
@@ -5139,6 +5223,7 @@
           "cancelledAt",
           "cancelledBy",
           "disbursedAt",
+          "transferConfirmedAt",
           "closedAt",
           "createdAt",
           "updatedAt",
@@ -5271,6 +5356,10 @@
                   "nullable": true
                 },
                 "disbursedAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "transferConfirmedAt": {
                   "type": "string",
                   "nullable": true
                 },
@@ -5545,6 +5634,7 @@
                 "cancelledAt",
                 "cancelledBy",
                 "disbursedAt",
+                "transferConfirmedAt",
                 "closedAt",
                 "createdAt",
                 "updatedAt",
@@ -8673,6 +8763,86 @@
         }
       }
     },
+    "/student/loan-requests/{id}/confirm-transfer": {
+      "post": {
+        "operationId": "post-student-loan-requests-{id}-confirm-transfer",
+        "summary": "Confirm that the current student received the money of their disbursed loan.",
+        "description": "Repayment slips are accepted only after this confirmation. Calling it again on a confirmed loan returns the loan unchanged, so a double click or a second device is safe.",
+        "tags": [
+          "Student loans"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^REQ\\d{8}\\d{4}$"
+            },
+            "example": "REQ202609060000",
+            "description": "The loan request id."
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanRequestDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/student/loan-requests/{id}/resubmit": {
       "post": {
         "operationId": "post-student-loan-requests-{id}-resubmit",
@@ -8798,7 +8968,7 @@
       "post": {
         "operationId": "post-student-payments",
         "summary": "Submit a repayment slip for the student's own loan (multipart/form-data: a `slip` file -",
-        "description": "Takes no loan id: a student may hold only one non-terminal loan, so the server resolves the disbursed one itself and the client needs a single request. The slip is stored privately and read back only through GET /api/payments/{id}/slip. Only one submission may await review at a time, and the amount may not exceed what is still owed on the loan (422). Repayment history is served by GET /api/student/loan-requests/{id}, which returns the loan's payments.",
+        "description": "Takes no loan id: a student may hold only one non-terminal loan, so the server resolves the disbursed one itself and the client needs a single request. The slip is stored privately and read back only through GET /api/payments/{id}/slip. The student must first confirm receipt of the loan transfer (POST /api/student/loan-requests/{id}/confirm-transfer), or the submission is refused with 409. Only one submission may await review at a time, and the amount may not exceed what is still owed on the loan (422). Repayment history is served by GET /api/student/loan-requests/{id}, which returns the loan's payments.",
         "tags": [
           "Student payments"
         ],

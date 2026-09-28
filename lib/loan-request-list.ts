@@ -85,6 +85,7 @@ export type LoanRequestListItem = {
   cancelledAt: string | null;
   cancelledBy: string | null;
   disbursedAt: string | null;
+  transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;

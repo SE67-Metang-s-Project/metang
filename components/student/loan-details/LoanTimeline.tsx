@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { LoanTimelineItem } from "@/app/student/studentMockData";
@@ -18,7 +18,8 @@ type LoanTimelineProps = {
   onDownloadRequest?: () => void;
   confirmTransferLabel?: string;
   isTransferAccepted?: boolean;
-  onConfirmTransfer?: () => void;
+  // Saves the confirmation on the server; rejects when it could not be saved.
+  onConfirmTransfer?: () => Promise<void>;
   onCancelRequest?: () => void;
   showCancelRequest?: boolean;
   onEditRequest?: () => void;
@@ -77,12 +78,15 @@ export default function LoanTimeline({
   const { language, t } = useStudentLanguage();
   const [isTransferConfirmed, setIsTransferConfirmed] = useState(false);
   const [isConfirmationSuccessOpen, setIsConfirmationSuccessOpen] = useState(false);
+  // A ref, not state: a second click in the same render must not send a second request.
+  const isConfirmingTransfer = useRef(false);
   const successDismiss = useModalDismiss({
     onClose: () => router.replace("/student"),
     isOpen: isConfirmationSuccessOpen,
   });
   const hasAcceptedTransfer = isTransferAccepted || isTransferConfirmed;
-  const effectiveRequestStatus = hasAcceptedTransfer
+  // A closed loan keeps its own status: its confirmation is stored (or backfilled) server-side.
+  const effectiveRequestStatus = hasAcceptedTransfer && requestStatus !== "closed"
     ? "repaying"
     : requestStatus ?? getRequestStatus(items, false);
   const shouldShowConfirmation =
@@ -112,10 +116,24 @@ export default function LoanTimeline({
       )
     : history;
 
-  const handleConfirmTransfer = () => {
-    setIsTransferConfirmed(true);
-    setIsConfirmationSuccessOpen(true);
-    onConfirmTransfer?.();
+  const handleConfirmTransfer = async () => {
+    if (!onConfirmTransfer || isConfirmingTransfer.current) return;
+
+    isConfirmingTransfer.current = true;
+    try {
+      await onConfirmTransfer();
+      setIsTransferConfirmed(true);
+      setIsConfirmationSuccessOpen(true);
+    } catch {
+      window.alert(
+        t(
+          "ไม่สามารถยืนยันการรับเงินได้ กรุณาลองใหม่อีกครั้ง",
+          "Unable to confirm receipt. Please try again.",
+        ),
+      );
+    } finally {
+      isConfirmingTransfer.current = false;
+    }
   };
 
   const requestActions =

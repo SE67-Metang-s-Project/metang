@@ -203,6 +203,11 @@ export function mapNetworkError(error?: unknown): StudentUiError {
 // falls through to the generic validation message.
 const PAYMENT_CONFLICT_PATTERNS: Array<{ pattern: RegExp; title: string; message: string }> = [
   {
+    pattern: /confirm receipt of the loan transfer/i,
+    title: "ยังไม่ได้ยืนยันการรับเงิน",
+    message: "กรุณายืนยันการรับเงินก่อนชำระ",
+  },
+  {
     pattern: /already awaiting review/i,
     title: "มีหลักฐานการชำระรอตรวจสอบอยู่แล้ว",
     message: "กรุณารอเจ้าหน้าที่ตรวจสอบหลักฐานการชำระครั้งก่อนให้เสร็จสิ้น แล้วจึงส่งหลักฐานใหม่",

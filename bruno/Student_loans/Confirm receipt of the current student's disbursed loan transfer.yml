@@ -1,0 +1,43 @@
+info:
+  name: Confirm receipt of the current student's disbursed loan transfer
+  type: http
+  seq: 8
+  tags:
+    - Student_loans
+
+http:
+  method: POST
+  url: "{{baseUrl}}/student/loan-requests/:id/confirm-transfer"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  params:
+    - name: id
+      value: REQ202609060007
+      type: path
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+    - expression: res.body.error.code
+      operator: eq
+      value: NOT_FOUND
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  REQ202609060007 is the seeded disbursed loan, but it belongs to student …0107, not the
+  dev-bypass student …0101. The route finds the loan by id and studentId together, so another
+  student's loan answers 404 exactly like a missing one. The 200 path needs a disbursed loan owned
+  by …0101, and disbursing uploads to Supabase Storage, which the isolated run does not provide.

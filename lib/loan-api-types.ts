@@ -127,6 +127,7 @@ export type LoanRequestDetail = {
   cancelledAt: string | null;
   cancelledBy: string | null;
   disbursedAt: string | null;
+  transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -186,6 +187,7 @@ export type AdvisorQueueItem = {
   cancelledAt: string | null;
   cancelledBy: string | null;
   disbursedAt: string | null;
+  transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -228,6 +230,7 @@ export type AdvisorLoanRequestDetail = {
   cancelledAt: string | null;
   cancelledBy: string | null;
   disbursedAt: string | null;
+  transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -269,6 +272,7 @@ export type AdminQueueItem = {
   cancelledAt: string | null;
   cancelledBy: string | null;
   disbursedAt: string | null;
+  transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -321,6 +325,7 @@ export type AdminLoanRequestDetail = {
   cancelledAt: string | null;
   cancelledBy: string | null;
   disbursedAt: string | null;
+  transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -388,6 +393,7 @@ export type ExecutiveQueueItem = {
   cancelledAt: string | null;
   cancelledBy: string | null;
   disbursedAt: string | null;
+  transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -437,6 +443,7 @@ export type ExecutiveLoanRequestDetail = {
   cancelledAt: string | null;
   cancelledBy: string | null;
   disbursedAt: string | null;
+  transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;

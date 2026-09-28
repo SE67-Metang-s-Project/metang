@@ -126,6 +126,8 @@ model LoanRequest {
   cancelledAt      DateTime?         @map("cancelled_at") @db.Timestamptz(6)
   cancelledBy      String?           @map("cancelled_by") @db.Uuid
   disbursedAt      DateTime?         @map("disbursed_at") @db.Timestamptz(6)
+  // The student's "confirm receipt"; set only after disbursement (see its migration's CHECK).
+  transferConfirmedAt DateTime?      @map("transfer_confirmed_at") @db.Timestamptz(6)
   closedAt         DateTime?         @map("closed_at") @db.Timestamptz(6)
   createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

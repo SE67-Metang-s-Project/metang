@@ -92,6 +92,25 @@ test("maps loan to ActiveLoanSummary", () => {
   assert.equal(summary.isDisbursed, true);
 });
 
+test("carries the server-side receipt confirmation to the summary and the details", () => {
+  const loan: RawStudentLoan = {
+    id: "loan-transfer",
+    amount: 3000,
+    purpose: "ค่าเทอม",
+    installmentCount: 1,
+    firstDueDate: "2026-10-15",
+    status: "disbursed",
+    disbursedAt: "2026-09-20T03:00:00Z",
+  };
+
+  assert.equal(mapToActiveLoanSummary(loan)?.isTransferConfirmed, false);
+  assert.equal(mapToLoanDetails(loan).isTransferConfirmed, false);
+
+  const confirmed = { ...loan, transferConfirmedAt: "2026-09-21T03:00:00Z" };
+  assert.equal(mapToActiveLoanSummary(confirmed)?.isTransferConfirmed, true);
+  assert.equal(mapToLoanDetails(confirmed).isTransferConfirmed, true);
+});
+
 test("builds timeline in mapToLoanDetails including comments on return", () => {
   const loan: RawStudentLoan = {
     id: "loan-detail-test",
