@@ -12,6 +12,7 @@
     "lint": "eslint",
     "openapi:generate": "next-openapi-gen generate -t next.openapi.json && node scripts/normalize-openapi.mjs",
     "postinstall": "prisma generate",
+    "prepare": "git config core.hooksPath .githooks || true",
     "db:generate": "prisma generate",
     "db:status": "node scripts/with-infisical.mjs prisma migrate status",
     "db:migrate": "node scripts/with-infisical.mjs prisma migrate dev",
