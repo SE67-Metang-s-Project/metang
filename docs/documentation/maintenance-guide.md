@@ -1125,7 +1125,7 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 | Slip upload fails with `Unable to upload slip` | Supabase Storage settings wrong, bucket missing, or service role key expired. | Check `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and that the private bucket exists. | 4.10 |
 | Slip does not open, `Unable to read slip` | Same as above, or the file was deleted from Storage. | Check Storage settings. Check that the file exists in **Storage**. | 4.8 |
 | Student sees `ไม่พบข้อมูลบัญชีรับชำระเงิน` | The `system_setting` row is missing (`System settings are not initialized`). | Restore the row from a backup, or ask the developers to re-apply the default row. | 5.4 |
-| Admin cannot disburse: `Insufficient fund balance for this disbursement` | The fund ledger balance is lower than the approved amount. | A SuperAdmin records a `top_up` in the fund ledger. | 4.9 |
+| Admin cannot disburse: `Insufficient fund balance for this disbursement` | The fund ledger balance is lower than the approved amount. | A SuperAdmin raises **วงเงินรวม** in **ตั้งค่าระบบ** > **วงเงินระบบ**. The screen records a `credit_adjustment`. The API also accepts `top_up` (Section 4.9). | 4.9 |
 | SuperAdmin cannot add a second executive | Only one `executive` is allowed. | Remove the role from the current executive first. | 3.2 |
 | Users see `The request changed; please retry` often | Two people changed the same record at the same time. | Ask the user to reload and retry. If frequent, check database load. | 8 |
 | The executive or SuperAdmin financial overview shows all zeros | The overview could not read the database. It returns zeros with HTTP `200` instead of an error, and logs `Unable to load executive financial overview from DB` or `Unable to load financial overview from DB for SuperAdmin`. | Check the Vercel logs and the database connection. | 8 |
@@ -1333,6 +1333,7 @@ cannot reach.
 | `SESSION_SECRET must contain at least 32 characters` | The session secret is too short. | Create a new one (Section 4.10). |
 | `<name> must be a valid URL` | A CMU Entra URL setting is not a valid URL. | Fix the value. |
 | `Missing .env. Create it from .env.example and set INFISICAL_ENV.` | An `npm run` command needs a local `.env`. | Create `.env` with `INFISICAL_ENV=dev`. |
+| `Missing INFISICAL_ENV in .env. Set it to the Infisical environment to use.` | `.env` exists but has no `INFISICAL_ENV`. The command stops instead of guessing `dev`. | Add `INFISICAL_ENV=dev` to `.env`. |
 | `Usage: node scripts/with-infisical.mjs <command> [...args]` | The wrapper script ran with no command. | Use the `npm run` commands in Section 6. |
 | `Supabase Storage upload failed with HTTP <status>: <text>` / `Supabase Storage sign failed with HTTP <status>: <text>` (in logs) | Supabase Storage refused the request. | Check the bucket and the service role key. |
 | `Unsupported slip content type: <type>` / `Slip exceeds the 10485760-byte limit` (in logs) | A slip failed the storage checks. | Students upload a JPG or PNG of 1 MB or less. Admins upload a JPEG, PNG, or PDF of 10 MB or less. |
