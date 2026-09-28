@@ -1,7 +1,7 @@
 # Me_Tang Maintenance Guide
 
 Version covered: Me_Tang 0.1.0 (`package.json` version `0.1.0`)
-Document version: 1.0 draft
+Document version: 1.1 draft
 Date: 2026-09-28
 
 ---
@@ -88,11 +88,14 @@ flowchart LR
   V -->|Profile| B[CMU BasicInfo API]
   V -->|SQL via DATABASE_URL| D[(Supabase PostgreSQL)]
   V -->|REST, service role key| S[(Supabase Storage: bank_payment_slips)]
-  C[Job scheduler inside the web app] -->|Calls /api/cron/ routes with CRON_SECRET| V
+  C[Vercel Cron] -->|Calls /api/cron/ routes with CRON_SECRET| V
   V -->|Reviewer messages| L[CMU LINE FON API]
   V -->|Student reminder and slip result emails| M[CMU Email API]
-  I[Infisical] -.->|Secrets at build and deploy| V
+  I[Infisical] -.->|Secrets as environment variables| V
 ```
+
+On a server that keeps running (`next start`), Vercel Cron is not used. The job scheduler inside
+the application runs the same jobs by calling the route code directly (Section 2.3).
 
 When a signed-out user opens a protected page, such as a link in a notification email, the
 application sends them to `/login?next=<page>`. After CMU sign-in, `/api/auth/callback` returns
@@ -101,9 +104,22 @@ page guard, and `lib/return-path.ts` rejects any value that is not a page on thi
 
 ### 2.3 How notifications work
 
-The application does not send a notification at the moment an event happens. It writes a row
-to the `notification_outbox` table. A scheduled job then claims up to 20 rows, sends them, and
-marks each row `delivered`, `retry`, or `failed`.
+For most notifications, the application does not send at the moment an event happens. It writes
+a row to the `notification_outbox` table. A scheduled job then claims up to 20 rows, sends them,
+and marks each row `delivered`, `retry`, or `failed`.
+
+Two manual actions send at once and do not use the outbox. They write no `notification_outbox`
+row, keep no delivery history, and are not retried:
+
+- A LINE reminder to the current reviewer (`POST /api/notifications/fon`). The student of the
+  request, its advisor, or any admin, SuperAdmin, or executive can send it. The same request and
+  status can be sent again only after 60 seconds. Each server instance keeps its own 60-second
+  timer in memory.
+- A due-date email to a student (`POST /api/notifications/outlook`), for an admin or SuperAdmin.
+  Version 0.1.0 has no button for this.
+
+Reviewer notifications write one outbox row for each recipient. A step with three admins writes
+three rows.
 
 | Scheduled job | Schedule in `lib/jobs/start-scheduler.ts` | What it does |
 |---|---|---|
@@ -166,9 +182,9 @@ These gaps exist in the delivered software. They affect maintenance.
 | No backup of slip files | Supabase database backups do not include Storage files. | Section 5 |
 | No monitoring or alerting | Nobody is told when a job fails. You must check by hand. | Section 8 |
 | Two ways to run the scheduled jobs | On Vercel, the `vercel.json` schedules need the Pro plan (Hobby allows only daily jobs and rejects the deployment). On other serverless hosts, an outside scheduler must call the routes. | Section 2.3 |
-| No continuous delivery pipeline and no single test command | Updates are manual. (Jira NAT-213 and NAT-209, open.) | Section 6 |
+| No continuous delivery pipeline and no npm script for the unit tests | Updates are manual. `npm run api:test` runs the API tests. The unit tests in `tests/` run with `npx tsx --test` (Section 6.2). (Jira NAT-213 and NAT-209, open.) | Section 6 |
 | No SuperAdmin setup screen | The first SuperAdmin must be added with SQL. | Section 3.3 |
-| Some fields on the SuperAdmin contact and bank settings screen are not saved to the database | Opening hours, closed-days note, bank code, and the faculty address details are kept only in the browser (`localStorage`) of the person who saved them. Other users do not see the change. (Jira NAT-200/NAT-203 are marked Done, but this part is not built.) | Section 7.2 |
+| Some fields on the SuperAdmin contact and bank settings screen are not saved to the database | Opening hours, the closed-days note, and the faculty address details are kept only in the browser (`localStorage` key `metang-system-address`) of the person who saved them. Other users do not see the change. The bank code is not stored: the screen finds it again from the stored bank name. (Jira NAT-200/NAT-203 are marked Done, but this part is not built.) | Section 7.2 |
 | Loan reports are printed from the browser | There is no server-generated PDF file. The report uses the browser print dialog. | None |
 | Automated tests check source text, not a running user interface | Passing tests do not prove that the pages work. Test by hand after each update. | Section 6.2 |
 
@@ -197,15 +213,24 @@ student account. A SuperAdmin grants every other role in the application.
 
 | Role | Can do |
 |---|---|
-| `student` | Apply for a loan, correct and resubmit, cancel before disbursement, upload repayment slips. |
+| `student` | Apply for a loan, correct and resubmit, cancel until the executive approves (not in `pending_disbursement` or later), upload repayment slips. |
 | `advisor` | Approve, return, or reject requests of their own advisees. A comment is required. |
-| `admin` | Review requests, set the approved amount, record disbursement with a slip, confirm or reject repayment slips, send a due-date email. |
-| `executive` | Final approval or rejection. The database allows only one `executive`. |
+| `admin` | Review requests, set the approved amount, record disbursement with a slip, confirm or reject repayment slips. The due-date email API (`POST /api/notifications/outlook`) is open to admins, but version 0.1.0 has no button for it. |
+| `executive` | Final decision: approve, return to the admin, or reject. The database allows only one `executive`. |
 | `super_admin` | Everything an admin can do, plus grant and revoke roles, record fund transactions, and edit system settings. The last `super_admin` cannot be removed in the application. |
 
-Only users of the CMU Faculty of Nursing can use the student functions. A student ID must
-match the pattern `^\d{2}12\d{5}$`. A user without a student ID must have organization code
-`12`.
+Any CMU account can sign in. Staff pages depend only on the roles that a SuperAdmin grants.
+The student functions need a student ID that matches the Faculty of Nursing pattern
+`^\d{2}12\d{5}$`. The organization code check (`12`, Nursing staff) runs only in the separate
+nurse sign-in mode (`/api/auth/nurse/login`). The sign-in page does not link to that mode.
+
+Role changes have side effects:
+
+- When a SuperAdmin revokes the `admin` role, that admin's requests in `pending_admin` and
+  `pending_executive` move to the SuperAdmin who revoked the role. The audit log records
+  `loan_request.admin_reassigned`.
+- To change the executive, revoke the role from the current executive first. A second
+  `executive` grant fails with `EXECUTIVE_ALREADY_EXISTS`.
 
 ### 3.3 Add the first SuperAdmin
 
@@ -224,7 +249,8 @@ Steps:
 
 1. Open the Supabase Dashboard and select the production project.
 2. Open **SQL Editor**.
-3. Run this query. Replace `replace-with-email@cmu.ac.th` with the person's CMU email.
+3. Run this query. Replace `replace-with-email@cmu.ac.th` with the person's CMU email, in
+   lowercase. The application stores emails in lowercase, and the comparison is case-sensitive.
 
    ```sql
    SELECT id, email, full_name_th FROM app_user WHERE email = 'replace-with-email@cmu.ac.th';
@@ -264,6 +290,16 @@ AND user_id = (SELECT id FROM app_user WHERE email = 'replace-with-email@cmu.ac.
   **Database**.
 - This guide never contains a secret value. Section 7.1 lists which settings are secrets.
 
+> **WARNING:** With `INFISICAL_ENV=prod` in `.env`, every `npm run db:*` command acts on the
+> production database, and `npm run build` uses the production secrets. `npm run db:seed` and
+> `npm run db:reset` have no
+> production check. `db:reset` deletes all users, loans, payments, ledger rows, notifications,
+> and audit history. Keep `INFISICAL_ENV=dev` except during the production steps of Section 6.2.
+>
+> If the Infisical CLI is not installed, `scripts/with-infisical.mjs` runs the command without
+> Infisical. The command then uses the values in `.env` and in the shell, and `INFISICAL_ENV`
+> has no effect.
+
 ---
 
 ## 4. Routine maintenance
@@ -295,10 +331,14 @@ Steps:
    Expected result: the sign-in page shows the button **เข้าสู่ระบบด้วย CMU Account**.
    If it shows `ผู้ดูแลระบบต้องตั้งค่า CMU Entra environment variables ก่อนเปิดใช้งาน`, the
    sign-in settings are missing (Section 9).
-2. Open the server log `[TO VERIFY: log location on the production host]`. Search for
-   `Job scheduler started` after the last restart.
-   Expected result: the line is present and lists five `/api/cron/` paths. If it shows
-   `Job scheduler not started: CRON_SECRET is not set`, set `CRON_SECRET` and restart.
+2. Check that the scheduled jobs run `[TO VERIFY: log location on the production host]`.
+   - On Vercel: open the project **Settings** > **Cron Jobs** and the **Logs**. Expected result:
+     five `/api/cron/` jobs, and recent calls return `200`. A `401` means that `CRON_SECRET` is
+     missing or wrong. The log line at startup is
+     `Job scheduler: using Vercel Cron from vercel.json`.
+   - On a server that keeps running: search the server log for `Job scheduler started` after the
+     last restart. Expected result: the line is present and lists five `/api/cron/` paths. If it
+     shows `Job scheduler not started: CRON_SECRET is not set`, set `CRON_SECRET` and restart.
 3. In the same log, filter the last 24 hours for errors.
    Expected result: no repeated errors. Look up any message in Section 10.
 4. In the Supabase SQL Editor, run:
@@ -352,9 +392,14 @@ Steps:
    ```
 
    Expected result: `UPDATE 1`.
-4. Wait 5 minutes and run the query from step 1 again.
+4. Wait 5 minutes and run this query with the same `id`:
 
-Expected result: the row is no longer `failed`. Its status is `delivered`.
+   ```sql
+   SELECT id, status, attempt_count, delivered_at, last_error
+   FROM notification_outbox WHERE id = 'replace-with-row-id';
+   ```
+
+Expected result: the status is `delivered`.
 
 To undo: no undo is needed. A row that fails again returns to `failed` after 5 attempts.
 
@@ -454,8 +499,10 @@ Steps:
 To undo: restore the rows from the backup (Section 5.4).
 
 Do not delete rows from `audit_log`, `fund_transaction`, `payment`, `loan_request`, or
-`installment`. They are the financial and audit record. The database blocks every `UPDATE`
-and `DELETE` on `fund_transaction`.
+`installment`. They are the financial and audit record. A database trigger blocks `UPDATE`
+and `DELETE` on `fund_transaction`. The only exception is a session that sets
+`methang.allow_fund_mutation = 'on'`, which `db/seed.ts` uses. The trigger does not block
+`TRUNCATE`.
 
 ### 4.8 Review unused slip files
 
@@ -510,6 +557,16 @@ Expected result: the values match. If they differ, a SuperAdmin records a
 `credit_adjustment` or `debit_adjustment` with a note in the application. Never edit
 `fund_transaction` with SQL.
 
+Limits on a correcting transaction:
+
+- Every kind except `top_up` needs a note.
+- The database trigger `fund_transaction_check_balance` rejects a row that makes the balance
+  negative.
+- The application rejects a `withdrawal` or `debit_adjustment` larger than the fund capacity:
+  the cash balance minus the amount that loan requests not yet paid out can still take
+  (`INSUFFICIENT_FUND_CAPACITY`). A large correcting debit can be blocked while such requests
+  are open. Record it after they are disbursed, or in smaller parts.
+
 ### 4.10 Renew secrets before they expire
 
 Purpose: prevent sign-in, notification, or storage failures caused by an expired or leaked
@@ -523,7 +580,7 @@ Prerequisites: access to Infisical `prod` and to the issuer of the secret.
 | `SESSION_SECRET` | Changing it signs out every user. | At least 32 characters. Create one with `openssl rand -base64 32`. |
 | `CRON_SECRET` | The job scheduler does not start. Outside callers of `/api/cron/` get `401 Unauthorized`. | The scheduler sends it as `Authorization: Bearer <value>`. Restart the server after a change. |
 | `NOTIFY_API_TOKEN` | LINE messages fail. | Issued by CMU `[TO VERIFY]`. |
-| `EMAIL_API_CLIENT_ID`, `EMAIL_API_CLIENT_SECRET` | Reminder emails fail. | Issued by CMU `[TO VERIFY]`. |
+| `EMAIL_API_CLIENT_ID`, `EMAIL_API_CLIENT_SECRET` | All student emails fail: reminders, request results, disbursements, and repayment slip results. | Issued by CMU `[TO VERIFY]`. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Slip upload and slip viewing fail. | Supabase Dashboard: **Project Settings** > **API**. |
 | Database password in `DATABASE_URL` and `DIRECT_URL` | The whole application fails. | Supabase Dashboard: **Project Settings** > **Database**. |
 
@@ -540,7 +597,8 @@ Steps:
    project does not sync from Infisical `[TO VERIFY]`.
 5. In Vercel, open **Deployments**, open the menu of the current production deployment, and
    select **Redeploy**.
-   Expected result: the new deployment becomes **Ready**.
+   Expected result: the new deployment becomes **Ready**. If the build fails with
+   `Missing .env`, the Build Command is `npm run build`. Set it to `next build` (Section 9).
 6. Do the health check (Section 4.2).
 
 To undo: put the old value back and redeploy, if the old value is still valid.
@@ -671,7 +729,9 @@ new, empty project before you need it in an incident.]`
 1. Run:
 
    ```sql
-   SELECT migration_name FROM _prisma_migrations ORDER BY finished_at DESC LIMIT 1;
+   SELECT migration_name FROM _prisma_migrations
+   WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL
+   ORDER BY finished_at DESC LIMIT 1;
    ```
 
    Expected result: `20260927130000_loan_request_id_cycle`, or the latest migration of the
@@ -728,6 +788,16 @@ Git branch `main`.]`
 
    Expected result: `npm run lint` reports `0 errors` (version 0.1.0 has 3 warnings about unused
    variables). `npx tsc --noEmit` prints nothing.
+
+   Then run the unit tests. They read the source files and need no database:
+
+   ```bash
+   npx tsx --test tests/*.test.ts tests/*.test.mjs
+   ```
+
+   Expected result: the summary line `ℹ fail 0`. On version 0.1.0, 16 tests fail (Jira
+   NAT-209). Compare the failed test names with the previous version: a new failure needs a
+   developer.
 4. Run the API tests. They use a temporary local PostgreSQL in Docker (port `5433`) and a
    test app on port `8081`. They never touch the real database.
 
@@ -782,8 +852,9 @@ Application rollback:
    (on the Hobby plan, only the last previous deployment is available).
 3. Expected result: the previous version serves users within a minute.
 
-Note: an Instant Rollback does not restore the environment variables of that deployment, only its
-environment variables.
+Note: an Instant Rollback does not rebuild. The previous deployment keeps the environment
+variables it was built with, so a setting that you changed after that build is not used. Its
+cron jobs also return to the schedules of that deployment.
 
 Database rollback:
 
@@ -811,7 +882,7 @@ production deployment ("Redeploy") before it takes effect.
 | Setting | Default | Valid values | Effect | Redeploy required | Secret |
 |---|---|---|---|---|---|
 | `DATABASE_URL` | None. Startup fails with `DATABASE_URL is not set`. | PostgreSQL URL of the Supabase Session pooler, with `sslmode=require` | Database connection of the application. | Yes | Yes |
-| `DIRECT_URL` | None | PostgreSQL URL, direct connection | Used by migrations (`npm run db:*`) and manual backups. | No (maintainer tools only) | Yes |
+| `DIRECT_URL` | The value of `DATABASE_URL` (`prisma.config.ts`) | PostgreSQL URL, direct connection | Used by migrations (`npm run db:*`) and manual backups. | No (maintainer tools only) | Yes |
 | `AUTH_URL` | None | URL | CMU Entra authorize endpoint. | Yes | No |
 | `TOKEN_URL` | None | URL | CMU Entra token endpoint. | Yes | No |
 | `CALLBACK_URL` | None | URL, exactly as registered in Entra, for example `https://<host>/api/auth/callback` | Where CMU Entra returns after sign-in. | Yes, and register it in Entra | No |
@@ -821,7 +892,7 @@ production deployment ("Redeploy") before it takes effect.
 | `SCOPE` | None | Space-separated scopes, for example `api://cmu/Mis.Account.Read.Me.Basicinfo offline_access` | Permissions requested at sign-in. | Yes | No |
 | `BASICINFO_URL` | None | URL | CMU profile API. | Yes | No |
 | `SESSION_SECRET` | None | Text of 32 characters or more | Encrypts the sign-in cookies. Changing it signs out all users. | Yes | Yes |
-| `APP_BASE_URL` | `http://localhost:8080` | Absolute `https://` URL of the production site | Base of links in LINE messages and emails. If not set, links point to localhost. | Yes | No |
+| `APP_BASE_URL` | `http://localhost:8080` | Absolute `https://` URL of the production site | Base of links in LINE messages and emails. If not set, links point to localhost. If the value is not a valid `http` or `https` URL, every delivery job run returns `500` before it claims rows, so notifications wait in the outbox. | Yes | No |
 | `CRON_SECRET` | None. The job scheduler does not start, and `/api/cron/` returns `401`. | Random text | Protects `/api/cron/` routes. The job scheduler uses it too. | Yes | Yes |
 | `ENABLE_JOB_SCHEDULER` | Not set (detect the host) | `true`, `false`, or not set | `true` forces the built-in scheduler, `false` turns it off. Not set: built-in scheduler on servers that keep running, Vercel Cron on Vercel (Section 2.3). | Yes (restart) | No |
 | `NOTIFY_API_URL` | None | URL | CMU LINE FON API. | Yes | No |
@@ -832,13 +903,19 @@ production deployment ("Redeploy") before it takes effect.
 | `SUPABASE_URL` | None | `https://<project-ref>.supabase.co` | Supabase Storage address. | Yes | No |
 | `SUPABASE_SERVICE_ROLE_KEY` | None | Supabase service role key | Full access to Storage. | Yes | Yes |
 | `SUPABASE_SLIP_BUCKET` | `bank_payment_slips` | Name of a private bucket | Bucket for slip files. | Yes | No |
-| `INFISICAL_ENV` | `dev` | `dev` or `prod` | Only in a maintainer's local `.env`. Selects the Infisical environment for `npm run dev` and `npm run db:*`. | Not applicable | No |
+| `INFISICAL_ENV` | `dev` | `dev` or `prod` | Only in a maintainer's local `.env`. Selects the Infisical environment for `npm run dev`, `npm run build`, and `npm run db:*`. Has no effect when the Infisical CLI is not installed (Section 3.4). | Not applicable | No |
 | `DEV_API_BYPASS` | Off | `true` or not set | Development only. Must not be set in production. Works only when `INFISICAL_ENV=dev` and `NODE_ENV=development`. | Not applicable | No |
 | `DEV_AS_ADVISOR`, `DEV_AS_ADMIN`, `DEV_AS_SUPERADMIN`, `DEV_AS_EXECUTIVE` | Off | `true` or not set | Development only. Must not be set in production. Same condition as `DEV_API_BYPASS`. | Not applicable | No |
 | `DEV_ADVISOR_USER_ID`, `DEV_ADMIN_USER_ID`, `DEV_SUPERADMIN_USER_ID`, `DEV_EXECUTIVE_USER_ID` | Test user IDs | User UUID | Development only. Must not be set in production. | Not applicable | No |
 | `EXT_PORT` | Not used | Port number | Appears in `.env.example` only. The application does not read it. | Not applicable | No |
 
-`NODE_ENV` is set by Next.js and Vercel. Do not set it by hand.
+`NODE_ENV` is set by Next.js and Vercel. Do not set it by hand. The hosting platform also sets
+`VERCEL`, `AWS_LAMBDA_FUNCTION_NAME`, `NETLIFY`, and `NEXT_RUNTIME`. The application reads them to
+choose the job scheduler (Section 2.3).
+
+`.env.example` differs from this table in two places. It does not list `ENABLE_JOB_SCHEDULER` or
+the `DEV_*_USER_ID` settings. It sets `SESSION_SECRET` twice, and the second value is shorter
+than 32 characters. Delete the second line when you create a `.env` from it.
 
 ### 7.2 In-app system settings
 
@@ -858,9 +935,13 @@ immediately. Every change is written to `audit_log` with the action `system_sett
 | Email (`contactEmail`) | Yes | Valid email, at most 254 characters | Contact block. |
 
 Only the eight settings above are stored in the database. The same screen also shows opening
-hours, a closed-days note, a bank code, and faculty address details. Version 0.1.0 saves those
-values only in the browser of the person who edits them. Other users keep seeing the default
-values.
+hours, a closed-days note, and faculty address details. Version 0.1.0 saves those values only in
+the browser of the person who edits them (`localStorage` key `metang-system-address`). Other
+users keep seeing the default values. The screen also shows a bank code. It is not stored: the
+screen finds it from the stored bank name each time.
+
+After installation, the settings row holds sample values, for example account number
+`521-0-12345-6`. Users see them until a SuperAdmin enters the real values.
 
 ### 7.3 Scheduled job settings
 
@@ -878,8 +959,10 @@ Change a schedule in both `lib/jobs/start-scheduler.ts` (built-in scheduler) and
 
 | Value | Setting |
 |---|---|
-| Slip file types | `image/jpeg`, `image/png`, `application/pdf` |
-| Slip file size limit | 10 MB |
+| Slip file types accepted by the server and the admin disbursement form | `image/jpeg`, `image/png`, `application/pdf` |
+| Slip file size limit on the server and the admin disbursement form | 10 MB |
+| Repayment slip accepted by the student form | JPG or PNG, at most 1 MB |
+| Installments per loan | 1 to 3 (server check and database `CHECK`) |
 | Signed slip link lifetime | 300 seconds |
 | Sign-in session lifetime | 8 hours |
 | Sign-in attempt lifetime | 10 minutes |
@@ -903,7 +986,7 @@ alerts in Vercel and Supabase `[TO VERIFY: available alert features on the chose
 | What to monitor | Where | Normal value | Warning threshold | Action |
 |---|---|---|---|---|
 | Sign-in page responds | `/login` in a browser | Page loads with the CMU sign-in button | Error page or no response | Section 9, "Site does not load". |
-| Scheduled jobs run | Server log: `Job scheduler started` at startup, `Scheduled job` lines when work was done | `deliver-fon` every minute, `deliver-reminders`, `deliver-payment-outcomes`, and `deliver-loan-outcomes` every 3 minutes, `installment-reminders` once a day | No run for 10 minutes, or status `401` or `500` | Section 9, "Notifications are not sent". |
+| Scheduled jobs run | On Vercel: **Settings** > **Cron Jobs** and the **Logs** of each `/api/cron/` call. On a server that keeps running: `Job scheduler started` at startup and `Scheduled job` lines when a job did work or failed | `deliver-fon` every minute, `deliver-reminders`, `deliver-payment-outcomes`, and `deliver-loan-outcomes` every 3 minutes, `installment-reminders` once a day | No run for 10 minutes, or status `401` or `500` | Section 9, "Notifications are not sent". |
 | Waiting notifications | SQL in Section 4.2 step 5 | 0 rows | Any row older than 30 minutes | Section 9. |
 | Failed notifications | SQL in Section 4.2 step 4 | Count does not increase | Any new `failed` row | Section 4.3. |
 | Application errors | Vercel **Logs**, level Error | Few, not repeated | The same error more than 10 times in one hour | Section 10. |
@@ -927,7 +1010,7 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 
 | Symptom | Likely cause | Fix | Procedure |
 |---|---|---|---|
-| Notifications stop some time after deployment on serverless hosting | Serverless instances stop between requests, so the in-process scheduler stops. | Host Me_Tang on a server that keeps running (`next start`), or add an outside scheduler that calls the `/api/cron/` routes with `CRON_SECRET`. | 2.3 |
+| Notifications stop on serverless hosting | On Vercel, Vercel Cron did not call the jobs: `CRON_SECRET` is missing, or the plan does not allow the `vercel.json` schedules. On other serverless hosts (AWS Lambda, Netlify), nothing calls the jobs. | On Vercel, set `CRON_SECRET` and check **Settings** > **Cron Jobs**. On other hosts, add an outside scheduler that calls the `/api/cron/` routes with `CRON_SECRET`, or host Me_Tang on a server that keeps running (`next start`). | 2.3 |
 | Build fails with `Missing .env. Create it from .env.example and set INFISICAL_ENV.` | The build runs `npm run build` on a machine without `.env`. | Set the Vercel Build Command to `next build`, or create `.env` with `INFISICAL_ENV`. | 6.2 |
 | Site does not load, every page returns an error | Missing `DATABASE_URL`, database down, or a failed deployment. | Check Vercel **Logs** for `DATABASE_URL is not set`. Check Supabase project status. Roll back if a deployment caused it. | 4.2, 6.3 |
 | Sign-in page shows `ผู้ดูแลระบบต้องตั้งค่า CMU Entra environment variables ก่อนเปิดใช้งาน` | One of the CMU Entra settings is missing. | Set all settings in Section 7.1 from `AUTH_URL` to `SESSION_SECRET`. Redeploy. | 4.10 |
@@ -937,7 +1020,7 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 | A student sees `ระบบนี้อนุญาตให้นักศึกษาปริญญาตรี ภาคปกติ คณะพยาบาลศาสตร์ หรือบุคลากรคณะพยาบาลศาสตร์เท่านั้น` | The CMU profile is not a Nursing student ID and not Nursing staff. | Expected behavior. Confirm the person's faculty. | 3.2 |
 | A staff member sees `ไม่มีสิทธิ์เข้าถึงหน้านี้ (403 Forbidden)` | The user has no role for that page. | A SuperAdmin grants the role. | 3.2 |
 | Nobody can manage roles | No `super_admin` exists (new or restored database). | Add the first SuperAdmin with SQL. | 3.3 |
-| Notifications are not sent, outbox rows wait | The job scheduler is not running: `ENABLE_JOB_SCHEDULER` is not `true`, `CRON_SECRET` is missing (`Job scheduler not started: CRON_SECRET is not set`), or the server is not a long-running process. | Set both settings and restart the server. | 4.2 |
+| Notifications are not sent, outbox rows wait | The jobs do not run: `ENABLE_JOB_SCHEDULER=false`, `CRON_SECRET` is missing (`Job scheduler not started: CRON_SECRET is not set`, or `401` on Vercel Cron calls), the host is serverless without Vercel Cron, or `APP_BASE_URL` is not valid. | Set `CRON_SECRET`. Remove `ENABLE_JOB_SCHEDULER=false`. Fix `APP_BASE_URL`. Restart the server or redeploy. | 2.3, 4.2 |
 | Outbox rows become `failed` with a LINE error | `NOTIFY_API_TOKEN` or `NOTIFY_API_URL` wrong or expired. | Renew, redeploy, then retry the rows. | 4.10, 4.3 |
 | Outbox rows become `failed` with an email error | Email API credentials wrong or expired, or the student email is not `@cmu.ac.th`. | Renew credentials, redeploy, retry. | 4.10, 4.3 |
 | Links in LINE messages or emails open `localhost` | `APP_BASE_URL` not set in production. | Set it to the production URL. Redeploy. | 7.1 |
@@ -950,6 +1033,7 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 | Admin cannot disburse: `Insufficient fund balance for this disbursement` | The fund ledger balance is lower than the approved amount. | A SuperAdmin records a `top_up` in the fund ledger. | 4.9 |
 | SuperAdmin cannot add a second executive | Only one `executive` is allowed. | Remove the role from the current executive first. | 3.2 |
 | Users see `The request changed; please retry` often | Two people changed the same record at the same time. | Ask the user to reload and retry. If frequent, check database load. | 8 |
+| The executive or SuperAdmin financial overview shows all zeros | The overview could not read the database. It returns zeros with HTTP `200` instead of an error, and logs `Unable to load executive financial overview from DB` or `Unable to load financial overview from DB for SuperAdmin`. | Check the Vercel logs and the database connection. | 8 |
 | Slow first page after a quiet period | Database connections were closed after 5 minutes idle, and serverless functions were cold. | Normal. The next requests are faster. | None |
 
 ---
@@ -968,24 +1052,27 @@ cannot reach.
 
 | Code or message | Meaning | Action |
 |---|---|---|
-| `configuration` / `ยังไม่ได้ตั้งค่า CMU Entra สำหรับแอปนี้` | A CMU Entra setting is missing or not a valid URL. | Set the settings in Section 7.1. Redeploy. |
+| `configuration` / `ยังไม่ได้ตั้งค่า CMU Entra สำหรับแอปนี้` | A CMU Entra setting is missing or not a valid URL, or `SESSION_SECRET` is shorter than 32 characters. The log shows `Unable to start CMU login` with the cause. | Set the settings in Section 7.1. Redeploy. |
 | `ผู้ดูแลระบบต้องตั้งค่า CMU Entra environment variables ก่อนเปิดใช้งาน` | Same cause, shown as a banner on `/login`. | Same as above. |
 | `access_denied` / `การเข้าสู่ระบบถูกยกเลิก` | The user cancelled at CMU Entra. | The user signs in again. |
 | `invalid_callback` / `ข้อมูลตอบกลับจาก CMU ไม่ครบถ้วน กรุณาลองใหม่` | The CMU response was incomplete, or the sign-in cookie was missing. | The user signs in again. Check that cookies are allowed. |
 | `invalid_state` / `คำขอเข้าสู่ระบบหมดอายุหรือไม่ถูกต้อง กรุณาลองใหม่` | The sign-in attempt expired (10 minutes) or did not match. | The user signs in again. |
 | `token_exchange_failed` / `ไม่สามารถยืนยันการเข้าสู่ระบบกับ CMU ได้` | CMU Entra refused the token request. | Check `CLIENT_ID`, `CLIENT_SECRET`, `CALLBACK_URL`. |
 | `profile_failed` / `เข้าสู่ระบบสำเร็จ แต่ไม่สามารถอ่านข้อมูลบัญชี CMU ได้` | The CMU BasicInfo API failed. | Check `BASICINFO_URL` and `SCOPE`. Contact CMU ITSC if the API is down. |
-| `not_eligible` / `ระบบนี้อนุญาตให้นักศึกษาปริญญาตรี ภาคปกติ คณะพยาบาลศาสตร์ หรือบุคลากรคณะพยาบาลศาสตร์เท่านั้น` | The person is not a Nursing student or Nursing staff. | Expected. |
-| `login_failed` / `เกิดข้อผิดพลาดระหว่างเข้าสู่ระบบ กรุณาลองใหม่` | Unexpected error during sign-in, for example a database error. | Check Vercel logs. |
+| `not_eligible` / `ระบบนี้อนุญาตให้นักศึกษาปริญญาตรี ภาคปกติ คณะพยาบาลศาสตร์ หรือบุคลากรคณะพยาบาลศาสตร์เท่านั้น` | Nurse sign-in mode only: the person is not a Nursing student or Nursing staff. The log shows `CMU nursing SSO rejected by access policy`. | Expected. |
+| `login_failed` / `เกิดข้อผิดพลาดระหว่างเข้าสู่ระบบ กรุณาลองใหม่` | Unexpected error during sign-in, for example a failed request to CMU. The log shows `CMU login callback failed`. | Check Vercel logs. |
+| `Failed to sync user to database during CMU login callback` (in logs) | The user record could not be saved at sign-in. Sign-in still succeeds. | Check the database connection. Roles or the student record may be out of date for that user. |
+| `CMU token exchange failed` / `CMU BasicInfo request failed` (in logs) | The logged causes of `token_exchange_failed` and `profile_failed`. | See those rows. |
 | `กรุณาเข้าสู่ระบบก่อนใช้งาน` / `ไม่พบข้อมูลการเข้าสู่ระบบ หรือเซสชันหมดอายุ กรุณาเข้าสู่ระบบด้วย CMU IT Account เพื่อเข้าใช้งาน` | Not signed in, or the 8-hour session expired. | The user signs in. |
 | `ไม่มีสิทธิ์เข้าถึงหน้านี้ (403 Forbidden)` / `บัญชี CMU ของคุณยังไม่มีสิทธิ์ในการเข้าถึงหน้านี้ หากคุณมีหน้าที่รับผิดชอบในส่วนนี้ กรุณาติดต่อผู้ดูแลระบบเพื่อกำหนดสิทธิ์การใช้งาน` | The user has no role for the page. | A SuperAdmin grants the role. |
 | `เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์` / `เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์การเข้าใช้งาน กรุณาลองใหม่อีกครั้ง` | Unexpected error while checking access. | Check Vercel logs. |
 | `Error code: <code>` (below the text on the error page) | The error code of the access problem. | Include it in a support request. |
-| `Student session rejected` with reason `student_id_not_eligible` or `employee_not_nursing` (in logs) | A signed-in user failed the Nursing faculty check. | Expected for users outside the faculty. |
+| `Student session rejected` with reason `student_id_not_eligible`, `employee_not_nursing`, or `profile_not_eligible` (in logs) | A signed-in user failed the Nursing faculty check for the student functions. | Expected for users outside the faculty. |
+| `Student session rejected` with reason `missing_or_invalid_session` or `missing_student_id` (in logs) | A student page was opened without a session, or by a CMU account that has no student ID. | Expected. Staff use the staff pages. |
 | `UNAUTHORIZED`: `Authentication required` (HTTP 401) | API call without a valid session. | The user signs in again. |
-| `UNAUTHORIZED`: `Advisor access required` (401), `FORBIDDEN`: `Advisor access required` (403) | Not the advisor of this request. | Expected. |
-| `FORBIDDEN`: `Admin access required` / `Executive access required` / `SuperAdmin access required` / `Loan request access required` (403) | The user lacks the role. | Grant the role if correct. |
-| `FORBIDDEN`: `A same-origin request is required` / `A same-origin JSON request is required` (403) | The request did not come from the Me_Tang site (security check). | The user reloads the page. Check that `APP_BASE_URL` and the site domain match. |
+| `UNAUTHORIZED`: `Advisor access required` (401), `FORBIDDEN`: `Advisor access required` (403) | The user is not signed in (401 on the list), or the signed-in user is not an advisor. | Grant the `advisor` role if correct. |
+| `FORBIDDEN`: `Admin access required` / `Executive access required` / `SuperAdmin access required` / `Super Admin access required` / `Loan request access required` (403) | The user lacks the role. | Grant the role if correct. |
+| `FORBIDDEN`: `A same-origin request is required` / `A same-origin JSON request is required` (403) | The `Origin` or `Referer` header does not match the site address of the request (security check). The JSON form also fires when the request is not `application/json`. | The user reloads the page. If it repeats, check that a proxy or browser extension does not remove the `Origin` and `Referer` headers. |
 | `เซสชันหมดอายุ`: `เซสชันการเข้าสู่ระบบหมดอายุหรือไม่ได้รับอนุญาต กรุณาเข้าสู่ระบบใหม่อีกครั้ง` / `Your session has expired or is not authorized. Please sign in again.` | Student page received 401 or 403. | The student signs in again. |
 | `กรุณาเข้าสู่ระบบใหม่ (Session หมดอายุ)` | Staff page received 401. | Sign in again. |
 | `ไม่มีสิทธิ์ดำเนินการสำหรับบทบาทนี้` | Staff page received 403. | Check the user's role. |
@@ -1005,8 +1092,12 @@ cannot reach.
 | `เลขที่บัญชีธนาคารไม่ถูกต้อง กรุณากรอกเลขที่บัญชี 10 หลัก` / `กรุณากรอกเลขที่บัญชีธนาคาร 10 หลัก` | Bank account number is not 10 digits. | Correct the number. |
 | `กรุณากรอกชื่อบัญชีธนาคาร` | Account name is empty. | Enter it. |
 | `กรุณาเลือกหรือระบุธนาคาร` | Bank is empty. | Choose a bank. |
-| `จำนวนงวดการชำระไม่ถูกต้อง (1-4 งวด)` | Installment count is not 1 to 4. | Correct it. |
-| `เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเบอร์โทรศัพท์ 10 หลัก` / `กรุณากรอกเบอร์โทรศัพท์ 10 หลัก` | Phone number is not 10 digits. | Correct it. |
+| `จำนวนงวดการชำระไม่ถูกต้อง (1-4 งวด)` | Installment count is not 1 to 3. The message says 1-4, but the server and the database accept only 1 to 3. | Choose 1, 2, or 3. |
+| `เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเบอร์โทรศัพท์ 10 หลัก` / `กรุณากรอกเบอร์โทรศัพท์ 10 หลัก` / `กรุณากรอกเบอร์โทรศัพท์ที่ถูกต้อง (เบอร์มือถือ 10 หลัก หรือเบอร์บ้าน 9 หลัก)` | The phone number is not valid. The server accepts a 10-digit mobile number (starting `06`, `08`, or `09`) or a 9-digit landline (starting `02` to `05` or `07`). | Correct it. |
+| `กรุณากรอกจำนวนเงินที่ถูกต้อง` / `จำนวนเงินไม่อยู่ในวงเงินที่ใช้ได้` (`Amount is outside available credit limit`) | The amount is empty, not a number, 0 or less, or above the loan limit shown on the form. | Correct the amount. |
+| `ไม่พบข้อมูลระดับการศึกษา` (`Education level not found`) | Shown on the form in place of the education level when the student record has none. | Contact support with the student's CMU account. |
+| `ไม่พบข้อมูลคำร้องหมายเลข "<id>" หรือคำร้องนี้อาจถูกลบไปแล้ว` / `ไม่พบข้อมูลคำร้องขอกู้ยืมในระบบ` | The detail page found no request with that ID, or the student has no request. | Check the link or the request ID. |
+| `VALIDATION_ERROR`: `installmentCount is invalid`, `studentYear is invalid` (422) | A value sent by the form is not valid. | Reload and retry. Report to support if it repeats. |
 | `กรุณากรอกจำนวนเงินที่มากกว่า 0 บาท` | Amount is 0 or less. | Correct it. |
 | `โปรดระบุข้อมูลในช่องนี้` | A required field is empty. | Fill it in. |
 | `ไม่พบข้อมูลบัญชี CMU Account ในเซสชัน กรุณาเข้าสู่ระบบใหม่` (`CMU account is missing`) | The session has no CMU account. | Sign in again. |
@@ -1015,7 +1106,7 @@ cannot reach.
 | `CONFLICT`: `You already have an open loan request` (409) / `มีคำร้องที่กำลังดำเนินการอยู่แล้ว`: `ท่านมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว ระบบอนุญาตให้เปิดได้ครั้งละ 1 คำร้อง` / `You already have a loan request in progress. Only one request can be open at a time.` | One open request per student is allowed. | Expected. |
 | `INSUFFICIENT_FUND_CAPACITY`: `The requested amount is more than the fund can currently lend` (409) | The fund cannot cover the request. | A SuperAdmin tops up the fund, or the student asks for less. |
 | `CONFLICT`: `The request is no longer available for resubmission` (409) / `คำร้องมีการเปลี่ยนแปลง`: `คำร้องนี้ได้รับการเปลี่ยนแปลงหรือไม่อยู่ในสถานะที่แก้ไขได้แล้ว กรุณาตรวจสอบสถานะล่าสุด` | The request is no longer in `returned` status. | Reload the page. |
-| `CONFLICT`: `The request can no longer be cancelled` (409) | The request is already disbursed, closed, rejected, or cancelled. | Expected. |
+| `CONFLICT`: `The request can no longer be cancelled` (409) | The request is already approved by the executive (`pending_disbursement`), disbursed, closed, rejected, or cancelled. | Expected. |
 | `ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง` / `Unable to cancel the request. Please try again.` | Cancel failed. | Retry. Check logs if it repeats. |
 | `ยังเตรียมข้อมูลไม่สำเร็จ กรุณาลองอีกครั้ง` / `The request could not be prepared. Please try again.` | The correction form could not load. | Retry. |
 | `CONFLICT`: `The request changed; please try again` (409) | Another change happened at the same time. | Retry. |
@@ -1029,8 +1120,13 @@ cannot reach.
 | Code or message | Meaning | Action |
 |---|---|---|
 | `VALIDATION_ERROR`: `A slip file is required` (422) | No file was attached. | Attach a slip. |
-| `VALIDATION_ERROR`: `Unsupported slip file type` (422) / `ไฟล์สลิปไม่ถูกต้อง` | Not JPEG, PNG, or PDF. | Use a JPEG, PNG, or PDF. |
+| `VALIDATION_ERROR`: `Unsupported slip file type` (422) / `ไฟล์สลิปไม่ถูกต้อง` | The server accepts only JPEG, PNG, or PDF. | Use a JPEG or PNG (students), or a JPEG, PNG, or PDF (admin disbursement). |
 | `VALIDATION_ERROR`: `Slip file exceeds the 10MB limit` (422) | File larger than 10 MB. | Use a smaller file. |
+| `กรุณาอัปโหลดไฟล์ JPG หรือ PNG` (`Please upload a JPG or PNG file.`) | The student repayment form accepts only JPG or PNG. | Upload a JPG or PNG image. |
+| `ไฟล์รูปภาพต้องมีขนาดไม่เกิน 1 MB` (`The image file must be 1 MB or smaller.`) | The student repayment form accepts images of 1 MB or less. | Use a smaller image, for example a screenshot. |
+| `กรุณาระบุจำนวนเงินเป็นจำนวนเต็มบาท` (`Enter a whole number of baht.`) | The repayment amount is not a whole number of baht. | Enter whole baht. |
+| `จำนวนเงินที่ระบุเกินยอดหนี้คงค้างทั้งหมด หากโอนเงินแล้ว โปรดติดต่อเจ้าหน้าที่เพื่อดำเนินการต่อ` | The repayment amount is more than the total balance. | If the student already transferred more, the fund office arranges a refund. |
+| `VALIDATION_ERROR`: `paidAt is invalid` / `paidAt cannot be in the future` (422) | The transfer date is missing, not a date, or in the future. | Enter the real transfer date. |
 | `INTERNAL_ERROR`: `Unable to upload slip` (500) | Supabase Storage refused the upload. | Check Storage settings (Section 9). |
 | `CONFLICT`: `You have no loan open for repayment` (409) / `ไม่มีสัญญาที่ต้องชำระคืน`: `ไม่พบสัญญากู้ยืมที่อยู่ระหว่างชำระคืน กรุณาตรวจสอบสถานะล่าสุด` | The student has no disbursed loan. | Expected. |
 | `CONFLICT`: `A payment is already awaiting review` (409) / `มีหลักฐานการชำระรอตรวจสอบอยู่แล้ว`: `กรุณารอเจ้าหน้าที่ตรวจสอบหลักฐานการชำระครั้งก่อนให้เสร็จสิ้น แล้วจึงส่งหลักฐานใหม่` | A previous slip waits for review. | An admin reviews the earlier slip first. |
@@ -1053,6 +1149,8 @@ cannot reach.
 | `CONFLICT`: `The request was already decided` (409) | Someone else decided first. | Reload the page. |
 | `CONFLICT`: `The request changed; please retry` (409) / `ข้อมูลคำร้องมีการเปลี่ยนแปลง กรุณาลองใหม่อีกครั้ง` | Concurrent change, or the user's role was removed during the action. | Reload and retry. |
 | `VALIDATION_ERROR`: `approvedAmount is invalid` (422) | Approved amount missing or not a positive whole number. | Enter a valid amount. |
+| `VALIDATION_ERROR`: `approvedAmount is only allowed for approval`, `decision is invalid`, `comment is invalid` (422) | An amount was sent with a return or reject, the decision is unknown, or the comment is longer than 500 characters. | Reload and retry. Shorten the comment. |
+| `VALIDATION_ERROR`: `status is invalid` (422) | The admin queue was opened with an unknown status filter. | Open the queue from the menu. |
 | `VALIDATION_ERROR`: `approvedAmount cannot exceed the requested amount` (422) / `ไม่สามารถปรับวงเงินมากกว่าที่ขอได้ (สูงสุด <amount>)` | Approved more than requested. | Lower the amount. |
 | `ไม่สามารถระบุวงเงินเกินวงเงินระบบ (สูงสุด <amount>)` | Amount above the system loan limit. | Lower the amount. |
 | `กรุณาระบุวงเงินที่มากกว่า 0 บาท` | Amount is 0 or less. | Correct it. |
@@ -1088,7 +1186,9 @@ cannot reach.
 | `CONFLICT`: `The role assignment changed; please retry` (409) | Concurrent change. | Retry. |
 | `ไม่สามารถโหลดรายชื่อผู้ใช้จากฐานข้อมูลได้`, `ไม่สามารถเพิ่มบทบาทผู้ใช้ได้`, `เกิดข้อผิดพลาดในการเปลี่ยนบทบาท` | Role screen errors. | Retry. Check logs. |
 | `VALIDATION_ERROR`: `request body is invalid`, `action is invalid`, `role is invalid` (422) | Invalid role request. | Report to support. |
-| `VALIDATION_ERROR`: `amount is invalid` (422) | Fund amount not a positive whole number. | Correct it. |
+| `VALIDATION_ERROR`: `amount is invalid` / `kind is invalid` (422) | Fund amount not a positive whole number, or an unknown transaction kind. | Correct it. |
+| `ยอดคงเหลือไม่สามารถติดลบได้`, `ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบจำนวนเงินและเหตุผล`, `เกิดข้อขัดแย้ง กรุณาลองใหม่` | Budget screen: the balance would go negative, the amount or reason is not valid, or a concurrent change happened. | Lower the amount, correct the form, or retry. |
+| `ไม่มีสิทธิ์แก้ไขการตั้งค่าระบบ`, `ข้อมูลมีการเปลี่ยนแปลง กรุณาลองใหม่อีกครั้ง`, `บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่`, `ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง` | Contact settings screen: no SuperAdmin role, a concurrent change, a save error, or a value that is not valid (Section 7.2). The screen also shows `กรุณาระบุ...` under an empty required field. | Check the role, then retry or correct the value. |
 | `VALIDATION_ERROR`: `A note is required for this transaction kind` (422) | Only `top_up` may have no note. | Add a note. |
 | `INSUFFICIENT_FUNDS`: `The fund balance cannot go negative` (409) | Withdrawal larger than the balance. | Lower the amount. |
 | `INSUFFICIENT_FUND_CAPACITY`: `The fund's cash must cover every loan request not yet paid out; at most <amount> can be taken out` (409) | The withdrawal would leave too little for approved loans. | Withdraw at most the shown amount. |
@@ -1104,18 +1204,25 @@ cannot reach.
 |---|---|---|
 | `UNAUTHORIZED`: `Unauthorized` (401) on `/api/cron/` | `CRON_SECRET` is not set, or the request header is wrong. | Set `CRON_SECRET`. Restart the server. |
 | `disbursed loan has no approved amount or installment schedule` (`last_error` of a `loan_outcome` row) | The disbursed loan has no installment rows. The email was not sent. | Report to support with the loan ID. |
-| `Job scheduler not started: CRON_SECRET is not set` (server log) | `ENABLE_JOB_SCHEDULER=true` but no `CRON_SECRET`. | Set `CRON_SECRET`. Restart the server. |
+| `Job scheduler not started: CRON_SECRET is not set` (server log) | The built-in scheduler was chosen (a server that keeps running, or `ENABLE_JOB_SCHEDULER=true`) but `CRON_SECRET` is missing. | Set `CRON_SECRET`. Restart the server. |
+| `Job scheduler: using Vercel Cron from vercel.json` (server log) | Normal on Vercel. Vercel Cron calls the jobs. | None. |
+| `Job scheduler not started (<reason>). Call the /api/cron routes from an outside scheduler.` (server log) | `ENABLE_JOB_SCHEDULER=false`, or a serverless host without a scheduler. | Add an outside scheduler, or remove `ENABLE_JOB_SCHEDULER=false`. |
 | `Scheduled job <path> returned <status>: <body>` / `Scheduled job <path> failed` (server log) | A job run failed. The body is one of the messages in this section. | Fix the cause. The job runs again on its next interval. |
 | `INTERNAL_ERROR` (500) with `APP_BASE_URL must be a valid URL` or `APP_BASE_URL must use HTTP or HTTPS` | Wrong `APP_BASE_URL`. | Fix it. Redeploy. |
 | `RATE_LIMITED`: `A notification for this step was already sent recently` (429) | A manual LINE reminder was sent in the last 60 seconds. | Wait one minute. |
 | `CONFLICT`: `The loan has no reviewer awaiting action` (409) | The request is not waiting for a reviewer. | None. |
 | `CONFLICT`: `No reviewer is available to notify for this loan` (409) | No user has the needed role. | Grant the role (Section 3.2). |
 | `FORBIDDEN`: `Not allowed to notify reviewers for this loan` (403) | The user may not send this reminder. | None. |
-| `INTERNAL_ERROR`: `Unable to resolve notification recipients` / `Unable to send reviewer notification` (500) | LINE delivery failed. | Check `NOTIFY_API_URL` and `NOTIFY_API_TOKEN`. |
+| `INTERNAL_ERROR`: `Unable to resolve notification recipients` (500) | The reviewers of the request could not be read from the database. The log shows `Unable to resolve reviewer recipients`. | Check the database connection and Vercel logs. |
+| `INTERNAL_ERROR` (500) with a LINE client message (see below), or `Unable to send reviewer notification` | The manual LINE reminder could not be sent to any reviewer. | Check `NOTIFY_API_URL` and `NOTIFY_API_TOKEN`. |
 | `NOT_FOUND`: `No outstanding installment for this loan` (404) | Nothing to remind. | None. |
 | `CONFLICT`: `The loan is not currently disbursed` / `This installment has no remaining balance` (409) | Reminder not possible. | None. |
 | `studentEmail must be a valid @cmu.ac.th address` | The student has no valid CMU email. | Check the `app_user` email. |
-| `INTERNAL_ERROR`: `Unable to build reminder email` / `Unable to send reminder email` (500 or 422) | Email API failure. | Check the Email API settings. |
+| `VALIDATION_ERROR`: `Unable to build reminder email`, or the build error text such as `studentEmail must be a valid @cmu.ac.th address` (422) | The reminder email could not be built from the student data. | Check the student's `app_user` email. |
+| `INTERNAL_ERROR`: `Unable to send reminder email`, or an Email client message (see below) (500) | The Email API refused or did not answer. | Check the Email API settings. |
+| `NOTIFY_API_URL must be a valid URL`, `Notification API did not respond in time`, `Unable to connect to notification API`, `Notification API returned invalid JSON` (in logs or `last_error`) | LINE client errors: a wrong setting, a timeout, no connection, or a bad answer from the FON API. | Check `NOTIFY_API_URL` and the FON API status. Retry the rows (Section 4.3). |
+| `EMAIL_API_URL must be a valid URL`, `Unable to connect to Email API GetToken endpoint`, `Unable to connect to Email API SendEmail endpoint`, `Email API returned invalid JSON`, `Email API returned an unexpected response` (in logs or `last_error`) | Email client errors: a wrong setting, no connection, or a bad answer from the CMU Email API. | Check `EMAIL_API_URL` and the credentials (Section 4.10). Retry the rows (Section 4.3). |
+| `No reviewer recipient resolved for loan <id> at status <status>` (in logs) | No user has the role that must review the request, so no LINE message was queued. | Grant the role (Section 3.2). |
 | `VALIDATION_ERROR`: `Request body must be valid JSON` / `loanId is invalid` (422) | Wrong request. | Report to support. |
 | `Missing required environment variable: <name>` (in logs) | A required setting is missing. | Set it in Section 7.1. Redeploy. |
 | `requestId is required to build a reviewer deep link`, `color must be a 6-digit HEX color`, `weblink must be a valid URL`, `idempotencyKey must contain 1-255 printable ASCII characters`, `idempotencyKey cannot be reused with a different notification payload` (in logs or `last_error`) | A LINE message was built with invalid data. | Report to support with the outbox row `id`. |
@@ -1130,8 +1237,11 @@ cannot reach.
 | `Missing .env. Create it from .env.example and set INFISICAL_ENV.` | An `npm run` command needs a local `.env`. | Create `.env` with `INFISICAL_ENV=dev`. |
 | `Usage: node scripts/with-infisical.mjs <command> [...args]` | The wrapper script ran with no command. | Use the `npm run` commands in Section 6. |
 | `Supabase Storage upload failed with HTTP <status>: <text>` / `Supabase Storage sign failed with HTTP <status>: <text>` (in logs) | Supabase Storage refused the request. | Check the bucket and the service role key. |
-| `Unsupported slip content type: <type>` / `Slip exceeds the 10485760-byte limit` (in logs) | A slip failed the storage checks. | The user uploads a JPEG, PNG, or PDF of 10 MB or less. |
+| `Unsupported slip content type: <type>` / `Slip exceeds the 10485760-byte limit` (in logs) | A slip failed the storage checks. | Students upload a JPG or PNG of 1 MB or less. Admins upload a JPEG, PNG, or PDF of 10 MB or less. |
 | `the app exited early with code <code>` / `nothing is listening on 8081` (from `npm run api:test`) | The test app did not start, often because another `npm run dev` runs in the same folder. | Stop the other server and retry. |
+| `another next dev server is running (pid <pid>, <url>)` / `port 8081 is already in use` (from `npm run api:test`) | The check before the tests found a running dev server or a used port. | Stop the other server or program and retry. |
+| `docker is required` / `postgres did not become ready within 60s` / `the app did not start within 120s` (from `npm run api:test`) | Docker is missing or slow, or the test app was slow to start. | Start Docker and retry. |
+| `prisma migrate deploy failed` / `seed failed` (from `npm run api:test`) | The test database could not be prepared. It is a local container, not the real database. | Read the lines above the message. Report to the developers. |
 
 ---
 
@@ -1169,13 +1279,13 @@ Include this information:
 | Approved amount | The loan amount set by the admin. It can be lower than the requested amount. |
 | Audit log | Table `audit_log`. A record of staff actions with before and after values. |
 | CMU Entra ID | The CMU sign-in service (Microsoft Entra ID) used for all users. |
-| Cron job | A scheduled job. The job scheduler inside the server calls a `/api/cron/` route on the schedule in `lib/jobs/start-scheduler.ts`. |
+| Cron job | A scheduled job at a `/api/cron/` route. On Vercel, Vercel Cron calls it on the schedule in `vercel.json`. On a server that keeps running, the job scheduler inside the server runs it on the schedule in `lib/jobs/start-scheduler.ts`. |
 | Disbursement | The bank transfer of the approved amount to the student. An admin records it with a slip. |
 | Executive | The one person who gives final approval. Role `executive`. |
 | FON | The CMU LINE notification API used to message reviewers. |
 | Fund ledger | Table `fund_transaction`. Every money movement of the fund. Rows cannot be changed or deleted. |
 | Infisical | The secret store with environments `dev` and `prod`. |
-| Installment | One scheduled repayment of a loan. A loan has 1 to 4 installments. |
+| Installment | One scheduled repayment of a loan. A loan has 1 to 3 installments. |
 | Loan request | A student's application. Its ID has the form `REQYYYYMMDDNNNN`. |
 | Loan status | The stage of a loan request: `draft`, `returned`, `pending_advisor`, `pending_admin`, `pending_executive`, `pending_disbursement`, `disbursed`, `closed`, `rejected`, `cancelled`. |
 | Maintainer | The person who performs the tasks in this guide. |
@@ -1183,7 +1293,7 @@ Include this information:
 | Notification outbox | Table `notification_outbox`. Messages that wait to be sent, or were sent. |
 | Production | The live system that users use. Secrets in Infisical `prod`. |
 | Redeploy | Build and publish the application again in Vercel so that new settings take effect. |
-| Repayment slip | An image or PDF of a bank transfer that a student uploads to repay. |
+| Repayment slip | A JPG or PNG image of a bank transfer that a student uploads to repay. |
 | Signed link | A temporary (300 seconds) address that opens one slip file. |
 | Slip storage | The private Supabase Storage bucket `bank_payment_slips`. |
 | SuperAdmin | The system owner in the application. Role `super_admin`. |
@@ -1196,3 +1306,4 @@ Include this information:
 | Version | Date | Author | Changes |
 |---|---|---|---|
 | 1.0 draft | 2026-09-28 | Me_Tang development team `[TO VERIFY: author names]` | First version for Jira NAT-214. Written from the repository at commit `f7fc3cd`, plus the Jira NAT-206 change (student email on slip confirmation or rejection), student emails on request rejection and disbursement, and the backend job scheduler. |
+| 1.1 draft | 2026-09-28 | Me_Tang development team | Jira NAT-240: corrected against the code at commit `d05ac00`. Scheduled jobs on Vercel, student cancel and executive return, eligibility rules, installment count (1 to 3), phone and slip rules, notifications sent without the outbox, fund ledger limits, the production database warning, unit tests, rollback behavior, and missing error messages in Section 10. |
