@@ -1,8 +1,9 @@
 import path from "node:path";
 import type { NextConfig } from "next";
+import { BASE_PATH } from "./lib/base-path";
 
 const nextConfig: NextConfig = {
-  basePath: "/metang",
+  basePath: BASE_PATH,
   turbopack: {
     root: path.resolve(__dirname),
   },
