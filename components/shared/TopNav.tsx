@@ -109,7 +109,7 @@ export default function TopNav({
               className="h-[60px] w-[60px] object-contain"
               height={60}
               priority
-              src="/metang-logo7.png"
+              src="/metang/metang-logo7.png"
               width={60}
             />
           </Link>
