@@ -26,11 +26,11 @@ OpenID Connect with ID-token signature, issuer, audience, nonce, and expiry vali
 | Area | File or route | Responsibility |
 | --- | --- | --- |
 | Shared authentication library | `lib/cmu-auth.ts` | Configuration, PKCE, state, encryption, profile sanitization, and session reads |
-| General login | `GET /api/auth/login` | Creates a general OAuth transaction and redirects to CMU Entra |
-| Nursing SSO login | `GET /api/auth/nurse/login` | Creates a nursing-policy OAuth transaction and redirects to CMU Entra |
-| Complete login | `GET /api/auth/callback` | Validates the callback, exchanges the code, fetches BasicInfo, and applies nursing policy when requested |
+| General login | `GET /metang/api/auth/login` | Creates a general OAuth transaction and redirects to CMU Entra |
+| Nursing SSO login | `GET /metang/api/auth/nurse/login` | Creates a nursing-policy OAuth transaction and redirects to CMU Entra |
+| Complete login | `GET /metang/api/auth/callback` | Validates the callback, exchanges the code, fetches BasicInfo, and applies nursing policy when requested |
 | Nursing access policy | `lib/nurse-auth.ts` | Allows only eligible nursing students and nursing-faculty employees |
-| Logout | `POST /api/auth/logout` | Deletes the local session and redirects through Entra logout |
+| Logout | `POST /metang/api/auth/logout` | Deletes the local session and redirects through Entra logout |
 | Login/profile UI | `app/page.tsx` | Shows login status and the complete BasicInfo JSON response |
 
 The application does not currently persist CMU identity information to Postgres.
@@ -44,13 +44,13 @@ sequenceDiagram
   participant Entra as CMU Entra
   participant API as CMU BasicInfo API
 
-  User->>App: GET /api/auth/login
+  User->>App: GET /metang/api/auth/login
   App->>App: Create state and PKCE verifier
   App-->>User: Encrypted cmu_oauth_transaction cookie
   App-->>User: Redirect to /authorize
   User->>Entra: Sign in or reuse CMU SSO session
   Entra-->>User: Redirect with code and state
-  User->>App: GET /api/auth/callback
+  User->>App: GET /metang/api/auth/callback
   App->>App: Decrypt transaction and validate state
   App->>Entra: Exchange code, client secret, and PKCE verifier
   Entra-->>App: Access token
@@ -62,7 +62,7 @@ sequenceDiagram
 
 ### 1. Login request
 
-`GET /api/auth/login` reads the server-side configuration and creates:
+`GET /metang/api/auth/login` reads the server-side configuration and creates:
 
 - A cryptographically random OAuth `state` value.
 - A PKCE verifier and SHA-256 challenge.
@@ -73,7 +73,7 @@ The browser is redirected to the configured `AUTH_URL` with `response_type=code`
 
 ### 2. Callback and token exchange
 
-CMU Entra redirects to `GET /api/auth/callback`. The callback requires all three values:
+CMU Entra redirects to `GET /metang/api/auth/callback`. The callback requires all three values:
 
 - Authorization `code` from Entra.
 - Returned `state` from Entra.
@@ -142,7 +142,7 @@ it must not be implemented only as a UI visibility check.
 
 ### 4. Logout
 
-The page submits `POST /api/auth/logout`. The route expires `cmu_session` and sends a `303`
+The page submits `POST /metang/api/auth/logout`. The route expires `cmu_session` and sends a `303`
 redirect to `LOGOUT_URL`. The configured Entra endpoint then returns the browser to the URL in
 `post_logout_redirect_uri`.
 
@@ -156,7 +156,7 @@ secret.
 3. Register the exact callback URI used by the application:
 
    ```text
-   http://localhost:8080/api/auth/callback
+   http://localhost:8080/metang/api/auth/callback
    ```
 
 4. Under **Certificates & secrets**, create a client secret and store its value securely.
@@ -194,7 +194,7 @@ Example development configuration:
 EXT_PORT=8080
 AUTH_URL=https://login.microsoftonline.com/cf81f1df-de59-4c29-91da-a2dfd04aa751/oauth2/v2.0/authorize
 TOKEN_URL=https://login.microsoftonline.com/cf81f1df-de59-4c29-91da-a2dfd04aa751/oauth2/v2.0/token
-CALLBACK_URL=http://localhost:8080/api/auth/callback
+CALLBACK_URL=http://localhost:8080/metang/api/auth/callback
 CLIENT_ID=replace-with-application-id
 CLIENT_SECRET=replace-with-client-secret
 SESSION_SECRET=replace-with-a-random-value-of-at-least-32-characters
@@ -261,7 +261,7 @@ sessions to a server-side store and keep only an opaque session identifier in th
    npm run dev -- -p 8080
    ```
 
-4. Open <http://localhost:8080>.
+4. Open <http://localhost:8080/metang>.
 5. Select **เข้าสู่ระบบด้วย CMU Account**.
 6. Complete CMU sign-in and consent.
 7. Confirm the page displays the expected BasicInfo profile.

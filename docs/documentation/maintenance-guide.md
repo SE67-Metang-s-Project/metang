@@ -41,6 +41,7 @@ Updates and upgrades (Section 6) need a copy of the source repository and Node.j
 | Database access | Prisma `7.9.1` with PostgreSQL |
 | Node.js | `24` (from `.nvmrc`) |
 | Database migrations | 19, the latest is `20260929120000_loan_request_transfer_confirmed` |
+| Base path | `/metang` (`basePath` in `next.config.ts`) |
 
 ### 1.4 Conventions
 
@@ -67,14 +68,21 @@ hosted services.
 
 | Component | Service | What it does |
 |---|---|---|
-| Web application | Vercel (serverless functions) | Serves all pages and the API under `/api/`. |
-| Scheduled jobs | Chosen at server start by `instrumentation.ts` (`lib/jobs/runtime.ts`) | On Vercel (`VERCEL=1`): Vercel Cron calls the five `/api/cron/` routes from `vercel.json`. On a server that keeps running (`next start`, `npm run dev`): the server runs the same five jobs on its own timers. |
+| Web application | Vercel (serverless functions) | Serves all pages and the API under `/metang/api/`. |
+| Scheduled jobs | Chosen at server start by `instrumentation.ts` (`lib/jobs/runtime.ts`) | On Vercel (`VERCEL=1`): Vercel Cron calls the five `/metang/api/cron/` routes from `vercel.json`. On a server that keeps running (`next start`, `npm run dev`): the server runs the same five jobs on its own timers. |
 | Database | Supabase PostgreSQL | Stores users, roles, loan requests, approvals, installments, payments, the fund ledger, the notification outbox, the audit log, and system settings. |
 | Slip storage | Supabase Storage, private bucket `bank_payment_slips` | Stores bank-transfer slip files (JPEG, PNG, PDF) for disbursements and repayments. |
 | Sign-in | CMU Entra ID (OAuth 2.0) and CMU BasicInfo API | Signs users in with their CMU IT Account and reads their profile. |
 | Reviewer notifications | CMU LINE notification API ("FON") | Sends LINE messages to the advisor, admin, or executive who must act on a request. |
 | Student emails | CMU Email API (Outlook) | Sends repayment due-date reminders to students. Tells students when their request is rejected, when the loan is disbursed, and when an admin confirms or rejects a repayment slip. |
 | Secrets | Infisical, environments `dev` and `prod` | Stores all passwords, keys, and tokens. |
+
+All pages and API routes are served under the base path `/metang`, for example
+`https://<host>/metang/login` and `https://<host>/metang/api/cron/deliver-fon`. A request to an
+old path without `/metang` (`/`, `/login`, `/student/...`, `/api/...`, and the public images)
+gets a temporary `307` redirect to the same path under `/metang` (`redirects()` in
+`next.config.ts`). Vercel Cron does not follow redirects, so every `path` in `vercel.json`
+must start with `/metang/api/cron/`.
 
 The Vercel project needs the Pro plan or higher. The `vercel.json` schedules run every minute and
 every 3 minutes, and the Hobby plan allows only daily cron jobs (Section 2.3).
@@ -87,11 +95,11 @@ every 3 minutes, and the Hobby plan allows only daily cron jobs (Section 2.3).
 flowchart LR
   U[User browser] -->|HTTPS| V[Vercel: Me_Tang web app and API]
   U -->|Sign in| E[CMU Entra ID]
-  E -->|Callback /api/auth/callback| V
+  E -->|Callback /metang/api/auth/callback| V
   V -->|Profile| B[CMU BasicInfo API]
   V -->|SQL via DATABASE_URL| D[(Supabase PostgreSQL)]
   V -->|REST, service role key| S[(Supabase Storage: bank_payment_slips)]
-  C[Vercel Cron] -->|Calls /api/cron/ routes with CRON_SECRET| V
+  C[Vercel Cron] -->|Calls /metang/api/cron/ routes with CRON_SECRET| V
   V -->|Reviewer messages| L[CMU LINE FON API]
   V -->|Student reminder and slip result emails| M[CMU Email API]
   I[Infisical] -.->|Secrets as environment variables| V
@@ -101,8 +109,8 @@ On a server that keeps running (`next start`), Vercel Cron is not used. The job 
 the application runs the same jobs by calling the route code directly (Section 2.3).
 
 When a signed-out user opens a protected page, such as a link in a notification email, the
-application sends them to `/login?next=<page>`. After CMU sign-in, `/api/auth/callback` returns
-them to that page instead of their role home page. `proxy.ts` passes the current page to the
+application sends them to `/metang/login?next=<page>`. After CMU sign-in,
+`/metang/api/auth/callback` returns them to that page instead of their role home page. `proxy.ts` passes the current page to the
 page guard, and `lib/return-path.ts` rejects any value that is not a page on this site.
 
 ### 2.3 How notifications work
@@ -114,11 +122,11 @@ and marks each row `delivered`, `retry`, or `failed`.
 Two manual actions send at once and do not use the outbox. They write no `notification_outbox`
 row, keep no delivery history, and are not retried:
 
-- A LINE reminder to the current reviewer (`POST /api/notifications/fon`). The student of the
+- A LINE reminder to the current reviewer (`POST /metang/api/notifications/fon`). The student of the
   request, its advisor, or any admin, SuperAdmin, or executive can send it. The same request and
   status can be sent again only after 60 seconds. Each server instance keeps its own 60-second
   timer in memory.
-- A due-date email to a student (`POST /api/notifications/outlook`), for an admin or SuperAdmin.
+- A due-date email to a student (`POST /metang/api/notifications/outlook`), for an admin or SuperAdmin.
   Version 0.1.0 has no button for this.
 
 Reviewer notifications write one outbox row for each recipient. A step with three admins writes
@@ -126,11 +134,11 @@ three rows.
 
 | Scheduled job | Schedule in `lib/jobs/start-scheduler.ts` | What it does |
 |---|---|---|
-| `/api/cron/installment-reminders` | Once a day, at the first check after 08:00 Bangkok time | Finds unpaid installments due today, in 1 day, and in 3 days (Bangkok dates). Writes one `installment_reminder` row per installment and offset. |
-| `/api/cron/deliver-reminders` | Every 3 minutes | Sends `installment_reminder` rows by email through the CMU Email API. |
-| `/api/cron/deliver-fon` | Every minute | Sends `reviewer_notification` rows by LINE through the FON API. |
-| `/api/cron/deliver-loan-outcomes` | Every 3 minutes | Sends `loan_outcome` rows by email through the CMU Email API. A rejection by the advisor, admin, or executive writes one row; the email names who rejected and the reason. A disbursement writes one row; the email states the amount and the first installment. |
-| `/api/cron/deliver-payment-outcomes` | Every 3 minutes | Sends `payment_outcome` rows by email through the CMU Email API. An admin's confirm or reject of a repayment slip writes one row. A rejection email includes the reviewer's reason. |
+| `/metang/api/cron/installment-reminders` | Once a day, at the first check after 08:00 Bangkok time | Finds unpaid installments due today, in 1 day, and in 3 days (Bangkok dates). Writes one `installment_reminder` row per installment and offset. |
+| `/metang/api/cron/deliver-reminders` | Every 3 minutes | Sends `installment_reminder` rows by email through the CMU Email API. |
+| `/metang/api/cron/deliver-fon` | Every minute | Sends `reviewer_notification` rows by LINE through the FON API. |
+| `/metang/api/cron/deliver-loan-outcomes` | Every 3 minutes | Sends `loan_outcome` rows by email through the CMU Email API. A rejection by the advisor, admin, or executive writes one row; the email names who rejected and the reason. A disbursement writes one row; the email states the amount and the first installment. |
+| `/metang/api/cron/deliver-payment-outcomes` | Every 3 minutes | Sends `payment_outcome` rows by email through the CMU Email API. An admin's confirm or reject of a repayment slip writes one row. A rejection email includes the reviewer's reason. |
 
 At server start, `instrumentation.ts` logs which trigger it chose:
 
@@ -139,7 +147,7 @@ At server start, `instrumentation.ts` logs which trigger it chose:
 - `Job scheduler: using Vercel Cron from vercel.json`: the host is Vercel. Vercel calls the jobs.
   The schedules in `vercel.json` need the Vercel Pro plan.
 - `Job scheduler not started (...)`: a serverless host without a scheduler (AWS Lambda, Netlify),
-  or `ENABLE_JOB_SCHEDULER=false`. Something outside must call the `/api/cron/` routes.
+  or `ENABLE_JOB_SCHEDULER=false`. Something outside must call the `/metang/api/cron/` routes.
 
 `ENABLE_JOB_SCHEDULER=true` forces the built-in scheduler; `false` turns it off. A job that is still
 running is not started again. Several server instances can run the scheduler at the same time:
@@ -219,14 +227,14 @@ student account. A SuperAdmin grants every other role in the application.
 |---|---|
 | `student` | Apply for a loan, correct and resubmit, cancel until the executive approves (not in `pending_disbursement` or later), upload repayment slips. |
 | `advisor` | Approve, return, or reject requests of their own advisees. A comment is required. |
-| `admin` | Review requests, set the approved amount, record disbursement with a slip, confirm or reject repayment slips. The due-date email API (`POST /api/notifications/outlook`) is open to admins, but version 0.1.0 has no button for it. |
+| `admin` | Review requests, set the approved amount, record disbursement with a slip, confirm or reject repayment slips. The due-date email API (`POST /metang/api/notifications/outlook`) is open to admins, but version 0.1.0 has no button for it. |
 | `executive` | Final decision: approve, return to the admin, or reject. The database allows only one `executive`. |
 | `super_admin` | Everything an admin can do, plus grant and revoke roles, record fund transactions, and edit system settings. The last `super_admin` cannot be removed in the application. |
 
 Any CMU account can sign in. Staff pages depend only on the roles that a SuperAdmin grants.
 The student functions need a student ID that matches the Faculty of Nursing pattern
 `^\d{2}12\d{5}$`. The organization code check (`12`, Nursing staff) runs only in the separate
-nurse sign-in mode (`/api/auth/nurse/login`). The sign-in page does not link to that mode.
+nurse sign-in mode (`/metang/api/auth/nurse/login`). The sign-in page does not link to that mode.
 
 Role changes have side effects:
 
@@ -331,17 +339,17 @@ Prerequisites: Vercel and Supabase access.
 
 Steps:
 
-1. Open the production site address `[TO VERIFY: production URL]` followed by `/login`.
+1. Open the production site address `[TO VERIFY: production URL]` followed by `/metang/login`.
    Expected result: the sign-in page shows the button **เข้าสู่ระบบด้วย CMU Account**.
    If it shows `ผู้ดูแลระบบต้องตั้งค่า CMU Entra environment variables ก่อนเปิดใช้งาน`, the
    sign-in settings are missing (Section 9).
 2. Check that the scheduled jobs run `[TO VERIFY: log location on the production host]`.
    - On Vercel: open the project **Settings** > **Cron Jobs** and the **Logs**. Expected result:
-     five `/api/cron/` jobs, and recent calls return `200`. A `401` means that `CRON_SECRET` is
+     five `/metang/api/cron/` jobs, and recent calls return `200`. A `401` means that `CRON_SECRET` is
      missing or wrong. The log line at startup is
      `Job scheduler: using Vercel Cron from vercel.json`.
    - On a server that keeps running: search the server log for `Job scheduler started` after the
-     last restart. Expected result: the line is present and lists five `/api/cron/` paths. If it
+     last restart. Expected result: the line is present and lists five cron jobs. If it
      shows `Job scheduler not started: CRON_SECRET is not set`, set `CRON_SECRET` and restart.
 3. In the same log, filter the last 24 hours for errors.
    Expected result: no repeated errors. Look up any message in Section 10.
@@ -582,7 +590,7 @@ Prerequisites: access to Infisical `prod` and to the issuer of the secret.
 |---|---|---|
 | `CLIENT_SECRET` | Nobody can sign in (`token_exchange_failed`). | Entra client secrets have an expiry date `[TO VERIFY: expiry date from CMU ITSC]`. |
 | `SESSION_SECRET` | Changing it signs out every user. | At least 32 characters. Create one with `openssl rand -base64 32`. |
-| `CRON_SECRET` | The job scheduler does not start. Outside callers of `/api/cron/` get `401 Unauthorized`. | The scheduler sends it as `Authorization: Bearer <value>`. Restart the server after a change. |
+| `CRON_SECRET` | The job scheduler does not start. Outside callers of `/metang/api/cron/` get `401 Unauthorized`. | The scheduler sends it as `Authorization: Bearer <value>`. Restart the server after a change. |
 | `NOTIFY_API_TOKEN` | LINE messages fail. | Issued by CMU `[TO VERIFY]`. |
 | `EMAIL_API_CLIENT_ID`, `EMAIL_API_CLIENT_SECRET` | All student emails fail: reminders, request results, disbursements, and repayment slip results. | Issued by the CMU Faculty of Nursing, which runs the Email API at `https://mis.nurse.cmu.ac.th/thesis` (`docs/Email_API_Manual.md`). |
 | `SUPABASE_SERVICE_ROLE_KEY` | Slip upload and slip viewing fail. | Supabase Dashboard: **Project Settings** > **API**. |
@@ -970,15 +978,15 @@ production deployment ("Redeploy") before it takes effect.
 | `DIRECT_URL` | The value of `DATABASE_URL` (`prisma.config.ts`) | PostgreSQL URL, direct connection | Used by migrations (`npm run db:*`) and manual backups. | No (maintainer tools only) | Yes |
 | `AUTH_URL` | None | URL | CMU Entra authorize endpoint. | Yes | No |
 | `TOKEN_URL` | None | URL | CMU Entra token endpoint. | Yes | No |
-| `CALLBACK_URL` | None | URL, exactly as registered in Entra, for example `https://<host>/api/auth/callback` | Where CMU Entra returns after sign-in. | Yes, and register it in Entra | No |
+| `CALLBACK_URL` | None | URL, exactly as registered in Entra, for example `https://<host>/metang/api/auth/callback` | Where CMU Entra returns after sign-in. | Yes, and register it in Entra | No |
 | `LOGOUT_URL` | None | Entra logout URL with `post_logout_redirect_uri` | Sign-out redirect. | Yes | No |
 | `CLIENT_ID` | None | Entra application ID | OAuth client. | Yes | No |
 | `CLIENT_SECRET` | None | Entra client secret | OAuth client secret. | Yes | Yes |
 | `SCOPE` | None | Space-separated scopes, for example `api://cmu/Mis.Account.Read.Me.Basicinfo offline_access` | Permissions requested at sign-in. | Yes | No |
 | `BASICINFO_URL` | None | URL | CMU profile API. | Yes | No |
 | `SESSION_SECRET` | None | Text of 32 characters or more | Encrypts the sign-in cookies. Changing it signs out all users. | Yes | Yes |
-| `APP_BASE_URL` | `http://localhost:8080` | Absolute `https://` URL of the production site | Base of links in LINE messages and emails. If not set, links point to localhost. If the value is not a valid `http` or `https` URL, every delivery job run returns `500` before it claims rows, so notifications wait in the outbox. | Yes | No |
-| `CRON_SECRET` | None. The job scheduler does not start, and `/api/cron/` returns `401`. | Random text | Protects `/api/cron/` routes. The job scheduler uses it too. | Yes | Yes |
+| `APP_BASE_URL` | `http://localhost:8080` | Absolute `https://` URL of the production site, for example `https://<host>` | Base of links in LINE messages and emails. If not set, links point to localhost. A path in the value is not used: links start at the site root (for example `/student/...`) and reach the page through the `/metang` redirect (Section 2.1). If the value is not a valid `http` or `https` URL, every delivery job run returns `500` before it claims rows, so notifications wait in the outbox. | Yes | No |
+| `CRON_SECRET` | None. The job scheduler does not start, and `/metang/api/cron/` returns `401`. | Random text | Protects `/metang/api/cron/` routes. The job scheduler uses it too. | Yes | Yes |
 | `ENABLE_JOB_SCHEDULER` | Not set (detect the host) | `true`, `false`, or not set | `true` forces the built-in scheduler, `false` turns it off. Not set: built-in scheduler on servers that keep running, Vercel Cron on Vercel (Section 2.3). | Yes (restart) | No |
 | `NOTIFY_API_URL` | None | URL | CMU LINE FON API. | Yes | No |
 | `NOTIFY_API_TOKEN` | None | Token | FON API token. | Yes | Yes |
@@ -1034,11 +1042,11 @@ Change a schedule in both `lib/jobs/start-scheduler.ts` (built-in scheduler) and
 
 | Job | Setting | Value |
 |---|---|---|
-| `/api/cron/installment-reminders` | Schedule | `dailyAtBangkokHour(8)` |
-| `/api/cron/deliver-reminders` | Schedule | `everyMinutes(3)` |
-| `/api/cron/deliver-fon` | Schedule | `everyMinutes(1)` |
-| `/api/cron/deliver-payment-outcomes` | Schedule | `everyMinutes(3)` |
-| `/api/cron/deliver-loan-outcomes` | Schedule | `everyMinutes(3)` |
+| `/metang/api/cron/installment-reminders` | Schedule | `dailyAtBangkokHour(8)` |
+| `/metang/api/cron/deliver-reminders` | Schedule | `everyMinutes(3)` |
+| `/metang/api/cron/deliver-fon` | Schedule | `everyMinutes(1)` |
+| `/metang/api/cron/deliver-payment-outcomes` | Schedule | `everyMinutes(3)` |
+| `/metang/api/cron/deliver-loan-outcomes` | Schedule | `everyMinutes(3)` |
 
 ### 7.4 Fixed values (change needs a code update)
 
@@ -1070,8 +1078,8 @@ alerts in Vercel and Supabase `[TO VERIFY: available alert features on the chose
 
 | What to monitor | Where | Normal value | Warning threshold | Action |
 |---|---|---|---|---|
-| Sign-in page responds | `/login` in a browser | Page loads with the CMU sign-in button | Error page or no response | Section 9, "Site does not load". |
-| Scheduled jobs run | On Vercel: **Settings** > **Cron Jobs** and the **Logs** of each `/api/cron/` call. On a server that keeps running: `Job scheduler started` at startup and `Scheduled job` lines when a job did work or failed | `deliver-fon` every minute, `deliver-reminders`, `deliver-payment-outcomes`, and `deliver-loan-outcomes` every 3 minutes, `installment-reminders` once a day | No run for 10 minutes, or status `401` or `500` | Section 9, "Notifications are not sent". |
+| Sign-in page responds | `/metang/login` in a browser | Page loads with the CMU sign-in button | Error page or no response | Section 9, "Site does not load". |
+| Scheduled jobs run | On Vercel: **Settings** > **Cron Jobs** and the **Logs** of each `/metang/api/cron/` call. On a server that keeps running: `Job scheduler started` at startup and `Scheduled job` lines when a job did work or failed | `deliver-fon` every minute, `deliver-reminders`, `deliver-payment-outcomes`, and `deliver-loan-outcomes` every 3 minutes, `installment-reminders` once a day | No run for 10 minutes, or status `401` or `500` | Section 9, "Notifications are not sent". |
 | Waiting notifications | SQL in Section 4.2 step 5 | 0 rows | Any row older than 30 minutes | Section 9. |
 | Failed notifications | SQL in Section 4.2 step 4 | Count does not increase | Any new `failed` row | Section 4.3. |
 | Application errors | Vercel **Logs**, level Error | Few, not repeated | The same error more than 10 times in one hour | Section 10. |
@@ -1095,7 +1103,8 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 
 | Symptom | Likely cause | Fix | Procedure |
 |---|---|---|---|
-| Notifications stop on serverless hosting | On Vercel, Vercel Cron did not call the jobs: `CRON_SECRET` is missing, or the plan does not allow the `vercel.json` schedules. On other serverless hosts (AWS Lambda, Netlify), nothing calls the jobs. | On Vercel, set `CRON_SECRET` and check **Settings** > **Cron Jobs**. On other hosts, add an outside scheduler that calls the `/api/cron/` routes with `CRON_SECRET`, or host Me_Tang on a server that keeps running (`next start`). | 2.3 |
+| Notifications stop on Vercel after a deployment, and **Logs** show no `/metang/api/cron/` calls | A `path` in `vercel.json` does not start with `/metang`. Vercel Cron gets the `307` redirect, treats it as the final response, and does not log the call. | Start every `path` in `vercel.json` with `/metang/api/cron/`. Redeploy. | 2.1 |
+| Notifications stop on serverless hosting | On Vercel, Vercel Cron did not call the jobs: `CRON_SECRET` is missing, or the plan does not allow the `vercel.json` schedules. On other serverless hosts (AWS Lambda, Netlify), nothing calls the jobs. | On Vercel, set `CRON_SECRET` and check **Settings** > **Cron Jobs**. On other hosts, add an outside scheduler that calls the `/metang/api/cron/` routes with `CRON_SECRET`, or host Me_Tang on a server that keeps running (`next start`). | 2.3 |
 | Build fails with `Missing .env. Create it from .env.example and set INFISICAL_ENV.` | The build runs `npm run build` on a machine without `.env`. | Set the Vercel Build Command to `next build`, or create `.env` with `INFISICAL_ENV`. | 6.2 |
 | Site does not load, every page returns an error | Missing `DATABASE_URL`, database down, or a failed deployment. | Check Vercel **Logs** for `DATABASE_URL is not set`. Check Supabase project status. Roll back if a deployment caused it. | 4.2, 6.3 |
 | Sign-in page shows `ผู้ดูแลระบบต้องตั้งค่า CMU Entra environment variables ก่อนเปิดใช้งาน` | One of the CMU Entra settings is missing. | Set all settings in Section 7.1 from `AUTH_URL` to `SESSION_SECRET`. Redeploy. | 4.10 |
@@ -1129,7 +1138,7 @@ The API returns errors as `{ "error": { "code": "...", "message": "..." } }`. St
 show Thai text. Student pages show Thai or English. The tables below list the exact text.
 Text in angle brackets, such as `<amount>`, is filled in by the application.
 
-Not listed: messages of the developer test pages under `/demo/` (they work only in a
+Not listed: messages of the developer test pages under `/metang/demo/` (they work only in a
 development environment), messages of developer build scripts, and code checks that users
 cannot reach.
 
@@ -1138,7 +1147,7 @@ cannot reach.
 | Code or message | Meaning | Action |
 |---|---|---|
 | `configuration` / `ยังไม่ได้ตั้งค่า CMU Entra สำหรับแอปนี้` | A CMU Entra setting is missing or not a valid URL, or `SESSION_SECRET` is shorter than 32 characters. The log shows `Unable to start CMU login` with the cause. | Set the settings in Section 7.1. Redeploy. |
-| `ผู้ดูแลระบบต้องตั้งค่า CMU Entra environment variables ก่อนเปิดใช้งาน` | Same cause, shown as a banner on `/login`. | Same as above. |
+| `ผู้ดูแลระบบต้องตั้งค่า CMU Entra environment variables ก่อนเปิดใช้งาน` | Same cause, shown as a banner on `/metang/login`. | Same as above. |
 | `access_denied` / `การเข้าสู่ระบบถูกยกเลิก` | The user cancelled at CMU Entra. | The user signs in again. |
 | `invalid_callback` / `ข้อมูลตอบกลับจาก CMU ไม่ครบถ้วน กรุณาลองใหม่` | The CMU response was incomplete, or the sign-in cookie was missing. | The user signs in again. Check that cookies are allowed. |
 | `invalid_state` / `คำขอเข้าสู่ระบบหมดอายุหรือไม่ถูกต้อง กรุณาลองใหม่` | The sign-in attempt expired (10 minutes) or did not match. | The user signs in again. |
@@ -1290,7 +1299,7 @@ cannot reach.
 
 | Code or message | Meaning | Action |
 |---|---|---|
-| `UNAUTHORIZED`: `Unauthorized` (401) on `/api/cron/` | `CRON_SECRET` is not set, or the request header is wrong. | Set `CRON_SECRET`. Restart the server. |
+| `UNAUTHORIZED`: `Unauthorized` (401) on `/metang/api/cron/` | `CRON_SECRET` is not set, or the request header is wrong. | Set `CRON_SECRET`. Restart the server. |
 | `disbursed loan has no approved amount or installment schedule` (`last_error` of a `loan_outcome` row) | The disbursed loan has no installment rows. The email was not sent. | Report to support with the loan ID. |
 | `Job scheduler not started: CRON_SECRET is not set` (server log) | The built-in scheduler was chosen (a server that keeps running, or `ENABLE_JOB_SCHEDULER=true`) but `CRON_SECRET` is missing. | Set `CRON_SECRET`. Restart the server. |
 | `Job scheduler: using Vercel Cron from vercel.json` (server log) | Normal on Vercel. Vercel Cron calls the jobs. | None. |
@@ -1367,7 +1376,7 @@ Include this information:
 | Approved amount | The loan amount set by the admin. It can be lower than the requested amount. |
 | Audit log | Table `audit_log`. A record of staff actions with before and after values. |
 | CMU Entra ID | The CMU sign-in service (Microsoft Entra ID) used for all users. |
-| Cron job | A scheduled job at a `/api/cron/` route. On Vercel, Vercel Cron calls it on the schedule in `vercel.json`. On a server that keeps running, the job scheduler inside the server runs it on the schedule in `lib/jobs/start-scheduler.ts`. |
+| Cron job | A scheduled job at a `/metang/api/cron/` route. On Vercel, Vercel Cron calls it on the schedule in `vercel.json`. On a server that keeps running, the job scheduler inside the server runs it on the schedule in `lib/jobs/start-scheduler.ts`. |
 | Disbursement | The bank transfer of the approved amount to the student. An admin records it with a slip. |
 | Executive | The one person who gives final approval. Role `executive`. |
 | FON | The CMU LINE notification API used to message reviewers. |

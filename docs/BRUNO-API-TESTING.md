@@ -684,8 +684,8 @@ Set up. `bruno/` holds the collection, `npm run api:test` runs it. Full detail i
 ```
 bruno/
   opencollection.yml
-  environments/isolated.yml    # http://localhost:8081/api - the harness
-  environments/local.yml       # http://localhost:8080/api - your dev server
+  environments/isolated.yml    # http://localhost:8081/metang/api - the harness
+  environments/local.yml       # http://localhost:8080/metang/api - your dev server
   <13 tag folders>/            # imported from public/openapi.json
   Workflow/                    # hand-written ordered walk over the state machine
 ```
