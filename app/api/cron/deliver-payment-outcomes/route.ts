@@ -1,22 +1,29 @@
 import { checkCronAuth } from "@/lib/notifications/cron-auth";
 import { apiOk, apiError } from "@/lib/api-response";
 import {
-  INSTALLMENT_REMINDER_EVENT,
+  PAYMENT_OUTCOME_EVENT,
   claimDueNotifications,
   markDelivered,
   markFailed,
   markSkipped,
 } from "@/db/queries/notifications";
-import { getInstallmentReminderContextById } from "@/db/queries/notification-recipients";
-import { buildLoanDueReminderEmail } from "@/lib/email-api/loan-reminder-template";
+import { getPaymentOutcomeContextById } from "@/db/queries/notification-recipients";
+import { buildPaymentOutcomeEmail } from "@/lib/email-api/payment-outcome-template";
 import { sendEmail } from "@/lib/email-api/client";
 import { classifyDeliveryFailure } from "@/lib/notifications/delivery-outcome";
+import {
+  decidePaymentOutcomeDelivery,
+  parsePaymentOutcomeRow,
+} from "@/lib/notifications/payment-outcome";
 import { buildStudentLoanDetailUrl } from "@/lib/student-deeplink";
 import { serializeJson } from "@/lib/serialization";
-import { parseReminderRow, decideDelivery } from "@/lib/notifications/delivery-decision";
 
 export const maxDuration = 60;
 
+/**
+ * Emails students the outcome of an Admin's review of their repayment slip. Students are notified
+ * through the Outlook email API only - never FON, which stays reviewer-only.
+ */
 async function handle(request: Request) {
   const authError = checkCronAuth(request);
   if (authError) return authError;
@@ -30,8 +37,7 @@ async function handle(request: Request) {
     return apiError("INTERNAL_ERROR", message, 500);
   }
 
-  // Smaller batch to ensure completion within maxDuration
-  const rows = await claimDueNotifications(20, INSTALLMENT_REMINDER_EVENT);
+  const rows = await claimDueNotifications(20, PAYMENT_OUTCOME_EVENT);
   let processed = 0;
   let delivered = 0;
   let skipped = 0;
@@ -43,33 +49,33 @@ async function handle(request: Request) {
       rows.slice(i, i + CONCURRENCY).map(async (row) => {
         processed++;
 
-        const parsed = parseReminderRow({ eventType: row.eventType, payload: row.payload });
+        const parsed = parsePaymentOutcomeRow({ eventType: row.eventType, payload: row.payload });
         if (parsed.kind === "fail") {
           await markFailed(row.id, parsed.message, { permanent: true });
           failed++;
           return;
         }
 
-        const installment = await getInstallmentReminderContextById(parsed.installmentId);
-        const decision = decideDelivery(installment);
-
+        const decision = decidePaymentOutcomeDelivery(
+          await getPaymentOutcomeContextById(parsed.paymentId),
+        );
         if (decision.kind === "skip") {
           await markSkipped(row.id, decision.reason);
           skipped++;
           return;
         }
 
-        const { installment: due } = decision;
+        const { payment } = decision;
         let emailPayload;
         try {
-          emailPayload = buildLoanDueReminderEmail({
-            studentName: due.loan.student.fullNameTh,
-            studentEmail: due.loan.student.email,
-            installmentSeq: due.seq,
-            amountDue: decision.amountRemaining,
-            dueDate: due.dueDate,
-            loanId: due.loanId,
-            loanDetailUrl: buildStudentLoanDetailUrl(baseUrl, due.loanId),
+          emailPayload = buildPaymentOutcomeEmail({
+            outcome: decision.outcome,
+            studentName: payment.loan.student.fullNameTh,
+            studentEmail: payment.loan.student.email,
+            amount: payment.amount,
+            loanId: payment.loanId,
+            reviewNote: payment.reviewNote,
+            loanDetailUrl: buildStudentLoanDetailUrl(baseUrl, payment.loanId),
           });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
@@ -83,17 +89,13 @@ async function handle(request: Request) {
           await markDelivered(row.id);
           delivered++;
         } catch (error) {
-          const outcome = classifyDeliveryFailure(error);
           const message = error instanceof Error ? error.message : String(error);
-
-          if (outcome === "permanent") {
-            await markFailed(row.id, message, { permanent: true });
-          } else {
-            await markFailed(row.id, message, {});
-          }
+          await markFailed(row.id, message, {
+            permanent: classifyDeliveryFailure(error) === "permanent",
+          });
           failed++;
         }
-      })
+      }),
     );
   }
 

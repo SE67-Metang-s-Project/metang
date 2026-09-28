@@ -14,8 +14,12 @@ function validateBaseUrl(baseUrl: string) {
   }
 }
 
-export function buildStudentLoanDetailUrl(baseUrl: string): string {
+/** With a requestId, the link opens that loan (`/student/detail?request=<id>`) rather than the
+ *  student's current one - a notice about a closed or rejected loan must not land elsewhere. */
+export function buildStudentLoanDetailUrl(baseUrl: string, requestId?: string): string {
   validateBaseUrl(baseUrl);
 
-  return new URL(STUDENT_LOAN_DETAIL_PATH, baseUrl).toString();
+  const url = new URL(STUDENT_LOAN_DETAIL_PATH, baseUrl);
+  if (requestId) url.searchParams.set("request", requestId);
+  return url.toString();
 }

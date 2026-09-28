@@ -1,22 +1,26 @@
 import { checkCronAuth } from "@/lib/notifications/cron-auth";
 import { apiOk, apiError } from "@/lib/api-response";
 import {
-  INSTALLMENT_REMINDER_EVENT,
+  LOAN_OUTCOME_EVENT,
   claimDueNotifications,
   markDelivered,
   markFailed,
   markSkipped,
 } from "@/db/queries/notifications";
-import { getInstallmentReminderContextById } from "@/db/queries/notification-recipients";
-import { buildLoanDueReminderEmail } from "@/lib/email-api/loan-reminder-template";
+import { getLoanOutcomeContextById } from "@/db/queries/notification-recipients";
+import { buildLoanOutcomeEmail } from "@/lib/email-api/loan-outcome-template";
 import { sendEmail } from "@/lib/email-api/client";
 import { classifyDeliveryFailure } from "@/lib/notifications/delivery-outcome";
+import { decideLoanOutcomeDelivery, parseLoanOutcomeRow } from "@/lib/notifications/loan-outcome";
 import { buildStudentLoanDetailUrl } from "@/lib/student-deeplink";
 import { serializeJson } from "@/lib/serialization";
-import { parseReminderRow, decideDelivery } from "@/lib/notifications/delivery-decision";
 
 export const maxDuration = 60;
 
+/**
+ * Emails students that their loan was disbursed or their request was rejected. Students are
+ * notified through the Outlook email API only - never FON, which stays reviewer-only.
+ */
 async function handle(request: Request) {
   const authError = checkCronAuth(request);
   if (authError) return authError;
@@ -30,8 +34,7 @@ async function handle(request: Request) {
     return apiError("INTERNAL_ERROR", message, 500);
   }
 
-  // Smaller batch to ensure completion within maxDuration
-  const rows = await claimDueNotifications(20, INSTALLMENT_REMINDER_EVENT);
+  const rows = await claimDueNotifications(20, LOAN_OUTCOME_EVENT);
   let processed = 0;
   let delivered = 0;
   let skipped = 0;
@@ -43,34 +46,54 @@ async function handle(request: Request) {
       rows.slice(i, i + CONCURRENCY).map(async (row) => {
         processed++;
 
-        const parsed = parseReminderRow({ eventType: row.eventType, payload: row.payload });
+        const parsed = parseLoanOutcomeRow({ eventType: row.eventType, payload: row.payload });
         if (parsed.kind === "fail") {
           await markFailed(row.id, parsed.message, { permanent: true });
           failed++;
           return;
         }
 
-        const installment = await getInstallmentReminderContextById(parsed.installmentId);
-        const decision = decideDelivery(installment);
-
+        const decision = decideLoanOutcomeDelivery(
+          await getLoanOutcomeContextById(parsed.loanId),
+          parsed.outcome,
+        );
         if (decision.kind === "skip") {
           await markSkipped(row.id, decision.reason);
           skipped++;
           return;
         }
 
-        const { installment: due } = decision;
+        const { loan } = decision;
         let emailPayload;
         try {
-          emailPayload = buildLoanDueReminderEmail({
-            studentName: due.loan.student.fullNameTh,
-            studentEmail: due.loan.student.email,
-            installmentSeq: due.seq,
-            amountDue: decision.amountRemaining,
-            dueDate: due.dueDate,
-            loanId: due.loanId,
-            loanDetailUrl: buildStudentLoanDetailUrl(baseUrl, due.loanId),
-          });
+          const common = {
+            studentName: loan.student.fullNameTh,
+            studentEmail: loan.student.email,
+            loanId: loan.id,
+            loanDetailUrl: buildStudentLoanDetailUrl(baseUrl, loan.id),
+          };
+          if (parsed.outcome === "disbursed") {
+            const first = loan.installments[0];
+            if (!first || loan.approvedAmount === null) {
+              throw new Error("disbursed loan has no approved amount or installment schedule");
+            }
+            emailPayload = buildLoanOutcomeEmail({
+              ...common,
+              outcome: "disbursed",
+              amount: loan.approvedAmount,
+              installmentCount: loan.installmentCount,
+              firstDueDate: first.dueDate,
+              firstInstallmentAmount: first.amountDue,
+            });
+          } else {
+            const rejection = loan.approvals[0];
+            emailPayload = buildLoanOutcomeEmail({
+              ...common,
+              outcome: "rejected",
+              rejectedBy: rejection?.step ?? null,
+              reason: rejection?.comment ?? null,
+            });
+          }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           await markFailed(row.id, message, { permanent: true });
@@ -83,17 +106,13 @@ async function handle(request: Request) {
           await markDelivered(row.id);
           delivered++;
         } catch (error) {
-          const outcome = classifyDeliveryFailure(error);
           const message = error instanceof Error ? error.message : String(error);
-
-          if (outcome === "permanent") {
-            await markFailed(row.id, message, { permanent: true });
-          } else {
-            await markFailed(row.id, message, {});
-          }
+          await markFailed(row.id, message, {
+            permanent: classifyDeliveryFailure(error) === "permanent",
+          });
           failed++;
         }
-      })
+      }),
     );
   }
 

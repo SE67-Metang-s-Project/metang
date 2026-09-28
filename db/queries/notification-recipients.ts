@@ -1,10 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma, UserRoleName } from "@/lib/generated/prisma/client";
 import {
+  LOAN_OUTCOME_EVENT,
   REVIEWER_NOTIFICATION_EVENT,
   enqueueNotification,
+  type LoanOutcome,
   type TxClient,
 } from "@/db/queries/notifications";
+import { buildLoanOutcomeDedupeKey } from "@/lib/notifications/loan-outcome";
 import { type ReviewerRole, buildRequestUrlForPath } from "@/lib/reviewer-deeplink";
 import {
   REVIEWER_STEP_BY_STATUS,
@@ -199,6 +202,78 @@ export async function getInstallmentReminderContextById(
   return prisma.installment.findUnique({
     where: { id: installmentId },
     select: installmentReminderSelect,
+  });
+}
+
+const paymentOutcomeSelect = {
+  status: true,
+  amount: true,
+  reviewNote: true,
+  loanId: true,
+  // The recipient is always the loan's own student, resolved here at delivery time - never taken
+  // from the outbox payload. No slip or bank field is selected.
+  loan: { select: { student: { select: { fullNameTh: true, email: true } } } },
+} satisfies Prisma.PaymentSelect;
+
+export type PaymentOutcomeContext = Prisma.PaymentGetPayload<{
+  select: typeof paymentOutcomeSelect;
+}>;
+
+/** The payment a claimed payment-outcome row was enqueued for, with its reviewer note. */
+export async function getPaymentOutcomeContextById(
+  paymentId: string,
+): Promise<PaymentOutcomeContext | null> {
+  return prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: paymentOutcomeSelect,
+  });
+}
+
+const loanOutcomeSelect = {
+  id: true,
+  status: true,
+  approvedAmount: true,
+  installmentCount: true,
+  // The recipient is always the loan's own student, resolved at delivery time. No bank field or
+  // disbursement slip is selected.
+  student: { select: { fullNameTh: true, email: true } },
+  installments: {
+    orderBy: { seq: "asc" },
+    take: 1,
+    select: { dueDate: true, amountDue: true },
+  },
+  // The latest rejecting decision, for who rejected and why.
+  approvals: {
+    where: { decision: "rejected" },
+    orderBy: { decidedAt: "desc" },
+    take: 1,
+    select: { step: true, comment: true },
+  },
+} satisfies Prisma.LoanRequestSelect;
+
+export type LoanOutcomeContext = Prisma.LoanRequestGetPayload<{
+  select: typeof loanOutcomeSelect;
+}>;
+
+export async function getLoanOutcomeContextById(
+  loanId: string,
+): Promise<LoanOutcomeContext | null> {
+  return prisma.loanRequest.findUnique({ where: { id: loanId }, select: loanOutcomeSelect });
+}
+
+/**
+ * Enqueues the student's disbursed/rejected notice. Call it INSIDE the transaction that made the
+ * transition, so the student is told only about outcomes that committed. Ids only - the delivery
+ * worker reads everything else from the loan.
+ */
+export function enqueueStudentLoanOutcome(
+  tx: TxClient,
+  input: { loanId: string; outcome: LoanOutcome },
+) {
+  return enqueueNotification(tx, {
+    dedupeKey: buildLoanOutcomeDedupeKey(input.loanId, input.outcome),
+    eventType: LOAN_OUTCOME_EVENT,
+    payload: { loanId: input.loanId, outcome: input.outcome },
   });
 }
 

@@ -14,6 +14,7 @@ import {
 import { getNurseAccessDecision } from "@/lib/nurse-auth";
 import { syncUserFromCmuProfile } from "@/db/queries/users";
 import { getUserHomePath } from "@/lib/loan-auth";
+import { sanitizeReturnPath } from "@/lib/return-path";
 
 type TokenResponse = {
   access_token?: string;
@@ -125,10 +126,12 @@ export async function GET(request: NextRequest) {
       expiresAt: Date.now() + SESSION_MAX_AGE * 1000,
     };
 
-    let destinationPath = "/student";
+    // Re-validated here as well, then falls back to the role home path when absent or unsafe.
+    const returnPath = sanitizeReturnPath(transaction.returnPath);
+    let destinationPath = returnPath ?? "/student";
     try {
       await syncUserFromCmuProfile(profile);
-      destinationPath = await getUserHomePath(profile);
+      destinationPath = returnPath ?? (await getUserHomePath(profile));
     } catch (dbError) {
       console.error("Failed to sync user to database during CMU login callback", dbError);
     }

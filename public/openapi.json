@@ -7388,6 +7388,50 @@
         "responses": {}
       }
     },
+    "/cron/deliver-loan-outcomes": {
+      "get": {
+        "operationId": "get-cron-deliver-loan-outcomes",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Cron"
+        ],
+        "parameters": [],
+        "responses": {}
+      },
+      "post": {
+        "operationId": "post-cron-deliver-loan-outcomes",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Cron"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/cron/deliver-payment-outcomes": {
+      "get": {
+        "operationId": "get-cron-deliver-payment-outcomes",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Cron"
+        ],
+        "parameters": [],
+        "responses": {}
+      },
+      "post": {
+        "operationId": "post-cron-deliver-payment-outcomes",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Cron"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
     "/cron/deliver-reminders": {
       "get": {
         "operationId": "get-cron-deliver-reminders",

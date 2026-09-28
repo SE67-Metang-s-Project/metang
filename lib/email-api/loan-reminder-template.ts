@@ -12,7 +12,7 @@ export type LoanDueReminderInput = {
   loanDetailUrl: string;
 };
 
-function validateStudentEmail(studentEmail: string) {
+export function validateStudentEmail(studentEmail: string) {
   if (!/^[a-zA-Z0-9._%+-]+@cmu\.ac\.th$/i.test(studentEmail)) {
     throw new Error("studentEmail must be a valid @cmu.ac.th address");
   }

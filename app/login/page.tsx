@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { getCmuSession, isCmuAuthConfigured } from "@/lib/cmu-auth";
 import { getUserHomePath } from "@/lib/loan-auth";
+import { sanitizeReturnPath } from "@/lib/return-path";
 import Grainient from "@/components/ui/Grainient";
 
 const errorMessages: Record<string, string> = {
@@ -34,6 +35,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const errorCode = Array.isArray(errorParam) ? errorParam[0] : errorParam;
   const errorMessage = errorCode ? (errorMessages[errorCode] ?? errorCode) : undefined;
   const isConfigured = isCmuAuthConfigured();
+  const nextParam = resolvedParams?.next;
+  const returnPath = sanitizeReturnPath(Array.isArray(nextParam) ? nextParam[0] : nextParam);
+  const loginHref = returnPath
+    ? `/api/auth/login?next=${encodeURIComponent(returnPath)}`
+    : "/api/auth/login";
 
   return (
     <div className="relative min-h-screen bg-[#fcf9f4] flex items-center justify-center p-6 sm:p-10 md:p-16 font-sans overflow-hidden">
@@ -103,7 +109,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
             {/* ปุ่ม Login สไตล์การ์ดสีขาว */}
             <a
-              href="/api/auth/login"
+              href={loginHref}
               className="w-full bg-white border border-gray-200 rounded-2xl p-3 sm:p-4 flex items-center hover:border-gray-300 hover:shadow-lg transition-all duration-300 group active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2"
             >
               {/* โลโก้ CMU สี่เหลี่ยมสีเข้ม */}
