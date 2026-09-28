@@ -20,6 +20,11 @@ const JOBS: { path: string; shouldRun: ShouldRun; load: () => Promise<{ GET: Cro
     load: () => import("@/app/api/cron/deliver-reminders/route"),
   },
   {
+    path: "/api/cron/deliver-payment-outcomes",
+    shouldRun: everyMinutes(3),
+    load: () => import("@/app/api/cron/deliver-payment-outcomes/route"),
+  },
+  {
     // 08:00 Bangkok, the time the reminders were sent before; enqueueing is idempotent per day.
     path: "/api/cron/installment-reminders",
     shouldRun: dailyAtBangkokHour(8),

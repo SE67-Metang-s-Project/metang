@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/deliver-fon",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/deliver-payment-outcomes",
+      "schedule": "*/3 * * * *"
     }
   ]
 }

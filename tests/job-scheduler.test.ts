@@ -81,6 +81,7 @@ test("the backend scheduler covers every notification job", () => {
   for (const path of [
     "/api/cron/deliver-fon",
     "/api/cron/deliver-reminders",
+    "/api/cron/deliver-payment-outcomes",
     "/api/cron/installment-reminders",
   ]) {
     assert.match(source, new RegExp(`path: "${path.replaceAll("/", "\\/")}"`));

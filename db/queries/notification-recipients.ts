@@ -202,6 +202,30 @@ export async function getInstallmentReminderContextById(
   });
 }
 
+const paymentOutcomeSelect = {
+  status: true,
+  amount: true,
+  reviewNote: true,
+  loanId: true,
+  // The recipient is always the loan's own student, resolved here at delivery time - never taken
+  // from the outbox payload. No slip or bank field is selected.
+  loan: { select: { student: { select: { fullNameTh: true, email: true } } } },
+} satisfies Prisma.PaymentSelect;
+
+export type PaymentOutcomeContext = Prisma.PaymentGetPayload<{
+  select: typeof paymentOutcomeSelect;
+}>;
+
+/** The payment a claimed payment-outcome row was enqueued for, with its reviewer note. */
+export async function getPaymentOutcomeContextById(
+  paymentId: string,
+): Promise<PaymentOutcomeContext | null> {
+  return prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: paymentOutcomeSelect,
+  });
+}
+
 /**
  * Enqueues one durable outbox row per reviewer recipient for a workflow transition. Call this
  * INSIDE the transaction that performed the transition, passing that transaction's client: the
