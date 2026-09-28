@@ -9,8 +9,30 @@ type ImageWithSkeletonProps = ImgHTMLAttributes<HTMLImageElement> & {
   loadingImageClassName?: string;
 };
 
+const BASE_PATH = "/metang";
+
+function resolveImageSrc(src?: string): string | undefined {
+  if (!src) return src;
+  if (
+    src.startsWith("/") &&
+    !src.startsWith("//") &&
+    !src.startsWith(`${BASE_PATH}/`) &&
+    src !== BASE_PATH
+  ) {
+    return `${BASE_PATH}${src}`;
+  }
+  return src;
+}
+
 export default function ImageWithSkeleton(props: ImageWithSkeletonProps) {
-  return <ImageWithSkeletonContent key={typeof props.src === "string" ? props.src : undefined} {...props} />;
+  const resolvedSrc = typeof props.src === "string" ? resolveImageSrc(props.src) : props.src;
+  return (
+    <ImageWithSkeletonContent
+      key={typeof resolvedSrc === "string" ? resolvedSrc : undefined}
+      {...props}
+      src={resolvedSrc}
+    />
+  );
 }
 
 function ImageWithSkeletonContent({
