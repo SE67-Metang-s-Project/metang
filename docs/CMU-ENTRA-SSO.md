@@ -171,6 +171,19 @@ secret.
 The callback URI must match `CALLBACK_URL` exactly, including scheme, host, port, and path.
 Register the HTTPS production callback separately when deploying.
 
+Either callback path works under the `/metang` base path, as long as `CALLBACK_URL` and the
+Entra registration are the same string:
+
+- `/metang/api/auth/callback` goes straight to the callback route.
+- `/api/auth/callback` (the path registered before the base path was added) also works. The
+  `/api/:path*` redirect in `next.config.ts` sends the browser on to `/metang/api/auth/callback`
+  with the `code` and `state` query unchanged, and the token request sends the same
+  `CALLBACK_URL` that the sign-in request used. It costs one extra redirect, and it stops
+  working if that redirect is removed.
+
+To move from one path to the other, change the Entra registration and `CALLBACK_URL` together.
+If only one of them changes, sign-in fails with `token_exchange_failed`.
+
 ## Environment variables
 
 All authentication variables are server-side. None of them needs the `NEXT_PUBLIC_` prefix.

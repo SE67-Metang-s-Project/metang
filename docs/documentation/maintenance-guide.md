@@ -979,7 +979,7 @@ production deployment ("Redeploy") before it takes effect.
 | `DIRECT_URL` | The value of `DATABASE_URL` (`prisma.config.ts`) | PostgreSQL URL, direct connection | Used by migrations (`npm run db:*`) and manual backups. | No (maintainer tools only) | Yes |
 | `AUTH_URL` | None | URL | CMU Entra authorize endpoint. | Yes | No |
 | `TOKEN_URL` | None | URL | CMU Entra token endpoint. | Yes | No |
-| `CALLBACK_URL` | None | URL, exactly as registered in Entra, for example `https://<host>/metang/api/auth/callback` | Where CMU Entra returns after sign-in. | Yes, and register it in Entra | No |
+| `CALLBACK_URL` | None | URL, exactly as registered in Entra, for example `https://<host>/metang/api/auth/callback` | Where CMU Entra returns after sign-in. The old path `https://<host>/api/auth/callback` also works: the `/api/:path*` redirect sends the browser on to `/metang/api/auth/callback`. Change the value and the Entra registration together. If only one changes, sign-in fails with `token_exchange_failed`. | Yes, and register it in Entra | No |
 | `LOGOUT_URL` | None | Entra logout URL with `post_logout_redirect_uri` | Sign-out redirect. | Yes | No |
 | `CLIENT_ID` | None | Entra application ID | OAuth client. | Yes | No |
 | `CLIENT_SECRET` | None | Entra client secret | OAuth client secret. | Yes | Yes |
