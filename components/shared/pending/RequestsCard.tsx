@@ -30,6 +30,7 @@ import { tempLoanApplicationLimit } from "@/app/student/temp/tempMockData";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import RequestTimeline from "@/components/shared/RequestTimeline";
 import styles from "@/app/student/student.module.css";
+import { withBasePath } from "@/lib/base-path";
 
 // ==========================================
 // การกำหนด Type (อ้างอิงจาก Database Schema)
@@ -628,7 +629,7 @@ export default function RequestsCard({
         payload.approvedAmount = parsed;
       }
 
-      const res = await fetch(endpoint, {
+      const res = await fetch(withBasePath(endpoint), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

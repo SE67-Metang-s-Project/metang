@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, CircleDollarSign, FileCheck2, WalletCards } from "lucide-react";
 import type { ExecutiveFinancialOverviewData } from "@/lib/financial-overview-types";
+import { withBasePath } from "@/lib/base-path";
 
 type Period = "monthly" | "quarterly";
 // สามารถเปลี่ยนชื่อ Type ให้เป็นกลางมากขึ้นได้ แต่ขออิงตามของเดิมเพื่อไม่ให้กระทบไฟล์อื่น
@@ -93,7 +94,7 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
 
     const controller = new AbortController();
 
-    fetch(`${apiUrl}?year=${selectedYear}`, { signal: controller.signal })
+    fetch(withBasePath(`${apiUrl}?year=${selectedYear}`), { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Unable to load financial overview");
         return response.json() as Promise<{ data: Overview }>;

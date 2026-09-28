@@ -36,6 +36,7 @@ import StudentTopNav from "@/components/student/StudentTopNav";
 import CardHeader from "@/components/shared/CardHeader";
 import BahtCoinIcon from "@/components/shared/BahtCoinIcon";
 import styles from "@/app/student/student.module.css";
+import { withBasePath } from "@/lib/base-path";
 import {
   mapStudentApiError,
   mapNetworkError,
@@ -196,7 +197,7 @@ export default function TempLoanApplicationPage({
   useEffect(() => {
     if (advisorOptions && advisorOptions.length > 0) return;
     let isMounted = true;
-    fetch("/api/student/advisors")
+    fetch(withBasePath("/api/student/advisors"))
       .then((res) => res.json())
       .then((json) => {
         if (isMounted && json.data && Array.isArray(json.data)) {
@@ -418,7 +419,7 @@ export default function TempLoanApplicationPage({
       const cleanedPhone = formData.phoneNumber.trim().replace(/[-\s]/g, "");
       if (cleanedPhone && /^0(?:[689]\d{8}|[23457]\d{7})$/.test(cleanedPhone)) {
         try {
-          await fetch("/api/student/phone-number", {
+          await fetch(withBasePath("/api/student/phone-number"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phoneNumber: cleanedPhone }),
@@ -448,7 +449,7 @@ export default function TempLoanApplicationPage({
           ? `/api/student/loan-requests/${existingLoan.id}/resubmit`
           : "/api/student/loan-requests";
 
-      const res = await fetch(endpoint, {
+      const res = await fetch(withBasePath(endpoint), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

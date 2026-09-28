@@ -48,6 +48,7 @@ import {
 } from "@/lib/student-error-mapper";
 import { mapStudentLoanToActionRequest } from "@/lib/student-action-request";
 import { getBankLogoSrc } from "@/lib/bank-name";
+import { withBasePath } from "@/lib/base-path";
 import styles from "@/app/student/student.module.css";
 
 type StudentDashboardProps = {
@@ -145,8 +146,8 @@ export default function StudentDashboard({
       setDashboardError(null);
       try {
         const [currentRes, listRes] = await Promise.all([
-          fetch("/api/student/loan-requests/current"),
-          fetch("/api/student/loan-requests"),
+          fetch(withBasePath("/api/student/loan-requests/current")),
+          fetch(withBasePath("/api/student/loan-requests")),
         ]);
 
         if (!currentRes.ok) {
@@ -226,7 +227,7 @@ export default function StudentDashboard({
 
   const openPayment = async (installment: InstallmentPayment) => {
     try {
-      const response = await fetch("/api/system-settings", { cache: "no-store" });
+      const response = await fetch(withBasePath("/api/system-settings"), { cache: "no-store" });
       const body = (await response.json().catch(() => null)) as {
         data?: PaymentAccountSettings;
       } | null;
@@ -267,7 +268,7 @@ export default function StudentDashboard({
     let response: Response;
     try {
       // No Content-Type header: the browser sets the multipart boundary itself.
-      response = await fetch("/api/student/payments", { method: "POST", body: formData });
+      response = await fetch(withBasePath("/api/student/payments"), { method: "POST", body: formData });
     } catch (err) {
       throw new Error(mapNetworkError(err).message);
     }
@@ -290,7 +291,7 @@ export default function StudentDashboard({
 
     setIsCancelling(true);
     try {
-      const response = await fetch(`/api/student/loan-requests/${currentActiveLoan.id}/cancel`, {
+      const response = await fetch(withBasePath(`/api/student/loan-requests/${currentActiveLoan.id}/cancel`), {
         method: "POST",
       });
       if (!response.ok) {
@@ -309,7 +310,7 @@ export default function StudentDashboard({
 
   // Throws so LoanTimeline can show the error and keep the confirm button for a retry.
   const confirmTransfer = async () => {
-    const response = await fetch(`/api/student/loan-requests/${currentLoanKey}/confirm-transfer`, {
+    const response = await fetch(withBasePath(`/api/student/loan-requests/${currentLoanKey}/confirm-transfer`), {
       method: "POST",
     });
     if (!response.ok) {

@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { getCmuSession, isCmuAuthConfigured } from "@/lib/cmu-auth";
 import { getUserHomePath } from "@/lib/loan-auth";
 import { sanitizeReturnPath } from "@/lib/return-path";
+import { withBasePath } from "@/lib/base-path";
 import Grainient from "@/components/ui/Grainient";
 
 const errorMessages: Record<string, string> = {
@@ -37,9 +38,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const isConfigured = isCmuAuthConfigured();
   const nextParam = resolvedParams?.next;
   const returnPath = sanitizeReturnPath(Array.isArray(nextParam) ? nextParam[0] : nextParam);
-  const loginHref = returnPath
-    ? `/api/auth/login?next=${encodeURIComponent(returnPath)}`
-    : "/api/auth/login";
+  const loginHref = withBasePath(
+    returnPath
+      ? `/api/auth/login?next=${encodeURIComponent(returnPath)}`
+      : "/api/auth/login",
+  );
 
   return (
     <div className="relative min-h-screen bg-[#fcf9f4] flex items-center justify-center p-6 sm:p-10 md:p-16 font-sans overflow-hidden">

@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import type { PredefinedRoleName, SuperAdminUser } from "@/lib/loan-api-types";
+import { withBasePath } from "@/lib/base-path";
 
 const ROLE_TO_THAI: Record<PredefinedRoleName, string> = {
   student: "นักศึกษา",
@@ -100,7 +101,7 @@ export default function UserRolesTab({
     }
 
     let isMounted = true;
-    fetch("/api/super-admin/users")
+    fetch(withBasePath("/api/super-admin/users"))
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load users");
         return res.json();
@@ -151,7 +152,7 @@ export default function UserRolesTab({
     try {
       // 1. Grant new role first (keeps admin permissions active if editing self)
       if (!currentRoleNames.includes(targetRole)) {
-        const grantRes = await fetch(`/api/super-admin/users/${user.id}/roles`, {
+        const grantRes = await fetch(withBasePath(`/api/super-admin/users/${user.id}/roles`), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "grant", role: targetRole }),
@@ -166,7 +167,7 @@ export default function UserRolesTab({
       for (const oldRole of currentRoleNames) {
         if (oldRole === targetRole) continue;
         if (!MANAGED_ROLES.has(oldRole)) continue;
-        const remRes = await fetch(`/api/super-admin/users/${user.id}/roles`, {
+        const remRes = await fetch(withBasePath(`/api/super-admin/users/${user.id}/roles`), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "remove", role: oldRole }),

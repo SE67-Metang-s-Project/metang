@@ -18,6 +18,7 @@ import AdaptiveKeyValueRow from "@/components/shared/AdaptiveKeyValueRow";
 import LoanDetailSchedule from "../loan-details/LoanDetailSchedule";
 import LoanDetailOverview from "../loan-details/LoanDetailOverview";
 import LoanTimeline from "../loan-details/LoanTimeline";
+import { withBasePath } from "@/lib/base-path";
 
 import type { LoanTimelineItem } from "@/app/student/studentMockData";
 import type { StudentProfileDisplay } from "../dashboard/LoanSummaryCard";
@@ -125,7 +126,7 @@ export default function TempLoanDetailsStep({
 
     setIsCancelling(true);
     try {
-      const response = await fetch(`/api/student/loan-requests/${createdLoan.id}/cancel`, {
+      const response = await fetch(withBasePath(`/api/student/loan-requests/${createdLoan.id}/cancel`), {
         method: "POST",
       });
       if (!response.ok) {

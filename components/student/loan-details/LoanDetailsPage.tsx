@@ -20,6 +20,7 @@ import { getBankLogoSrc } from "@/lib/bank-name";
 import { mapNetworkError, mapStudentPaymentError } from "@/lib/student-error-mapper";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
+import { withBasePath } from "@/lib/base-path";
 import styles from "@/app/student/student.module.css";
 
 type LoanDetailsPageProps = {
@@ -103,7 +104,7 @@ export default function LoanDetailsPage({ details, installments = [], profile }:
 
   const openPayment = async (installment: InstallmentPayment) => {
     try {
-      const response = await fetch("/api/system-settings", { cache: "no-store" });
+      const response = await fetch(withBasePath("/api/system-settings"), { cache: "no-store" });
       const body = (await response.json().catch(() => null)) as { data?: PaymentAccountSettings } | null;
       if (!response.ok || !body?.data) throw new Error("Payment account unavailable");
 
@@ -134,7 +135,7 @@ export default function LoanDetailsPage({ details, installments = [], profile }:
 
     let response: Response;
     try {
-      response = await fetch("/api/student/payments", { method: "POST", body: formData });
+      response = await fetch(withBasePath("/api/student/payments"), { method: "POST", body: formData });
     } catch (error) {
       throw new Error(mapNetworkError(error).message);
     }
@@ -152,7 +153,7 @@ export default function LoanDetailsPage({ details, installments = [], profile }:
   // Throws so LoanTimeline can show the error and keep the confirm button for a retry.
   const confirmTransfer = async () => {
     const response = await fetch(
-      `/api/student/loan-requests/${transferConfirmationKey}/confirm-transfer`,
+      withBasePath(`/api/student/loan-requests/${transferConfirmationKey}/confirm-transfer`),
       { method: "POST" },
     );
     // Refresh either way: on success the server now holds the confirmation, and a 409 means the
@@ -166,7 +167,7 @@ export default function LoanDetailsPage({ details, installments = [], profile }:
 
     setIsCancelling(true);
     try {
-      const response = await fetch(`/api/student/loan-requests/${details.id}/cancel`, { method: "POST" });
+      const response = await fetch(withBasePath(`/api/student/loan-requests/${details.id}/cancel`), { method: "POST" });
       if (!response.ok) {
         window.alert(t("ไม่สามารถยกเลิกคำร้องได้ กรุณาลองใหม่อีกครั้ง", "Unable to cancel the request. Please try again."));
         return;

@@ -10,6 +10,7 @@ import {
   resolveFundAdjustment,
   type FundBudgetOverview,
 } from "@/lib/fund-budget";
+import { withBasePath } from "@/lib/base-path";
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat("th-TH").format(amount);
 
@@ -31,7 +32,7 @@ export default function SystemBudgetTab() {
     activeControllerRef.current?.abort();
     const controller = new AbortController();
     activeControllerRef.current = controller;
-    fetch("/api/super-admin/fund-transactions", { signal: controller.signal })
+    fetch(withBasePath("/api/super-admin/fund-transactions"), { signal: controller.signal })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
         if (!response.ok) {
@@ -109,7 +110,7 @@ export default function SystemBudgetTab() {
     setSuccessMessage(null);
 
     try {
-      const res = await fetch("/api/super-admin/fund-transactions", {
+      const res = await fetch(withBasePath("/api/super-admin/fund-transactions"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

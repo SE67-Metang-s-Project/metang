@@ -30,6 +30,7 @@ import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import RequestTimeline from "@/components/shared/RequestTimeline";
 import styles from "@/app/student/student.module.css";
 import LoanPetitionDocument, { downloadLoanPetitionPdf } from "./LoanPetitionDocument";
+import { withBasePath } from "@/lib/base-path";
 
 // ==========================================
 // การกำหนด Type
@@ -353,7 +354,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
       const formData = new FormData();
       formData.append("slip", slipFile);
 
-      const res = await fetch(`/api/admin/loan-requests/${selectedRequest.id}/disburse`, {
+      const res = await fetch(withBasePath(`/api/admin/loan-requests/${selectedRequest.id}/disburse`), {
         method: "POST",
         body: formData,
       });

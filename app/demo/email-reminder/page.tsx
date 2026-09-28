@@ -4,6 +4,7 @@ import { LoanReminderDemoForm } from "@/app/demo/email-reminder/LoanReminderDemo
 import { getCmuSession, getProfileEmail } from "@/lib/cmu-auth";
 import { isDevelopmentEnvironment } from "@/lib/development-access";
 import { requireAdminAccess } from "@/lib/loan-auth";
+import { withBasePath } from "@/lib/base-path";
 
 export default async function EmailReminderDemoPage() {
   if (!isDevelopmentEnvironment()) {
@@ -28,7 +29,7 @@ export default async function EmailReminderDemoPage() {
         {!session ? (
           <a
             className="mt-6 block rounded-lg bg-emerald-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-emerald-700"
-            href="/api/auth/login"
+            href={withBasePath("/api/auth/login")}
           >
             เข้าสู่ระบบด้วย CMU Account
           </a>

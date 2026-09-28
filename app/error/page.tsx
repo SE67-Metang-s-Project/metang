@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ShieldAlert, LogIn, ArrowLeft } from "lucide-react";
+import { withBasePath } from "@/lib/base-path";
 
 type ErrorPageProps = {
   searchParams: Promise<{ type?: string; code?: string }>;
@@ -47,7 +48,7 @@ export default async function AuthErrorPage({ searchParams }: ErrorPageProps) {
         <div className="pt-2 flex flex-col gap-3">
           {isUnauthenticated ? (
             <a
-              href="/api/auth/login"
+              href={withBasePath("/api/auth/login")}
               className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#6f1d77] hover:bg-[#5a1661] text-white font-medium transition-colors"
             >
               <LogIn size={18} />

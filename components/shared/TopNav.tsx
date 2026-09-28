@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { UserRole } from "@/components/shared/SidebarNav";
 import type { StudentLanguage } from "@/app/student/StudentLanguageProvider";
+import { withBasePath } from "@/lib/base-path";
 
 export const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   student: "นักศึกษา",
@@ -185,7 +186,7 @@ export default function TopNav({
                   </div>
                 </div>
               ) : null}
-              <form action="/api/auth/logout" method="post" className="border-t border-gray-100">
+              <form action={withBasePath("/api/auth/logout")} method="post" className="border-t border-gray-100">
                 <button
                   type="submit"
                   role="menuitem"

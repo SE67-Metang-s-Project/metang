@@ -9,6 +9,7 @@ import {
 } from "@/components/shared/mock-data/mockSystemSettings";
 import styles from "@/app/student/student.module.css";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
+import { withBasePath } from "@/lib/base-path";
 
 export default function ContactFooter() {
   const { t } = useStudentLanguage();
@@ -24,7 +25,7 @@ export default function ContactFooter() {
       // yet, so it still comes from the fixture.
       const [address, stored] = await Promise.all([
         getSystemAddress(),
-        fetch("/api/system-settings")
+        fetch(withBasePath("/api/system-settings"))
           .then((res) => (res.ok ? res.json() : null))
           .then((body) => body?.data ?? null)
           .catch(() => null),

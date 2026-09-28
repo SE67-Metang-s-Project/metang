@@ -24,6 +24,7 @@ import CardHeader from "@/components/shared/CardHeader";
 import ImageWithSkeleton from "@/components/shared/ImageWithSkeleton";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import styles from "@/app/student/student.module.css";
+import { withBasePath } from "@/lib/base-path";
 
 // ==========================================
 // 1. Types
@@ -445,7 +446,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
 
     try {
       // `id` is the payment id, not the installment id.
-      const res = await fetch(`/api/admin/payments/${selectedEvidence.id}/decision`, {
+      const res = await fetch(withBasePath(`/api/admin/payments/${selectedEvidence.id}/decision`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

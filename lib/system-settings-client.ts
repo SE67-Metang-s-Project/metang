@@ -1,6 +1,8 @@
 // Browser-side access to the system_setting row for the SuperAdmin settings tabs. The row holds the
 // student-facing bank account and contact block; see db/queries/system-settings.ts.
 
+import { withBasePath } from "@/lib/base-path";
+
 export type StoredSystemSetting = {
   bankName: string;
   accountName: string;
@@ -40,7 +42,7 @@ export function systemSettingErrorMessage(status: number, apiMessage?: string | 
 }
 
 export async function fetchSystemSetting(): Promise<StoredSystemSetting> {
-  const res = await fetch("/api/super-admin/settings");
+  const res = await fetch(withBasePath("/api/super-admin/settings"));
   if (!res.ok) throw new Error(`Unable to load system settings (${res.status})`);
   return (await res.json()).data as StoredSystemSetting;
 }
@@ -48,7 +50,7 @@ export async function fetchSystemSetting(): Promise<StoredSystemSetting> {
 /** Resolves to null on success, or a Thai message for the failure. */
 export async function saveSystemSetting(patch: SystemSettingPatch): Promise<string | null> {
   try {
-    const res = await fetch("/api/super-admin/settings", {
+    const res = await fetch(withBasePath("/api/super-admin/settings"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),

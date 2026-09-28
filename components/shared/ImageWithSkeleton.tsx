@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ImgHTMLAttributes, type SyntheticEvent } from "react";
+import { withBasePath } from "@/lib/base-path";
 
 type ImageWithSkeletonProps = ImgHTMLAttributes<HTMLImageElement> & {
   containerClassName?: string;
@@ -9,17 +10,10 @@ type ImageWithSkeletonProps = ImgHTMLAttributes<HTMLImageElement> & {
   loadingImageClassName?: string;
 };
 
-const BASE_PATH = "/metang";
-
 function resolveImageSrc(src?: string): string | undefined {
   if (!src) return src;
-  if (
-    src.startsWith("/") &&
-    !src.startsWith("//") &&
-    !src.startsWith(`${BASE_PATH}/`) &&
-    src !== BASE_PATH
-  ) {
-    return `${BASE_PATH}${src}`;
+  if (src.startsWith("/") && !src.startsWith("//")) {
+    return withBasePath(src);
   }
   return src;
 }
