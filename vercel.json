@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/deliver-payment-outcomes",
       "schedule": "*/3 * * * *"
+    },
+    {
+      "path": "/api/cron/deliver-loan-outcomes",
+      "schedule": "*/3 * * * *"
     }
   ]
 }

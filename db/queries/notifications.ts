@@ -40,6 +40,20 @@ export type PaymentOutcomePayload = {
   loanId: string;
 };
 
+export const LOAN_OUTCOME_EVENT = "loan_outcome" as const;
+
+export type LoanOutcome = "disbursed" | "rejected";
+
+/** Keyed on loan and outcome: a loan is disbursed at most once (one disbursement ledger row per
+ *  loan) and a rejection is terminal, so each outcome can only be announced once. */
+export type LoanOutcomeDedupeKey = `loan-outcome:${string}:${LoanOutcome}`;
+
+/** Ids only. The recipient, amounts, schedule, and reviewer reason are read at delivery time. */
+export type LoanOutcomePayload = {
+  loanId: string;
+  outcome: LoanOutcome;
+};
+
 export type EnqueueNotificationInput =
   | {
       dedupeKey: InstallmentReminderDedupeKey;
@@ -55,6 +69,11 @@ export type EnqueueNotificationInput =
       dedupeKey: PaymentOutcomeDedupeKey;
       eventType: typeof PAYMENT_OUTCOME_EVENT;
       payload: PaymentOutcomePayload;
+    }
+  | {
+      dedupeKey: LoanOutcomeDedupeKey;
+      eventType: typeof LOAN_OUTCOME_EVENT;
+      payload: LoanOutcomePayload;
     };
 
 /**
