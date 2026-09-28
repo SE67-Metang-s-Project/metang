@@ -172,6 +172,7 @@ export interface RequestTimelineProps {
   onShowTransferSlip?: () => void;
   onConfirmReceipt?: () => void;
   onDownloadRequest?: () => void;
+  transferActionsAtBottom?: boolean;
   hideComments?: boolean;
   hideBankDetails?: boolean;
   footer?: React.ReactNode;
@@ -199,6 +200,7 @@ export default function RequestTimeline({
   onShowTransferSlip,
   onConfirmReceipt,
   onDownloadRequest,
+  transferActionsAtBottom = false,
   hideComments = false,
   hideBankDetails = false,
   footer,
@@ -249,6 +251,53 @@ export default function RequestTimeline({
       : language === "en" && advisorNameEn && actor === advisorName
         ? advisorNameEn
         : localizeTimelineText(actor, language);
+  const hasTransferStatus =
+    requestStatus === "pending_disbursement" ||
+    timelineItems.some((item) => item.action.includes("โอนเงิน"));
+  const renderTransferActions = () => {
+    const hasSlipButton = Boolean(onShowTransferSlip);
+    const hasConfirmReceiptButton = Boolean(onConfirmReceipt);
+    const hasDownloadButton = Boolean(onDownloadRequest);
+
+    if (!hasSlipButton && !hasConfirmReceiptButton && !hasDownloadButton) return null;
+
+    return (
+      <div
+        className={`${styles.loanTimelineActions} ${
+          hasSlipButton && (hasConfirmReceiptButton || hasDownloadButton)
+            ? ""
+            : styles.loanTimelineActionsSingle
+        }`}
+      >
+        {hasSlipButton ? (
+          <button className={styles.outlineOrangeButton} onClick={onShowTransferSlip} type="button">
+            <FileText aria-hidden="true" size={18} />
+            {t("ดูหลักฐาน", "View proof")}
+          </button>
+        ) : null}
+        {hasConfirmReceiptButton ? (
+          <button
+            className={`${styles.loanApplicationNext} ${styles.loanDownloadRequestButton}`}
+            onClick={onConfirmReceipt}
+            type="button"
+          >
+            <CheckCircle2 aria-hidden="true" size={18} />
+            {t("ยืนยันการรับเงิน", "Confirm receipt")}
+          </button>
+        ) : null}
+        {hasDownloadButton ? (
+          <button
+            className={`${styles.loanApplicationNext} ${styles.loanDownloadRequestButton}`}
+            onClick={onDownloadRequest}
+            type="button"
+          >
+            <Download aria-hidden="true" size={18} />
+            {t("ดาวน์โหลดแบบคำร้อง", "Download request")}
+          </button>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
     <section className={`${styles.loanApprovalInfoCard} ${className}`}>
@@ -331,11 +380,10 @@ export default function RequestTimeline({
                     );
                     const hasDetails = filteredDetails.length > 0;
                     const isTransferStatus = item.action.includes("โอนเงิน");
-                    const hasSlipButton = isTransferStatus && Boolean(onShowTransferSlip);
-                    const hasConfirmReceiptButton = isTransferStatus && Boolean(onConfirmReceipt);
-                    const hasDownloadButton = isTransferStatus && Boolean(onDownloadRequest);
+                    const transferActions =
+                      !transferActionsAtBottom && isTransferStatus ? renderTransferActions() : null;
 
-                    if (!hasDetails && !hasSlipButton && !hasConfirmReceiptButton && !hasDownloadButton) {
+                    if (!hasDetails && !transferActions) {
                       return null;
                     }
 
@@ -354,46 +402,7 @@ export default function RequestTimeline({
                             })}
                           </dl>
                         ) : null}
-                        {hasSlipButton || hasConfirmReceiptButton || hasDownloadButton ? (
-                          <div
-                            className={`${styles.loanTimelineActions} ${
-                              hasSlipButton && (hasConfirmReceiptButton || hasDownloadButton)
-                                ? ""
-                                : styles.loanTimelineActionsSingle
-                            }`}
-                          >
-                            {hasSlipButton ? (
-                              <button
-                                className={styles.outlineOrangeButton}
-                                onClick={onShowTransferSlip}
-                                type="button"
-                              >
-                                <FileText aria-hidden="true" size={18} />
-                                {t("ดูหลักฐาน", "View proof")}
-                              </button>
-                            ) : null}
-                            {hasDownloadButton ? (
-                              <button
-                                className={`${styles.loanApplicationNext} ${styles.loanDownloadRequestButton}`}
-                                onClick={onDownloadRequest}
-                                type="button"
-                              >
-                                <Download aria-hidden="true" size={18} />
-                                {t("ดาวน์โหลดแบบคำร้อง", "Download request")}
-                              </button>
-                            ) : null}
-                            {hasConfirmReceiptButton ? (
-                              <button
-                                className={`${styles.loanApplicationNext} ${styles.loanDownloadRequestButton}`}
-                                onClick={onConfirmReceipt}
-                                type="button"
-                              >
-                                <CheckCircle2 aria-hidden="true" size={18} />
-                                {t("ยืนยันการรับเงิน", "Confirm receipt")}
-                              </button>
-                            ) : null}
-                          </div>
-                        ) : null}
+                        {transferActions}
                       </>
                     );
                   })()}
@@ -411,6 +420,8 @@ export default function RequestTimeline({
           {emptyDescription ? <span>{emptyDescription}</span> : null}
         </div>
       )}
+
+      {transferActionsAtBottom && hasTransferStatus ? renderTransferActions() : null}
 
       {footer}
 

@@ -19,18 +19,22 @@ test("active student requests keep Show Log available even without source histor
   );
 });
 
-test("transfer details use the blue format and expose proof before request download", () => {
+test("transfer pending actions appear at the bottom and switch to request download after confirmation", () => {
   const timeline = read("components/shared/RequestTimeline.tsx");
+  const loanTimeline = read("components/student/loan-details/LoanTimeline.tsx");
 
   assert.match(timeline, /border-blue-200 bg-blue-50[^\n]*text-blue-800/);
   assert.match(timeline, /style=\{\{ color: "#1e40af" \}\}/);
   assert.match(timeline, /\? language === "en"\s*\? "Bank name"\s*: "ชื่อธนาคาร"/);
-  assert.match(timeline, /hasDownloadButton = isTransferStatus && Boolean\(onDownloadRequest\)/);
+  assert.match(timeline, /transferActionsAtBottom = false/);
+  assert.match(timeline, /transferActionsAtBottom && hasTransferStatus \? renderTransferActions\(\) : null/);
   assert.ok(
     timeline.indexOf('{t("ดูหลักฐาน", "View proof")}') <
-      timeline.indexOf('onClick={onDownloadRequest}'),
-    "View proof should appear before Download request",
+      timeline.indexOf('{t("ยืนยันการรับเงิน", "Confirm receipt")}'),
+    "View proof should appear before receipt confirmation",
   );
+  assert.match(loanTimeline, /onDownloadRequest=\{hasAcceptedTransfer \? onDownloadRequest : undefined\}/);
+  assert.match(loanTimeline, /transferActionsAtBottom/);
 });
 
 test("transfer proof popup receives timeline metadata and reserves portrait loading space", () => {

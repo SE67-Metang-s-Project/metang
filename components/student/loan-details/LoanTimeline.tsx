@@ -149,7 +149,7 @@ export default function LoanTimeline({
         language={language}
         onConfirmReceipt={shouldShowConfirmation ? handleConfirmTransfer : undefined}
         onShowTransferSlip={onShowTransferSlip}
-        onDownloadRequest={onDownloadRequest}
+        onDownloadRequest={hasAcceptedTransfer ? onDownloadRequest : undefined}
         requestStatus={items.length ? effectiveRequestStatus : undefined}
         emptyTitle={t("ยังไม่มีคำร้องขอกู้ยืม", "No loan request yet")}
         emptyDescription={t(
@@ -162,6 +162,7 @@ export default function LoanTimeline({
         splitReturnedStatus
         title={t("ติดตามสถานะคำร้อง", "Request Status")}
         timelineHistory={timelineHistory}
+        transferActionsAtBottom
       />
 
       {isConfirmationSuccessOpen ? (

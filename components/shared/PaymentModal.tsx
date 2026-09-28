@@ -330,9 +330,11 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
             </span>
             <div className="min-w-0 text-left">
               <h2 className="text-xl font-semibold leading-tight text-gray-900" id="payment-modal-title">
-                {t("ชำระงวดที่", "Pay installment")} {installment.installmentNumber}
+                {t("ชำระงวดที่", "Pay Installment")} {installment.installmentNumber}
                 {installment.paymentAttempt && installment.paymentAttempt > 1
-                  ? ` ${t("(ครั้งที่", "(Attempt")} ${installment.paymentAttempt})`
+                  ? language === "th"
+                    ? ` (ครั้งที่ ${installment.paymentAttempt})`
+                    : ` (${installment.paymentAttempt})`
                   : ""}
               </h2>
               <p className="mt-1 text-sm font-normal text-gray-600">

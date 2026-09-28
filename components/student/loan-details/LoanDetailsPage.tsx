@@ -230,11 +230,15 @@ export default function LoanDetailsPage({ details, installments = [], profile }:
         items={displayedTimeline}
         isTransferAccepted={isTransferAccepted}
         onConfirmTransfer={
-          isWaitingForTransferConfirmation && hasAdminTransferredFunds
+          isWaitingForTransferConfirmation
             ? () => saveTransferConfirmation(details.id ?? details.requestNumber)
             : undefined
         }
-        onShowTransferSlip={hasAdminTransferredFunds ? () => setIsSlipModalOpen(true) : undefined}
+        onShowTransferSlip={
+          isWaitingForTransferConfirmation || hasAdminTransferredFunds
+            ? () => setIsSlipModalOpen(true)
+            : undefined
+        }
         onCancelRequest={() => setIsCancelDialogOpen(true)}
         onEditRequest={isReturned ? () => router.push("/student/loan/apply") : undefined}
         showCancelRequest={canCancelRequest}

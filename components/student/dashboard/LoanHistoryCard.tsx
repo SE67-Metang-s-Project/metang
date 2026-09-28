@@ -19,6 +19,10 @@ export default function LoanHistoryCard({
   const canCorrect = request.statusType === "revisionRequired" && Boolean(onCorrectRequest);
   const submittedAt = request.submittedAt.replace(/^ยื่นเมื่อ\s*/, "");
   const amount = request.amount.replace(/\s*บาท\b/g, "");
+  const isPaid =
+    request.statusType === "completed" ||
+    request.amountLabel === "ชำระแล้ว" ||
+    ["ชำระแล้ว", "ชำระเรียบร้อยแล้ว", "ชำระเสร็จสิ้น", "Paid"].includes(request.statusLabel);
 
   return (
     <article
@@ -53,9 +57,11 @@ export default function LoanHistoryCard({
         </p>
         <AdaptiveKeyValueRow
           className={styles.historyPurposeRow}
+          alwaysStacked
           label={t("วัตถุประสงค์การกู้ยืม", "Loan purpose")}
           labelAs="small"
           value={localizeStudentContent(request.purpose, language)}
+          valueAlignment="left"
           valueAs="strong"
           valueClassName={styles.historyPurpose}
         />
@@ -74,9 +80,11 @@ export default function LoanHistoryCard({
         ) : null}
       </div>
       <div className={styles.historyAmount}>
-        <span>{request.amountLabel === "ชำระแล้ว" ? t("ชำระแล้ว", "Paid") : t("จำนวนที่ขอกู้", "Requested amount")}</span>
+        <span>{isPaid ? t("ชำระแล้ว", "Paid") : t("จำนวนที่ขอกู้", "Requested amount")}</span>
         <strong>
-          {request.statusType === "pending" && totalAmount ? (
+          {isPaid && totalAmount ? (
+            paidAmount.trim()
+          ) : request.statusType === "pending" && totalAmount ? (
             <>
               {paidAmount.trim()}
               <span className={styles.historyAmountTotal}>/{totalAmount.trim()}</span>

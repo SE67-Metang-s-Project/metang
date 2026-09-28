@@ -445,12 +445,12 @@ export default function StudentDashboard({
             onCancelRequest={() => setIsCancelDialogOpen(true)}
             onEditRequest={isActiveLoanReturned ? () => router.push("/student/loan/apply") : undefined}
             onConfirmTransfer={
-              isWaitingForTransferConfirmation && hasAdminTransferredFunds
+              isWaitingForTransferConfirmation
                 ? () => saveTransferConfirmation(currentLoanKey)
                 : undefined
             }
             onShowTransferSlip={
-              hasAdminTransferredFunds
+              isWaitingForTransferConfirmation || hasAdminTransferredFunds
                 ? () => {
                     if (transferSlipImage) {
                       setIsTransferSlipOpen(true);

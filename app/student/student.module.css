@@ -2502,10 +2502,17 @@
   padding: 15px 14px 14px;
   border: 2px solid var(--color-border);
   border-radius: 15px;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 7%);
 }
 
 .historyCard[role="button"] {
   cursor: pointer;
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+.historyCard[role="button"]:hover {
+  box-shadow: 0 3px 7px rgb(15 23 42 / 10%);
+  transform: translateY(-1px);
 }
 
 .historyCard[role="button"]:focus-visible {
@@ -2587,16 +2594,6 @@
   white-space: nowrap;
 }
 
-@media (max-width: 639px) {
-  .historySubmittedAt {
-    white-space: normal;
-  }
-
-  .historySubmittedDate {
-    display: block;
-  }
-}
-
 .historyCard small {
   margin-bottom: 1px;
   color: var(--color-history-label);
@@ -2607,18 +2604,13 @@
 .historyPurposeRow .historyPurpose {
   color: var(--color-history-description);
   font-size: 14px;
+  font-weight: 400;
 }
 
 .historyPurpose {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.historyPurposeRow[data-layout="stacked"] .historyPurpose {
-  overflow-wrap: anywhere;
-  text-overflow: clip;
-  white-space: normal;
 }
 
 .historyCorrectionButton,
@@ -2998,8 +2990,14 @@
 
 .historyAmount strong {
   color: var(--color-history-amount);
-  font-size: 17px;
+  font-size: 18px !important;
+  font-weight: 600 !important;
   white-space: nowrap;
+}
+
+.historyAmount strong .historyAmountTotal {
+  font-size: 18px !important;
+  font-weight: 600 !important;
 }
 
 .contactFooter {
