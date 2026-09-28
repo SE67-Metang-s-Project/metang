@@ -1,5 +1,6 @@
 import "server-only";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   getCmuDisplayName,
@@ -17,6 +18,7 @@ import {
   type DevelopmentApiRole,
 } from "@/lib/development-access";
 import { prisma } from "@/lib/prisma";
+import { RETURN_PATH_HEADER, sanitizeReturnPath } from "@/lib/return-path";
 import type { AppUser, UserRoleName } from "@/lib/generated/prisma/client";
 
 const STUDENT_ID_KEYS = ["student_id", "studentId", "student_code", "studentCode"];
@@ -423,6 +425,17 @@ export async function getStudentAccess(): Promise<RoleAccess> {
   return { status: "authorized", context };
 }
 
+// Adds ?next=<current page> to the login URL. proxy.ts forwards the current pathname + search in
+// RETURN_PATH_HEADER; without a safe value the login URL is returned unchanged.
+async function withReturnPath(loginRedirectUrl: string): Promise<string> {
+  const returnPath = sanitizeReturnPath((await headers()).get(RETURN_PATH_HEADER));
+  if (!returnPath) return loginRedirectUrl;
+
+  const loginUrl = new URL(loginRedirectUrl, "http://localhost");
+  loginUrl.searchParams.set("next", returnPath);
+  return `${loginUrl.pathname}${loginUrl.search}`;
+}
+
 async function requireRoleAccess(
   accessPromise: Promise<RoleAccess>,
   errorRedirectUrl: string,
@@ -431,7 +444,7 @@ async function requireRoleAccess(
   const access = await accessPromise;
 
   if (access.status === "unauthenticated") {
-    redirect(loginRedirectUrl);
+    redirect(await withReturnPath(loginRedirectUrl));
   }
 
   if (access.status === "forbidden") {

@@ -9,6 +9,7 @@ import {
 } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { sanitizeReturnPath } from "@/lib/return-path";
 
 export const CMU_SESSION_COOKIE = "cmu_session";
 export const CMU_OAUTH_COOKIE = "cmu_oauth_transaction";
@@ -50,6 +51,8 @@ export type OAuthTransaction = {
   codeVerifier: string;
   expiresAt: number;
   mode: CmuLoginMode;
+  // Page to return to after sign-in; optional so transactions sealed before it still unseal.
+  returnPath?: string;
 };
 
 export type CmuLoginMode = "general" | "nurse";
@@ -184,11 +187,13 @@ export function startCmuLogin(request: Request, mode: CmuLoginMode) {
     const config = getCmuAuthConfig();
     const state = createOAuthState();
     const { codeVerifier, codeChallenge } = createPkcePair();
+    const returnPath = sanitizeReturnPath(new URL(request.url).searchParams.get("next"));
     const transaction: OAuthTransaction = {
       state,
       codeVerifier,
       expiresAt: Date.now() + OAUTH_TRANSACTION_MAX_AGE * 1000,
       mode,
+      ...(returnPath ? { returnPath } : {}),
     };
     const authorizationUrl = new URL(config.authorizationUrl);
 
