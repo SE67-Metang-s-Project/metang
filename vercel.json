@@ -1,23 +1,23 @@
 {
   "crons": [
     {
-      "path": "/api/cron/installment-reminders",
+      "path": "/metang/api/cron/installment-reminders",
       "schedule": "0 1 * * *"
     },
     {
-      "path": "/api/cron/deliver-reminders",
+      "path": "/metang/api/cron/deliver-reminders",
       "schedule": "*/3 * * * *"
     },
     {
-      "path": "/api/cron/deliver-fon",
+      "path": "/metang/api/cron/deliver-fon",
       "schedule": "* * * * *"
     },
     {
-      "path": "/api/cron/deliver-payment-outcomes",
+      "path": "/metang/api/cron/deliver-payment-outcomes",
       "schedule": "*/3 * * * *"
     },
     {
-      "path": "/api/cron/deliver-loan-outcomes",
+      "path": "/metang/api/cron/deliver-loan-outcomes",
       "schedule": "*/3 * * * *"
     }
   ]

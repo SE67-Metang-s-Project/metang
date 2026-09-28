@@ -1,3 +1,4 @@
+import { withBasePath } from "@/lib/base-path";
 import { dailyAtBangkokHour, everyMinutes, startSchedule, type ShouldRun } from "./schedule";
 
 type CronHandler = (request: Request) => Promise<Response>;
@@ -7,6 +8,10 @@ type CronHandler = (request: Request) => Promise<Response>;
  * `next dev`). Each job calls the same route handler an outside scheduler would, with the same
  * CRON_SECRET check, so the job logic has one home. Not for serverless hosting: a frozen or
  * recycled instance would stop the timers.
+ *
+ * `path` is the app-root route (the `app/api/cron/*` module each job imports). The scheduler
+ * calls the handler directly, so the base path is added only to the request URL it builds;
+ * vercel.json lists the same paths with the base path, because Vercel Cron calls them over HTTP.
  */
 const JOBS: { path: string; shouldRun: ShouldRun; load: () => Promise<{ GET: CronHandler }> }[] = [
   {
@@ -57,7 +62,7 @@ export function startJobScheduler() {
       run: async () => {
         const { GET } = await job.load();
         const response = await GET(
-          new Request(new URL(job.path, "http://localhost"), {
+          new Request(new URL(withBasePath(job.path), "http://localhost"), {
             headers: { Authorization: `Bearer ${secret}` },
           }),
         );

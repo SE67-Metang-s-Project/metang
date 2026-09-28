@@ -23,10 +23,30 @@ test("the callback redirects to the sanitized stored path, else to the role home
   assert.match(callback, /redirectCallback\(request, destinationPath\)/);
 });
 
-test("callback error redirects still go to plain /login with an error code", () => {
+test("callback error redirects go through redirectCallback with an app-root /login", () => {
   for (const code of ["access_denied", "invalid_callback", "invalid_state", "login_failed"]) {
     assert.match(callback, new RegExp(`redirectCallback\\(request, "/login", "${code}"\\)`));
   }
+});
+
+test("the callback adds the base path to every app-root destination it redirects to", () => {
+  // Success and error redirects both go through redirectCallback, and NextResponse.redirect does
+  // not add the base path the way redirect() from next/navigation does.
+  assert.match(callback, /new URL\(withBasePath\(destination\), request\.nextUrl\.origin\)/);
+  assert.equal(callback.match(/NextResponse\.redirect\(/g)?.length, 1);
+});
+
+test("return paths stay app-root from the proxy through the guard to the callback", () => {
+  // The proxy forwards nextUrl.pathname (no base path); the guard hands the login URL to
+  // redirect(), which adds the base path; only the callback turns the path into a URL.
+  assert.match(proxy, /`\$\{request\.nextUrl\.pathname\}\$\{request\.nextUrl\.search\}`/);
+  assert.match(loanAuth, /import \{ redirect \} from "next\/navigation";/);
+  assert.doesNotMatch(loanAuth, /NextResponse\.redirect/);
+});
+
+test("the sign-in start falls back to the login page under the base path", () => {
+  assert.match(startLogin, /URL\(withBasePath\("\/login\?error=configuration"\), request\.url\)/);
+  assert.doesNotMatch(startLogin, /new URL\("\//);
 });
 
 test("startCmuLogin seals the sanitized next inside the OAuth transaction only", () => {

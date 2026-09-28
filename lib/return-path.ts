@@ -1,5 +1,10 @@
 // Pure helpers for "return to the original page after sign-in". No server-only imports, so the
 // validator can be unit-tested directly and shared by the proxy, the page guard and the callback.
+//
+// A return path is an app-root path, without the base path: proxy.ts forwards
+// request.nextUrl.pathname, which Next.js gives without it. The callback adds the base path when
+// it redirects (withBasePath leaves a path that already has it unchanged).
+import { BASE_PATH } from "@/lib/base-path";
 
 // Request header that proxy.ts sets to the current pathname + search for the page guards.
 export const RETURN_PATH_HEADER = "x-metang-return-path";
@@ -10,9 +15,14 @@ const CONTROL_CHARACTERS = /[\u0000-\u001F\u007F]/;
 
 function isBlockedPathname(pathname: string) {
   const lowerPathname = pathname.toLowerCase();
+  const lowerBasePath = BASE_PATH.toLowerCase();
+  // "/metang/login" and "/metang/api/..." are the same targets as "/login" and "/api/...".
+  const appPathname = lowerPathname.startsWith(`${lowerBasePath}/`)
+    ? lowerPathname.slice(lowerBasePath.length)
+    : lowerPathname;
 
-  return ["/api", "/login"].some(
-    (prefix) => lowerPathname === prefix || lowerPathname.startsWith(`${prefix}/`),
+  return [lowerPathname, appPathname].some((candidate) =>
+    ["/api", "/login"].some((prefix) => candidate === prefix || candidate.startsWith(`${prefix}/`)),
   );
 }
 

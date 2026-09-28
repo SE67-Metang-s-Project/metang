@@ -15,14 +15,17 @@ import { getNurseAccessDecision } from "@/lib/nurse-auth";
 import { syncUserFromCmuProfile } from "@/db/queries/users";
 import { getUserHomePath } from "@/lib/loan-auth";
 import { sanitizeReturnPath } from "@/lib/return-path";
+import { withBasePath } from "@/lib/base-path";
 
 type TokenResponse = {
   access_token?: string;
   error?: string;
 };
 
+// `destination` is an app-root path ("/login", a sanitized return path, or the role home path).
+// NextResponse.redirect does not add the base path, so it is added here.
 function redirectCallback(request: NextRequest, destination: string, error?: string) {
-  const url = new URL(destination, request.nextUrl.origin);
+  const url = new URL(withBasePath(destination), request.nextUrl.origin);
 
   if (error) {
     url.searchParams.set("error", error);

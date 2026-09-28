@@ -1,8 +1,11 @@
+import { withBasePath } from "@/lib/base-path";
+
 export type ReviewerRole = "advisor" | "admin" | "super_admin" | "executive";
 
 /**
  * Stable route contract between notification delivery and reviewer-facing pages.
  * Frontend routes can be added later without changing the worker or FON payload shape.
+ * These are app-root paths; the URL builders below add the base path.
  */
 export const REVIEWER_REQUEST_PATHS: Readonly<Record<ReviewerRole, string>> = {
   advisor: "/advisor/pending",
@@ -47,7 +50,11 @@ export function buildRequestUrlForPath(baseUrl: string, path: string, requestId:
   validateRequestId(requestId);
   validateBaseUrl(baseUrl);
 
-  return new URL(`${path}?requestId=${encodeURIComponent(requestId)}`, baseUrl).toString();
+  // new URL() does not add the base path, and a path in baseUrl is not used.
+  return new URL(
+    withBasePath(`${path}?requestId=${encodeURIComponent(requestId)}`),
+    baseUrl,
+  ).toString();
 }
 
 export function buildReviewerRequestUrl(
@@ -57,5 +64,5 @@ export function buildReviewerRequestUrl(
 ) {
   validateBaseUrl(baseUrl);
 
-  return new URL(buildReviewerRequestPath(role, requestId), baseUrl).toString();
+  return new URL(withBasePath(buildReviewerRequestPath(role, requestId)), baseUrl).toString();
 }

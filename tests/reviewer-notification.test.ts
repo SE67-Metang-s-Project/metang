@@ -95,5 +95,20 @@ test("buildRequestUrlForPath builds an absolute URL for a path that differs from
   // pending_disbursement routes Admin to the disbursement queue, not /admin/pending - the whole
   // reason buildRequestUrlForPath exists instead of always deriving the path from role.
   const url = buildRequestUrlForPath("https://example.com", "/admin/disburse-debt", "REQ-1");
-  assert.equal(url, "https://example.com/admin/disburse-debt?requestId=REQ-1");
+  assert.equal(url, "https://example.com/metang/admin/disburse-debt?requestId=REQ-1");
+});
+
+test("reviewer links carry the base path, whether or not APP_BASE_URL already has it", () => {
+  for (const baseUrl of ["https://example.com", "https://example.com/metang/"]) {
+    assert.equal(
+      buildReviewerRequestUrl(baseUrl, "advisor", "REQ 1"),
+      "https://example.com/metang/advisor/pending?requestId=REQ%201",
+    );
+    assert.equal(
+      buildRequestUrlForPath(baseUrl, "/admin/disburse-debt", "REQ-1"),
+      "https://example.com/metang/admin/disburse-debt?requestId=REQ-1",
+    );
+  }
+  // The route contract itself stays app-root, like every Next.js route path.
+  assert.equal(buildReviewerRequestPath("admin", "REQ-1"), "/admin/pending?requestId=REQ-1");
 });

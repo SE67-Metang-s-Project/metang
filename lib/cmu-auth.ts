@@ -10,6 +10,7 @@ import {
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { sanitizeReturnPath } from "@/lib/return-path";
+import { withBasePath } from "@/lib/base-path";
 
 export const CMU_SESSION_COOKIE = "cmu_session";
 export const CMU_OAUTH_COOKIE = "cmu_oauth_transaction";
@@ -218,7 +219,7 @@ export function startCmuLogin(request: Request, mode: CmuLoginMode) {
     return response;
   } catch (error) {
     console.error("Unable to start CMU login", error);
-    return NextResponse.redirect(new URL("/login?error=configuration", request.url));
+    return NextResponse.redirect(new URL(withBasePath("/login?error=configuration"), request.url));
   }
 }
 

@@ -118,6 +118,12 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       {
+        source: "/user/:path*",
+        destination: "/metang/user/:path*",
+        basePath: false,
+        permanent: false,
+      },
+      {
         source: "/login",
         destination: "/metang/login",
         basePath: false,
@@ -138,6 +144,12 @@ const nextConfig: NextConfig = {
       {
         source: "/api-docs",
         destination: "/metang/api-docs",
+        basePath: false,
+        permanent: false,
+      },
+      {
+        source: "/openapi.json",
+        destination: "/metang/openapi.json",
         basePath: false,
         permanent: false,
       },

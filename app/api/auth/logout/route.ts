@@ -1,20 +1,25 @@
 import { NextResponse } from "next/server";
 import { CMU_OAUTH_COOKIE, CMU_SESSION_COOKIE, getCmuAuthConfig } from "@/lib/cmu-auth";
+import { withBasePath } from "@/lib/base-path";
 
 function handleLogout(request: Request) {
   const url = new URL(request.url);
   const federated = url.searchParams.get("federated") === "true";
+  // NextResponse.redirect and new URL() do not add the base path.
+  const loginPath = withBasePath("/login");
 
   let redirectUrl: URL;
   if (federated) {
     try {
       redirectUrl = new URL(getCmuAuthConfig().logoutUrl);
+      // Kept at the root path, so the post-logout URI registered in CMU Entra does not change. The
+      // /login redirect in next.config.ts sends the browser on to the base-path login page.
       redirectUrl.searchParams.set("post_logout_redirect_uri", `${url.origin}/login`);
     } catch {
-      redirectUrl = new URL("/login", request.url);
+      redirectUrl = new URL(loginPath, request.url);
     }
   } else {
-    redirectUrl = new URL("/login", request.url);
+    redirectUrl = new URL(loginPath, request.url);
   }
 
   const response = NextResponse.redirect(redirectUrl, 303);

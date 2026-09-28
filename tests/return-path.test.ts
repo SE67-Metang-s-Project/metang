@@ -49,6 +49,26 @@ test("API and login targets are rejected, including after path normalization", (
   assert.equal(sanitizeReturnPath("/api-docs"), "/api-docs");
 });
 
+test("API and login targets under the base path are rejected too", () => {
+  assert.equal(sanitizeReturnPath("/metang/login"), null);
+  assert.equal(sanitizeReturnPath("/metang/login?next=/admin"), null);
+  assert.equal(sanitizeReturnPath("/metang/api"), null);
+  assert.equal(sanitizeReturnPath("/metang/api/auth/login"), null);
+  assert.equal(sanitizeReturnPath("/METANG/API/auth/login"), null);
+  assert.equal(sanitizeReturnPath("/metang/%61pi/auth/login"), null);
+  assert.equal(sanitizeReturnPath("/metang/admin/../login"), null);
+  assert.equal(sanitizeReturnPath("//metang/admin"), null);
+});
+
+test("return paths stay app-root; a path that already has the base path is kept as it is", () => {
+  // proxy.ts forwards request.nextUrl.pathname, which has no base path.
+  assert.equal(sanitizeReturnPath("/student"), "/student");
+  assert.equal(sanitizeReturnPath("/metang/admin"), "/metang/admin");
+  assert.equal(sanitizeReturnPath("/metang"), "/metang");
+  // Only the whole base-path segment counts.
+  assert.equal(sanitizeReturnPath("/metangx/login"), "/metangx/login");
+});
+
 test("empty, non-string, over-long and control-character values are rejected", () => {
   assert.equal(sanitizeReturnPath(""), null);
   assert.equal(sanitizeReturnPath(null), null);

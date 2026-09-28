@@ -9,6 +9,7 @@ import {
   type ScheduledJob,
 } from "../lib/jobs/schedule";
 import { detectJobRunner } from "../lib/jobs/runtime";
+import { BASE_PATH, withBasePath } from "../lib/base-path";
 
 // Pure scheduling logic - no DB, network, or real timers beyond one short test.
 
@@ -95,10 +96,26 @@ test("the backend scheduler covers every notification job", () => {
 
 test("vercel.json schedules the same jobs as the in-process scheduler", () => {
   const source = readFileSync(resolve(import.meta.dirname, "../lib/jobs/start-scheduler.ts"), "utf8");
-  const schedulerPaths = [...source.matchAll(/path: "([^"]+)"/g)].map((match) => match[1]).sort();
+  // The scheduler lists app-root paths; Vercel Cron calls over HTTP, so it needs the base path.
+  const schedulerPaths = [...source.matchAll(/path: "([^"]+)"/g)]
+    .map((match) => withBasePath(match[1]))
+    .sort();
   const vercel = JSON.parse(readFileSync(resolve(import.meta.dirname, "../vercel.json"), "utf8"));
   const cronPaths = vercel.crons.map((cron: { path: string }) => cron.path).sort();
   assert.deepEqual(cronPaths, schedulerPaths);
+});
+
+test("vercel.json cron paths include the base path, because Vercel Cron does not follow redirects", () => {
+  const vercel = JSON.parse(readFileSync(resolve(import.meta.dirname, "../vercel.json"), "utf8"));
+  assert.ok(vercel.crons.length > 0);
+  for (const cron of vercel.crons as { path: string }[]) {
+    assert.ok(cron.path.startsWith(`${BASE_PATH}/api/cron/`), cron.path);
+  }
+});
+
+test("the scheduler calls each handler with the URL Next.js would pass it", () => {
+  const source = readFileSync(resolve(import.meta.dirname, "../lib/jobs/start-scheduler.ts"), "utf8");
+  assert.match(source, /new Request\(new URL\(withBasePath\(job\.path\), "http:\/\/localhost"\)/);
 });
 
 test("detectJobRunner picks the trigger for the host", () => {
