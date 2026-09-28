@@ -47,7 +47,8 @@ test("only one submission may await review per loan", () => {
 
 test("the slip is uploaded privately before the row exists, under the repayment prefix", () => {
   assert.match(route, /buildSlipPath\(\{ kind: "repayment", loanId, ext \}\)/);
-  assert.match(route, /await uploadSlip\(\{ path: slipPath, contentType: slip\.type, bytes \}\)/);
+  // The detected content type is stored, never the browser-declared slip.type.
+  assert.match(route, /await uploadSlip\(\{ path: slipPath, contentType, bytes \}\)/);
 
   // Same ordering as the disbursement upload: storage first, then the DB write.
   assert.ok(route.indexOf("await uploadSlip(") < route.indexOf("createStudentPayment("));
@@ -56,7 +57,8 @@ test("the slip is uploaded privately before the row exists, under the repayment 
 
 test("the file is validated for type and size before anything is stored", () => {
   assert.match(route, /if \(!\(slip instanceof File\) \|\| slip\.size === 0\)/);
-  assert.match(route, /const ext = extensionForSlipContentType\(slip\.type\);/);
+  assert.match(route, /const contentType = await detectSlipContentType\(slip\);/);
+  assert.match(route, /const ext = contentType && extensionForSlipContentType\(contentType\);/);
   assert.match(route, /if \(slip\.size > MAX_SLIP_BYTES\)/);
   assert.ok(route.indexOf("MAX_SLIP_BYTES") < route.indexOf("await uploadSlip("));
 });

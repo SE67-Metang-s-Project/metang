@@ -54,6 +54,44 @@ export class StudentPaymentError extends Error {
 }
 
 /**
+ * Runs createStudentPayment's refusals once before the slip is uploaded, so a submission that is
+ * bound to be refused stores nothing - there is no storage delete to clean up after it. Advisory
+ * only: it reads outside any transaction, and createStudentPayment re-checks every rule inside its
+ * Serializable transaction, which stays the authority when two requests race.
+ */
+export async function assertStudentPaymentAllowed({
+  loanId,
+  studentId,
+  amount,
+}: {
+  loanId: string;
+  studentId: string;
+  amount: number;
+}) {
+  const loan = await prisma.loanRequest.findFirst({
+    where: { id: loanId, studentId },
+    select: {
+      status: true,
+      transferConfirmedAt: true,
+      payments: { where: { status: "pending_review" }, select: { id: true }, take: 1 },
+      installments: {
+        where: { settledAt: null },
+        orderBy: { seq: "asc" },
+        select: { id: true, seq: true, amountDue: true, amountPaid: true },
+      },
+    },
+  });
+  // Same rules, codes and order as createStudentPayment below.
+  if (!loan) throw new StudentPaymentError("LOAN_NOT_FOUND");
+  if (loan.status !== "disbursed") throw new StudentPaymentError("LOAN_NOT_DISBURSED");
+  if (!loan.transferConfirmedAt) throw new StudentPaymentError("TRANSFER_NOT_CONFIRMED");
+  if (loan.payments.length > 0) throw new StudentPaymentError("REVIEW_IN_PROGRESS");
+  if (loan.installments.length === 0) throw new StudentPaymentError("NOTHING_OUTSTANDING");
+  const { surplus } = allocatePayment(loan.installments, amount);
+  if (surplus > 0) throw new StudentPaymentError("AMOUNT_EXCEEDS_REMAINING", amount - surplus);
+}
+
+/**
  * Records a student's repayment slip for review. slipPath must already point at an uploaded object
  * (see the route) - the student's evidence is stored before the row exists, mirroring disbursement.
  *

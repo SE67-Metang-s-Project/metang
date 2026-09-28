@@ -1,4 +1,5 @@
 import {
+  assertStudentPaymentAllowed,
   createStudentPayment,
   findRepayableLoanId,
   StudentPaymentError,
@@ -9,6 +10,7 @@ import { getStudentContext } from "@/lib/loan-auth";
 import { parseStudentPaymentInput } from "@/lib/loan-validation";
 import { isSameOrigin } from "@/lib/request-security";
 import { serializeJson } from "@/lib/serialization";
+import { detectSlipContentType } from "@/lib/slip-file-type";
 import {
   buildSlipPath,
   extensionForSlipContentType,
@@ -59,8 +61,12 @@ export async function POST(request: Request) {
   if (!(slip instanceof File) || slip.size === 0) {
     return apiError("VALIDATION_ERROR", "A slip file is required", 422);
   }
-  const ext = extensionForSlipContentType(slip.type);
-  if (!ext) return apiError("VALIDATION_ERROR", "Unsupported slip file type", 422);
+  // The browser-declared type is untrusted; the stored type and extension come from the bytes.
+  const contentType = await detectSlipContentType(slip);
+  const ext = contentType && extensionForSlipContentType(contentType);
+  if (!contentType || !ext) {
+    return apiError("VALIDATION_ERROR", "Unsupported slip file type", 422);
+  }
   if (slip.size > MAX_SLIP_BYTES) {
     return apiError("VALIDATION_ERROR", "Slip file exceeds the 10MB limit", 422);
   }
@@ -70,11 +76,23 @@ export async function POST(request: Request) {
   const loanId = await findRepayableLoanId(context.user.id);
   if (!loanId) return apiError("CONFLICT", "You have no loan open for repayment", 409);
 
+  // Refuse up front what the transaction would refuse (unconfirmed transfer, a slip already under
+  // review, nothing owed, too much), so a refused submission uploads nothing.
+  try {
+    await assertStudentPaymentAllowed({
+      loanId,
+      studentId: context.user.id,
+      amount: input.amount,
+    });
+  } catch (error) {
+    return submissionErrorResponse(error);
+  }
+
   const slipPath = buildSlipPath({ kind: "repayment", loanId, ext });
 
   try {
     const bytes = new Uint8Array(await slip.arrayBuffer());
-    await uploadSlip({ path: slipPath, contentType: slip.type, bytes });
+    await uploadSlip({ path: slipPath, contentType, bytes });
   } catch (error) {
     console.error("Unable to upload repayment slip", error);
     return apiError("INTERNAL_ERROR", "Unable to upload slip", 500);
@@ -82,7 +100,8 @@ export async function POST(request: Request) {
 
   try {
     // ponytail: orphaned slip object if the insert below fails - same tradeoff the disburse route
-    // takes, since the object is already durably stored and cannot be rolled back.
+    // takes, since the object is already durably stored and cannot be rolled back. The pre-check
+    // above leaves only races here (e.g. two submissions at once, one then REVIEW_IN_PROGRESS).
     const submit = () =>
       createStudentPayment({
         loanId,
@@ -101,34 +120,39 @@ export async function POST(request: Request) {
       }
     }
   } catch (error) {
-    if (
-      error instanceof StudentPaymentError &&
-      (error.code === "LOAN_NOT_FOUND" || error.code === "LOAN_NOT_DISBURSED")
-    ) {
-      return apiError("CONFLICT", "You have no loan open for repayment", 409);
-    }
-    if (error instanceof StudentPaymentError && error.code === "TRANSFER_NOT_CONFIRMED") {
-      return apiError("CONFLICT", "Confirm receipt of the loan transfer before repaying", 409);
-    }
-    if (error instanceof StudentPaymentError && error.code === "REVIEW_IN_PROGRESS") {
-      return apiError("CONFLICT", "A payment is already awaiting review", 409);
-    }
-    if (error instanceof StudentPaymentError && error.code === "AMOUNT_EXCEEDS_REMAINING") {
-      return apiError(
-        "VALIDATION_ERROR",
-        `amount exceeds the remaining repayment (${error.remaining})`,
-        422,
-      );
-    }
-    if (error instanceof StudentPaymentError && error.code === "NOTHING_OUTSTANDING") {
-      return apiError("CONFLICT", "This loan has nothing left to repay", 409);
-    }
-    if (isSerializationFailure(error)) {
-      return apiError("CONFLICT", "The request changed; please try again", 409);
-    }
-    console.error("Unable to submit repayment", error);
-    return apiError("INTERNAL_ERROR", "Unable to submit repayment", 500);
+    return submissionErrorResponse(error);
   }
+}
+
+/** One mapping for both the pre-upload check and the transaction, so their responses match. */
+function submissionErrorResponse(error: unknown) {
+  if (
+    error instanceof StudentPaymentError &&
+    (error.code === "LOAN_NOT_FOUND" || error.code === "LOAN_NOT_DISBURSED")
+  ) {
+    return apiError("CONFLICT", "You have no loan open for repayment", 409);
+  }
+  if (error instanceof StudentPaymentError && error.code === "TRANSFER_NOT_CONFIRMED") {
+    return apiError("CONFLICT", "Confirm receipt of the loan transfer before repaying", 409);
+  }
+  if (error instanceof StudentPaymentError && error.code === "REVIEW_IN_PROGRESS") {
+    return apiError("CONFLICT", "A payment is already awaiting review", 409);
+  }
+  if (error instanceof StudentPaymentError && error.code === "AMOUNT_EXCEEDS_REMAINING") {
+    return apiError(
+      "VALIDATION_ERROR",
+      `amount exceeds the remaining repayment (${error.remaining})`,
+      422,
+    );
+  }
+  if (error instanceof StudentPaymentError && error.code === "NOTHING_OUTSTANDING") {
+    return apiError("CONFLICT", "This loan has nothing left to repay", 409);
+  }
+  if (isSerializationFailure(error)) {
+    return apiError("CONFLICT", "The request changed; please try again", 409);
+  }
+  console.error("Unable to submit repayment", error);
+  return apiError("INTERNAL_ERROR", "Unable to submit repayment", 500);
 }
 
 function isSerializationFailure(error: unknown) {

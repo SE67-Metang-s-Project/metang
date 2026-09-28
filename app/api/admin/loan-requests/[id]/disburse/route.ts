@@ -5,6 +5,7 @@ import { getAdminAccess } from "@/lib/loan-auth";
 import { isLoanId } from "@/lib/loan-validation";
 import { isSameOrigin } from "@/lib/request-security";
 import { serializeJson } from "@/lib/serialization";
+import { detectSlipContentType } from "@/lib/slip-file-type";
 import { buildSlipPath, extensionForSlipContentType, MAX_SLIP_BYTES, uploadSlip } from "@/lib/slip-storage";
 
 type Params = { params: Promise<{ id: string }> };
@@ -47,8 +48,12 @@ export async function POST(request: Request, { params }: Params) {
   if (!(slip instanceof File) || slip.size === 0) {
     return apiError("VALIDATION_ERROR", "A slip file is required", 422);
   }
-  const ext = extensionForSlipContentType(slip.type);
-  if (!ext) return apiError("VALIDATION_ERROR", "Unsupported slip file type", 422);
+  // The browser-declared type is untrusted; the stored type and extension come from the bytes.
+  const contentType = await detectSlipContentType(slip);
+  const ext = contentType && extensionForSlipContentType(contentType);
+  if (!contentType || !ext) {
+    return apiError("VALIDATION_ERROR", "Unsupported slip file type", 422);
+  }
   if (slip.size > MAX_SLIP_BYTES) {
     return apiError("VALIDATION_ERROR", "Slip file exceeds the 10MB limit", 422);
   }
@@ -57,7 +62,7 @@ export async function POST(request: Request, { params }: Params) {
 
   try {
     const bytes = new Uint8Array(await slip.arrayBuffer());
-    await uploadSlip({ path: slipPath, contentType: slip.type, bytes });
+    await uploadSlip({ path: slipPath, contentType, bytes });
   } catch (error) {
     console.error("Unable to upload disbursement slip", error);
     return apiError("INTERNAL_ERROR", "Unable to upload slip", 500);

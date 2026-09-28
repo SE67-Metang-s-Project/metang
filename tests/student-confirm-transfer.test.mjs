@@ -71,6 +71,63 @@ test("a repayment is refused until the transfer is confirmed", () => {
   );
 });
 
+test("an unconfirmed transfer is refused before the slip is uploaded", () => {
+  // A refusal after the upload would leave an unused object in storage (there is no delete).
+  const precheck = payments.slice(
+    payments.indexOf("export async function assertStudentPaymentAllowed"),
+    payments.indexOf("export async function createStudentPayment"),
+  );
+  assert.match(precheck, /transferConfirmedAt: true,/);
+  assert.match(
+    precheck,
+    /if \(!loan\.transferConfirmedAt\) throw new StudentPaymentError\("TRANSFER_NOT_CONFIRMED"\);/,
+  );
+
+  const precheckCall = paymentsRoute.indexOf("await assertStudentPaymentAllowed(");
+  assert.ok(precheckCall > -1, "the route must run the pre-upload check");
+  assert.ok(paymentsRoute.indexOf("await findRepayableLoanId(") < precheckCall);
+  assert.ok(precheckCall < paymentsRoute.indexOf("buildSlipPath("));
+  assert.ok(precheckCall < paymentsRoute.indexOf("await uploadSlip("));
+  assert.match(
+    paymentsRoute,
+    new RegExp(
+      String.raw`await assertStudentPaymentAllowed\(\{[^}]*\}\);\s*` +
+        String.raw`\} catch \(error\) \{\s*return submissionErrorResponse\(error\);`,
+    ),
+  );
+  // The pre-check and the transaction share one mapping, so the 409 is the same either way, and
+  // the transaction keeps its own check as the authority against races.
+  assert.equal(paymentsRoute.match(/return submissionErrorResponse\(error\);/g)?.length, 2);
+  const message = /"Confirm receipt of the loan transfer before repaying"/g;
+  assert.equal(paymentsRoute.match(message)?.length, 1);
+});
+
+test("the pre-upload check mirrors every refusal of the transaction, in the same order", () => {
+  const precheck = payments.slice(
+    payments.indexOf("export async function assertStudentPaymentAllowed"),
+    payments.indexOf("export async function createStudentPayment"),
+  );
+  const write = payments.slice(payments.indexOf("export async function createStudentPayment"));
+  const codes = (source) =>
+    [...source.matchAll(/throw new StudentPaymentError\("([A-Z_]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(codes(precheck), codes(write));
+  assert.deepEqual(codes(precheck), [
+    "LOAN_NOT_FOUND",
+    "LOAN_NOT_DISBURSED",
+    "TRANSFER_NOT_CONFIRMED",
+    "REVIEW_IN_PROGRESS",
+    "NOTHING_OUTSTANDING",
+    "AMOUNT_EXCEEDS_REMAINING",
+  ]);
+  // Same filters as the transaction's reads, and the same allocator for the amount cap.
+  assert.match(precheck, /where: \{ id: loanId, studentId \}/);
+  assert.match(precheck, /payments: \{ where: \{ status: "pending_review" \}/);
+  assert.match(precheck, /where: \{ settledAt: null \},\s*orderBy: \{ seq: "asc" \}/);
+  assert.match(precheck, /allocatePayment\(loan\.installments, amount\)/);
+  // Read-only: it never writes, so a refused submission leaves no trace.
+  assert.doesNotMatch(precheck, /\.(create|update|updateMany|upsert|delete)\(/);
+});
+
 test("the confirmation lives on the server, not in the browser", () => {
   assert.equal(existsSync(resolve(root, "lib/student-transfer-confirmation.ts")), false);
 
