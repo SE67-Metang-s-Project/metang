@@ -25,11 +25,15 @@ function responseRef(document, path, method, status = "200") {
   return response.content?.["application/json"]?.schema?.$ref;
 }
 
-test("notification persistence remains stateless", () => {
+// The outbox was restored on purpose in NAT-79; the dedupe key keeps enqueueing idempotent.
+test("notification outbox persists with a unique dedupe key (NAT-79)", () => {
   const schema = read("db/schema.prisma");
-  assert.doesNotMatch(schema, /model NotificationOutbox/);
-  assert.doesNotMatch(schema, /enum NotificationStatus/);
-  assert.equal(existsSync(resolve(root, "db/queries/notifications.ts")), false);
+  assert.match(
+    schema,
+    /model NotificationOutbox \{[\s\S]*?dedupeKey +String +@unique\(map: "notification_outbox_dedupe_key"/,
+  );
+  assert.match(schema, /enum NotificationStatus \{/);
+  assert.equal(existsSync(resolve(root, "db/queries/notifications.ts")), true);
 });
 
 test("workflow sources keep transactions and CAS guards together", () => {

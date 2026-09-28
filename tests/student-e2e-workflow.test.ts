@@ -102,12 +102,12 @@ test("Student view-model maps active loan, history, and timeline with Buddhist y
   const activeSummary = mapToActiveLoanSummary(mockSubmittedLoan);
   assert.ok(activeSummary);
   assert.equal(activeSummary.requestNumber, "REQ202609060001");
-  assert.equal(activeSummary.statusLabel, "รออาจารย์ที่ปรึกษาพิจารณา");
+  assert.equal(activeSummary.statusLabel, "รออาจารย์");
   assert.equal(activeSummary.statusType, "waitingAdvisorApproval");
 
   const historyItem = mapToLoanRequestHistoryItem(mockSubmittedLoan);
   assert.equal(historyItem.requestNumber, "REQ202609060001");
-  assert.equal(historyItem.amount, "6,000 บาท");
+  assert.equal(historyItem.amount, "6,000");
   assert.ok(isLoanId(mockSubmittedLoan.id));
 
   const details = mapToLoanDetails(mockSubmittedLoan);
@@ -150,7 +150,7 @@ test("Student view-model and page state correctly handle returned loans and comm
   const activeSummary = mapToActiveLoanSummary(mockReturnedLoan);
   assert.ok(activeSummary);
   assert.equal(activeSummary.status, "returned");
-  assert.equal(activeSummary.statusLabel, "ส่งกลับแก้ไข");
+  assert.equal(activeSummary.statusLabel, "แก้ไขเอกสาร");
   assert.equal(activeSummary.statusType, "revisionRequired");
 
   const details = mapToLoanDetails(mockReturnedLoan);

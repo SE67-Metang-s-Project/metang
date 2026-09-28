@@ -123,7 +123,16 @@ test("cancel guard: disbursed loans are excluded from cancellation everywhere", 
   );
 
   const dashboard = read("components/student/dashboard/StudentDashboard.tsx");
-  assert.match(dashboard, /showCancelRequest=\{Boolean\(\s*currentActiveLoan && !\("isDisbursed" in currentActiveLoan && currentActiveLoan\.isDisbursed\)/);
+  // The dashboard hides cancel once the executive has approved, matching the route's
+  // terminalStatuses: pending_disbursement, disbursed, and closed all count as approved.
+  assert.match(
+    dashboard,
+    /const hasExecutiveApproved = Boolean\(\s*\["pending_disbursement", "disbursed", "closed"\]\.includes\(/,
+  );
+  assert.match(
+    dashboard,
+    /showCancelRequest=\{Boolean\(currentActiveLoan\) && !hasExecutiveApproved\}/,
+  );
 });
 
 test("NAT-162: pending_disbursement is a shared queue, not owned by one admin", () => {

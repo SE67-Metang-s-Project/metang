@@ -14,15 +14,15 @@ import {
 
 test("maps all LoanStatus values to expected Thai labels and UI types", () => {
   assert.deepEqual(mapLoanStatus("pending_advisor"), {
-    label: "รออาจารย์ที่ปรึกษาพิจารณา",
+    label: "รออาจารย์",
     statusType: "waitingAdvisorApproval",
   });
   assert.deepEqual(mapLoanStatus("pending_admin"), {
-    label: "รอเจ้าหน้าที่ตรวจสอบเอกสาร",
+    label: "รอเจ้าหน้าที่",
     statusType: "waitingDocumentReview",
   });
   assert.deepEqual(mapLoanStatus("pending_executive"), {
-    label: "รอผู้บริหารอนุมัติ",
+    label: "รอผู้บริหาร",
     statusType: "waitingExecutiveApproval",
   });
   assert.deepEqual(mapLoanStatus("pending_disbursement"), {
@@ -30,15 +30,15 @@ test("maps all LoanStatus values to expected Thai labels and UI types", () => {
     statusType: "waitingPaymentConfirmation",
   });
   assert.deepEqual(mapLoanStatus("returned"), {
-    label: "ส่งกลับแก้ไข",
+    label: "แก้ไขเอกสาร",
     statusType: "revisionRequired",
   });
   assert.deepEqual(mapLoanStatus("closed"), {
-    label: "เสร็จสิ้น (ชำระครบแล้ว)",
+    label: "ชำระแล้ว",
     statusType: "completed",
   });
   assert.deepEqual(mapLoanStatus("rejected"), {
-    label: "ไม่อนุมัติ",
+    label: "ไม่อนุมัติโดยผู้บริหาร",
     statusType: "rejectedExecutive",
   });
 });
@@ -62,9 +62,9 @@ test("maps loan to LoanRequestHistoryItem", () => {
 
   const historyItem = mapToLoanRequestHistoryItem(loan);
   assert.equal(historyItem.requestNumber, "loan-1234");
-  assert.equal(historyItem.statusLabel, "รออาจารย์ที่ปรึกษาพิจารณา");
+  assert.equal(historyItem.statusLabel, "รออาจารย์");
   assert.equal(historyItem.statusType, "waitingAdvisorApproval");
-  assert.equal(historyItem.amount, "5,000 บาท");
+  assert.equal(historyItem.amount, "5,000");
   assert.equal(historyItem.purpose, "ค่าครองชีพฉุกเฉิน");
 });
 
@@ -136,7 +136,7 @@ test("builds timeline in mapToLoanDetails including comments on return", () => {
   const details = mapToLoanDetails(loan);
   assert.equal(details.id, "loan-detail-test");
   assert.equal(details.statusCode, "returned");
-  assert.equal(details.statusLabel, "ส่งกลับแก้ไข");
+  assert.equal(details.statusLabel, "แก้ไขเอกสาร");
   assert.equal(details.timeline.length, 2);
   assert.equal(details.timeline[0].title, "ยื่นคำร้องกู้ยืมเงิน");
   assert.equal(details.timeline[1].title, "อาจารย์ที่ปรึกษาส่งกลับแก้ไข");
@@ -146,7 +146,7 @@ test("builds timeline in mapToLoanDetails including comments on return", () => {
   const summary = mapToActiveLoanSummary(loan);
   assert.equal(summary?.id, "loan-detail-test");
   assert.equal(summary?.status, "returned");
-  assert.equal(summary?.statusLabel, "ส่งกลับแก้ไข");
+  assert.equal(summary?.statusLabel, "แก้ไขเอกสาร");
 });
 
 test("uses the adjusted approved amount for student details and the estimated repayment schedule", () => {

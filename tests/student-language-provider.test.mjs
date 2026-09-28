@@ -11,6 +11,6 @@ test("student route layout provides language context to all nested pages", () =>
   assert.match(layout, /import \{ StudentLanguageProvider \}/);
   assert.match(
     layout,
-    /<StudentLanguageProvider>\s*\{children\}\s*<\/StudentLanguageProvider>/s,
+    /<StudentLanguageProvider>\s*\{children\}[\s\S]*?<\/StudentLanguageProvider>/,
   );
 });

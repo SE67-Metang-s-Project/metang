@@ -123,7 +123,7 @@ test("Executive UI shows return button (wired to Admin) and protects bank detail
   );
   assert.match(
     requestsCard,
-    /\{canViewSensitiveData && \(\s*<section className=\{styles\.loanApprovalInfoCard\}>[\s\S]*?title="ข้อมูลธนาคาร"/,
+    /\{canViewSensitiveData && \(\s*<section className=\{styles\.loanApprovalInfoCard\}>[\s\S]*?title="ข้อมูลบัญชีธนาคารสำหรับรับเงิน"/,
     "RequestsCard must guard bank details box so it only renders for admin and super_admin",
   );
   assert.match(

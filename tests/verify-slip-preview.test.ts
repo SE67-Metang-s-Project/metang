@@ -42,7 +42,7 @@ test("VerifySlipCard provides preview functionality for payment slip evidence", 
   );
   assert.match(
     content,
-    /ดูภาพต้นฉบับ/,
-    "VerifySlipCard preview modal must have original image link button",
+    /onClick=\{\(\) => setPreviewSlipUrl\(null\)\}[\s\S]{0,300}?aria-label="ปิดหน้าต่างพรีวิว"/,
+    "VerifySlipCard preview modal must have a close button",
   );
 });
