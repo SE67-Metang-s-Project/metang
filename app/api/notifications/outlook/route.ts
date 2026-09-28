@@ -66,7 +66,10 @@ export async function POST(request: Request) {
       amountDue: amountRemaining,
       dueDate: installment.dueDate,
       loanId: installment.loanId,
-      loanDetailUrl: buildStudentLoanDetailUrl(process.env.APP_BASE_URL ?? "http://localhost:8080"),
+      loanDetailUrl: buildStudentLoanDetailUrl(
+        process.env.APP_BASE_URL ?? "http://localhost:8080",
+        installment.loanId,
+      ),
     });
   } catch (error) {
     return apiError(

@@ -21,9 +21,10 @@ async function handle(request: Request) {
   const authError = checkCronAuth(request);
   if (authError) return authError;
 
-  let loanDetailUrl: string;
+  // Probed before claiming, so a bad APP_BASE_URL fails the run instead of every claimed row.
+  const baseUrl = process.env.APP_BASE_URL ?? "http://localhost:8080";
   try {
-    loanDetailUrl = buildStudentLoanDetailUrl(process.env.APP_BASE_URL ?? "http://localhost:8080");
+    buildStudentLoanDetailUrl(baseUrl);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return apiError("INTERNAL_ERROR", message, 500);
@@ -68,7 +69,7 @@ async function handle(request: Request) {
             amountDue: decision.amountRemaining,
             dueDate: due.dueDate,
             loanId: due.loanId,
-            loanDetailUrl,
+            loanDetailUrl: buildStudentLoanDetailUrl(baseUrl, due.loanId),
           });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
