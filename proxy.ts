@@ -20,5 +20,6 @@ export const config = {
     "/executive/:path*",
     "/student/:path*",
     "/superadmin/:path*",
+    "/user/:path*",
   ],
 };
