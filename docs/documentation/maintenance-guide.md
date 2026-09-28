@@ -76,7 +76,10 @@ hosted services.
 | Student emails | CMU Email API (Outlook) | Sends repayment due-date reminders to students. Tells students when their request is rejected, when the loan is disbursed, and when an admin confirms or rejects a repayment slip. |
 | Secrets | Infisical, environments `dev` and `prod` | Stores all passwords, keys, and tokens. |
 
-`[TO VERIFY: the production Vercel project, Vercel plan, Supabase project, and Supabase plan. Production deployment (Jira NAT-15) was not complete when this guide was written.]`
+The Vercel project needs the Pro plan or higher. The `vercel.json` schedules run every minute and
+every 3 minutes, and the Hobby plan allows only daily cron jobs (Section 2.3).
+
+`[TO VERIFY: the production Vercel project, the Vercel plan in use, the Supabase project, and the Supabase plan. Production deployment (Jira NAT-15) was not complete when this guide was written.]`
 
 ### 2.2 How the components connect
 
@@ -202,9 +205,10 @@ You need these accounts. Never share one account between people.
 | Supabase project member | SQL Editor, backups, Storage, usage, database password | Supabase organization owner `[TO VERIFY]` |
 | Infisical project member | Read and change secrets in `dev` and `prod` | Infisical project admin `[TO VERIFY]` |
 | CMU Entra app registration access | Callback URL, client secret renewal | CMU ITSC `[TO VERIFY]` |
-| CMU LINE FON API token and CMU Email API client | Notification delivery | CMU ITSC / MIS `[TO VERIFY]` |
+| CMU Email API client | Student emails | CMU Faculty of Nursing MIS (`docs/Email_API_Manual.md`) |
+| CMU LINE FON API token | Reviewer LINE messages | CMU ITSC / MIS `[TO VERIFY: issuer of the FON API token]` |
 | Me_Tang SuperAdmin role | Grant roles, fund ledger, system settings | Another SuperAdmin, or SQL for the first one (Section 3.3) |
-| Git repository access | Updates (Section 6) | Repository owner `[TO VERIFY]` |
+| Git repository access | Updates (Section 6) | An owner of the GitHub organization `SE67-Metang-s-Project`. The repository `SE67-Metang-s-Project/metang` is public: anyone can clone it, but write access needs an organization owner `[TO VERIFY: confirm who takes ownership after hand-over]` |
 
 ### 3.2 Application roles
 
@@ -580,7 +584,7 @@ Prerequisites: access to Infisical `prod` and to the issuer of the secret.
 | `SESSION_SECRET` | Changing it signs out every user. | At least 32 characters. Create one with `openssl rand -base64 32`. |
 | `CRON_SECRET` | The job scheduler does not start. Outside callers of `/api/cron/` get `401 Unauthorized`. | The scheduler sends it as `Authorization: Bearer <value>`. Restart the server after a change. |
 | `NOTIFY_API_TOKEN` | LINE messages fail. | Issued by CMU `[TO VERIFY]`. |
-| `EMAIL_API_CLIENT_ID`, `EMAIL_API_CLIENT_SECRET` | All student emails fail: reminders, request results, disbursements, and repayment slip results. | Issued by CMU `[TO VERIFY]`. |
+| `EMAIL_API_CLIENT_ID`, `EMAIL_API_CLIENT_SECRET` | All student emails fail: reminders, request results, disbursements, and repayment slip results. | Issued by the CMU Faculty of Nursing, which runs the Email API at `https://mis.nurse.cmu.ac.th/thesis` (`docs/Email_API_Manual.md`). |
 | `SUPABASE_SERVICE_ROLE_KEY` | Slip upload and slip viewing fail. | Supabase Dashboard: **Project Settings** > **API**. |
 | Database password in `DATABASE_URL` and `DIRECT_URL` | The whole application fails. | Supabase Dashboard: **Project Settings** > **Database**. |
 
@@ -642,9 +646,16 @@ Purpose: keep a database copy that does not depend on the Supabase plan.
 Prerequisites:
 
 - PostgreSQL client tools (`pg_dump`, `pg_restore`). The major version must be the same as, or
-  newer than, the Supabase database version `[TO VERIFY: Supabase PostgreSQL version in
-  **Project Settings** > **Infrastructure**]`.
+  newer than, the Supabase database version. To see the version, run `SHOW server_version;`.
+  On 2026-09-28 the dev project showed `17.6`, so use version 17 or newer.
 - Infisical CLI, signed in with `infisical login`, with read access to `prod`.
+
+Note: `.env.example` sets `DIRECT_URL` to the direct connection (`db.<project-ref>.supabase.co`).
+This host can have an IPv6 address only, if the project has no IPv4 add-on. If `pg_dump` stops
+with `Network is unreachable` or cannot find the host, your network has no IPv6. Then use the
+**Session pooler** connection string (port `5432`) from the Supabase Dashboard: **Connect**.
+Do not give `DATABASE_URL` to `pg_dump` unchanged. If it contains the Prisma parameter
+`pgbouncer=true`, `psql` and `pg_dump` stop with `invalid URI query parameter: "pgbouncer"`.
 
 Steps:
 
@@ -652,38 +663,89 @@ Steps:
 2. Run:
 
    ```bash
-   infisical run --projectId 721bea71-5be4-426d-9b76-23e2e4333286 --env prod -- sh -c 'pg_dump "$DIRECT_URL" --format=custom --schema=public --no-owner --no-privileges --file="metang-$(date +%Y%m%d).dump"'
+   infisical run --projectId 721bea71-5be4-426d-9b76-23e2e4333286 --env prod -- sh -c 'pg_dump "$DIRECT_URL" --format=custom --schema=public --no-owner --no-privileges --file="metang-$(LC_ALL=C date +%Y%m%d).dump"'
    ```
 
-   Expected result: a file named `metang-YYYYMMDD.dump` and no error.
+   Expected result: a file named `metang-YYYYMMDD.dump` and no error. `LC_ALL=C` keeps the
+   year in the Gregorian calendar. With a Thai locale (`LC_TIME=th_TH.UTF-8`), `date` writes
+   the Buddhist year, for example `25690928`.
 3. Check that the file is readable:
 
    ```bash
-   pg_restore --list "metang-$(date +%Y%m%d).dump" | grep -c "TABLE DATA"
+   pg_restore --list "metang-$(LC_ALL=C date +%Y%m%d).dump" | grep -c "TABLE DATA"
    ```
 
-   Expected result: a number of 11 or more.
-4. Move the file to the off-site backup location.
+   Expected result: a number of 11 or more. Version 0.1.0 has 10 application tables and the
+   table `_prisma_migrations`.
+4. Run the queries in Section 5.5, step 1 and step 2, and the balance query in Section 4.9.
+   Write the results next to the file name. Section 5.5 compares a restore with these values.
+5. Move the file to the off-site backup location.
 
 ### 5.3 Back up slip files
 
 Purpose: keep a copy of the slip files. Supabase backups do not include them.
 
-`[TO VERIFY: choose and test a download method. Options are the Supabase Dashboard download
-per file, or the Supabase Storage S3-compatible endpoint with a tool such as rclone. The
-delivered software has no tool for this.]`
+The delivered software has no tool for this. This procedure uses the Supabase Storage REST API,
+the same API that the application uses. It was tested on the dev project on 2026-09-28.
 
-Minimum steps:
+Prerequisites:
 
-1. Open the Supabase Dashboard: **Storage** > `bank_payment_slips`.
-2. Download the folders `disbursement` and `repayment`.
-3. Store the files with the database backup of the same date.
+- `psql` and `curl`.
+- Infisical CLI, signed in with `infisical login`, with read access to `prod`.
+- A network connection that can reach `DIRECT_URL` (see the note in Section 5.2).
+- `SUPABASE_SLIP_BUCKET` is set in Infisical `prod`. The script stops if it is not set.
 
-Expected result: the number of files matches this query:
+Steps:
 
-```sql
-SELECT count(*) FROM storage.objects WHERE bucket_id = 'bank_payment_slips';
-```
+1. Open a terminal in the folder of the database backup of the same date.
+2. Save this text as `backup-slips.sh`:
+
+   ```sh
+   #!/bin/sh
+   set -u
+   out="slips-$(LC_ALL=C date +%Y%m%d)"
+   psql "$DIRECT_URL" -At -c "SELECT name FROM storage.objects
+     WHERE bucket_id = '$SUPABASE_SLIP_BUCKET' AND name NOT LIKE '%.emptyFolderPlaceholder'" |
+   while IFS= read -r name; do
+     mkdir -p "$out/$(dirname "$name")"
+     urlpath=$(printf '%s' "$name" | sed 's#//#/%2F#g')
+     printf 'header = "Authorization: Bearer %s"\nheader = "apikey: %s"\n' \
+       "$SUPABASE_SERVICE_ROLE_KEY" "$SUPABASE_SERVICE_ROLE_KEY" |
+       curl -sSf -K - -o "$out/$name" \
+         "$SUPABASE_URL/storage/v1/object/authenticated/$SUPABASE_SLIP_BUCKET/$urlpath" ||
+       echo "FAILED: $name"
+   done
+   echo "Files downloaded: $(find "$out" -type f | wc -l)"
+   ```
+
+   The script gives the service role key to `curl` on standard input, so the key is not in the
+   process list. It changes `//` in a file name to `/%2F`. The Storage API returns `400` for a
+   path that contains `//`. The dev bucket has one such file. The application did not make it,
+   because the application does not use this name format.
+3. Run:
+
+   ```bash
+   chmod +x backup-slips.sh
+   infisical run --projectId 721bea71-5be4-426d-9b76-23e2e4333286 --env prod -- ./backup-slips.sh
+   ```
+
+   Expected result: no `FAILED:` lines, and the last line is `Files downloaded: N`.
+4. Run this query. Expected result: the count is the same as `N`.
+
+   ```sql
+   SELECT count(*) FROM storage.objects
+   WHERE bucket_id = 'bank_payment_slips' AND name NOT LIKE '%.emptyFolderPlaceholder';
+   ```
+
+   Replace `bank_payment_slips` with the value of `SUPABASE_SLIP_BUCKET` if it is different.
+
+   Note: a count of all rows in `storage.objects` includes folder placeholders. These are
+   objects named `.emptyFolderPlaceholder`, not slip files. On 2026-09-28 the dev
+   bucket had 83 rows: 81 slip files and 2 placeholders. The script downloaded 81 files.
+5. Store the folder `slips-YYYYMMDD` with the database backup.
+
+`[TO VERIFY: the Supabase Dashboard download and the S3-compatible endpoint (for example with
+rclone) were not tested.]`
 
 ### 5.4 Restore the database
 
@@ -705,11 +767,19 @@ Option B: manual dump file
 
 Prerequisites: an empty target database, or approval to replace the current one.
 
-`[TO VERIFY: this restore command was not tested against a Supabase project. Test it once on a
-new, empty project before you need it in an incident.]`
+Test record: on 2026-09-28 these steps were done once with the dev project: Section 5.2, the
+download in Section 5.3, step 2 of Option B, and Section 5.5 steps 1 to 3. The dump
+(PostgreSQL 17 client tools) was restored into a local, empty PostgreSQL 17 database with the
+command in step 2. The command ran two times: into the empty database, and again over the
+restored data. Both runs ended with exit code 0 and no messages. Row counts, the fund balance,
+the latest migration, and the sequence values were the same as in the dev project.
 
-1. Set the Me_Tang production deployment to maintenance, or tell users to stop working
-   `[TO VERIFY: the application has no maintenance mode]`.
+`[TO VERIFY: these were not tested: a restore into a new Supabase project, the bucket and
+upload in step 3, the settings change in step 4, and Section 5.5 steps 4 and 5. Test them once
+before you need them in an incident.]`
+
+1. Tell users to stop work until the restore is verified. The application has no maintenance
+   mode.
 2. Run this command. It drops and re-creates each table from the file.
 
    ```bash
@@ -722,7 +792,19 @@ new, empty project before you need it in an incident.]`
 3. If the Storage bucket is empty (new project), create a **private** bucket named
    `bank_payment_slips` and upload the slip files from Section 5.3 with the same folder
    structure.
-4. Continue with Section 5.5.
+4. If you restored into a new Supabase project, change these settings in Infisical `prod`
+   (and in Vercel if it does not sync) to the values of the new project. Then redeploy
+   (Section 7.1).
+
+   | Setting | New value |
+   |---|---|
+   | `DATABASE_URL` | Session pooler connection string of the new project. |
+   | `DIRECT_URL` | Direct connection string of the new project (see the note in Section 5.2). |
+   | `SUPABASE_URL` | `https://<new-project-ref>.supabase.co` |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Service role key of the new project. |
+   | `SUPABASE_SLIP_BUCKET` | The bucket name from step 3. Not set means `bank_payment_slips`. |
+
+5. Continue with Section 5.5.
 
 ### 5.5 Verify a restore
 
@@ -734,8 +816,8 @@ new, empty project before you need it in an incident.]`
    ORDER BY finished_at DESC LIMIT 1;
    ```
 
-   Expected result: `20260927130000_loan_request_id_cycle`, or the latest migration of the
-   installed version.
+   Expected result: the value recorded at backup time (Section 5.2, step 4). For version
+   0.1.0 with all migrations applied, it is `20260927130000_loan_request_id_cycle`.
 2. Run:
 
    ```sql
@@ -746,8 +828,10 @@ new, empty project before you need it in an incident.]`
           (SELECT count(*) FROM system_setting) AS settings;
    ```
 
-   Expected result: counts match the values recorded at backup time. `settings` is `1`.
-3. Run the fund balance query from Section 4.9. Expected result: the balance at backup time.
+   Expected result: counts match the values recorded at backup time (Section 5.2, step 4).
+   `settings` is `1`.
+3. Run the fund balance query from Section 4.9. Expected result: the balance recorded at
+   backup time.
 4. Sign in as a SuperAdmin. Open a disbursed loan and open its slip.
    Expected result: the slip image or PDF opens.
 5. Do the health check (Section 4.2).
@@ -758,7 +842,8 @@ new, empty project before you need it in an incident.]`
 
 Updates need the source repository, Node.js 24, and npm. There is no continuous delivery
 pipeline (Jira NAT-213 is open). `[TO VERIFY: whether Vercel deploys automatically from the
-Git branch `main`.]`
+Git branch `main`. `vercel.json` has no `git` settings, so a Vercel project that is connected to
+the repository deploys each push to its production branch.]`
 
 ### 6.1 Pre-update checklist
 
@@ -1305,5 +1390,5 @@ Include this information:
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
-| 1.0 draft | 2026-09-28 | Me_Tang development team `[TO VERIFY: author names]` | First version for Jira NAT-214. Written from the repository at commit `f7fc3cd`, plus the Jira NAT-206 change (student email on slip confirmation or rejection), student emails on request rejection and disbursement, and the backend job scheduler. |
+| 1.0 draft | 2026-09-28 | Me_Tang development team (Git user `nacs-970`) `[TO VERIFY: real author names]` | First version for Jira NAT-214. Written from the repository at commit `f7fc3cd`, plus the Jira NAT-206 change (student email on slip confirmation or rejection), student emails on request rejection and disbursement, and the backend job scheduler. |
 | 1.1 draft | 2026-09-28 | Me_Tang development team | Jira NAT-240: corrected against the code at commit `d05ac00`. Scheduled jobs on Vercel, student cancel and executive return, eligibility rules, installment count (1 to 3), phone and slip rules, notifications sent without the outbox, fund ledger limits, the production database warning, unit tests, rollback behavior, and missing error messages in Section 10. |
