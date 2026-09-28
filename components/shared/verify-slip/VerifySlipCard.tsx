@@ -226,12 +226,13 @@ function calculateInstallments(
     const initialExpected = actualInstallment
       ? Math.max(0, baseInstallmentAmount - Number(actualInstallment.paidAmount))
       : baseInstallmentAmount;
+    const initialPaidAmount = actualInstallment ? Number(actualInstallment.paidAmount) || 0 : 0;
     return {
       installmentNumber: i + 1,
       expectedAmount: initialExpected,
       baseAmount: baseInstallmentAmount,
-      isPaid: false,
-      paidAmount: 0,
+      isPaid: initialPaidAmount >= baseInstallmentAmount && baseInstallmentAmount > 0,
+      paidAmount: initialPaidAmount,
       evidence: null as PaymentEvidence | null,
       evidences: [] as PaymentEvidence[],
       billedAmountByEvidenceId: new Map<string, number>(),
@@ -268,15 +269,34 @@ function calculateInstallments(
         installment.baseAmount - (index === lastInstallmentIndex ? advancePaidToLastInstallment : 0),
       );
 
+      let verifiedPaidSum = 0;
+
       installment.evidences.forEach((evidence) => {
         installment.billedAmountByEvidenceId.set(evidence.id, remainingAmount);
 
         if (evidence.status === "verified") {
-          remainingAmount = Math.max(0, remainingAmount - Number(evidence.amount));
+          const verifiedAmt = Number(evidence.amount) || 0;
+          remainingAmount = Math.max(0, remainingAmount - verifiedAmt);
+          verifiedPaidSum += verifiedAmt;
         }
       });
 
       installment.expectedAmount = remainingAmount;
+
+      const actualInst = installments?.find(
+        (inst) => inst.installmentNumber === installment.installmentNumber,
+      );
+      if (installment.evidences.length > 0) {
+        // ยอดที่ admin ตรวจสอบเรียบร้อยแล้วว่า slip ถูกต้อง (status === "verified")
+        installment.paidAmount = verifiedPaidSum;
+      } else if (actualInst) {
+        installment.paidAmount = Number(actualInst.paidAmount) || 0;
+      } else {
+        installment.paidAmount =
+          index === lastInstallmentIndex ? advancePaidToLastInstallment : 0;
+      }
+      installment.isPaid =
+        installment.paidAmount >= installment.baseAmount && installment.baseAmount > 0;
     });
   }
 
@@ -354,6 +374,30 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
       ? getEvidenceBilledAmount(selectedRequest, selectedEvidence.id)
       : 0;
   const isOverpayment = Boolean(selectedEvidence?.isOverpayment);
+
+  const selectedRequestSchedule = selectedRequest
+    ? calculateInstallments(
+        selectedRequest.submitDate,
+        selectedRequest.term,
+        selectedRequest.amount,
+        selectedRequest.paymentHistory,
+        selectedRequest.installments,
+      )
+    : [];
+
+  const totalRequestedAmount = selectedRequest
+    ? parseFloat(String(selectedRequest.amount).replace(/,/g, "")) ||
+      selectedRequestSchedule.reduce((sum, inst) => sum + inst.baseAmount, 0)
+    : 0;
+
+  const totalVerifiedPaidAmount = selectedRequest
+    ? Math.max(
+        (selectedRequest.paymentHistory || [])
+          .filter((ev) => ev.status === "verified")
+          .reduce((sum, ev) => sum + (Number(ev.amount) || 0), 0),
+        selectedRequestSchedule.reduce((sum, inst) => sum + inst.paidAmount, 0),
+      )
+    : 0;
 
   // A refresh can drop the selected request (its last pending slip was decided) or the slip. Clear
   // the ids so the modal does not reopen by itself when the request comes back later.
@@ -682,13 +726,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                       </tr>
                     </thead>
                     <tbody>
-                      {calculateInstallments(
-                        selectedRequest.submitDate,
-                        selectedRequest.term,
-                        selectedRequest.amount,
-                        selectedRequest.paymentHistory,
-                        selectedRequest.installments,
-                      )
+                      {selectedRequestSchedule
                         .flatMap((inst) => {
                           const evidences = inst.evidences.length > 0 ? inst.evidences : [null];
 
@@ -721,6 +759,9 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                               <div className="flex flex-col items-center gap-1 text-gray-600">
                                 <span className="font-medium text-gray-700">งวดที่ {inst.installmentNumber}</span>
                                 <span className="whitespace-nowrap text-sm">{inst.dateString}</span>
+                                <span className="whitespace-nowrap text-sm text-gray-600">
+                                  {formatAmount(inst.paidAmount)} / {formatAmount(inst.baseAmount)}
+                                </span>
                               </div>
                             </td>
                           ) : null}
@@ -784,6 +825,44 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                         </tr>
                       ))}
                     </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-gray-300 bg-gray-50/90 font-semibold text-gray-800">
+                        <td className="border-r border-gray-200 px-3 py-3 text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="font-semibold text-gray-900">รวมทั้งสิ้น</span>
+                            <span className="whitespace-nowrap text-sm text-gray-600 font-medium">
+                              {formatAmount(totalVerifiedPaidAmount)} / {formatAmount(totalRequestedAmount)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-center text-gray-400 font-normal">-</td>
+                        <td className="px-3 py-3 text-center">
+                          <span className="font-semibold text-gray-900">
+                            {formatAmount(totalRequestedAmount)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span
+                            className={`font-semibold ${
+                              totalVerifiedPaidAmount > 0 ? "text-emerald-700" : "text-gray-400 font-normal"
+                            }`}
+                          >
+                            {formatAmount(totalVerifiedPaidAmount)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          {totalVerifiedPaidAmount >= totalRequestedAmount && totalRequestedAmount > 0 ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                              ชำระครบแล้ว
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-2.5 py-1 text-xs font-semibold text-[#ea580c]">
+                              ค้างชำระ {formatAmount(Math.max(0, totalRequestedAmount - totalVerifiedPaidAmount))}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               </section>
