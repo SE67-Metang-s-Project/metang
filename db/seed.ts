@@ -173,8 +173,8 @@ const approvals: Prisma.LoanApprovalCreateManyInput[] = approvalRows.map(
 );
 
 const installments: Prisma.InstallmentCreateManyInput[] = [
-  { loanId: loanId(207), seq: 1, dueDate: dateFromNow(-30), amountDue: 1500, amountPaid: 0 },
-  { loanId: loanId(207), seq: 2, dueDate: dateFromNow(10), amountDue: 1500, amountPaid: 500 },
+  { loanId: loanId(207), seq: 1, dueDate: dateFromNow(-30), amountDue: 1500, amountPaid: 500 },
+  { loanId: loanId(207), seq: 2, dueDate: dateFromNow(10), amountDue: 1500, amountPaid: 0 },
   { loanId: loanId(207), seq: 3, dueDate: dateFromNow(40), amountDue: 1500, amountPaid: 0 },
   {
     loanId: loanId(208),
@@ -271,7 +271,7 @@ async function main() {
         [301, 208, 1, 1000, "confirmed"],
         [302, 208, 2, 1000, "confirmed"],
         [303, 208, 3, 1000, "confirmed"],
-        [304, 207, 2, 500, "pending_review"],
+        [304, 207, 1, 500, "pending_review"],
         [305, 207, 1, 1500, "rejected"],
       ] as const;
       const payments: Prisma.PaymentCreateManyInput[] = paymentRows.map(
