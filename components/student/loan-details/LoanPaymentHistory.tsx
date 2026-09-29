@@ -28,6 +28,7 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
   const { language, t } = useStudentLanguage();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [selectedPaymentEvidence, setSelectedPaymentEvidence] = useState<LoanPaymentHistoryItem | null>(null);
+  const [showAllPaymentRecords, setShowAllPaymentRecords] = useState(false);
   const verifiedCount = items.filter((item) => getPaymentStatus(item.status) === "verified").length;
   const failedCount = items.filter((item) => getPaymentStatus(item.status) === "failed").length;
   const pendingCount = items.filter((item) => getPaymentStatus(item.status) === "pending").length;
@@ -39,6 +40,16 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
 
     return { item, index, attemptNumber, totalAttempts: recordsForInstallment.length };
   });
+  const visiblePaymentRecords = showAllPaymentRecords ? paymentRecords : paymentRecords.slice(0, 5);
+  const showMoreLabel = showAllPaymentRecords
+    ? t("ซ่อนรายละเอียด", "Hide details")
+    : t("ดูรายละเอียดเพิ่มเติม", "See more details");
+  const showMoreIconClassName = [
+    styles.showMoreIcon,
+    showAllPaymentRecords ? styles.showMoreIconExpanded : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <section className={`${styles.loanDetailSection} ${styles.detailDashboardCard} ${styles.paymentHistorySection}`}>
@@ -57,7 +68,7 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
 
       <div className={styles.paymentEvidenceTable}>
         {paymentRecords.length > 0 ? (
-          paymentRecords.map(({ item, index, attemptNumber, totalAttempts }) => {
+          visiblePaymentRecords.map(({ item, index, attemptNumber, totalAttempts }) => {
             const id = item.id ?? `${item.installmentNumber}-${index}`;
             const isExpanded = expandedIds.has(id);
             const status = getPaymentStatus(item.status);
@@ -159,6 +170,20 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
           </div>
         )}
       </div>
+      {paymentRecords.length > 5 ? (
+        <button
+          aria-expanded={showAllPaymentRecords}
+          className={styles.showMore}
+          onClick={() => setShowAllPaymentRecords((current) => !current)}
+          type="button"
+        >
+          {showMoreLabel}
+          <span aria-hidden="true" className={showMoreIconClassName}>
+            <i />
+            <i />
+          </span>
+        </button>
+      ) : null}
       {selectedPaymentEvidence ? (
         <TransferSlipModal
           imageSrc={selectedPaymentEvidence.receiptImage}

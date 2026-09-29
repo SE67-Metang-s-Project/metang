@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle2, LogIn, RefreshCw, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, FileX2, LogIn, RefreshCw } from "lucide-react";
 import {
   activeLoan as defaultActiveLoan,
   loanRequestHistory as defaultLoanRequestHistory,
@@ -572,7 +572,7 @@ export default function StudentDashboard({
             role="alertdialog"
           >
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
-              <X aria-hidden="true" size={28} strokeWidth={2.5} />
+              <FileX2 aria-hidden="true" size={28} strokeWidth={2.5} />
             </div>
             <h2 className="mt-4 text-center text-xl font-bold text-gray-900" id="dashboard-cancel-request-title">
               {t("ยืนยันการยกเลิกคำร้อง", "Confirm cancellation")}

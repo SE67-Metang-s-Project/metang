@@ -8,7 +8,7 @@ import {
   tempCurrentLoanDetails,
   type TempLoanFormData,
 } from "@/app/student/temp/tempMockData";
-import { Landmark, UserRound, X } from "lucide-react";
+import { FileX2, Landmark, UserRound } from "lucide-react";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
 import BahtCoinIcon from "@/components/shared/BahtCoinIcon";
@@ -278,7 +278,7 @@ export default function TempLoanDetailsStep({
             role="alertdialog"
           >
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
-              <X aria-hidden="true" size={28} strokeWidth={2.5} />
+              <FileX2 aria-hidden="true" size={28} strokeWidth={2.5} />
             </div>
             <h2
               className="mt-4 text-center text-xl font-bold text-gray-900"

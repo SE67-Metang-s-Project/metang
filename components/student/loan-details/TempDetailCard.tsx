@@ -46,7 +46,7 @@ export default function TempDetailCard({ details, profile }: TempDetailCardProps
             <dt>{t("รหัสนักศึกษา", "Student ID")}</dt>
             <dd>{profile.studentId}</dd>
           </div>
-          <div>
+          <div className={styles.studentProgramRow}>
             <dt>{t("หลักสูตร", "Program")}</dt>
             <dd>{localizeStudentContent(programName, language)}</dd>
           </div>

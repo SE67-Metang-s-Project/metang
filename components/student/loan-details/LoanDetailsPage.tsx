@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { FileX2 } from "lucide-react";
 import type { InstallmentPayment, LoanDetails, PaymentAccount } from "@/app/student/studentMockData";
 import type { StudentProfileDisplay } from "@/components/student/dashboard/LoanSummaryCard";
 import ContactFooter from "./ContactFooter";
@@ -300,7 +300,7 @@ export default function LoanDetailsPage({ details, installments = [], profile }:
             role="alertdialog"
           >
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
-              <X aria-hidden="true" size={28} strokeWidth={2.5} />
+              <FileX2 aria-hidden="true" size={28} strokeWidth={2.5} />
             </div>
             <h2 className="mt-4 text-center text-xl font-bold text-gray-900" id="cancel-request-title">
               {t("ยืนยันการยกเลิกคำร้อง", "Confirm cancellation")}
