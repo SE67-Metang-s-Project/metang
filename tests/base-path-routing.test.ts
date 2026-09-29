@@ -23,9 +23,8 @@ test("every root-path redirect in next.config.ts sends to the same path under th
   }
 });
 
-test("next.config.ts redirects /user and /openapi.json, which 404 without the base path", async () => {
+test("next.config.ts redirects /openapi.json, which 404s without the base path", async () => {
   const sources = (await nextConfig.redirects!()).map((redirect) => redirect.source);
-  assert.ok(sources.includes("/user/:path*"));
   assert.ok(sources.includes("/openapi.json"));
 });
 

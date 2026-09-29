@@ -118,12 +118,6 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       {
-        source: "/user/:path*",
-        destination: "/metang/user/:path*",
-        basePath: false,
-        permanent: false,
-      },
-      {
         source: "/login",
         destination: "/metang/login",
         basePath: false,

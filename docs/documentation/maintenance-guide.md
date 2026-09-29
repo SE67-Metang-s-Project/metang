@@ -79,7 +79,7 @@ hosted services.
 
 All pages and API routes are served under the base path `/metang`, for example
 `https://<host>/metang/login` and `https://<host>/metang/api/cron/deliver-fon`. A request to an
-old path without `/metang` (`/`, `/login`, `/student/...`, `/user/...`, `/api/...`,
+old path without `/metang` (`/`, `/login`, `/student/...`, `/api/...`,
 `/openapi.json`, and most public files) gets a temporary `307` redirect to the same path under
 `/metang` (`redirects()` in `next.config.ts`). The browser repeats a `POST` with its body after
 this redirect. Vercel Cron does not follow redirects, so every `path` in `vercel.json` must start
