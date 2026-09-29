@@ -905,10 +905,13 @@ before you need them in an incident.]`
 Updates need the source repository, Node.js 24, and npm. The GitHub workflow `CI`
 (`.github/workflows/ci.yml`) runs on every push to every branch: lint, type check, build, the unit
 tests, and the API tests. It does not deploy: there is no automatic deployment yet (Jira
-NAT-228, because the client's platform is not chosen). `[TO VERIFY: the first green `CI` run and the first run of
-**Migrate production database** on GitHub. Whether Vercel deploys automatically from the
-Git branch `main`. `vercel.json` has no `git` settings, so a Vercel project that is connected to
-the repository deploys each push to its production branch.]`
+NAT-228, because the client's platform is not chosen). `CI` passed on `main` at commit `1c69183`
+on 2026-09-29: all three jobs (unit tests, lint with type check and build, and API tests) were green.
+``[TO VERIFY: the first run of **Migrate production database** on GitHub. It needs a production
+database and the GitHub environment `production` (Section 6.2, after step 8), which do not exist yet.
+Only if the platform is Vercel: whether Vercel deploys automatically from the Git branch `main`.
+`vercel.json` has no `git` settings, so a Vercel project that is connected to the repository
+deploys each push to its production branch.]``
 
 ### 6.1 Pre-update checklist
 
