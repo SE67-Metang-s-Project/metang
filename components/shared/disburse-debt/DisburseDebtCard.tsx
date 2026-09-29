@@ -23,6 +23,7 @@ import {
   FileText,
   Download,
   ZoomIn,
+  RefreshCw,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
 import AdaptiveKeyValueRow from "@/components/shared/AdaptiveKeyValueRow";
@@ -827,20 +828,32 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
 
                 {isCompleted ? (
                   selectedRequest.slipUrl ? (
-                    <div
-                      onClick={() => setPreviewSlipUrl(selectedRequest.slipUrl || null)}
-                      className="group relative mt-2 flex cursor-pointer justify-center overflow-hidden rounded-xl"
-                      title="คลิกเพื่อดูภาพขนาดเต็ม (Preview)"
-                    >
-                      <ImageWithSkeleton
-                        src={selectedRequest.slipUrl}
-                        alt="slip proof"
-                        containerClassName="max-h-[45vh] max-w-full"
-                        className="max-h-[45vh] rounded-xl object-contain transition-transform duration-200 group-hover:scale-[1.02]"
-                      />
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 sm:text-sm">
-                        <ZoomIn size={22} className="drop-shadow" />
-                        <span className="drop-shadow">คลิกเพื่อดูภาพขนาดเต็ม</span>
+                    <div className="mt-2 space-y-3">
+                      <div
+                        onClick={() => setPreviewSlipUrl(selectedRequest.slipUrl || null)}
+                        className="group relative flex cursor-pointer justify-center overflow-hidden rounded-xl bg-gray-50 border border-gray-200 p-2"
+                        title="คลิกเพื่อดูภาพขนาดเต็ม (Preview)"
+                      >
+                        <ImageWithSkeleton
+                          src={selectedRequest.slipUrl}
+                          alt="slip proof"
+                          containerClassName="max-h-[45vh] max-w-full flex items-center justify-center"
+                          className="max-h-[45vh] w-auto max-w-full rounded-xl object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+                        />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 sm:text-sm rounded-xl">
+                          <ZoomIn size={22} className="drop-shadow" />
+                          <span className="drop-shadow">คลิกเพื่อดูภาพขนาดเต็ม</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-center">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewSlipUrl(selectedRequest.slipUrl || null)}
+                          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-900 transition-colors shadow-sm cursor-pointer"
+                        >
+                          <ZoomIn size={16} className="text-gray-500" />
+                          <span>ดูรูปแบบเต็ม</span>
+                        </button>
                       </div>
                     </div>
                   ) : (
@@ -851,54 +864,88 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
                   )
                 ) : (
                   <div className="mt-2 space-y-3">
-                    <div
-                      className={`group rounded-xl border-2 border-dashed text-center transition-colors ${
-                        errorMessage
-                          ? "border-red-400 bg-red-50 hover:border-orange-300 hover:bg-orange-50 active:border-orange-400 active:bg-orange-100"
-                          : "border-gray-300 bg-gray-50 hover:border-orange-300 hover:bg-orange-50 active:border-orange-400 active:bg-orange-100"
-                      }`}
-                    >
-                      <button
-                        className="flex min-h-32 w-full cursor-pointer flex-col items-center justify-center p-5"
-                        onClick={() => fileInputRef.current?.click()}
-                        type="button"
-                      >
-                        {uploadedSlip ? (
+                    {uploadedSlip ? (
+                      <div className="space-y-3">
+                        <div
+                          onClick={() => setPreviewSlipUrl(uploadedSlip)}
+                          className="group relative flex cursor-pointer justify-center overflow-hidden rounded-xl bg-gray-50 border border-gray-200 p-2"
+                          title="คลิกเพื่อดูภาพขนาดเต็ม (Preview)"
+                        >
                           <ImageWithSkeleton
-                            alt="ตัวอย่างหลักฐานการโอนเงิน"
-                            className="h-auto w-full rounded-lg object-contain"
-                            containerClassName="w-full"
-                            height={160}
                             src={uploadedSlip}
-                            width={240}
+                            alt="ตัวอย่างหลักฐานการโอนเงิน"
+                            containerClassName="max-h-[40vh] max-w-full flex items-center justify-center"
+                            className="max-h-[40vh] w-auto max-w-full rounded-xl object-contain transition-transform duration-200 group-hover:scale-[1.02]"
                           />
-                        ) : (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 sm:text-sm rounded-xl">
+                            <ZoomIn size={22} className="drop-shadow" />
+                            <span className="drop-shadow">คลิกเพื่อดูภาพขนาดเต็ม</span>
+                          </div>
+                        </div>
+
+                        {slipFile?.name && (
+                          <p className="text-center text-xs text-gray-500 break-all px-2">
+                            {slipFile.name}
+                          </p>
+                        )}
+
+                        <div className="flex flex-wrap items-center justify-center gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewSlipUrl(uploadedSlip)}
+                            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-900 transition-colors shadow-sm cursor-pointer"
+                          >
+                            <ZoomIn size={16} className="text-gray-500" />
+                            <span>ดูรูปแบบเต็ม</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg text-[#ea580c] bg-orange-50 border border-orange-200 hover:bg-orange-100 hover:text-[#c2410c] transition-colors shadow-sm cursor-pointer"
+                          >
+                            <RefreshCw size={15} />
+                            <span>เปลี่ยนรูปภาพ</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className={`group rounded-xl border-2 border-dashed text-center transition-colors ${
+                          errorMessage
+                            ? "border-red-400 bg-red-50 hover:border-orange-300 hover:bg-orange-50 active:border-orange-400 active:bg-orange-100"
+                            : "border-gray-300 bg-gray-50 hover:border-orange-300 hover:bg-orange-50 active:border-orange-400 active:bg-orange-100"
+                        }`}
+                      >
+                        <button
+                          className="flex min-h-32 w-full cursor-pointer flex-col items-center justify-center p-5"
+                          onClick={() => fileInputRef.current?.click()}
+                          type="button"
+                        >
                           <UploadCloud
                             aria-hidden="true"
                             className="text-gray-400 transition-colors group-hover:text-orange-300 group-active:text-orange-400"
                             size={32}
                           />
-                        )}
-                        <span className={`${uploadedSlip ? "mt-3" : "mt-2"} text-sm font-normal text-gray-800`}>
-                          {uploadedSlip
-                            ? "แตะเพื่ออัปโหลดรูปภาพใหม่"
-                            : "แตะเพื่ออัปโหลดหลักฐานการโอน"}
-                        </span>
-                        <span className="mt-1 max-w-full break-all text-sm font-normal text-gray-500">
-                          {uploadedSlip
-                            ? slipFile?.name
-                            : "รองรับ JPG หรือ PNG (ขนาดไม่เกิน 1MB)"}
-                        </span>
-                      </button>
+                          <span className="mt-2 text-sm font-normal text-gray-800">
+                            แตะเพื่ออัปโหลดหลักฐานการโอน
+                          </span>
+                          <span className="mt-1 max-w-full break-all text-sm font-normal text-gray-500">
+                            รองรับ JPG หรือ PNG (ขนาดไม่เกิน 1MB)
+                          </span>
+                        </button>
+                      </div>
+                    )}
 
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*,application/pdf"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                      />
-                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*,application/pdf"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      onClick={(e) => {
+                        (e.target as HTMLInputElement).value = "";
+                      }}
+                    />
 
                     <div className="flex gap-2 rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-[14px] text-amber-700">
                       <AlertCircle size={16} className="shrink-0 mt-0.5" />
