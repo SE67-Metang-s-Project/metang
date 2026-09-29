@@ -240,7 +240,7 @@ These gaps exist in the delivered software. They affect maintenance.
 | No backup of slip files | Supabase database backups do not include Storage files. | Section 5 |
 | No monitoring or alerting | Nobody is told when a job fails. You must check by hand. | Section 8 |
 | Two ways to run the scheduled jobs | On Vercel, the `vercel.json` schedules need the Pro plan (Hobby allows only daily jobs and rejects the deployment). On other serverless hosts, an outside scheduler must call the routes. | Section 2.3 |
-| No continuous delivery pipeline and no npm script for the unit tests | Updates are manual. `npm run api:test` runs the API tests. The unit tests in `tests/` run with `npx tsx --test` (Section 6.2). (Jira NAT-213 and NAT-209, open.) | Section 6 |
+| No automatic deployment | GitHub Actions checks every push (Section 6), but nothing deploys the result. Updates are manual: `npm test` runs the unit tests, `npm run api:test` runs the API tests (Section 6.2). (Jira NAT-228 to NAT-230, open.) | Section 6 |
 | No SuperAdmin setup screen | The first SuperAdmin must be added with SQL. | Section 3.3 |
 | Some fields on the SuperAdmin contact and bank settings screen are not saved to the database | Opening hours, the closed-days note, and the faculty address details are kept only in the browser (`localStorage` key `metang-system-address`) of the person who saved them. Other users do not see the change. The bank code is not stored: the screen finds it again from the stored bank name. (Jira NAT-200/NAT-203 are marked Done, but this part is not built.) | Section 7.2 |
 | Loan reports are printed from the browser | There is no server-generated PDF file. The report uses the browser print dialog. | None |
@@ -896,8 +896,11 @@ before you need them in an incident.]`
 
 ## 6. Updates and upgrades
 
-Updates need the source repository, Node.js 24, and npm. There is no continuous delivery
-pipeline (Jira NAT-213 is open). `[TO VERIFY: whether Vercel deploys automatically from the
+Updates need the source repository, Node.js 24, and npm. The GitHub workflow `CI`
+(`.github/workflows/ci.yml`) runs on every push to every branch: lint, type check, build, the unit
+tests, and the API tests. It does not deploy: there is no automatic deployment yet (Jira
+NAT-228, because the client's platform is not chosen). `[TO VERIFY: the first green `CI` run and the first run of
+**Migrate production database** on GitHub. Whether Vercel deploys automatically from the
 Git branch `main`. `vercel.json` has no `git` settings, so a Vercel project that is connected to
 the repository deploys each push to its production branch.]`
 
@@ -905,6 +908,8 @@ the repository deploys each push to its production branch.]`
 
 - [ ] Read the change list. Note every new folder under `db/migrations/`.
 - [ ] Read the SQL of each new migration. Look for `DROP`, `RENAME`, and data updates.
+- [ ] Open the **Actions** tab of the GitHub repository and check that the `CI` run for the
+      commit you deploy is green.
 - [ ] Take a database backup (Section 5.2).
 - [ ] Note the current production deployment in Vercel **Deployments**, for rollback.
 - [ ] Choose a time with few users. Tell the fund office.
@@ -919,7 +924,9 @@ the repository deploys each push to its production branch.]`
    npm ci
    ```
 
-   Expected result: no errors. Prisma Client is generated automatically.
+   Expected result: no errors. Prisma Client is generated automatically. `npm ci` also turns
+   on the pre-push hook (`.githooks/pre-push`), which runs `npm run lint` and `npx tsc --noEmit`
+   before every `git push`. Do not skip it with `git push --no-verify` on `main`.
 3. Run the code checks:
 
    ```bash
@@ -933,12 +940,11 @@ the repository deploys each push to its production branch.]`
    Then run the unit tests. They read the source files and need no database:
 
    ```bash
-   npx tsx --test tests/*.test.ts tests/*.test.mjs
+   npm test
    ```
 
-   Expected result: the summary line `ℹ fail 0`. On version 0.1.0, 16 tests fail (Jira
-   NAT-209). Compare the failed test names with the previous version: a new failure needs a
-   developer.
+   Expected result: the summary line `ℹ fail 0`. At the time of writing, 483 tests pass. A
+   failure needs a developer. CI runs the same command.
 4. Run the API tests. They use a temporary local PostgreSQL in Docker (port `5433`) and a
    test app on port `8081`. They never touch the real database.
 
@@ -973,11 +979,21 @@ the repository deploys each push to its production branch.]`
 
    Expected result: each new migration is reported as applied.
 8. Open `.env` and set `INFISICAL_ENV=dev` again.
+
+   Instead of steps 5 to 8, you can apply the migrations with the GitHub workflow **Migrate
+   production database**: **Actions** tab > **Migrate production database** > **Run workflow** on
+   `main`. Tick the backup box (Section 5.2), type `migrate production`, and a reviewer of the
+   `production` environment approves the run. The workflow runs `prisma migrate deploy` with
+   `DIRECT_URL` from a GitHub runner, so the database must be reachable from the internet. Set
+   it up once: in the repository **Settings** > **Environments**, create `production`, add required
+   reviewers, and add `DIRECT_URL` as a secret of that environment. Do not add it as a repository
+   secret, because the run would skip the approval. For a database inside a private network, use
+   the migration image (Section 6.4).
 9. Deploy the application to production `[TO VERIFY: by Git push to the production branch, or
    by `vercel deploy --prod`]`.
 
-   Note: `npm run build` is plain `next build`, so it works on any build server without a `.env`
-   file. The build reads no secret. `npm run build:infisical` is the same build with the secrets
+   Note: the Build Command is `next build`, which is `npm run build`. CI runs it with placeholder
+   database addresses and no `.env` file, so it works on any build server. The build reads no secret. `npm run build:infisical` is the same build with the secrets
    of `INFISICAL_ENV`, for a maintainer's computer.
 10. Wait until the deployment is **Ready**.
 11. Do the health check (Section 4.2). Sign in with each role you can and open its main page.
@@ -1505,7 +1521,7 @@ Include this information:
 | Loan request | A student's application. Its ID has the form `REQYYYYMMDDNNNN`. |
 | Loan status | The stage of a loan request: `draft`, `returned`, `pending_advisor`, `pending_admin`, `pending_executive`, `pending_disbursement`, `disbursed`, `closed`, `rejected`, `cancelled`. |
 | Maintainer | The person who performs the tasks in this guide. |
-| Migration | A versioned database change in `db/migrations/`. Applied with `npm run db:deploy`. |
+| Migration | A versioned database change in `db/migrations/`. Applied with `npm run db:deploy`, with the GitHub workflow **Migrate production database**, or with the migration image (Section 6.4). |
 | Notification outbox | Table `notification_outbox`. Messages that wait to be sent, or were sent. |
 | Production | The live system that users use. Secrets in Infisical `prod`. |
 | Redeploy | Build and publish the application again in Vercel so that new settings take effect. |
