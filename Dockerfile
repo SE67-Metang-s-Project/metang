@@ -1,6 +1,6 @@
-# Stage 1: Install dependencies and build the application. The dependency layer comes before the
-# source copy, so it is reused until package-lock.json changes.
-FROM node:24-slim AS build
+# Stage 1: Dependencies and generated Prisma client, shared by the build and migrate targets. The
+# dependency layer comes before the source copy, so it is reused until package-lock.json changes.
+FROM node:24-slim AS base
 WORKDIR /app
 
 # Prisma's schema engine (prisma migrate deploy, in the migrate target below) needs libssl. The
@@ -10,24 +10,33 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN npm ci --ignore-scripts && npm cache clean --force
 COPY . .
+
+# The database addresses are placeholders: generating the client and building the pages do not
+# connect. They are set on these commands only, not with ENV, so the migrate target below does not
+# inherit them and reads the real DIRECT_URL or DATABASE_URL given to `docker run`.
+RUN DATABASE_URL=postgresql://build:build@localhost:5432/build \
+  DIRECT_URL=postgresql://build:build@localhost:5432/build \
+  npx prisma generate
+
+# Stage 2: Database migrations runner
+FROM base AS migrate
+CMD ["npx", "prisma", "migrate", "deploy"]
+
+# Stage 3: Application build
+FROM base AS build
 
 ARG PUBLIC_SUBPATH=/metang
 ENV PUBLIC_SUBPATH=$PUBLIC_SUBPATH
 ENV NEXT_OUTPUT=standalone
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
-ENV DIRECT_URL=postgresql://build:build@localhost:5432/build
 
-RUN npx prisma generate
-RUN npx next build
+RUN DATABASE_URL=postgresql://build:build@localhost:5432/build \
+  DIRECT_URL=postgresql://build:build@localhost:5432/build \
+  npx next build
 
-# Stage 2: Database migrations runner
-FROM build AS migrate
-CMD ["npx", "prisma", "migrate", "deploy"]
-
-# Stage 3: Production runner (must be last)
+# Stage 4: Production runner (must be last)
 FROM node:24-slim AS runner
 WORKDIR /app
 

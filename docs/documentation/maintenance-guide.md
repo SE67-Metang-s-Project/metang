@@ -1015,10 +1015,12 @@ reversed, for example `20260905110000_remove_payment_ocr` (drops columns) and
 Use this when the application does not run on Vercel. The repository has a `Dockerfile`, a
 `.dockerignore`, and a sample reverse proxy setup in `deploy/nginx.conf.example`. The image needs
 no Infisical: all settings are environment variables (Section 7.1).
-`[TO VERIFY: the migration image (step 2, second command) on the client server. The application image
-was built and started in a container, and the sign-in page, static files, and an API route
-answered under the sub path. The migration image was not built there: the Prisma engine that it
-runs was tested inside node:24-slim.]`
+The application image was built and started in a container, and the sign-in page, static files, and
+an API route answered under the sub path. The migration image was built and run against an empty
+PostgreSQL container: all 19 migrations were applied, a second run reported "No pending
+migrations to apply", and it also worked when only `DATABASE_URL` was given.
+`[TO VERIFY: both images on the client server, including the connection to the client's PostgreSQL
+(for example its TLS setting).]`
 
 1. Choose the sub path. The default is `/metang`. The sub path is fixed when the image is built
    (Section 2.1), so build one image for each sub path.
@@ -1026,13 +1028,14 @@ runs was tested inside node:24-slim.]`
 
    ```bash
    docker build --build-arg PUBLIC_SUBPATH=/metang -t metang:<version> .
-   docker build --build-arg PUBLIC_SUBPATH=/metang --target migrate -t metang-migrate:<version> .
+   docker build --target migrate -t metang-migrate:<version> .
    ```
 
-   Expected result: both builds end without an error. The image contains no secret: the build uses
-   placeholder database addresses that are not part of the final image.
+   Expected result: both builds end without an error. The migration image does not contain the built
+   application, so it does not depend on the sub path. The image contains no secret: the build uses
+   placeholder database addresses that are set only for the commands that need them.
 3. Back up the database (Section 5.2). Then apply the migrations. `DIRECT_URL` is the direct or
-   session-pooler connection of the database:
+   session-pooler connection of the database (`DATABASE_URL` is used when `DIRECT_URL` is not set):
 
    ```bash
    docker run --rm -e DIRECT_URL="postgresql://..." metang-migrate:<version>
