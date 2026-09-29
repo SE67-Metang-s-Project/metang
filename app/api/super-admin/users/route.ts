@@ -1,5 +1,6 @@
 import { createManagedUser, listUsersWithRoles, RoleMutationError } from "@/db/queries/users";
 import { apiError, apiOk } from "@/lib/api-response";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { getSuperAdminAccess } from "@/lib/loan-auth";
 import { validateJsonRequest } from "@/lib/request-security";
 import { isCmuEmail, predefinedRoleNames } from "@/lib/role-management";
@@ -33,9 +34,16 @@ export async function GET() {
 }
 
 /**
- * Add a new managed user (admin or super_admin).
+ * Add a staff member (admin or super_admin).
+ * @description Grants the role to the user with this email or CMU account if one exists (a person who has signed in before), otherwise creates the user. They sign in later with CMU SSO.
  * @tag SuperAdmin roles
+ * @body CreateManagedUserBody
  * @auth cookieAuth
+ * @response 200:SuperAdminUserResponse
+ * @add 401:ApiErrorResponse
+ * @add 403:ApiErrorResponse
+ * @add 409:ApiErrorResponse
+ * @add 422:ApiErrorResponse
  */
 export async function POST(request: Request) {
   const requestError = validateJsonRequest(request);
@@ -92,6 +100,9 @@ export async function POST(request: Request) {
       if (error.code === "ROLE_ALREADY_GRANTED") {
         return apiError("CONFLICT", "ผู้ใช้งานนี้มีบทบาทนี้อยู่แล้ว", 409);
       }
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && (error.code === "P2002" || error.code === "P2034")) {
+      return apiError("CONFLICT", "The user changed; please retry", 409);
     }
     console.error("Unable to create/add managed user", error);
     return apiError("INTERNAL_ERROR", "Unable to create/add user", 500);

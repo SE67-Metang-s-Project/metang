@@ -10,6 +10,10 @@ export const predefinedRoleNames = [
 
 export type RoleMutationAction = "grant" | "remove";
 
+export function holdsAdminAccess(roles: readonly UserRoleName[]) {
+  return roles.includes("admin") || roles.includes("super_admin");
+}
+
 export type RoleMutationInput = {
   action: RoleMutationAction;
   role: UserRoleName;

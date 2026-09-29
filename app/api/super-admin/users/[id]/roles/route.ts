@@ -11,6 +11,7 @@ type Params = { params: Promise<{ id: string }> };
 
 /**
  * Grant or remove a predefined role for an application user.
+ * @description Removing `admin` or `super_admin` from someone left with neither hands their open pending_admin/pending_executive loans to the calling SuperAdmin. Refused with 409: removing the final `super_admin`, removing your own `super_admin` (a successor removes you), removing `executive` (edit the executive instead), and granting a second `executive`.
  * @tag SuperAdmin roles
  * @pathParams UserIdParams
  * @body RoleMutationBody
@@ -68,6 +69,19 @@ export async function POST(request: Request, { params }: Params) {
       }
       if (error.code === "FINAL_SUPER_ADMIN") {
         return apiError("FINAL_SUPER_ADMIN", "The final SuperAdmin role cannot be removed", 409);
+      }
+      if (error.code === "SELF_DEMOTION") {
+        return apiError("SELF_DEMOTION", "You cannot remove your own SuperAdmin role", 409);
+      }
+      if (error.code === "EXECUTIVE_ROLE_LOCKED") {
+        return apiError(
+          "EXECUTIVE_ROLE_LOCKED",
+          "The executive role cannot be removed; edit the executive's name and email instead",
+          409,
+        );
+      }
+      if (error.code === "REASSIGNMENT_CONFLICT") {
+        return apiError("CONFLICT", "The loan assignment changed; please retry", 409);
       }
       if (error.code === "EXECUTIVE_ALREADY_EXISTS") {
         return apiError(
