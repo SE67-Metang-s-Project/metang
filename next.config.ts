@@ -2,158 +2,51 @@ import path from "node:path";
 import type { NextConfig } from "next";
 import { BASE_PATH } from "./lib/base-path";
 
+// Old root paths, each sent with a temporary redirect to the same path under the base path.
+const ROOT_PATHS = [
+  "/",
+  "/metang-logo7.png",
+  "/metang-logo.png",
+  "/bank-logos/:path*",
+  "/logo-variations/:path*",
+  "/mock-payment-qr.svg",
+  "/payment-qr.jpg",
+  "/mock-payment-receipt-1.jpg",
+  "/mock-payment-receipt-2.jpg",
+  "/mock-payment-receipt.jpg",
+  "/mock-transfer-slip.svg",
+  "/favicon.ico",
+  "/icon.png",
+  "/admin/:path*",
+  "/advisor/:path*",
+  "/executive/:path*",
+  "/superadmin/:path*",
+  "/student/:path*",
+  "/login",
+  "/error",
+  "/demo/:path*",
+  "/api-docs",
+  "/openapi.json",
+  "/api/:path*",
+];
+
 const nextConfig: NextConfig = {
   basePath: BASE_PATH,
+  // Without this, PUBLIC_SUBPATH would reach the server only: Next.js writes only NEXT_PUBLIC_*
+  // and `env` values into the browser bundles.
+  env: { PUBLIC_SUBPATH: BASE_PATH },
   turbopack: {
     root: path.resolve(__dirname),
   },
   async redirects() {
-    return [
-      {
-        source: "/",
-        destination: "/metang",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/metang-logo7.png",
-        destination: "/metang/metang-logo7.png",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/metang-logo.png",
-        destination: "/metang/metang-logo.png",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/bank-logos/:path*",
-        destination: "/metang/bank-logos/:path*",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/logo-variations/:path*",
-        destination: "/metang/logo-variations/:path*",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/mock-payment-qr.svg",
-        destination: "/metang/mock-payment-qr.svg",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/payment-qr.jpg",
-        destination: "/metang/payment-qr.jpg",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/mock-payment-receipt-1.jpg",
-        destination: "/metang/mock-payment-receipt-1.jpg",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/mock-payment-receipt-2.jpg",
-        destination: "/metang/mock-payment-receipt-2.jpg",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/mock-payment-receipt.jpg",
-        destination: "/metang/mock-payment-receipt.jpg",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/mock-transfer-slip.svg",
-        destination: "/metang/mock-transfer-slip.svg",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/favicon.ico",
-        destination: "/metang/favicon.ico",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/icon.png",
-        destination: "/metang/icon.png",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/admin/:path*",
-        destination: "/metang/admin/:path*",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/advisor/:path*",
-        destination: "/metang/advisor/:path*",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/executive/:path*",
-        destination: "/metang/executive/:path*",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/superadmin/:path*",
-        destination: "/metang/superadmin/:path*",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/student/:path*",
-        destination: "/metang/student/:path*",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/login",
-        destination: "/metang/login",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/error",
-        destination: "/metang/error",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/demo/:path*",
-        destination: "/metang/demo/:path*",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/api-docs",
-        destination: "/metang/api-docs",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/openapi.json",
-        destination: "/metang/openapi.json",
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/api/:path*",
-        destination: "/metang/api/:path*",
-        basePath: false,
-        permanent: false,
-      },
-    ];
+    // Served from the root, the old paths are the real paths.
+    if (!BASE_PATH) return [];
+    return ROOT_PATHS.map((source) => ({
+      source,
+      destination: source === "/" ? BASE_PATH : `${BASE_PATH}${source}`,
+      basePath: false as const,
+      permanent: false,
+    }));
   },
 };
 

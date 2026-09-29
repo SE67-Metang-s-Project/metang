@@ -85,6 +85,11 @@ old path without `/metang` (`/`, `/login`, `/student/...`, `/api/...`,
 this redirect. Vercel Cron does not follow redirects, so every `path` in `vercel.json` must start
 with `/metang/api/cron/`.
 
+The base path `/metang` is the default. The build reads a different one from the environment
+variable `PUBLIC_SUBPATH` (Section 7.1), for example a client server that serves the application
+under `/loan`. The value is fixed when the application is built: change it, then build again. The
+server must start with the same value.
+
 The Vercel project needs the Pro plan or higher. The `vercel.json` schedules run every minute and
 every 3 minutes, and the Hobby plan allows only daily cron jobs (Section 2.3).
 
@@ -986,6 +991,7 @@ production deployment ("Redeploy") before it takes effect.
 | `SCOPE` | None | Space-separated scopes, for example `api://cmu/Mis.Account.Read.Me.Basicinfo offline_access` | Permissions requested at sign-in. | Yes | No |
 | `BASICINFO_URL` | None | URL | CMU profile API. | Yes | No |
 | `SESSION_SECRET` | None | Text of 32 characters or more | Encrypts the sign-in cookies. Changing it signs out all users. | Yes | Yes |
+| `PUBLIC_SUBPATH` | Not set (`/metang`) | A path such as `/loan` or `loan`. A missing leading `/` and a trailing `/` are corrected | Sub path under which all pages and API routes are served (`lib/base-path.ts`). Empty or `/` serves the application from the root and turns off the redirects from old paths. Also change by hand: `CALLBACK_URL` and its Entra registration, the post-logout address registered in Entra, the `path` values in `vercel.json`, and `servers` in `next.openapi.json` (then run `npm run openapi:generate`). | Yes, and a new build | No |
 | `APP_BASE_URL` | `http://localhost:8080` | Absolute `https://` URL of the production site, for example `https://<host>` | Base of links in LINE messages and emails. If not set, links point to localhost. A path in the value is not used: links start with `/metang` (for example `/metang/student/...`), so `https://<host>` and `https://<host>/metang` give the same links. If the value is not a valid `http` or `https` URL, every delivery job run returns `500` before it claims rows, so notifications wait in the outbox. | Yes | No |
 | `CRON_SECRET` | None. The job scheduler does not start, and `/metang/api/cron/` returns `401`. | Random text | Protects `/metang/api/cron/` routes. The job scheduler uses it too. | Yes | Yes |
 | `ENABLE_JOB_SCHEDULER` | Not set (detect the host) | `true`, `false`, or not set | `true` forces the built-in scheduler, `false` turns it off. Not set: built-in scheduler on servers that keep running, Vercel Cron on Vercel (Section 2.3). | Yes (restart) | No |
