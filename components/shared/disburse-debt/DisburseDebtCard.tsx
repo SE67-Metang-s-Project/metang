@@ -11,6 +11,7 @@ import {
   HandCoins,
   CalendarDays,
   CreditCard,
+  Check,
   CheckCircle2,
   Copy,
   UploadCloud,
@@ -22,7 +23,6 @@ import {
   FileText,
   Download,
   ZoomIn,
-  ExternalLink,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
 import AdaptiveKeyValueRow from "@/components/shared/AdaptiveKeyValueRow";
@@ -413,7 +413,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   <div className="font-semibold text-gray-900 text-[15px] leading-tight">
                     {req.name}
                   </div>
-                  <div className="text-[13px] text-gray-500 mt-1">
+                  <div className="text-[14px] leading-5 text-gray-500 mt-1">
                     {formatStudentDetails(req)}
                   </div>
                 </div>
@@ -522,7 +522,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                     <div className="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
                       <span>{req.name}</span>
                     </div>
-                    <div className="mt-0.5 text-[13px] text-gray-500">
+                    <div className="mt-0.5 text-[14px] leading-5 text-gray-500">
                       {formatStudentDetails(req)}
                     </div>
                   </td>
@@ -691,7 +691,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                   <div>
                     <dt>เลขที่บัญชี</dt>
                     <dd className="flex items-center justify-end gap-2">
-                      <span className="font-mono font-semibold text-gray-900 text-[15px]">
+                      <span className="font-[family-name:var(--font-kanit)] text-[15px] font-semibold text-gray-900">
                         {selectedRequest.bankDetails?.accountNumber || "-"}
                       </span>
                       {selectedRequest.bankDetails?.accountNumber && (
@@ -699,22 +699,16 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                           onClick={() =>
                             handleCopy(selectedRequest.bankDetails?.accountNumber ?? "")
                           }
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                          aria-label={isCopied ? "คัดลอกเลขที่บัญชีแล้ว" : "คัดลอกเลขที่บัญชี"}
+                          className={`inline-flex p-1 transition-colors cursor-pointer ${
                             isCopied
-                              ? "bg-green-100 text-green-700"
-                              : "bg-orange-50 text-[#ea580c] hover:bg-orange-100 border border-orange-200"
+                              ? "text-gray-600"
+                              : "text-gray-400 hover:text-gray-700"
                           }`}
+                          title={isCopied ? "คัดลอกเลขที่บัญชีแล้ว" : "คัดลอกเลขที่บัญชี"}
                           type="button"
                         >
-                          {isCopied ? (
-                            <>
-                              <CheckCircle2 size={13} /> คัดลอกแล้ว
-                            </>
-                          ) : (
-                            <>
-                              <Copy size={13} /> คัดลอก
-                            </>
-                          )}
+                          {isCopied ? <Check aria-hidden="true" size={16} /> : <Copy aria-hidden="true" size={16} />}
                         </button>
                       )}
                     </dd>
@@ -751,7 +745,9 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                       {isCompleted ? "ยอดเงินที่โอนแล้ว (บาท)" : "จำนวนเงินที่อนุมัติ (บาท)"}
                     </dt>
                     <dd
-                      className={`font-semibold ${isCompleted ? "text-green-600" : "text-[#ea580c]"}`}
+                      className={`font-[family-name:var(--font-kanit)] font-semibold ${
+                        isCompleted ? "text-green-600" : "text-[#ea580c]"
+                      }`}
                     >
                       {formatAmount(selectedRequest.approvedAmount ?? selectedRequest.amount)}
                     </dd>
@@ -821,31 +817,29 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                 </div>
 
                 {isCompleted ? (
-                  <div className="relative rounded-xl border border-gray-200 bg-gray-50/50 p-3 flex justify-center items-center min-h-[180px] mt-2">
-                    {selectedRequest.slipUrl ? (
-                      <div
-                        onClick={() => setPreviewSlipUrl(selectedRequest.slipUrl || null)}
-                        className="relative group cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white hover:shadow-md transition-all flex justify-center items-center"
-                        title="คลิกเพื่อดูภาพขนาดเต็ม (Preview)"
-                      >
-                        <ImageWithSkeleton
-                          src={selectedRequest.slipUrl}
-                          alt="slip proof"
-                          containerClassName="max-h-[45vh] max-w-full"
-                          className="max-h-[45vh] rounded-lg shadow-sm object-contain transition-transform duration-200 group-hover:scale-[1.02]"
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-xs sm:text-sm font-semibold rounded-lg">
-                          <ZoomIn size={22} className="drop-shadow" />
-                          <span className="drop-shadow">คลิกเพื่อดูภาพขนาดเต็ม</span>
-                        </div>
+                  selectedRequest.slipUrl ? (
+                    <div
+                      onClick={() => setPreviewSlipUrl(selectedRequest.slipUrl || null)}
+                      className="group relative mt-2 flex cursor-pointer justify-center overflow-hidden rounded-xl"
+                      title="คลิกเพื่อดูภาพขนาดเต็ม (Preview)"
+                    >
+                      <ImageWithSkeleton
+                        src={selectedRequest.slipUrl}
+                        alt="slip proof"
+                        containerClassName="max-h-[45vh] max-w-full"
+                        className="max-h-[45vh] rounded-xl object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+                      />
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 sm:text-sm">
+                        <ZoomIn size={22} className="drop-shadow" />
+                        <span className="drop-shadow">คลิกเพื่อดูภาพขนาดเต็ม</span>
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-gray-400 py-8">
-                        <FileImage size={36} className="mb-2 opacity-50" />
-                        <p className="text-sm">ไม่พบรูปภาพหลักฐานการโอนเงิน</p>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                      <FileImage size={36} className="mb-2 opacity-50" />
+                      <p className="text-sm">ไม่พบรูปภาพหลักฐานการโอนเงิน</p>
+                    </div>
+                  )
                 ) : (
                   <div className="mt-2 space-y-3">
                     {uploadedSlip ? (
@@ -1189,17 +1183,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <a
-                  href={previewSlipUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-emerald-700 bg-gray-50 hover:bg-emerald-50 px-2.5 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 text-xs font-semibold"
-                  title="เปิดรูปภาพในแท็บใหม่"
-                >
-                  <ExternalLink size={15} />
-                  <span className="hidden sm:inline">เปิดในแท็บใหม่</span>
-                </a>
+              <div>
                 <button
                   onClick={() => setPreviewSlipUrl(null)}
                   className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
@@ -1230,30 +1214,6 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
               )}
             </div>
 
-            {/* Footer ของ Modal พรีวิวสลิป */}
-            <div className="p-3.5 sm:p-4 bg-white border-t border-gray-100 flex justify-between items-center shrink-0">
-              <span className="text-[12px] text-gray-500 hidden sm:inline">
-                กด Esc หรือคลิกพื้นที่ภายนอกเพื่อปิด
-              </span>
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                <a
-                  href={previewSlipUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all cursor-pointer active:scale-[0.98]"
-                >
-                  <ExternalLink size={15} />
-                  <span>ดูภาพต้นฉบับ</span>
-                </a>
-                <button
-                  onClick={() => setPreviewSlipUrl(null)}
-                  className="px-5 py-2 rounded-xl text-[13px] font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer active:scale-[0.98]"
-                  type="button"
-                >
-                  ปิด
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}

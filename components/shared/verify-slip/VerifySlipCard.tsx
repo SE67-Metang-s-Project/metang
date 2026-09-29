@@ -567,7 +567,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                   <div className="font-semibold text-gray-900 text-[15px] leading-tight">
                     {req.name}
                   </div>
-                  <div className="text-[13px] text-gray-500 mt-1">
+                  <div className="text-[14px] leading-5 text-gray-500 mt-1">
                     {formatStudentDetails(req)}
                   </div>
                 </div>
@@ -668,7 +668,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                     <div className="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
                       <span>{req.name}</span>
                     </div>
-                    <div className="mt-0.5 text-[13px] text-gray-500">
+                    <div className="mt-0.5 text-[14px] leading-5 text-gray-500">
                       {formatStudentDetails(req)}
                     </div>
                   </td>
@@ -901,11 +901,11 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                         </td>
                         <td className="px-3 py-3 text-center">
                           {totalVerifiedPaidAmount >= totalRequestedAmount && totalRequestedAmount > 0 ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[14px] font-semibold text-emerald-700">
                               ชำระครบแล้ว
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-2.5 py-1 text-xs font-semibold text-[#ea580c]">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-2.5 py-1 text-[14px] font-semibold text-[#ea580c]">
                               ค้างชำระ {formatAmount(Math.max(0, totalRequestedAmount - totalVerifiedPaidAmount))}
                             </span>
                           )}
@@ -942,7 +942,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <span
-                  className={`text-[12px] font-semibold px-3 py-1 rounded-full border ${
+                  className={`text-[14px] font-semibold px-3 py-1 rounded-full border ${
                     selectedEvidence.status === "verified"
                       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                       : selectedEvidence.status === "pending"
