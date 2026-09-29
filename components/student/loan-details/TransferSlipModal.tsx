@@ -50,7 +50,7 @@ export default function TransferSlipModal({
   return (
     <div
       aria-label={title}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
       {...backdropDismiss}
       role="presentation"
     >

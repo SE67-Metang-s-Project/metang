@@ -2,12 +2,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { X } from "lucide-react";
 import StudentFilters from "@/components/shared/filter/StudentFilters";
 import { useServerPagedList } from "@/hooks/useServerPagedList";
 import PagedListError from "@/components/shared/PagedListError";
 import StudentListTable, { Student } from "./StudentListItem";
-import PaymentEvidenceHistory from "./PaymentEvidenceHistory";
+import StudentPaymentHistoryModal from "./StudentPaymentHistoryModal";
 import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
 const defaultFilterTabs = ["ทั้งหมด", "มีคำร้องดำเนินการ", "มีหนี้คงเหลือ", "ชำระครบ", "เคยชำระล่าช้า"];
@@ -187,40 +186,12 @@ export default function SharedStudentList({
       </div>
       </div>
 
-      {selectedStudent && (
-        <div
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
-          onClick={() => setSelectedStudent(null)}
-          role="dialog"
-        >
-          <section
-            aria-labelledby="student-detail-title"
-            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-gray-50 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className="sticky top-0 z-10 flex items-start justify-between border-b border-gray-100 bg-white px-5 py-4 sm:px-6">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900" id="student-detail-title">{selectedStudent.name}</h2>
-                <p className="mt-0.5 text-sm text-gray-500">
-                  {selectedStudent.studentId} · {selectedStudent.major} · ชั้นปี {selectedStudent.year}
-                </p>
-              </div>
-              <button
-                aria-label="ปิดรายละเอียดนักศึกษา"
-                className="rounded-full bg-gray-50 p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
-                onClick={() => setSelectedStudent(null)}
-                type="button"
-              >
-                <X aria-hidden="true" size={20} />
-              </button>
-            </header>
-            <div className="space-y-4 p-4 sm:p-6">
-              <PaymentEvidenceHistory payments={selectedStudent.paymentHistory} />
-            </div>
-          </section>
-        </div>
-      )}
+      {selectedStudent ? (
+        <StudentPaymentHistoryModal
+          student={selectedStudent}
+          onClose={() => setSelectedStudent(null)}
+        />
+      ) : null}
     </>
   );
 }

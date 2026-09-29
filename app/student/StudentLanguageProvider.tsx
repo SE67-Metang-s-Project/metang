@@ -222,12 +222,14 @@ export function StudentLanguageProvider({ children, defaultLanguage = "th" }: St
   return <StudentLanguageContext.Provider value={value}>{children}</StudentLanguageContext.Provider>;
 }
 
+const defaultStudentLanguageValue: StudentLanguageContextValue = {
+  language: "th",
+  setLanguage: () => {},
+  setDefaultLanguage: () => {},
+  t: (thai: string) => thai,
+};
+
 export function useStudentLanguage() {
   const context = useContext(StudentLanguageContext);
-
-  if (!context) {
-    throw new Error("useStudentLanguage must be used within StudentLanguageProvider");
-  }
-
-  return context;
+  return context ?? defaultStudentLanguageValue;
 }

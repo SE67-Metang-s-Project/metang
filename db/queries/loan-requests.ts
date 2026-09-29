@@ -1014,7 +1014,7 @@ export async function getAdvisorDashboardRequests(advisorId: string): Promise<Ac
       advisorId,
       OR: [{ status: "pending_advisor" }, { status: "disbursed", installments: unsettledInstallments }],
     },
-    advisorView,
+    { ...advisorView, slipLinks: true },
   );
 }
 
@@ -1026,7 +1026,7 @@ export async function getAdvisorActionRequests(advisorId: string): Promise<Actio
 export async function getAdvisorStudentRequests(advisorId: string): Promise<ActionRequest[]> {
   return loadActionRequests(
     { advisorId, status: "disbursed", installments: unsettledInstallments },
-    advisorView,
+    { ...advisorView, slipLinks: true },
     { distinctStudent: true },
   );
 }

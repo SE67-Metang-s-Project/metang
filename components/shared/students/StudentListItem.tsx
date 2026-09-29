@@ -178,6 +178,21 @@ export default function StudentListTable({
                 </span>
               )}
             </div>
+
+            {onStudentSelect && (
+              <div className="border-t border-gray-100 pt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStudentSelect(student);
+                  }}
+                  className="w-full sm:w-auto px-4 py-2 text-[13px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-medium bg-orange-50 hover:bg-orange-100 border-orange-200"
+                >
+                  ประวัติการชำระ
+                </button>
+              </div>
+            )}
           </div>
         ))
       )}
@@ -201,15 +216,18 @@ export default function StudentListTable({
               <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap text-center">
                 การกู้ยืมทั้งหมด
               </th>
-              <th className="py-3.5 px-4 font-semibold whitespace-nowrap text-center">
+              <th className="py-3.5 px-4 font-semibold border-r border-gray-300 whitespace-nowrap text-center">
                 หนี้คงเหลือ
+              </th>
+              <th className="w-px py-3.5 px-4 text-center font-semibold whitespace-nowrap">
+                จัดการ
               </th>
             </tr>
           </thead>
           <tbody>
             {students.length === 0 ? (
               <tr>
-                <td className="p-0" colSpan={5}>
+                <td className="p-0" colSpan={6}>
                   <EmptyStudentsState />
                 </td>
               </tr>
@@ -281,8 +299,24 @@ export default function StudentListTable({
                   </td>
 
                   {/* คอลัมน์หนี้คงเหลือ */}
-                  <td className="py-3 px-4 text-[#dc2626] font-semibold whitespace-nowrap text-center">
+                  <td className="py-3 px-4 text-[#dc2626] font-semibold border-r border-gray-200 whitespace-nowrap text-center">
                     {student.balance}
+                  </td>
+
+                  {/* คอลัมน์จัดการ */}
+                  <td className="w-px py-3 px-4 align-middle whitespace-nowrap">
+                    <div className="flex justify-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onStudentSelect?.(student);
+                        }}
+                        className="w-fit max-w-full px-3 py-1.5 text-[13px] rounded-lg transition-colors border text-center text-[#ea580c] hover:text-[#c2410c] font-normal bg-orange-50 hover:bg-orange-100 border-orange-200 cursor-pointer"
+                      >
+                        <span className="block truncate">ประวัติการชำระ</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
