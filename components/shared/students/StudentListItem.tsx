@@ -116,7 +116,7 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold text-[#1e293b] text-[15px] mb-0.5">{student.name}</h4>
-                <p className="text-[12px] text-gray-400 font-medium">
+                <p className="text-[14px] leading-5 text-gray-400 font-medium">
                   {student.studentId} • {student.major} • {student.degree} • ปี {student.year}
                 </p>
               </div>
@@ -144,7 +144,7 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
             <div className="flex flex-wrap gap-2">
               {/* ป้ายแสดงสถานะคำร้อง */}
               <span
-                className={`px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 border w-fit ${getBadgeStyles(student.requestStatusColor)}`}
+                className={`px-3 py-1 rounded-full text-[14px] leading-5 font-normal flex items-center gap-1.5 border w-fit ${getBadgeStyles(student.requestStatusColor)}`}
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${getBadgeDotColor(student.requestStatusColor)}`}
@@ -154,12 +154,12 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
 
               {/* ป้ายพฤติกรรมการชำระเงิน */}
               {student.paymentStatusType === "good" ? (
-                <span className="bg-[#dcfce7] text-[#16a34a] px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 border border-[#bbf7d0] w-fit">
+                <span className="bg-[#dcfce7] text-[#16a34a] px-3 py-1 rounded-full text-[14px] leading-5 font-normal flex items-center gap-1.5 border border-[#bbf7d0] w-fit">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
                   {student.paymentStatus}
                 </span>
               ) : (
-                <span className="bg-[#fee2e2] text-[#dc2626] px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 border border-[#fecaca] w-fit">
+                <span className="bg-[#fee2e2] text-[#dc2626] px-3 py-1 rounded-full text-[14px] leading-5 font-normal flex items-center gap-1.5 border border-[#fecaca] w-fit">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>
                   {student.paymentStatus}
                 </span>
@@ -223,7 +223,7 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
                       </div>
                       <div>
                         <div className="font-semibold text-gray-900">{student.name}</div>
-                        <div className="text-[13px] text-gray-500 mt-0.5">
+                        <div className="text-[14px] leading-5 text-gray-500 mt-0.5">
                           {student.studentId} • {student.major} • {student.degree} • ปี {student.year}
                         </div>
                       </div>
@@ -233,7 +233,7 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
                   {/* คอลัมน์สถานะคำร้องปัจจุบัน */}
                   <td className="py-3 px-4 border-r border-gray-200 whitespace-nowrap text-center">
                     <span
-                      className={`px-3 py-1.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1.5 border ${getBadgeStyles(student.requestStatusColor)}`}
+                      className={`px-3 py-1 rounded-full text-[14px] leading-5 font-normal inline-flex items-center gap-1.5 border ${getBadgeStyles(student.requestStatusColor)}`}
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${getBadgeDotColor(student.requestStatusColor)}`}
@@ -245,13 +245,13 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
                   {/* คอลัมน์พฤติกรรมชำระเงิน */}
                   <td className="py-3 px-4 border-r border-gray-200 whitespace-nowrap text-center">
                     {student.paymentStatusType === "good" ? (
-                      <span className="bg-[#dcfce7] text-[#16a34a] px-3 py-1.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1.5 border border-[#bbf7d0]">
+                      <span className="bg-[#dcfce7] text-[#16a34a] px-3 py-1 rounded-full text-[14px] leading-5 font-normal inline-flex items-center gap-1.5 border border-[#bbf7d0]">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
                         {student.paymentStatus}
                       </span>
                     ) : (
                       <div className="flex flex-col items-center justify-center gap-1">
-                        <span className="bg-[#fee2e2] text-[#dc2626] px-3 py-1.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1.5 border border-[#fecaca]">
+                        <span className="bg-[#fee2e2] text-[#dc2626] px-3 py-1 rounded-full text-[14px] leading-5 font-normal inline-flex items-center gap-1.5 border border-[#fecaca]">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>
                           {student.paymentStatus}
                         </span>

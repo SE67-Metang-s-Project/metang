@@ -8,6 +8,7 @@ import RequestsCard, {
   sortRequestsBySubmissionDateDesc,
 } from "@/components/shared/pending/RequestsCard";
 import StudentListTable, { Student } from "@/components/shared/students/StudentListItem";
+import StudentPaymentHistoryModal from "@/components/shared/students/StudentPaymentHistoryModal";
 import { filterAdvisorStudents } from "@/lib/advisor-students";
 import {
   ChevronRight,
@@ -46,6 +47,7 @@ export default function AdvisorDashboard({
 }: AdvisorDashboardProps) {
   const [requests, setRequests] = useState<ActionRequest[]>(initialRequests);
   const [prevInitialRequests, setPrevInitialRequests] = useState<ActionRequest[]>(initialRequests);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   if (initialRequests !== prevInitialRequests) {
     setPrevInitialRequests(initialRequests);
@@ -123,6 +125,7 @@ export default function AdvisorDashboard({
         totalBorrowed: formattedAmount,
         balance,
         delayDays: req.isOverdue ? String(req.waitDays ?? 0) : "0",
+        paymentHistory: req.paymentHistory,
       };
     });
   }, [requests]);
@@ -200,8 +203,12 @@ export default function AdvisorDashboard({
           </Link>
         </div>
 
-        <StudentListTable students={studentsList} />
+        <StudentListTable onStudentSelect={setSelectedStudent} students={studentsList} />
       </section>
+
+      {selectedStudent ? (
+        <StudentPaymentHistoryModal student={selectedStudent} onClose={() => setSelectedStudent(null)} />
+      ) : null}
     </div>
   );
 }
