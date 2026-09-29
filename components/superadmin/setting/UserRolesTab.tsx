@@ -13,6 +13,7 @@ import {
   AlertCircle,
   X,
 } from "lucide-react";
+import TablePagination from "@/components/shared/TablePagination";
 import type { PredefinedRoleName, SuperAdminUser } from "@/lib/loan-api-types";
 
 const ROLE_TO_THAI: Record<PredefinedRoleName, string> = {
@@ -236,6 +237,24 @@ export default function UserRolesTab({
     return matchesSearch && matchesRole;
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [prevFilters, setPrevFilters] = useState({ searchQuery, roleFilter, count: filteredUsers.length });
+
+  if (
+    prevFilters.searchQuery !== searchQuery ||
+    prevFilters.roleFilter !== roleFilter ||
+    prevFilters.count !== filteredUsers.length
+  ) {
+    setPrevFilters({ searchQuery, roleFilter, count: filteredUsers.length });
+    setCurrentPage(1);
+  }
+
+  const totalPages = Math.ceil(filteredUsers.length / 5);
+  const validCurrentPage = totalPages > 0 ? Math.min(Math.max(currentPage, 1), totalPages) : 1;
+  const paginatedUsers = filteredUsers.length > 5
+    ? filteredUsers.slice((validCurrentPage - 1) * 5, validCurrentPage * 5)
+    : filteredUsers;
+
   return (
     <div className="animate-in fade-in duration-300">
       {/* Toast Notification */}
@@ -315,7 +334,7 @@ export default function UserRolesTab({
               <p className="text-sm">ไม่พบผู้ใช้งานที่ค้นหา</p>
             </div>
           ) : (
-            filteredUsers.map((user, index) => {
+            paginatedUsers.map((user, index) => {
               const displayName = user.fullNameTh || user.fullNameEn || user.email;
               const displayId = user.studentCode || user.cmuAccount || user.id.slice(0, 8);
               const initials = getInitials(user.fullNameTh || user.fullNameEn, user.email);
@@ -448,7 +467,7 @@ export default function UserRolesTab({
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user, index) => {
+                paginatedUsers.map((user, index) => {
                   const displayName = user.fullNameTh || user.fullNameEn || user.email;
                   const displayId = user.studentCode || user.cmuAccount || user.id.slice(0, 8);
                   const initials = getInitials(user.fullNameTh || user.fullNameEn, user.email);
@@ -541,6 +560,14 @@ export default function UserRolesTab({
             </tbody>
           </table>
         </div>
+
+        {filteredUsers.length > 5 && (
+          <TablePagination
+            currentPage={validCurrentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
     </div>
   );

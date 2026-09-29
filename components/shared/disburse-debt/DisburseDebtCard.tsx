@@ -3,6 +3,7 @@
 
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import TablePagination from "@/components/shared/TablePagination";
 import {
   X,
   UserRound,
@@ -273,6 +274,20 @@ function EmptyRequestsState() {
 // ==========================================
 export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
   const router = useRouter();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [prevRequests, setPrevRequests] = useState(requests);
+
+  if (prevRequests !== requests) {
+    setPrevRequests(requests);
+    setCurrentPage(1);
+  }
+
+  const totalPages = Math.ceil(requests.length / 5);
+  const validCurrentPage = totalPages > 0 ? Math.min(Math.max(currentPage, 1), totalPages) : 1;
+  const paginatedRequests = requests.length > 5
+    ? requests.slice((validCurrentPage - 1) * 5, validCurrentPage * 5)
+    : requests;
+
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
 
   const [viewDocumentReq, setViewDocumentReq] = useState<ActionRequest | null>(null);
@@ -387,7 +402,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
         {requests.length === 0 ? (
           <EmptyRequestsState />
         ) : (
-          requests.map((req, idx) => (
+          paginatedRequests.map((req, idx) => (
             <div
               key={idx}
               className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md"
@@ -492,7 +507,7 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
                 </td>
               </tr>
             ) : (
-              requests.map((req, idx) => (
+              paginatedRequests.map((req, idx) => (
                 <tr
                   key={idx}
                   className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
@@ -551,6 +566,14 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
           </tbody>
         </table>
       </div>
+
+      {requests.length > 5 && (
+        <TablePagination
+          currentPage={validCurrentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      )}
 
       {/* 3. Modal หลัก: ดำเนินการเบิกจ่ายเงิน / ดูหลักฐาน */}
       {selectedRequest && (

@@ -8,6 +8,7 @@ import RequestsCard, {
   sortRequestsBySubmissionDateDesc,
 } from "@/components/shared/pending/RequestsCard";
 import StudentListTable, { Student } from "@/components/shared/students/StudentListItem";
+import { filterAdvisorStudents } from "@/lib/advisor-students";
 import {
   ChevronRight,
   ShieldCheck,
@@ -77,29 +78,7 @@ export default function AdvisorDashboard({
 
   // แปลงรายการคำร้องเป็นรายชื่อนักศึกษาในความดูแล (ไม่ซ้ำ) เฉพาะที่โอนเงินแล้วและยังชำระหนี้ไม่ครบ
   const studentsList: Student[] = useMemo(() => {
-    const seen = new Set<string>();
-    const uniqueReqs: ActionRequest[] = [];
-
-    const activeRequests = requests.filter((req) => {
-      if (req.requestStatus !== "disbursed") return false;
-      const totalDue =
-        req.installments && req.installments.length > 0
-          ? req.installments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0)
-          : Number(req.approvedAmount ?? req.amount ?? 0);
-      const totalPaid =
-        req.installments && req.installments.length > 0
-          ? req.installments.reduce((sum, inst) => sum + Number(inst.paidAmount || 0), 0)
-          : 0;
-      const remainingBalance = Math.max(0, totalDue - totalPaid);
-      return remainingBalance > 0;
-    });
-
-    for (const req of activeRequests) {
-      if (!seen.has(req.studentId)) {
-        seen.add(req.studentId);
-        uniqueReqs.push(req);
-      }
-    }
+    const uniqueReqs = filterAdvisorStudents(requests);
 
     return uniqueReqs.map((req) => {
       const isLate = (req.paymentBehavior?.lateInstallments ?? 0) > 0;
