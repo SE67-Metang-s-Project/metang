@@ -4,6 +4,7 @@ import { sendLineNotification, LineNotificationError } from "@/lib/line-notifica
 import { buildReviewerNotificationPayload } from "@/lib/line-notification-template";
 import { getRecipientEmailsByRole } from "@/db/queries/notification-recipients";
 import { buildReviewerRequestUrl, type ReviewerRole } from "@/lib/reviewer-deeplink";
+import { getAppBaseUrl } from "@/lib/app-base-url";
 import { requireDemoAdminSession, readField } from "@/lib/demo-admin-session";
 
 const REVIEWER_ROLES: ReviewerRole[] = ["advisor", "admin", "super_admin", "executive"];
@@ -53,7 +54,7 @@ export async function sendDemoReviewerNotification(
     const recipientEmails = [recipientEmail];
 
     const deepLinkUrl = buildReviewerRequestUrl(
-      process.env.APP_BASE_URL ?? "http://localhost:8080",
+      getAppBaseUrl(),
       role,
       loanId || "N/A",
     );

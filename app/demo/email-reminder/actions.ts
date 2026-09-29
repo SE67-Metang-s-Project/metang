@@ -7,6 +7,7 @@ import {
   type LoanDueReminderInput,
 } from "@/lib/email-api/loan-reminder-template";
 import { buildStudentLoanDetailUrl } from "@/lib/student-deeplink";
+import { getAppBaseUrl } from "@/lib/app-base-url";
 import { requireDemoAdminSession, readField } from "@/lib/demo-admin-session";
 
 export type LoanReminderDemoState = {
@@ -53,7 +54,7 @@ export async function sendDemoLoanReminder(
   let payload;
   try {
     const loanDetailUrl = buildStudentLoanDetailUrl(
-      process.env.APP_BASE_URL ?? "http://localhost:8080",
+      getAppBaseUrl(),
     );
     const input: LoanDueReminderInput = {
       studentName,

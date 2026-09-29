@@ -7,6 +7,7 @@ import { isLoanId } from "@/lib/loan-validation";
 import { validateJsonRequest } from "@/lib/request-security";
 import { serializeJson } from "@/lib/serialization";
 import { buildStudentLoanDetailUrl } from "@/lib/student-deeplink";
+import { getAppBaseUrl } from "@/lib/app-base-url";
 
 /**
  * Outlook (email) due-date reminder to the student for a loan's next unpaid installment - which
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
       dueDate: installment.dueDate,
       loanId: installment.loanId,
       loanDetailUrl: buildStudentLoanDetailUrl(
-        process.env.APP_BASE_URL ?? "http://localhost:8080",
+        getAppBaseUrl(),
         installment.loanId,
       ),
     });
