@@ -49,14 +49,14 @@ export default function TopNav({
 }: TopNavProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const isStudentRole = role === "student" || userRole === "นักศึกษา";
+  const isStudentRole = role === "student" || userRole === "นักศึกษา" || userRole === "Student";
   const hasSidebar = !isStudentRole && Boolean(hasPersistentSidebar || onOpenSidebar);
   const shouldShowLogo = showLogo ?? !hasSidebar;
   const canShowSidebarButton = !isStudentRole && showSidebarButton && Boolean(onOpenSidebar);
   const displayRole = userRole ?? (role ? ROLE_DISPLAY_NAMES[role] : undefined) ?? "ผู้ใช้งาน";
   const displayCode = userId ?? displayRole;
   const displayEmail = userEmail ?? (userId ? `${userId.toLowerCase()}@cmu.ac.th` : "user@cmu.ac.th");
-  const logoHref = dashboardHref ?? (role ? `/${role}` : userRole === "นักศึกษา" ? "/student" : "/");
+  const logoHref = dashboardHref ?? (role ? `/${role}` : isStudentRole ? "/student" : "/");
   const handleLanguageChange = (nextLanguage: StudentLanguage) => {
     onLanguageChange?.(nextLanguage);
     setIsProfileOpen(false);
@@ -107,11 +107,11 @@ export default function TopNav({
           >
             <Image
               alt="METANG"
-              className="h-[55px] w-[55px] object-contain"
-              height={55}
+              className="h-[50px] w-[50px] object-contain"
+              height={50}
               priority
               src="/metang/metang-logo-transparent.png"
-              width={55}
+              width={50}
             />
           </Link>
         ) : null}

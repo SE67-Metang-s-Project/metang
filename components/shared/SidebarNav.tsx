@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   FileCheck,
-  X,
   Users,
   FileSignature,
   FileSearch,
@@ -140,9 +139,9 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
               <Image
                 src="/metang/metang-logo-transparent.png"
                 alt="METANG"
-                width={55}
-                height={55}
-                className="h-[55px] w-[55px] object-contain"
+                width={50}
+                height={50}
+                className="h-[50px] w-[50px] object-contain"
                 priority
               />
             </Link>
@@ -151,16 +150,12 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
                 FON - Metang
               </h1>
               <p className="text-[12px] text-gray-500 leading-tight mt-0.5">
-                ระบบกู้ยืมเงินนักศึกษาพยาบาล มช
+                <span className="whitespace-nowrap">ระบบกู้ยืมเงินนักศึกษาพยาบาล</span>
+                <br />
+                มหาวิทยาลัยเชียงใหม่
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="min-[1576px]:hidden text-gray-400 hover:text-gray-700 p-1"
-          >
-            <X size={20} />
-          </button>
         </div>
 
         <nav className="flex-1 py-6 px-4 space-y-1.5 text-sm font-medium overflow-y-auto">
