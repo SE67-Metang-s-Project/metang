@@ -31,10 +31,10 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npx tsc --noEmit
-      # `npm run build` goes through scripts/with-infisical.mjs, which fails without .env. The build
-      # only needs the variables to exist - it never connects - so CI uses placeholders, never a
-      # real secret.
-      - run: npx next build
+      # The build only needs the database variables to exist - it never connects - so CI uses
+      # placeholders, never a real secret. `npm run build` is plain `next build`; the Infisical
+      # version is `npm run build:infisical`.
+      - run: npm run build
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
           DIRECT_URL: postgresql://ci:ci@localhost:5432/ci
@@ -43,9 +43,6 @@ jobs:
     name: Unit tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # TODO(NAT-209): 16 of 412 tests fail on main today. Remove continue-on-error, and switch to
-    # `npm test`, once NAT-209 makes the suite green and adds the script.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -53,7 +50,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx tsx --test tests/*.test.ts tests/*.test.mjs
+      - run: npm test
 
   api-tests:
     name: API tests (Bruno)
