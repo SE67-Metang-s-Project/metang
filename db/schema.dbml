@@ -106,6 +106,7 @@ Table loan_request {
     student_id
     (advisor_id, status)
     (assigned_admin_id, status)
+    (status, submitted_at) [note: 'submitted_at DESC']
   }
   Note: 'NAT-24. Partial unique index on student_id WHERE status NOT IN (closed, rejected, cancelled) allows only one open loan per student.'
 }
@@ -140,6 +141,7 @@ Table installment {
   indexes {
     (loan_id, seq) [unique]
     due_date [note: 'partial: WHERE settled_at IS NULL']
+    loan_id
   }
   Note: 'NAT-29: amount_due is rewritten on remaining rows when a student overpays.'
 }

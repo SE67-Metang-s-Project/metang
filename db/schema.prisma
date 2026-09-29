@@ -144,6 +144,7 @@ model LoanRequest {
   @@index([advisorId, status], map: "loan_request_advisor_idx")
   @@index([studentId], map: "loan_request_student_idx")
   @@index([assignedAdminId, status], map: "loan_request_assigned_admin_idx")
+  @@index([status, submittedAt(sort: Desc)], map: "loan_request_status_submitted_idx")
   @@map("loan_request")
 }
 
@@ -178,6 +179,7 @@ model Installment {
 
   @@unique([seq, loanId], map: "installment_loan_id_seq_key")
   @@index([dueDate], map: "installment_due_idx", where: { settledAt: null })
+  @@index([loanId], map: "installment_loan_idx")
   @@map("installment")
 }
 
