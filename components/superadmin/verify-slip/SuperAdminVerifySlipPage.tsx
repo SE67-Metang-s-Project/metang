@@ -9,10 +9,13 @@ import type { ActionRequest as VerifySlipActionRequest } from "@/components/shar
 
 interface SuperAdminVerifySlipPageProps {
   initialRequests?: PendingActionRequest[] | VerifySlipActionRequest[];
+  // EXPERIMENT verify-slip-paging: total loans behind the first page
+  initialTotal?: number;
 }
 
 export default function SuperAdminVerifySlipPage({
   initialRequests,
+  initialTotal,
 }: SuperAdminVerifySlipPageProps) {
   return (
     <div>
@@ -26,7 +29,11 @@ export default function SuperAdminVerifySlipPage({
       </div>
 
       {/* ส่ง Role เข้าไป */}
-      <SharedVerifySlipList userRole="super_admin" initialRequests={initialRequests} />
+      <SharedVerifySlipList
+        userRole="super_admin"
+        initialRequests={initialRequests}
+        initialTotal={initialTotal}
+      />
     </div>
   );
 }

@@ -8,10 +8,13 @@ import { filterAdvisorStudents } from "@/lib/advisor-students";
 
 type ExecutiveStudentPageProps = {
   initialRequests?: ActionRequest[];
+  // EXPERIMENT server-paging (revert: EXPERIMENT-server-paging.local.md)
+  initialTotal?: number;
 };
 
 export default function ExecutiveStudentPage({
   initialRequests = [],
+  initialTotal,
 }: ExecutiveStudentPageProps) {
   // กรองเฉพาะนักศึกษาที่ admin หรือ super admin โอนเงินให้แล้ว (disbursed) และยังชำระหนี้ไม่ครบ
   const activeRequests = useMemo(
@@ -34,6 +37,9 @@ export default function ExecutiveStudentPage({
       <SharedStudentList
         rawRequests={activeRequests}
         filterTabs={["ทั้งหมด", "ชำระตรงเวลา", "เคยชำระล่าช้า"]}
+        serverStudents={
+          initialTotal === undefined ? undefined : { endpoint: "/api/executive/students", initialTotal }
+        }
       />
     </div>
   );

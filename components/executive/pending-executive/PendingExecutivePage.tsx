@@ -3,15 +3,19 @@
 import React from "react";
 import RequestsListExecutive from "./RequestsList";
 import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
+import type { ServerQueue } from "@/hooks/useServerPagedList";
 
 type PendingExecutivePageProps = {
   initialRequests?: ActionRequest[];
   highlightRequestId?: string;
+  // EXPERIMENT server-paging (revert: EXPERIMENT-server-paging.local.md)
+  serverQueue?: ServerQueue;
 };
 
 export default function PendingExecutivePage({
   initialRequests,
   highlightRequestId,
+  serverQueue,
 }: PendingExecutivePageProps) {
   return (
     <div>
@@ -27,6 +31,7 @@ export default function PendingExecutivePage({
       <RequestsListExecutive
         initialRequests={initialRequests}
         highlightRequestId={highlightRequestId}
+        serverQueue={serverQueue}
       />
     </div>
   );

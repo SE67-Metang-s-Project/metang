@@ -143,6 +143,9 @@ export type UserRole = "advisor" | "executive" | "admin" | "super_admin";
 interface VerifySlipCardProps {
   requests: ActionRequest[];
   userRole?: UserRole;
+  // EXPERIMENT verify-slip-paging (revert: EXPERIMENT-verify-slip-paging.local.md): when set,
+  // `requests` is already the current page and the pager is driven by the parent.
+  serverPaging?: { page: number; total: number; pageSize: number; onPageChange: (page: number) => void };
 }
 
 // ==========================================
@@ -377,7 +380,7 @@ function getEvidenceBilledAmount(request: ActionRequest, evidenceId: string) {
 // ==========================================
 // Main Component
 // ==========================================
-export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
+export default function VerifySlipCard({ requests, serverPaging }: VerifySlipCardProps) {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [prevRequests, setPrevRequests] = useState(requests);
@@ -387,11 +390,17 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
     setCurrentPage(1);
   }
 
-  const totalPages = Math.ceil(requests.length / 5);
-  const validCurrentPage = totalPages > 0 ? Math.min(Math.max(currentPage, 1), totalPages) : 1;
-  const paginatedRequests = requests.length > 5
-    ? requests.slice((validCurrentPage - 1) * 5, validCurrentPage * 5)
-    : requests;
+  const totalPages = serverPaging
+    ? Math.ceil(serverPaging.total / serverPaging.pageSize)
+    : Math.ceil(requests.length / 5);
+  const validCurrentPage = serverPaging
+    ? serverPaging.page
+    : totalPages > 0
+      ? Math.min(Math.max(currentPage, 1), totalPages)
+      : 1;
+  const paginatedRequests = serverPaging || requests.length <= 5
+    ? requests
+    : requests.slice((validCurrentPage - 1) * 5, validCurrentPage * 5);
 
   // Selection is kept by id and read from `requests`, so router.refresh() after a decision shows
   // the new status instead of a stale copy of the pending slip.
@@ -704,11 +713,11 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
         </table>
       </div>
 
-      {requests.length > 5 && (
+      {(serverPaging ? totalPages > 1 : requests.length > 5) && (
         <TablePagination
           currentPage={validCurrentPage}
           totalPages={totalPages}
-          onPageChange={setCurrentPage}
+          onPageChange={serverPaging ? serverPaging.onPageChange : setCurrentPage}
         />
       )}
 

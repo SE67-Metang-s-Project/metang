@@ -3,15 +3,19 @@
 import React from "react";
 import SharedRequestsList from "@/components/shared/pending/SharedRequestsList";
 import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
+import type { ServerQueue } from "@/hooks/useServerPagedList";
 
 type AdvisorPendingPageProps = {
   initialRequests?: ActionRequest[];
   highlightRequestId?: string;
+  // EXPERIMENT server-paging (revert: EXPERIMENT-server-paging.local.md)
+  serverQueue?: ServerQueue;
 };
 
 export default function AdvisorPendingPage({
   initialRequests = [],
   highlightRequestId,
+  serverQueue,
 }: AdvisorPendingPageProps) {
   return (
     <div>
@@ -31,6 +35,7 @@ export default function AdvisorPendingPage({
         userRole="advisor"
         initialRequests={initialRequests}
         highlightRequestId={highlightRequestId}
+        serverQueue={serverQueue}
       />
     </div>
   );

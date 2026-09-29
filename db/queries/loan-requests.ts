@@ -1,35 +1,29 @@
 import { prisma } from "@/lib/prisma";
-import { getAdminAccess } from "@/lib/loan-auth";
-import { withBasePath } from "@/lib/base-path";
-import { Prisma, type ApprovalStep as LoanApprovalStep, type Decision } from "@/lib/generated/prisma/client";
+import {
+  Prisma,
+  type ApprovalStep as LoanApprovalStep,
+  type Decision,
+  type LoanStatus,
+} from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
-import { deriveInstallmentConduct } from "@/lib/repayment-conduct";
 import { computeInstallmentSchedule, type ExecutiveDecision, type LoanDecision } from "@/lib/loan-validation";
 import {
   enqueueReviewerNotifications,
   enqueueStudentLoanOutcome,
 } from "@/db/queries/notification-recipients";
-import type {
-  ActionRequest,
-  ActionHistory,
-  ApprovalStep,
-  BankDetails,
-  PaymentBehaviorInfo,
-} from "@/components/shared/pending/RequestsCard";
-import { filterAdvisorStudents } from "@/lib/advisor-students";
+import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
+import { pendingStatusFor, statusesForFilter, type QueueFilter, type QueueRole } from "@/lib/queue-filter";
+import {
+  conductFromRows,
+  summarizeStudentConduct,
+  toActionRequest,
+  type ActionRequestRow,
+  type ActionRequestView,
+  type StudentConduct,
+} from "@/lib/action-request-view";
 
 
 export type LoanRequestVisibility = { scope: "global" } | { scope: "assigned"; advisorId: string };
-
-const educationLevelByStudentCodeDigit: Record<string, string> = {
-  "0": "ประกาศนียบัตรผู้ช่วยพยาบาล",
-  "1": "ปริญญาตรี",
-  "3": "ปริญญาโท",
-  "5": "ปริญญาเอก",
-};
-
-const getEducationLevel = (studentCode: string | null) =>
-  studentCode ? educationLevelByStudentCodeDigit[studentCode.charAt(4)] : undefined;
 
 const userSummarySelect = {
   id: true,
@@ -570,389 +564,487 @@ export async function disburseLoanRequest({
 }
 
 
-const THAI_MONTH_ABBRS = [
-  "ม.ค.",
-  "ก.พ.",
-  "มี.ค.",
-  "เม.ย.",
-  "พ.ค.",
-  "มิ.ย.",
-  "ก.ค.",
-  "ส.ค.",
-  "ก.ย.",
-  "ต.ค.",
-  "พ.ย.",
-  "ธ.ค.",
-] as const;
-
-function formatThaiDate(date: Date): string {
-  const day = date.getDate();
-  const month = THAI_MONTH_ABBRS[date.getMonth()];
-  const year = date.getFullYear() + 543;
-  return `${day} ${month} ${year}`;
-}
-
-function formatThaiTime(date: Date): string {
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${hours}:${minutes} น.`;
-}
-
-function formatThaiDateTime(date: Date): string {
-  const dateStr = formatThaiDate(date);
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${dateStr} ${hours}:${minutes}`;
-}
-
-export async function getActionRequests(
-  where?: Prisma.LoanRequestWhereInput,
-  options?: { hideBankDetails?: boolean },
+/**
+ * Staff pages are Server Components that hand this result to client components, so every field
+ * returned is serialized into the page. `view` names what the page's UI reads; the rest is neither
+ * selected nor sent.
+ */
+async function loadActionRequests(
+  where: Prisma.LoanRequestWhereInput,
+  view: ActionRequestView,
+  options: {
+    distinctStudent?: boolean;
+    conductFromRows?: boolean;
+    page?: { skip: number; take: number };
+  } = {},
 ): Promise<ActionRequest[]> {
-  const loans = await prisma.loanRequest.findMany({
-    where,
-    include: {
-      student: {
-        select: {
-          id: true,
-          fullNameTh: true,
-          fullNameEn: true,
-          studentCode: true,
-          phone: true,
-          educationLevel: true,
-          studentLoans: {
-            select: {
-              id: true,
-              status: true,
+  // Only when `where` covers every loan that can have installments (disbursed or closed), so the
+  // rows already hold each student's repayment history and only the loan count is read separately.
+  const readConductFromRows = view.conduct && view.schedule && options.conductFromRows === true;
+  const [rows, loanTotals] = await Promise.all([
+    prisma.loanRequest.findMany({
+      where,
+      ...(options.distinctStudent ? { distinct: ["studentId" as const] } : {}),
+      ...(options.page ?? {}),
+      select: {
+        id: true,
+        studentId: true,
+        studentYear: true,
+        purpose: true,
+        amount: true,
+        approvedAmount: true,
+        installmentCount: true,
+        status: true,
+        submittedAt: true,
+        createdAt: true,
+        cancelledAt: true,
+        ...(view.bank ? { bankName: true, bankAccountNo: true, bankAccountName: true } : {}),
+        student: {
+          select: { fullNameTh: true, studentCode: true, phone: true, educationLevel: true },
+        },
+        // Verify-slip shows no advisor, approvals or cancellation.
+        ...(view.verifySlip
+          ? {}
+          : {
+              advisor: { select: { fullNameTh: true } },
+              cancelledByUser: { select: { fullNameTh: true } },
+              approvals: {
+                select: {
+                  step: true,
+                  decision: true,
+                  comment: true,
+                  decidedAt: true,
+                  createdAt: true,
+                  decider: { select: { fullNameTh: true } },
+                },
+                orderBy: [{ attempt: "asc" }, { id: "asc" }],
+              },
+            }),
+        ...(view.schedule
+          ? {
               installments: {
                 select: {
                   id: true,
                   seq: true,
                   dueDate: true,
-                  settledAt: true,
                   amountDue: true,
                   amountPaid: true,
+                  settledAt: true,
                 },
+                orderBy: { seq: "asc" },
               },
-              // Repayment history for conduct; see deriveInstallmentConduct.
               payments: {
                 select: {
+                  id: true,
+                  installmentId: true,
                   status: true,
                   amount: true,
                   paidAt: true,
                   confirmedAt: true,
                   createdAt: true,
+                  reviewNote: true,
+                  slipPath: true,
                 },
+                orderBy: { createdAt: "asc" },
               },
-            },
-          },
-        },
+            }
+          : {}),
+        // At most one row, per fund_transaction_one_disbursement_per_loan. Only the id is needed:
+        // the slip is read through GET /api/fund-transactions/{id}/slip, never by storage path.
+        ...(view.slipLinks && !view.verifySlip
+          ? { fundTransactions: { where: { kind: "disbursement" as const }, select: { id: true } } }
+          : {}),
       },
-      advisor: {
-        select: {
-          fullNameTh: true,
-        },
+      orderBy: [
+        { submittedAt: { sort: "desc", nulls: "last" } },
+        { createdAt: "desc" },
+        { id: "desc" },
+      ],
+    }),
+    readConductFromRows
+      ? prisma.loanRequest.groupBy({
+          by: ["studentId"],
+          where: { student: { studentLoans: { some: where } } },
+          _count: { _all: true },
+        })
+      : null,
+  ]);
+
+  // The conditional selects widen Prisma's inferred type to the whole model, so the row shape is
+  // stated by ActionRequestRow and each select above is kept in step with it.
+  const loans = rows as unknown as (ActionRequestRow & { studentId: string })[];
+  const conductByStudent = !view.conduct
+    ? new Map<string, StudentConduct>()
+    : loanTotals
+      ? conductFromRowsOf(loans, loanTotals)
+      : await loadStudentConduct([...new Set(loans.map((loan) => loan.studentId))]);
+
+  return loans.map((loan) => toActionRequest(loan, view, conductByStudent.get(loan.studentId)));
+}
+
+function conductFromRowsOf(
+  rows: Parameters<typeof conductFromRows>[0],
+  totals: { studentId: string; _count: { _all: number } }[],
+) {
+  return conductFromRows(
+    rows,
+    totals.map(({ studentId, _count }) => ({ studentId, count: _count._all })),
+  );
+}
+
+/** One query per table for all the students on a page, instead of every loan of each student per row. */
+async function loadStudentConduct(studentIds: string[]): Promise<Map<string, StudentConduct>> {
+  if (studentIds.length === 0) return new Map();
+  const loan = { studentId: { in: studentIds } };
+  const [installments, payments, counts] = await Promise.all([
+    prisma.installment.findMany({
+      where: { loan },
+      orderBy: { seq: "asc" },
+      select: {
+        loanId: true,
+        seq: true,
+        dueDate: true,
+        settledAt: true,
+        amountDue: true,
+        amountPaid: true,
+        loan: { select: { studentId: true } },
       },
-      approvals: {
-        include: {
-          decider: {
-            select: {
-              id: true,
-              fullNameTh: true,
-              fullNameEn: true,
-            },
-          },
-        },
-        orderBy: [{ attempt: "asc" }, { id: "asc" }],
+    }),
+    // Only confirmed payments count toward conduct; see deriveInstallmentConduct.
+    prisma.payment.findMany({
+      where: { status: "confirmed", loan },
+      select: {
+        loanId: true,
+        status: true,
+        amount: true,
+        paidAt: true,
+        confirmedAt: true,
+        createdAt: true,
+        loan: { select: { studentId: true } },
       },
-      installments: {
-        orderBy: { seq: "asc" },
-      },
-      payments: {
-        orderBy: { createdAt: "asc" },
-      },
-      cancelledByUser: {
-        select: {
-          fullNameTh: true,
-          fullNameEn: true,
-        },
-      },
-      // At most one row, per fund_transaction_one_disbursement_per_loan. Only the id is needed:
-      // the slip is read through GET /api/fund-transactions/{id}/slip, never by storage path.
-      fundTransactions: {
-        where: { kind: "disbursement" },
-        select: { id: true },
-      },
+    }),
+    prisma.loanRequest.groupBy({ by: ["studentId"], where: loan, _count: { _all: true } }),
+  ]);
+
+  const byStudent = new Map<string, Map<string, { installments: typeof installments; payments: typeof payments }>>();
+  const loanOf = (studentId: string, loanId: string) => {
+    const loans = byStudent.get(studentId) ?? new Map();
+    byStudent.set(studentId, loans);
+    const entry = loans.get(loanId) ?? { installments: [], payments: [] };
+    loans.set(loanId, entry);
+    return entry;
+  };
+  for (const row of installments) loanOf(row.loan.studentId, row.loanId).installments.push(row);
+  for (const row of payments) loanOf(row.loan.studentId, row.loanId).payments.push(row);
+
+  return new Map(
+    counts.map((count) => [
+      count.studentId,
+      summarizeStudentConduct([...(byStudent.get(count.studentId)?.values() ?? [])], count._count._all),
+    ]),
+  );
+}
+
+const unsettledInstallments = { some: { settledAt: null } } satisfies Prisma.InstallmentListRelationFilter;
+
+/** Admin and SuperAdmin pages: the disburse and verify views also show the bank and slip links. */
+const fullView: ActionRequestView = { bank: true, slipLinks: true, schedule: true, conduct: true };
+const advisorView: ActionRequestView = { bank: false, slipLinks: false, schedule: true, conduct: true };
+
+/**
+ * A pending_admin loan assigned to another admin - an executive return goes back only to the admin
+ * who forwarded it - is theirs alone: hidden from the queue, as in GET /api/admin/loan-requests,
+ * and refused by decideAdminLoanRequest. SuperAdmins included. `viewerId` is the session user the
+ * page has already authenticated, the identity the decide route acts as (dev bypass included).
+ */
+const assignedToViewerOrNoOne = (viewerId: string): Prisma.LoanRequestWhereInput[] => [
+  { assignedAdminId: null },
+  { assignedAdminId: viewerId },
+];
+
+/** /admin: only what the dashboard lists - queue, awaiting disbursement, slips to verify. */
+export async function getAdminDashboardRequests(viewerId: string): Promise<ActionRequest[]> {
+  return loadActionRequests(
+    {
+      OR: [
+        { status: "pending_admin", OR: assignedToViewerOrNoOne(viewerId) },
+        { status: "pending_disbursement" },
+        { status: { in: ["disbursed", "closed"] }, payments: { some: { status: "pending_review" } } },
+      ],
     },
-    orderBy: [
-      { submittedAt: { sort: "desc", nulls: "last" } },
-      { createdAt: "desc" },
-      { id: "desc" },
-    ],
-  });
+    fullView,
+  );
+}
 
-  // Sort descending by effective submission date-time (submittedAt ?? createdAt), newest first
-  loans.sort((a, b) => {
-    const timeA = (a.submittedAt ?? a.createdAt).getTime();
-    const timeB = (b.submittedAt ?? b.createdAt).getTime();
-    if (timeB !== timeA) {
-      return timeB - timeA;
-    }
-    return b.id.localeCompare(a.id);
-  });
+/** /admin/pending and /superadmin/pending. */
+export async function getAdminQueueRequests(viewerId: string): Promise<ActionRequest[]> {
+  return loadActionRequests(
+    {
+      status: { not: "draft" },
+      OR: [{ status: { not: "pending_admin" } }, ...assignedToViewerOrNoOne(viewerId)],
+    },
+    fullView,
+    { conductFromRows: true },
+  );
+}
 
-  return loans.map((loan) => {
-    const student = loan.student;
-    const studentLoans = student.studentLoans || [];
-    const totalLoanRequests = studentLoans.length;
-    let onTimeInstallments = 0;
-    let lateInstallments = 0;
+const verifySlipView: ActionRequestView = {
+  bank: false,
+  slipLinks: true,
+  schedule: true,
+  conduct: false,
+  verifySlip: true,
+};
+const verifySlipWhere: Prisma.LoanRequestWhereInput = {
+  status: { in: ["disbursed", "closed"] },
+  payments: { some: {} },
+};
 
-    // The student dashboard's rule: judged by transfer date, not by settledAt (review time).
-    for (const sLoan of studentLoans) {
-      for (const conduct of deriveInstallmentConduct(sLoan.installments, sLoan.payments)) {
-        if (conduct === "on_time") onTimeInstallments += 1;
-        else if (conduct === "late") lateInstallments += 1;
+/** Verify-slip pages read payments, never the borrower's bank account or conduct. */
+export async function getVerifySlipRequests(): Promise<ActionRequest[]> {
+  return loadActionRequests(verifySlipWhere, verifySlipView);
+}
+
+// EXPERIMENT verify-slip-paging: one page of verify-slip loans, filtered by student name or code,
+// for GET /api/admin/verify-slip. Revert with EXPERIMENT-verify-slip-paging.local.md.
+export async function getVerifySlipPage({
+  q,
+  page,
+  limit,
+}: {
+  q?: string;
+  page: number;
+  limit: number;
+}): Promise<{ items: ActionRequest[]; total: number }> {
+  const term = q?.trim();
+  const where: Prisma.LoanRequestWhereInput = term
+    ? {
+        ...verifySlipWhere,
+        OR: [
+          { student: { fullNameTh: { contains: term, mode: "insensitive" } } },
+          { student: { studentCode: { contains: term } } },
+        ],
       }
-    }
+    : verifySlipWhere;
+  const [items, total] = await Promise.all([
+    loadActionRequests(where, verifySlipView, { page: { skip: (page - 1) * limit, take: limit } }),
+    prisma.loanRequest.count({ where }),
+  ]);
+  return { items, total };
+}
 
-    const paymentBehavior: PaymentBehaviorInfo = {
-      totalLoanRequests,
-      onTimeInstallments,
-      lateInstallments,
-      totalInstallments: onTimeInstallments + lateInstallments,
-      onTimeStatusLabel:
-        onTimeInstallments + lateInstallments === 0
-          ? "ยังไม่มีประวัติการชำระเงิน"
-          : lateInstallments === 0
-            ? "ชำระตรงเวลา"
-            : "ชำระล่าช้า",
-    };
+// EXPERIMENT disburse-debt-paging: one page of disbursement loans for
+// GET /api/admin/disburse-debt. Revert with EXPERIMENT-disburse-debt-paging.local.md.
+const disbursementStatusesByTab = {
+  all: ["pending_disbursement", "disbursed", "closed"],
+  pending: ["pending_disbursement"],
+  done: ["disbursed", "closed"],
+} as const;
+export type DisbursementTab = keyof typeof disbursementStatusesByTab;
+export const isDisbursementTab = (value: string): value is DisbursementTab =>
+  Object.hasOwn(disbursementStatusesByTab, value);
 
-    const submitDateObj = loan.submittedAt ?? loan.createdAt;
-    const now = new Date();
-    const waitDays = Math.max(
-      0,
-      Math.floor((now.getTime() - new Date(submitDateObj).getTime()) / (1000 * 60 * 60 * 24)),
-    );
-
-    const history: ActionHistory[] = [];
-    if (loan.submittedAt || loan.createdAt) {
-      history.push({
-        action: "ยื่นคำร้องขอกู้ยืม",
-        date: formatThaiDateTime(submitDateObj),
-        actor: student.fullNameTh,
-      });
-    }
-
-    for (const approval of loan.approvals) {
-      if (approval.decision !== "pending") {
-        let actionDesc = "";
-        if (approval.step === "advisor") {
-          actionDesc =
-            approval.decision === "approved"
-              ? "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ"
-              : approval.decision === "returned"
-                ? "ส่งกลับให้นักศึกษาแก้ไข"
-                : "อาจารย์ที่ปรึกษาไม่อนุมัติ";
-        } else if (approval.step === "admin") {
-          actionDesc =
-            approval.decision === "approved"
-              ? "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน"
-              : approval.decision === "returned"
-                ? "เจ้าหน้าที่ส่งกลับแก้ไข"
-                : "เจ้าหน้าที่ไม่อนุมัติ";
-        } else if (approval.step === "executive") {
-          actionDesc =
-            approval.decision === "approved"
-              ? "ผู้บริหารอนุมัติคำร้อง"
-              : approval.decision === "returned"
-                ? "ผู้บริหารส่งกลับแก้ไข"
-                : "ผู้บริหารไม่อนุมัติ";
+export async function getDisbursementPage({
+  tab,
+  q,
+  degree,
+  page,
+  limit,
+}: {
+  tab: DisbursementTab;
+  q?: string;
+  degree?: string;
+  page: number;
+  limit: number;
+}): Promise<{ items: ActionRequest[]; total: number }> {
+  const term = q?.trim();
+  const where: Prisma.LoanRequestWhereInput = {
+    status: { in: [...disbursementStatusesByTab[tab]] },
+    ...(term
+      ? {
+          OR: [
+            { student: { fullNameTh: { contains: term, mode: "insensitive" } } },
+            { student: { studentCode: { contains: term } } },
+          ],
         }
-        history.push({
-          action: actionDesc,
-          date: formatThaiDateTime(approval.decidedAt ?? approval.createdAt),
-          actor:
-            approval.decider?.fullNameTh ??
-            (approval.step === "advisor"
-              ? "อาจารย์ที่ปรึกษา"
-              : approval.step === "admin"
-                ? "เจ้าหน้าที่"
-                : "ผู้บริหาร"),
-        });
-      }
-    }
+      : {}),
+    ...(degree ? { student: { educationLevel: degree } } : {}),
+  };
+  const [items, total] = await Promise.all([
+    loadActionRequests(where, fullView, { page: { skip: (page - 1) * limit, take: limit } }),
+    prisma.loanRequest.count({ where }),
+  ]);
+  return { items, total };
+}
 
-    if (loan.cancelledAt) {
-      history.push({
-        action: "ยกเลิกคำร้อง",
-        date: formatThaiDateTime(loan.cancelledAt),
-        actor: loan.cancelledByUser?.fullNameTh ?? "นักศึกษา",
-      });
-    }
+// EXPERIMENT server-paging (revert: EXPERIMENT-server-paging.local.md)
+// One page of a staff queue: the "pending" / "approved" / status filters and the search the lists
+// used to apply to the whole array, plus the badge counts they took from it. `base` is what the
+// role may see at all (assignment rule, no drafts); filters and search narrow it.
+const executiveView: ActionRequestView = { bank: false, slipLinks: true, schedule: true, conduct: true };
 
-    const approvals: ApprovalStep[] = loan.approvals
-      .filter((a) => a.decision !== "pending")
-      .map((a) => ({
-        step: a.step,
-        actorName:
-          a.decider?.fullNameTh ??
-          (a.step === "advisor"
-            ? "อาจารย์ที่ปรึกษา"
-            : a.step === "admin"
-              ? "เจ้าหน้าที่"
-              : "ผู้บริหาร"),
-        comment: a.comment ?? "",
-        decision: a.decision,
-        date: formatThaiDate(a.decidedAt ?? a.createdAt),
-      }));
+export type QueuePageParams = {
+  filter: QueueFilter;
+  q?: string;
+  page: number;
+  limit: number;
+  /** ?requestId= deep link: put this loan on the first page even if it would fall elsewhere. */
+  focusId?: string;
+};
+export type QueuePage = {
+  items: ActionRequest[];
+  total: number;
+  counts: { pending: number; pendingExecutive: number };
+};
 
-    const bankDetails: BankDetails | undefined = options?.hideBankDetails
-      ? undefined
-      : {
-          bankName: loan.bankName,
-          accountNumber: loan.bankAccountNo,
-          accountName: loan.bankAccountName,
-        };
+async function getQueuePage(
+  base: Prisma.LoanRequestWhereInput,
+  role: QueueRole,
+  view: ActionRequestView,
+  { filter, q, page, limit, focusId }: QueuePageParams,
+): Promise<QueuePage> {
+  const statuses = statusesForFilter(role, filter);
+  const term = q?.trim();
+  const where: Prisma.LoanRequestWhereInput = {
+    AND: [
+      base,
+      ...(statuses ? [{ status: { in: statuses as LoanStatus[] } }] : []),
+      ...(term
+        ? [
+            {
+              OR: [
+                { student: { fullNameTh: { contains: term, mode: "insensitive" as const } } },
+                { student: { studentCode: { contains: term } } },
+                { id: { contains: term, mode: "insensitive" as const } },
+                { purpose: { contains: term, mode: "insensitive" as const } },
+              ],
+            },
+          ]
+        : []),
+    ],
+  };
+  const [items, total, byStatus] = await Promise.all([
+    loadActionRequests(where, view, { page: { skip: (page - 1) * limit, take: limit } }),
+    prisma.loanRequest.count({ where }),
+    prisma.loanRequest.groupBy({ by: ["status"], where: base, _count: { _all: true } }),
+  ]);
+  const countOf = (status: string) => byStatus.find((row) => row.status === status)?._count._all ?? 0;
+  const focus =
+    focusId && page === 1 && !items.some((item) => item.id === focusId)
+      ? await loadActionRequests({ AND: [base, { id: focusId }] }, view)
+      : [];
+  return {
+    items: [...focus, ...items],
+    total,
+    counts: { pending: countOf(pendingStatusFor(role)), pendingExecutive: countOf("pending_executive") },
+  };
+}
 
-    const totalOutstandingAmount = (loan.installments || []).reduce(
-      (sum, installment) => sum + Math.max(0, installment.amountDue - installment.amountPaid),
-      0,
-    );
-    const paymentAttemptsByInstallment = new Map<number, number>();
-    const paymentHistory = (loan.payments || []).map((p) => {
-      const matchingInst = (loan.installments || []).find((i) => i.id === p.installmentId);
-      const installmentNumber = matchingInst ? matchingInst.seq : 1;
-      const attemptNumber = (paymentAttemptsByInstallment.get(installmentNumber) ?? 0) + 1;
-      paymentAttemptsByInstallment.set(installmentNumber, attemptNumber);
-      const mappedStatus =
-        p.status === "confirmed"
-          ? "verified"
-          : p.status === "pending_review"
-            ? "pending"
-            : p.status;
+export async function getAdminQueuePage(viewerId: string, params: QueuePageParams): Promise<QueuePage> {
+  return getQueuePage(
+    {
+      status: { not: "draft" },
+      OR: [{ status: { not: "pending_admin" } }, ...assignedToViewerOrNoOne(viewerId)],
+    },
+    "admin",
+    fullView,
+    params,
+  );
+}
 
-      return {
-        id: p.id,
-        installmentNumber,
-        attemptNumber,
-        amount: String(p.amount),
-        installmentOutstandingAmount: String(
-          matchingInst ? Math.max(0, matchingInst.amountDue - matchingInst.amountPaid) : 0,
-        ),
-        paidAt: p.paidAt ? formatThaiDate(p.paidAt) : formatThaiDate(p.createdAt),
-        paidTime: formatThaiTime(p.paidAt ?? p.createdAt),
-        reviewedAt: p.confirmedAt ? formatThaiDate(p.confirmedAt) : undefined,
-        status: mappedStatus,
-        // The reviewer's reason for a rejection, shown in the verify-slip modal.
-        reviewNote: p.reviewNote ?? undefined,
-        isOverpayment: p.status === "pending_review" && p.amount > totalOutstandingAmount,
-        // The route, not the storage path: these props are serialized to the browser, and a bare
-        // bucket path in an <img src> renders nothing. The 302 re-runs authorization per load.
-        slipImageUrl: p.slipPath ? withBasePath(`/api/payments/${p.id}/slip`) : "",
-      };
-    });
+export async function getExecutiveQueuePage(params: QueuePageParams): Promise<QueuePage> {
+  return getQueuePage({ status: { not: "draft" } }, "executive", executiveView, params);
+}
 
-    const disbursement = loan.fundTransactions[0];
+export async function getAdvisorQueuePage(advisorId: string, params: QueuePageParams): Promise<QueuePage> {
+  return getQueuePage({ advisorId, status: { not: "draft" } }, "advisor", advisorView, params);
+}
 
-    const installments = (loan.installments || []).map((inst) => ({
-      installmentNumber: inst.seq,
-      dueDate: formatThaiDate(inst.dueDate),
-      amount: String(inst.amountDue),
-      paidAmount: String(inst.amountPaid),
-      isPaid: inst.settledAt !== null || inst.amountPaid >= inst.amountDue,
-    }));
+export const STUDENT_TABS = ["all", "on_time", "late"] as const;
+export type StudentTab = (typeof STUDENT_TABS)[number];
+export const isStudentTab = (value: string): value is StudentTab =>
+  (STUDENT_TABS as readonly string[]).includes(value);
 
-    return {
-      id: loan.id,
-      name: student.fullNameTh,
-      studentId: student.studentCode ?? "-",
-      major: "พยาบาลศาสตร์",
-      program: "พยาบาลศาสตรบัณฑิต",
-      degree: student.educationLevel || getEducationLevel(student.studentCode) || "-",
-      educationLevel: student.educationLevel ?? undefined,
-      advisorName: loan.advisor?.fullNameTh ?? undefined,
-      year: String(loan.studentYear),
-      phone: student.phone ?? "-",
-      objective: loan.purpose,
-      additionalNote: loan.additionalNote ?? undefined,
-      amount: String(loan.amount),
-      approvedAmount: loan.approvedAmount,
-      term: String(loan.installmentCount),
-      submitDate: formatThaiDate(submitDateObj),
-      submitTime: formatThaiTime(submitDateObj),
-      submittedAt: submitDateObj.toISOString(),
-      requestStatus: loan.status,
-      waitDays,
-      isOverdue: waitDays > 7,
-      history,
-      approvals,
-      ...(bankDetails ? { bankDetails } : {}),
-      paymentBehavior,
-      paymentHistory,
-      installments,
-      ...(disbursement ? { slipUrl: withBasePath(`/api/fund-transactions/${disbursement.id}/slip`) } : {}),
-    };
+// The degree filter reads the fifth digit of the student code, as the list did in the browser.
+const DEGREE_CODE_DIGIT: Record<string, string> = {
+  "ประกาศนียบัตรผู้ช่วยพยาบาล": "0",
+  "ปริญญาตรี": "1",
+  "ปริญญาโท": "3",
+  "ปริญญาเอก": "5",
+};
+export const isStudentDegree = (value: string) => Object.hasOwn(DEGREE_CODE_DIGIT, value);
+
+/**
+ * One page of the students still repaying. Punctuality (on time / late) comes from repayment
+ * conduct, which the database does not hold, so the small student set (one row per student) is
+ * loaded, filtered here, then sliced.
+ */
+export async function getStudentsPage(
+  scope: { advisorId: string } | "all",
+  {
+    tab,
+    q,
+    degree,
+    page,
+    limit,
+  }: { tab: StudentTab; q?: string; degree?: string; page: number; limit: number },
+): Promise<{ items: ActionRequest[]; total: number }> {
+  const students = scope === "all" ? await getExecutiveStudentRequests() : await getAdvisorStudentRequests(scope.advisorId);
+  const term = q ?? "";
+  const digit = degree ? DEGREE_CODE_DIGIT[degree] : undefined;
+  const matching = students.filter((student) => {
+    if (!student.name.includes(term) && !student.studentId.includes(term)) return false;
+    if (digit && student.studentId.charAt(4) !== digit) return false;
+    const late = (student.paymentBehavior?.lateInstallments ?? 0) > 0;
+    return tab === "all" || (tab === "late" ? late : !late);
   });
+  return { items: matching.slice((page - 1) * limit, page * limit), total: matching.length };
+}
+
+export async function getDisbursementActionRequests(): Promise<ActionRequest[]> {
+  return loadActionRequests({ status: { in: ["pending_disbursement", "disbursed", "closed"] } }, fullView, {
+    conductFromRows: true,
+  });
+}
+
+/** /advisor: the pending queue and the students still repaying. */
+export async function getAdvisorDashboardRequests(advisorId: string): Promise<ActionRequest[]> {
+  return loadActionRequests(
+    {
+      advisorId,
+      OR: [{ status: "pending_advisor" }, { status: "disbursed", installments: unsettledInstallments }],
+    },
+    advisorView,
+  );
 }
 
 export async function getAdvisorActionRequests(advisorId: string): Promise<ActionRequest[]> {
-  return getActionRequests({ advisorId }, { hideBankDetails: true });
+  return loadActionRequests({ advisorId, status: { not: "draft" } }, advisorView);
 }
 
+/** Disbursed loans with a balance left, one per student: what filterAdvisorStudents used to cut. */
 export async function getAdvisorStudentRequests(advisorId: string): Promise<ActionRequest[]> {
-  const requests = await getActionRequests(
-    {
-      advisorId,
-      status: "disbursed",
-    },
-    { hideBankDetails: true },
+  return loadActionRequests(
+    { advisorId, status: "disbursed", installments: unsettledInstallments },
+    advisorView,
+    { distinctStudent: true },
   );
-
-  return filterAdvisorStudents(requests);
-}
-
-/**
- * Loans for the Admin and SuperAdmin pages. A pending_admin loan assigned to another admin - an
- * executive return goes back only to the admin who forwarded it - is theirs alone: hidden here, as
- * in GET /api/admin/loan-requests, and refused by decideAdminLoanRequest. SuperAdmins included.
- */
-export async function getAdminActionRequests(): Promise<ActionRequest[]> {
-  const access = await getAdminAccess();
-  if (access.status !== "authorized") return [];
-  const viewerId = access.context.user.id;
-  return getActionRequests({
-    OR: [
-      { status: { not: "pending_admin" } },
-      { assignedAdminId: null },
-      { assignedAdminId: viewerId },
-    ],
-  });
 }
 
 export async function getExecutiveActionRequests(): Promise<ActionRequest[]> {
-  return getActionRequests(
+  return loadActionRequests(
     { status: { not: "draft" } },
-    { hideBankDetails: true },
+    { bank: false, slipLinks: true, schedule: true, conduct: true },
+    { conductFromRows: true },
   );
 }
 
 export async function getExecutiveStudentRequests(): Promise<ActionRequest[]> {
-  const requests = await getActionRequests(
-    {
-      status: "disbursed",
-    },
-    { hideBankDetails: true },
+  return loadActionRequests(
+    { status: "disbursed", installments: unsettledInstallments },
+    { bank: false, slipLinks: true, schedule: true, conduct: true },
+    { distinctStudent: true },
   );
-
-  return filterAdvisorStudents(requests);
-}
-
-export async function getDisbursementActionRequests(): Promise<ActionRequest[]> {
-  return getActionRequests({
-    status: { in: ["pending_disbursement", "disbursed", "closed"] },
-  });
 }
 
 // System-wide total, unlike the Admin queue above: no assignedAdminId filter, for SuperAdmin's

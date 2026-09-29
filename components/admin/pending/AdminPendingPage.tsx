@@ -3,13 +3,20 @@
 import React from "react";
 import SharedRequestsList from "@/components/shared/pending/SharedRequestsList";
 import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
+import type { ServerQueue } from "@/hooks/useServerPagedList";
 
 type AdminPendingPageProps = {
   initialRequests?: ActionRequest[];
   highlightRequestId?: string;
+  // EXPERIMENT server-paging (revert: EXPERIMENT-server-paging.local.md)
+  serverQueue?: ServerQueue;
 };
 
-export default function PendingPage({ initialRequests, highlightRequestId }: AdminPendingPageProps) {
+export default function PendingPage({
+  initialRequests,
+  highlightRequestId,
+  serverQueue,
+}: AdminPendingPageProps) {
   return (
     <div>
       <div className="mb-6">
@@ -23,6 +30,7 @@ export default function PendingPage({ initialRequests, highlightRequestId }: Adm
         userRole="admin"
         initialRequests={initialRequests}
         highlightRequestId={highlightRequestId}
+        serverQueue={serverQueue}
       />
     </div>
   );

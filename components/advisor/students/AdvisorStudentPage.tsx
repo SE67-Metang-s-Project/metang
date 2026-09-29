@@ -10,10 +10,13 @@ export { filterAdvisorStudents };
 
 type AdvisorStudentPageProps = {
   initialRequests?: ActionRequest[];
+  // EXPERIMENT server-paging (revert: EXPERIMENT-server-paging.local.md)
+  initialTotal?: number;
 };
 
 export default function AdvisorStudentPage({
   initialRequests = [],
+  initialTotal,
 }: AdvisorStudentPageProps) {
   // กรองเฉพาะนักศึกษาที่ admin หรือ super admin โอนเงินให้แล้ว (disbursed) และยังชำระหนี้ไม่ครบ
   const activeRequests = useMemo(
@@ -34,6 +37,9 @@ export default function AdvisorStudentPage({
       <SharedStudentList
         rawRequests={activeRequests}
         filterTabs={["ทั้งหมด", "ชำระตรงเวลา", "เคยชำระล่าช้า"]}
+        serverStudents={
+          initialTotal === undefined ? undefined : { endpoint: "/api/advisor/students", initialTotal }
+        }
       />
     </div>
   );

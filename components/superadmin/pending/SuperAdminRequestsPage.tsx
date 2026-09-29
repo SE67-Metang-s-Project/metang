@@ -5,15 +5,19 @@ import React from "react";
 // Import Component List ของ Super Admin ที่สร้างไว้
 import SuperAdminRequestsList from "./SuperAdminRequestsList";
 import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
+import type { ServerQueue } from "@/hooks/useServerPagedList";
 
 type SuperAdminPendingPageProps = {
   initialRequests?: ActionRequest[];
   highlightRequestId?: string;
+  // EXPERIMENT server-paging (revert: EXPERIMENT-server-paging.local.md)
+  serverQueue?: ServerQueue;
 };
 
 export default function SuperAdminPendingPage({
   initialRequests = [],
   highlightRequestId,
+  serverQueue,
 }: SuperAdminPendingPageProps) {
   return (
     <div>
@@ -29,6 +33,7 @@ export default function SuperAdminPendingPage({
       <SuperAdminRequestsList
         initialRequests={initialRequests}
         highlightRequestId={highlightRequestId}
+        serverQueue={serverQueue}
       />
     </div>
   );

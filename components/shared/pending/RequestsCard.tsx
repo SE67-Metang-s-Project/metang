@@ -161,6 +161,9 @@ interface RequestsCardProps {
   tableLayout?: "default" | "executive";
   onRequestDecided?: (requestId: string, decision: string) => void;
   initialSelectedRequestId?: string;
+  // EXPERIMENT server-paging (revert: EXPERIMENT-server-paging.local.md): when set, `requests` is
+  // already the current page and the pager is driven by the parent.
+  serverPaging?: { page: number; total: number; pageSize: number; onPageChange: (page: number) => void };
 }
 
 // ==========================================
@@ -428,6 +431,7 @@ export default function RequestsCard({
   tableLayout = "executive",
   onRequestDecided,
   initialSelectedRequestId,
+  serverPaging,
 }: RequestsCardProps) {
   const router = useRouter();
   const sortedRequests = React.useMemo(() => {
@@ -441,11 +445,17 @@ export default function RequestsCard({
     setCurrentPage(1);
   }
 
-  const totalPages = Math.ceil(sortedRequests.length / 5);
-  const validCurrentPage = totalPages > 0 ? Math.min(Math.max(currentPage, 1), totalPages) : 1;
-  const paginatedRequests = sortedRequests.length > 5
-    ? sortedRequests.slice((validCurrentPage - 1) * 5, validCurrentPage * 5)
-    : sortedRequests;
+  const totalPages = serverPaging
+    ? Math.ceil(serverPaging.total / serverPaging.pageSize)
+    : Math.ceil(sortedRequests.length / 5);
+  const validCurrentPage = serverPaging
+    ? serverPaging.page
+    : totalPages > 0
+      ? Math.min(Math.max(currentPage, 1), totalPages)
+      : 1;
+  const paginatedRequests = serverPaging || sortedRequests.length <= 5
+    ? sortedRequests
+    : sortedRequests.slice((validCurrentPage - 1) * 5, validCurrentPage * 5);
 
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
   const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | "return" | null>(null);
@@ -959,11 +969,11 @@ export default function RequestsCard({
         </table>
       </div>
 
-      {sortedRequests.length > 5 && (
+      {(serverPaging ? totalPages > 1 : sortedRequests.length > 5) && (
         <TablePagination
           currentPage={validCurrentPage}
           totalPages={totalPages}
-          onPageChange={setCurrentPage}
+          onPageChange={serverPaging ? serverPaging.onPageChange : setCurrentPage}
         />
       )}
 

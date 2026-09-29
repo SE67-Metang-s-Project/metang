@@ -1,13 +1,13 @@
 import Settings from "@/components/superadmin/setting/SettingPage";
 import { requireSuperAdminAccess } from "@/lib/loan-auth";
-import { listUsersWithRoles } from "@/db/queries/users";
+import { listStaffWithRoles } from "@/db/queries/users";
 import { serializeJson } from "@/lib/serialization";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
   const context = await requireSuperAdminAccess();
-  const rawUsers = await listUsersWithRoles().catch((error) => {
+  const rawUsers = await listStaffWithRoles().catch((error) => {
     console.error("Unable to list users and roles from DB", error);
     return [];
   });

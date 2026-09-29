@@ -29,6 +29,9 @@ export interface Student {
 interface StudentListTableProps {
   students: Student[];
   onStudentSelect?: (student: Student) => void;
+  // EXPERIMENT server-paging (revert: EXPERIMENT-server-paging.local.md): when set, `students` is
+  // already the current page and the pager is driven by the parent.
+  serverPaging?: { page: number; total: number; pageSize: number; onPageChange: (page: number) => void };
 }
 
 // ----------------------------------------------------
@@ -74,7 +77,11 @@ function EmptyStudentsState() {
   );
 }
 
-export default function StudentListTable({ students, onStudentSelect }: StudentListTableProps) {
+export default function StudentListTable({
+  students,
+  onStudentSelect,
+  serverPaging,
+}: StudentListTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [prevStudents, setPrevStudents] = useState(students);
 
@@ -83,11 +90,17 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
     setCurrentPage(1);
   }
 
-  const totalPages = Math.ceil(students.length / 5);
-  const validCurrentPage = totalPages > 0 ? Math.min(Math.max(currentPage, 1), totalPages) : 1;
-  const paginatedStudents = students.length > 5
-    ? students.slice((validCurrentPage - 1) * 5, validCurrentPage * 5)
-    : students;
+  const totalPages = serverPaging
+    ? Math.ceil(serverPaging.total / serverPaging.pageSize)
+    : Math.ceil(students.length / 5);
+  const validCurrentPage = serverPaging
+    ? serverPaging.page
+    : totalPages > 0
+      ? Math.min(Math.max(currentPage, 1), totalPages)
+      : 1;
+  const paginatedStudents = serverPaging || students.length <= 5
+    ? students
+    : students.slice((validCurrentPage - 1) * 5, validCurrentPage * 5);
 
   return (
     <div className="w-full">
@@ -278,11 +291,11 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
         </table>
       </div>
 
-      {students.length > 5 && (
+      {(serverPaging ? totalPages > 1 : students.length > 5) && (
         <TablePagination
           currentPage={validCurrentPage}
           totalPages={totalPages}
-          onPageChange={setCurrentPage}
+          onPageChange={serverPaging ? serverPaging.onPageChange : setCurrentPage}
         />
       )}
     </div>

@@ -6,9 +6,14 @@ import type { ActionRequest } from "@/components/shared/disburse-debt/DisburseDe
 
 interface DisburseDebtPageProps {
   initialRequests?: ActionRequest[];
+  // EXPERIMENT server-paging: total loans behind the first page
+  initialTotal?: number;
 }
 
-export default function DisburseDebtPage({ initialRequests }: DisburseDebtPageProps) {
+export default function DisburseDebtPage({
+  initialRequests,
+  initialTotal,
+}: DisburseDebtPageProps) {
   return (
     <div>
       <div className="mb-6">
@@ -21,7 +26,11 @@ export default function DisburseDebtPage({ initialRequests }: DisburseDebtPagePr
         </p>
       </div>
 
-      <SharedDisburseDebtList userRole="admin" initialRequests={initialRequests} />
+      <SharedDisburseDebtList
+        userRole="admin"
+        initialRequests={initialRequests}
+        initialTotal={initialTotal}
+      />
     </div>
   );
 }

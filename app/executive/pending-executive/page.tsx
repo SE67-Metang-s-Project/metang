@@ -1,8 +1,10 @@
 import ExecutivePendingPage from "@/components/executive/pending-executive/PendingExecutivePage";
 import { requireExecutiveAccess } from "@/lib/loan-auth";
-import { getExecutiveActionRequests } from "@/db/queries/loan-requests";
+import { getExecutiveQueuePage } from "@/db/queries/loan-requests";
 
 export const dynamic = "force-dynamic";
+
+const EMPTY_PAGE = { items: [], total: 0, counts: { pending: 0, pendingExecutive: 0 } };
 
 type ExecutivePendingRouteProps = {
   searchParams: Promise<{ requestId?: string }>;
@@ -11,10 +13,27 @@ type ExecutivePendingRouteProps = {
 export default async function ExecutivePendingRoute({ searchParams }: ExecutivePendingRouteProps) {
   await requireExecutiveAccess();
   const { requestId } = await searchParams;
-  const requests = await getExecutiveActionRequests().catch((error) => {
+  // EXPERIMENT server-paging: page 1 of the initial filter; the list fetches the rest
+  // (revert: EXPERIMENT-server-paging.local.md)
+  const page = await getExecutiveQueuePage({
+      filter: requestId ? "all" : "pending",
+      page: 1,
+      limit: 5,
+      focusId: requestId,
+    }).catch((error) => {
     console.error("Unable to load executive pending requests from DB", error);
-    return [];
+    return EMPTY_PAGE;
   });
 
-  return <ExecutivePendingPage initialRequests={requests} highlightRequestId={requestId} />;
+  return (
+    <ExecutivePendingPage
+      initialRequests={page.items}
+      highlightRequestId={requestId}
+      serverQueue={{
+        endpoint: "/api/executive/queue",
+        initialTotal: page.total,
+        initialCounts: page.counts,
+      }}
+    />
+  );
 }

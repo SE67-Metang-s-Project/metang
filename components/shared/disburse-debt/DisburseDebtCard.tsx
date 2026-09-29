@@ -137,6 +137,9 @@ export type ActionRequest = StudentInfo &
   };
 
 interface DisburseDebtCardProps {
+  // EXPERIMENT disburse-debt-paging (revert: EXPERIMENT-disburse-debt-paging.local.md): when set,
+  // `requests` is already the current page and the pager is driven by the parent.
+  serverPaging?: { page: number; total: number; pageSize: number; onPageChange: (page: number) => void };
   requests: ActionRequest[];
 }
 
@@ -273,7 +276,7 @@ function EmptyRequestsState() {
 // ==========================================
 // Main Component
 // ==========================================
-export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
+export default function DisburseDebtCard({ requests, serverPaging }: DisburseDebtCardProps) {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [prevRequests, setPrevRequests] = useState(requests);
@@ -283,11 +286,17 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
     setCurrentPage(1);
   }
 
-  const totalPages = Math.ceil(requests.length / 5);
-  const validCurrentPage = totalPages > 0 ? Math.min(Math.max(currentPage, 1), totalPages) : 1;
-  const paginatedRequests = requests.length > 5
-    ? requests.slice((validCurrentPage - 1) * 5, validCurrentPage * 5)
-    : requests;
+  const totalPages = serverPaging
+    ? Math.ceil(serverPaging.total / serverPaging.pageSize)
+    : Math.ceil(requests.length / 5);
+  const validCurrentPage = serverPaging
+    ? serverPaging.page
+    : totalPages > 0
+      ? Math.min(Math.max(currentPage, 1), totalPages)
+      : 1;
+  const paginatedRequests = serverPaging || requests.length <= 5
+    ? requests
+    : requests.slice((validCurrentPage - 1) * 5, validCurrentPage * 5);
 
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
 
@@ -568,11 +577,11 @@ export default function DisburseDebtCard({ requests }: DisburseDebtCardProps) {
         </table>
       </div>
 
-      {requests.length > 5 && (
+      {(serverPaging ? totalPages > 1 : requests.length > 5) && (
         <TablePagination
           currentPage={validCurrentPage}
           totalPages={totalPages}
-          onPageChange={setCurrentPage}
+          onPageChange={serverPaging ? serverPaging.onPageChange : setCurrentPage}
         />
       )}
 

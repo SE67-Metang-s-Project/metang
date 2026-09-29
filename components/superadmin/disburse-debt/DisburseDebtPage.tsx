@@ -6,10 +6,13 @@ import type { ActionRequest } from "@/components/shared/disburse-debt/DisburseDe
 
 interface DisburseDebtPageProps {
   initialRequests?: ActionRequest[];
+  // EXPERIMENT disburse-debt-paging: total loans behind the first page
+  initialTotal?: number;
 }
 
 export default function DisburseDebtPage({
   initialRequests,
+  initialTotal,
 }: DisburseDebtPageProps) {
   return (
     <div>
@@ -23,7 +26,11 @@ export default function DisburseDebtPage({
         </p>
       </div>
 
-      <SharedDisburseDebtList userRole="super_admin" initialRequests={initialRequests} />
+      <SharedDisburseDebtList
+        userRole="super_admin"
+        initialRequests={initialRequests}
+        initialTotal={initialTotal}
+      />
     </div>
   );
 }

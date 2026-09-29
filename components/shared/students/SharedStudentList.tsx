@@ -4,15 +4,22 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
 import StudentFilters from "@/components/shared/filter/StudentFilters";
+import { useServerPagedList } from "@/hooks/useServerPagedList";
+import PagedListError from "@/components/shared/PagedListError";
 import StudentListTable, { Student } from "./StudentListItem";
 import PaymentEvidenceHistory from "./PaymentEvidenceHistory";
 import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 
 const defaultFilterTabs = ["ทั้งหมด", "มีคำร้องดำเนินการ", "มีหนี้คงเหลือ", "ชำระครบ", "เคยชำระล่าช้า"];
 
+// EXPERIMENT server-paging (revert: EXPERIMENT-server-paging.local.md)
+const STUDENT_TAB_PARAM: Record<string, string> = { "ชำระตรงเวลา": "on_time", "เคยชำระล่าช้า": "late" };
+
 interface SharedStudentListProps {
   rawRequests: ActionRequest[];
   filterTabs?: string[];
+  // With this set, `rawRequests` is page 1 (tab, search and degree unset) and the rest is fetched.
+  serverStudents?: { endpoint: string; initialTotal: number };
 }
 
 // ----------------------------------------------------
@@ -36,12 +43,44 @@ const getTranslateStatus = (status: string) => {
 };
 
 export default function SharedStudentList({
-  rawRequests,
+  rawRequests: initialRequests,
   filterTabs = defaultFilterTabs,
+  serverStudents,
 }: SharedStudentListProps) {
-  const [activeTab, setActiveTab] = useState("ทั้งหมด");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [degreeFilter, setDegreeFilter] = useState("ทั้งหมด");
+  const [activeTab, setActiveTabState] = useState("ทั้งหมด");
+  const [searchQuery, setSearchQueryState] = useState("");
+  const [degreeFilter, setDegreeFilterState] = useState("ทั้งหมด");
+  const [page, setPage] = useState(1);
+  const setActiveTab = (next: string) => {
+    setActiveTabState(next);
+    setPage(1);
+  };
+  const setSearchQuery = (next: string) => {
+    setSearchQueryState(next);
+    setPage(1);
+  };
+  const setDegreeFilter = (next: string) => {
+    setDegreeFilterState(next);
+    setPage(1);
+  };
+
+  const degree = degreeFilter === "ทั้งหมด" ? "" : degreeFilter;
+  const paged = useServerPagedList<ActionRequest>({
+    endpoint: serverStudents?.endpoint ?? "",
+    params: {
+      tab: STUDENT_TAB_PARAM[activeTab] ?? "all",
+      q: searchQuery,
+      degree,
+      page,
+      limit: 5,
+    },
+    atInitialView: !serverStudents || (activeTab === "ทั้งหมด" && !searchQuery && !degree && page === 1),
+    initialItems: initialRequests,
+    initialTotal: serverStudents?.initialTotal ?? 0,
+
+    onPageOverflow: setPage,
+  });
+  const rawRequests = serverStudents ? paged.items : initialRequests;
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   const mappedStudents: Student[] = rawRequests.map((req) => {
@@ -90,6 +129,7 @@ export default function SharedStudentList({
   });
 
   const filteredStudents = mappedStudents.filter((student) => {
+    if (serverStudents) return true; // the server already filtered
     const matchesSearch =
       student.name.includes(searchQuery) || student.studentId.includes(searchQuery);
 
@@ -134,7 +174,16 @@ export default function SharedStudentList({
       />
 
       <div className="mt-2">
-        <StudentListTable onStudentSelect={setSelectedStudent} students={filteredStudents} />
+        <PagedListError failed={paged.failed} />
+        <div className={paged.loading ? "opacity-50 transition-opacity" : undefined} aria-busy={paged.loading}>
+          <StudentListTable
+            onStudentSelect={setSelectedStudent}
+            students={filteredStudents}
+            serverPaging={
+              serverStudents ? { page, total: paged.total, pageSize: 5, onPageChange: setPage } : undefined
+            }
+          />
+        </div>
       </div>
       </div>
 
