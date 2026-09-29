@@ -1,5 +1,5 @@
 info:
-  name: Redirect to a short-lived signed URL for a fund transaction's slip evidence
+  name: Stream a fund transaction's slip evidence
   type: http
   seq: 1
   tags:
@@ -25,7 +25,7 @@ runtime:
   assertions:
     - expression: res.status
       operator: eq
-      value: "302"
+      value: "200"
   scripts:
     - type: before-request
       code: |-
@@ -41,7 +41,7 @@ settings:
   forwardAuthorizationHeader: true
 
 examples:
-  - name: 302 Response
+  - name: 200 Response
     description: Successful response
     request:
       url: "{{baseUrl}}/fund-transactions/:id/slip"
@@ -54,8 +54,8 @@ examples:
           value: "123"
           type: path
     response:
-      status: 302
-      statusText: Found
+      status: 200
+      statusText: OK
       body:
         type: text
         data: ""
@@ -168,4 +168,4 @@ examples:
             }
           }
 
-docs: 'Use it as an image source - `<img src="/api/fund-transactions/{id}/slip">`. Testing it from this page fails with "Failed to fetch": the 302 target is cross-origin and Supabase answers `Access-Control-Allow-Origin: `, which a credentialed fetch rejects. An `<img>` load is not a credentialed CORS request, so it is unaffected.'
+docs: 'Answers the slip itself (JPEG, PNG, GIF, WebP, BMP or AVIF). Use it as an image source - `<img src="/api/fund-transactions/{id}/slip">`.'

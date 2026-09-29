@@ -2,22 +2,24 @@ import { apiError } from "@/lib/api-response";
 import { getSignedInContext } from "@/lib/loan-auth";
 import { prisma } from "@/lib/prisma";
 import { canReadDisbursementSlip } from "@/lib/slip-access";
-import { SLIP_REDIRECT_CACHE_CONTROL, signSlipUrl } from "@/lib/slip-storage";
+import { serveSlip } from "@/lib/slip-storage";
 
 type Params = { params: Promise<{ id: string }> };
 
-// The slip bucket is private, so this route is the only way to read a slip: the signed URL is
-// minted per request and never stored. Authorization runs on every request that reaches the
-// server; the browser may reuse a 302 for up to SLIP_REDIRECT_CACHE_CONTROL's max-age, keyed on
-// the session cookie (Vary: Cookie) - fund transaction ids are sequential, so without Vary the
-// next user on a shared browser could replay a cached redirect just by walking the ids.
+// The slip bucket is private, so this route is the only way to read a slip: it streams the bytes
+// itself, so no storage URL - not even a short-lived signed one, which is a bearer link - ever
+// reaches the browser. Authorization runs on every request that reaches the server; the browser
+// may reuse the response for up to SLIP_CACHE_CONTROL's max-age, keyed on the session cookie
+// (Vary: Cookie) - fund transaction ids are sequential, so without Vary the next user on a shared
+// browser could replay a cached slip just by walking the ids.
+
 /**
- * Redirect to a short-lived signed URL for a fund transaction's slip evidence.
- * @description Use it as an image source - `<img src="/api/fund-transactions/{id}/slip">`. Testing it from this page fails with "Failed to fetch": the 302 target is cross-origin and Supabase answers `Access-Control-Allow-Origin: *`, which a credentialed fetch rejects. An `<img>` load is not a credentialed CORS request, so it is unaffected.
+ * Stream a fund transaction's slip evidence.
+ * @description Answers the slip image itself (JPEG, PNG, GIF, WebP, BMP or AVIF), so use it as an image source: `<img src="/api/fund-transactions/{id}/slip">`. No storage URL is ever returned.
  * @tag Fund slips
  * @pathParams FundTransactionIdParams
  * @auth cookieAuth
- * @response 302
+ * @response 200
  * @add 401:ApiErrorResponse
  * @add 403:ApiErrorResponse
  * @add 404:ApiErrorResponse
@@ -51,13 +53,9 @@ export async function GET(_request: Request, { params }: Params) {
     );
     if (!allowed) return apiError("FORBIDDEN", "Not allowed to read this slip", 403);
 
-    const url = await signSlipUrl({ path: transaction.slipPath });
-    return new Response(null, {
-      status: 302,
-      headers: { Location: url, "Cache-Control": SLIP_REDIRECT_CACHE_CONTROL, Vary: "Cookie" },
-    });
+    return await serveSlip({ path: transaction.slipPath });
   } catch (error) {
-    console.error("Unable to sign slip URL", error);
+    console.error("Unable to read slip", error);
     return apiError("INTERNAL_ERROR", "Unable to read slip", 500);
   }
 }

@@ -17,7 +17,7 @@ export type StudentPaymentBody = {
   amount: number;
   /** ISO 8601. Defaults to now when omitted; never in the future. */
   paidAt?: string | null;
-  /** The transfer slip: image/jpeg, image/png or application/pdf, up to 10MB. */
+  /** The transfer slip: an image (JPEG, PNG, GIF, WebP, BMP or AVIF), up to 1MB. */
   slip: string;
 };
 
@@ -497,6 +497,23 @@ export type SuperAdminUserListResponse = {
 
 export type SuperAdminUserResponse = {
   data: SuperAdminUser;
+};
+
+export type CreateManagedUserBody = {
+  fullNameTh: string;
+  email: string;
+  fullNameEn?: string;
+  role: "admin" | "super_admin";
+};
+
+export type EditExecutiveBody = {
+  fullNameTh: string;
+  email: string;
+  fullNameEn?: string;
+};
+
+export type SuperAdminUserDeleteResponse = {
+  data: { success: boolean; message: string };
 };
 
 export type FundLedgerKind =

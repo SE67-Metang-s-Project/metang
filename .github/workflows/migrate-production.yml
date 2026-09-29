@@ -1,0 +1,65 @@
+name: Migrate production database
+
+# Applies pending Prisma migrations to production (NAT-230). Run it by hand only, before the
+# deploy: back up, migrate, then deploy. The migrations have no down scripts and some cannot be
+# reversed, so the backup is the only way back.
+#
+# Setup (repository Settings > Environments): create the environment `production`, add required
+# reviewers, and add DIRECT_URL as an environment secret there. Never add it as a repository
+# secret: the job would then run without the reviewer approval.
+on:
+  workflow_dispatch:
+    inputs:
+      backup_taken:
+        description: "I took a database backup (maintenance guide section 5.2) and checked it."
+        type: boolean
+        required: true
+        default: false
+      confirm:
+        description: 'Type "migrate production" to confirm.'
+        type: string
+        required: true
+
+concurrency:
+  group: migrate-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    name: prisma migrate deploy
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - name: Check the confirmations
+        env:
+          BACKUP_TAKEN: ${{ inputs.backup_taken }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          if [ "$BACKUP_TAKEN" != "true" ]; then
+            echo "::error::Take and check a database backup first (maintenance guide section 5.2)."
+            exit 1
+          fi
+          if [ "$CONFIRM" != "migrate production" ]; then
+            echo "::error::The confirmation text does not match."
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Informational: `migrate status` exits non-zero whenever a migration is pending.
+      - name: Show migration status
+        run: npx prisma migrate status || true
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}

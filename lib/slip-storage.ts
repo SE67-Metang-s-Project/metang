@@ -1,16 +1,24 @@
 import "server-only";
 
-// ponytail: plain fetch against the Supabase Storage REST API, no @supabase/supabase-js -
-// three small HTTP calls don't need a client SDK dependency.
 const SLIP_BUCKET = process.env.SUPABASE_SLIP_BUCKET ?? "bank_payment_slips";
 
-const ALLOWED_SLIP_CONTENT_TYPES = ["image/jpeg", "image/png", "application/pdf"] as const;
-export const MAX_SLIP_BYTES = 10 * 1024 * 1024;
+const ALLOWED_SLIP_CONTENT_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/bmp",
+  "image/avif",
+] as const;
+export const MAX_SLIP_BYTES = 1 * 1024 * 1024;
 
 const SLIP_CONTENT_TYPE_EXTENSIONS: Record<(typeof ALLOWED_SLIP_CONTENT_TYPES)[number], string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
-  "application/pdf": "pdf",
+  "image/gif": "gif",
+  "image/webp": "webp",
+  "image/bmp": "bmp",
+  "image/avif": "avif",
 };
 
 /** Maps a slip's content type to a file extension, or null if it is not an allowed slip type. */
@@ -85,8 +93,6 @@ export async function uploadSlip({
       apikey: serviceRoleKey,
       "content-type": contentType,
     },
-    // ponytail: @types/node's generic Uint8Array<ArrayBufferLike> vs. lib.dom's BodyInit is a
-    // known TS typing friction point; Uint8Array is a valid fetch body at runtime.
     body: bytes as BodyInit,
   });
 
@@ -98,48 +104,53 @@ export async function uploadSlip({
   }
 }
 
-/** How long a signed slip URL stays valid. */
-export const SLIP_URL_TTL_SECONDS = 300;
+// Slips are served by the app, never by a storage URL: a signed URL is a bearer link, so anyone it
+// reached - a copied address bar, a forwarded chat message - could open the slip with no session
+// until it expired. Streaming the bytes keeps every read behind the slip routes' authorization.
 
 /**
- * Cache-Control for the slip routes' 302. The browser may reuse the redirect (and so the signed
- * URL it points at) for a while, but it must expire at least 60s before the token does, or a
- * cached redirect would lead to an expired URL. Pair it with `Vary: Cookie` so a different or
- * missing session - the next user on a shared browser - misses the cache and is re-authorized.
+ * Cache-Control for a served slip. Only the browser may keep it (private), and it is paired with
+ * `Vary: Cookie` so a different or missing session - the next user on a shared browser - misses
+ * the cache and is re-authorized.
  */
-export const SLIP_REDIRECT_CACHE_CONTROL = `private, max-age=${SLIP_URL_TTL_SECONDS - 60}`;
+export const SLIP_CACHE_CONTROL = "private, max-age=300";
 
-export async function signSlipUrl({
-  path,
-  expiresInSeconds = SLIP_URL_TTL_SECONDS,
-}: {
-  path: string;
-  expiresInSeconds?: number;
-}): Promise<string> {
+/** The type a slip is served as, from the extension buildSlipPath chose - never from storage. */
+export function slipContentTypeForPath(path: string): string {
+  const ext = path.slice(path.lastIndexOf(".") + 1);
+  const match = Object.entries(SLIP_CONTENT_TYPE_EXTENSIONS).find(([, value]) => value === ext);
+  return match?.[0] ?? "application/octet-stream";
+}
+
+/**
+ * Downloads a slip from the private bucket and streams it back as the slip route's 200 response.
+ * The caller must have authorized the reader first.
+ */
+export async function serveSlip({ path }: { path: string }): Promise<Response> {
   const supabaseUrl = getRequiredEnv("SUPABASE_URL");
   const serviceRoleKey = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
 
-  const response = await fetch(`${supabaseUrl}/storage/v1/object/sign/${SLIP_BUCKET}/${path}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${serviceRoleKey}`,
-      apikey: serviceRoleKey,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({ expiresIn: expiresInSeconds }),
-  });
+  const response = await fetch(
+    `${supabaseUrl}/storage/v1/object/authenticated/${SLIP_BUCKET}/${path}`,
+    { headers: { Authorization: `Bearer ${serviceRoleKey}`, apikey: serviceRoleKey } },
+  );
 
   if (!response.ok) {
     throw new SlipStorageError(
-      `Supabase Storage sign failed with HTTP ${response.status}: ${await response.text()}`,
+      `Supabase Storage download failed with HTTP ${response.status}: ${await response.text()}`,
       response.status,
     );
   }
 
-  const result = (await response.json()) as { signedURL?: string };
-  if (!result.signedURL) {
-    throw new SlipStorageError("Supabase Storage sign response is missing signedURL");
-  }
-
-  return `${supabaseUrl}/storage/v1${result.signedURL}`;
+  return new Response(response.body, {
+    status: 200,
+    headers: {
+      "Content-Type": slipContentTypeForPath(path),
+      "Cache-Control": SLIP_CACHE_CONTROL,
+      Vary: "Cookie",
+      // The slip is now served from the app's own origin: never let the browser sniff an upload
+      // whose declared type was a lie into HTML.
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 }

@@ -2492,6 +2492,38 @@
           "error"
         ]
       },
+      "CreateManagedUserBody": {
+        "type": "object",
+        "properties": {
+          "fullNameTh": {
+            "type": "string",
+            "description": "Must look like an email; its local part becomes the CMU account.",
+            "nullable": false
+          },
+          "email": {
+            "type": "string",
+            "description": "Must look like an email; its local part becomes the CMU account.",
+            "nullable": false
+          },
+          "fullNameEn": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "super_admin"
+            ],
+            "nullable": false
+          }
+        },
+        "required": [
+          "fullNameTh",
+          "email",
+          "role"
+        ]
+      },
       "DisburseLoanRequestBody": {
         "type": "object",
         "properties": {
@@ -2502,6 +2534,29 @@
         },
         "required": [
           "slip"
+        ]
+      },
+      "EditExecutiveBody": {
+        "type": "object",
+        "properties": {
+          "fullNameTh": {
+            "type": "string",
+            "description": "A different email hands the executive role to a new person; one already in use is refused.",
+            "nullable": false
+          },
+          "email": {
+            "type": "string",
+            "description": "A different email hands the executive role to a new person; one already in use is refused.",
+            "nullable": false
+          },
+          "fullNameEn": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "fullNameTh",
+          "email"
         ]
       },
       "ExecutiveDecisionBody": {
@@ -5876,7 +5931,7 @@
           },
           "slip": {
             "type": "string",
-            "description": "The transfer slip: image/jpeg, image/png or application/pdf, up to 10MB.",
+            "description": "The transfer slip: an image (JPEG, PNG, GIF, WebP, BMP or AVIF), up to 1MB.",
             "nullable": false
           }
         },
@@ -6088,6 +6143,29 @@
           "createdAt",
           "updatedAt",
           "roles"
+        ]
+      },
+      "SuperAdminUserDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "success",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "SuperAdminUserListResponse": {
@@ -7828,8 +7906,8 @@
     "/fund-transactions/{id}/slip": {
       "get": {
         "operationId": "get-fund-transactions-{id}-slip",
-        "summary": "Redirect to a short-lived signed URL for a fund transaction's slip evidence.",
-        "description": "Use it as an image source - `<img src=\"/api/fund-transactions/{id}/slip\">`. Testing it from this page fails with \"Failed to fetch\": the 302 target is cross-origin and Supabase answers `Access-Control-Allow-Origin: `, which a credentialed fetch rejects. An `<img>` load is not a credentialed CORS request, so it is unaffected.",
+        "summary": "Stream a fund transaction's slip evidence.",
+        "description": "Answers the slip image itself (JPEG, PNG, GIF, WebP, BMP or AVIF), so use it as an image source: `<img src=\"/api/fund-transactions/{id}/slip\">`. No storage URL is ever returned.",
         "tags": [
           "Fund slips"
         ],
@@ -7852,14 +7930,43 @@
           }
         ],
         "responses": {
-          "302": {
-            "description": "Successful response",
-            "headers": {
-              "Location": {
-                "description": "Redirect target URL",
+          "200": {
+            "description": "The slip file.",
+            "content": {
+              "image/jpeg": {
                 "schema": {
                   "type": "string",
-                  "format": "uri"
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/bmp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/avif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -8189,8 +8296,8 @@
     "/payments/{id}/slip": {
       "get": {
         "operationId": "get-payments-{id}-slip",
-        "summary": "Redirect to a short-lived signed URL for a payment's repayment slip evidence.",
-        "description": "Use it as an image source - `<img src=\"/api/payments/{id}/slip\">`. Testing it from this page fails with \"Failed to fetch\": the 302 target is cross-origin and Supabase answers `Access-Control-Allow-Origin: `, which a credentialed fetch rejects. An `<img>` load is not a credentialed CORS request, so it is unaffected.",
+        "summary": "Stream a payment's repayment slip evidence.",
+        "description": "Answers the slip image itself (JPEG, PNG, GIF, WebP, BMP or AVIF), so use it as an image source: `<img src=\"/api/payments/{id}/slip\">`. No storage URL is ever returned.",
         "tags": [
           "Payment slips"
         ],
@@ -8213,14 +8320,43 @@
           }
         ],
         "responses": {
-          "302": {
-            "description": "Successful response",
-            "headers": {
-              "Location": {
-                "description": "Redirect target URL",
+          "200": {
+            "description": "The slip file.",
+            "content": {
+              "image/jpeg": {
                 "schema": {
                   "type": "string",
-                  "format": "uri"
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/bmp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/avif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -9290,13 +9426,271 @@
             }
           }
         }
+      },
+      "post": {
+        "operationId": "post-super-admin-users",
+        "summary": "Add a staff member (admin or super_admin).",
+        "description": "Grants the role to the user with this email or CMU account if one exists (a person who has signed in before), otherwise creates the user. They sign in later with CMU SSO.",
+        "tags": [
+          "SuperAdmin roles"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateManagedUserBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuperAdminUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/super-admin/users/{id}": {
+      "patch": {
+        "operationId": "patch-super-admin-users-{id}",
+        "summary": "Edit the executive's name and email.",
+        "description": "Only the executive can be edited. The same email fixes the names in place. A different email hands the executive role to a new person created from it, and the response is the new executive; the previous executive keeps their other roles and history. An email or CMU account that already belongs to another user is refused with 409.",
+        "tags": [
+          "SuperAdmin roles"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditExecutiveBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuperAdminUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-super-admin-users-{id}",
+        "summary": "Remove a staff member (admin or super_admin).",
+        "description": "Takes away the user's admin and super_admin roles and hands their open pending_admin/pending_executive loans to the calling SuperAdmin. The user record stays, so their past decisions keep their name. Refused for the caller themself (a leaving SuperAdmin is removed by a successor), for the final SuperAdmin, and for the executive, who is replaced through PATCH instead.",
+        "tags": [
+          "SuperAdmin roles"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuperAdminUserDeleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/super-admin/users/{id}/roles": {
       "post": {
         "operationId": "post-super-admin-users-{id}-roles",
         "summary": "Grant or remove a predefined role for an application user.",
-        "description": "",
+        "description": "Removing `admin` or `super_admin` from someone left with neither hands their open pending_admin/pending_executive loans to the calling SuperAdmin. Refused with 409: removing the final `super_admin`, removing your own `super_admin` (a successor removes you), removing `executive` (edit the executive instead), and granting a second `executive`.",
         "tags": [
           "SuperAdmin roles"
         ],

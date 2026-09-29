@@ -1,8 +1,8 @@
 # Me_Tang Maintenance Guide
 
 Version covered: Me_Tang 0.1.0 (`package.json` version `0.1.0`)
-Document version: 1.1 draft
-Date: 2026-09-28
+Document version: 1.4 draft
+Date: 2026-09-29
 
 ---
 
@@ -20,8 +20,7 @@ bank transfer, and the student repays in installments by uploading bank-transfer
 
 ### 1.2 Audience and required skills
 
-This guide is for the IT staff who operate Me_Tang after delivery
-`[TO VERIFY: confirm the receiving team and their skill level with the client]`.
+This guide is for the IT staff who operate Me_Tang after delivery.
 
 You need these skills:
 
@@ -71,7 +70,7 @@ hosted services.
 | Web application | Vercel (serverless functions) | Serves all pages and the API under `/metang/api/`. |
 | Scheduled jobs | Chosen at server start by `instrumentation.ts` (`lib/jobs/runtime.ts`) | On Vercel (`VERCEL=1`): Vercel Cron calls the five `/metang/api/cron/` routes from `vercel.json`. On a server that keeps running (`next start`, `npm run dev`): the server runs the same five jobs on its own timers. |
 | Database | Supabase PostgreSQL | Stores users, roles, loan requests, approvals, installments, payments, the fund ledger, the notification outbox, the audit log, and system settings. |
-| Slip storage | Supabase Storage, private bucket `bank_payment_slips` | Stores bank-transfer slip files (JPEG, PNG, PDF) for disbursements and repayments. |
+| Slip storage | Supabase Storage, private bucket `bank_payment_slips` | Stores bank-transfer slip files (images of 1 MB or less) for disbursements and repayments. |
 | Sign-in | CMU Entra ID (OAuth 2.0) and CMU BasicInfo API | Signs users in with their CMU IT Account and reads their profile. |
 | Reviewer notifications | CMU LINE notification API ("FON") | Sends LINE messages to the advisor, admin, or executive who must act on a request. |
 | Student emails | CMU Email API (Outlook) | Sends repayment due-date reminders to students. Tells students when their request is rejected, when the loan is disbursed, and when an admin confirms or rejects a repayment slip. |
@@ -79,16 +78,39 @@ hosted services.
 
 All pages and API routes are served under the base path `/metang`, for example
 `https://<host>/metang/login` and `https://<host>/metang/api/cron/deliver-fon`. A request to an
-old path without `/metang` (`/`, `/login`, `/student/...`, `/user/...`, `/api/...`,
+old path without `/metang` (`/`, `/login`, `/student/...`, `/api/...`,
 `/openapi.json`, and most public files) gets a temporary `307` redirect to the same path under
 `/metang` (`redirects()` in `next.config.ts`). The browser repeats a `POST` with its body after
 this redirect. Vercel Cron does not follow redirects, so every `path` in `vercel.json` must start
 with `/metang/api/cron/`.
 
+The base path `/metang` is the default. The build reads a different one from the environment
+variable `PUBLIC_SUBPATH` (Section 7.1), for example a client server that serves the application
+under `/loan`. The value is fixed when the application is built: change it, then build again. The
+server must start with the same value.
+
+The sign-in cookies (`cmu_session` and `cmu_oauth`) are set for the base path only, for example
+`Path=/metang`. Other applications on the same domain do not receive them. When the application is
+served from the root (`PUBLIC_SUBPATH` empty), the path is `/`. Sessions that were issued before
+this change have a cookie with path `/`. Such a cookie keeps working until the user signs in again
+or signs out; both actions remove it.
+
+Behind a reverse proxy, the proxy must tell the application which address the browser used.
+Next.js reads only `X-Forwarded-Proto` by itself and takes the host from its own listen address
+(for example `127.0.0.1:3000`), so the application reads the public host from `X-Forwarded-Host`,
+or from `Host` when that is not set (`lib/public-origin.ts`). The same-origin check on POST
+requests and the redirects after sign-in and sign-out depend on it. With nginx:
+
+```nginx
+proxy_set_header Host $host;
+proxy_set_header X-Forwarded-Host $host;
+proxy_set_header X-Forwarded-Proto $scheme;
+```
+
 The Vercel project needs the Pro plan or higher. The `vercel.json` schedules run every minute and
 every 3 minutes, and the Hobby plan allows only daily cron jobs (Section 2.3).
 
-`[TO VERIFY: the production Vercel project, the Vercel plan in use, the Supabase project, and the Supabase plan. Production deployment (Jira NAT-15) was not complete when this guide was written.]`
+`[TO VERIFY: the deploy platform is not chosen (Jira NAT-15, NAT-228). If it is Vercel and Supabase, confirm the production Vercel project and plan and the Supabase project and plan. If the client hosts the application itself, use Section 6.4 and ignore the Vercel parts of this guide.]`
 
 ### 2.2 How the components connect
 
@@ -169,13 +191,36 @@ Delivery rules:
 - If `installment-reminders` does not run on a day, the reminders for that day are not
   created later. There is no catch-up.
 
+#### Jobs on a host that stops idle servers
+
+Container platforms that stop or scale an idle instance (for example Cloud Run or Knative) can
+stop the built-in timers. Set `ENABLE_JOB_SCHEDULER=false` and let a scheduler outside the
+application call the five routes. Each call is a `GET` with the header
+`Authorization: Bearer <CRON_SECRET>`. A missing or wrong secret returns `401`. Use the public
+address and the sub path of the deployment (`PUBLIC_SUBPATH`, `/metang` by default). System cron
+example, with the schedules of `vercel.json`:
+
+```cron
+# m   h  dom mon dow  command  (server time zone: UTC; the daily job runs at 08:00 Bangkok time)
+0     1  *   *   *    curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://<host>/metang/api/cron/installment-reminders
+*/3   *  *   *   *    curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://<host>/metang/api/cron/deliver-reminders
+*     *  *   *   *    curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://<host>/metang/api/cron/deliver-fon
+*/3   *  *   *   *    curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://<host>/metang/api/cron/deliver-payment-outcomes
+*/3   *  *   *   *    curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://<host>/metang/api/cron/deliver-loan-outcomes
+```
+
+Set `CRON_SECRET` in the environment of the cron user (a Kubernetes `CronJob` or a systemd timer
+works the same way). Use the public `https` address, not an internal one, and do not rely on a
+redirect: a scheduler that does not follow redirects would stop without an error. Check that it
+works with `curl -i` on one route: `200` and a JSON body with a count means the job ran.
+
 ### 2.4 Locations of data, logs, configuration, and backups
 
 | What | Where |
 |---|---|
 | Application data | Supabase PostgreSQL, schema `public`. Main tables: `app_user`, `user_role`, `loan_request`, `loan_approval`, `installment`, `payment`, `fund_transaction`, `notification_outbox`, `audit_log`, `system_setting`, `_prisma_migrations`. |
 | Slip files | Supabase Storage bucket `bank_payment_slips` (or the name in `SUPABASE_SLIP_BUCKET`). Object names are `disbursement/<loan-id>-<timestamp>.<ext>` and `repayment/<loan-id>-<timestamp>.<ext>`. |
-| Secrets and environment settings | Infisical project `721bea71-5be4-426d-9b76-23e2e4333286`, environments `dev` and `prod`. Vercel project **Settings** > **Environment Variables** `[TO VERIFY: how production secrets reach Vercel, by Infisical integration or by manual copy]`. |
+| Secrets and environment settings | Infisical project `721bea71-5be4-426d-9b76-23e2e4333286`, environments `dev` and `prod`. Vercel project **Settings** > **Environment Variables** `[TO VERIFY: only if the platform is Vercel: how production secrets reach Vercel, by Infisical integration or by manual copy]`. |
 | In-app settings (bank account and office contact shown to users) | Table `system_setting` (one row). Edited by a SuperAdmin in the application. |
 | Scheduled job definitions | `lib/jobs/start-scheduler.ts` in the repository. |
 | Application logs | Vercel Dashboard: project > **Logs**. The application writes errors to the console only. There is no other log store and no error-tracking service. |
@@ -194,8 +239,8 @@ These gaps exist in the delivered software. They affect maintenance.
 | No backup of slip files | Supabase database backups do not include Storage files. | Section 5 |
 | No monitoring or alerting | Nobody is told when a job fails. You must check by hand. | Section 8 |
 | Two ways to run the scheduled jobs | On Vercel, the `vercel.json` schedules need the Pro plan (Hobby allows only daily jobs and rejects the deployment). On other serverless hosts, an outside scheduler must call the routes. | Section 2.3 |
-| No continuous delivery pipeline and no npm script for the unit tests | Updates are manual. `npm run api:test` runs the API tests. The unit tests in `tests/` run with `npx tsx --test` (Section 6.2). (Jira NAT-213 and NAT-209, open.) | Section 6 |
-| No SuperAdmin setup screen | The first SuperAdmin must be added with SQL. | Section 3.3 |
+| No automatic deployment | GitHub Actions checks every push (Section 6), but nothing deploys the result. Updates are manual: `npm test` runs the unit tests, `npm run api:test` runs the API tests (Section 6.2). (Jira NAT-228 to NAT-230, open.) | Section 6 |
+| No screen for the first SuperAdmin or for the `advisor` role | The first SuperAdmin must be added with SQL. Later admins and SuperAdmins are added on the SuperAdmin screen. No screen grants `advisor` (Section 3.2). | Section 3.3 |
 | Some fields on the SuperAdmin contact and bank settings screen are not saved to the database | Opening hours, the closed-days note, and the faculty address details are kept only in the browser (`localStorage` key `metang-system-address`) of the person who saved them. Other users do not see the change. The bank code is not stored: the screen finds it again from the stored bank name. (Jira NAT-200/NAT-203 are marked Done, but this part is not built.) | Section 7.2 |
 | Loan reports are printed from the browser | There is no server-generated PDF file. The report uses the browser print dialog. | None |
 | Automated tests check source text, not a running user interface | Passing tests do not prove that the pages work. Test by hand after each update. | Section 6.2 |
@@ -210,19 +255,21 @@ You need these accounts. Never share one account between people.
 
 | Account | Used for | Who issues it |
 |---|---|---|
-| Vercel project member | Deployments, logs, cron job status, environment variables, rollback | Vercel project owner `[TO VERIFY]` |
-| Supabase project member | SQL Editor, backups, Storage, usage, database password | Supabase organization owner `[TO VERIFY]` |
-| Infisical project member | Read and change secrets in `dev` and `prod` | Infisical project admin `[TO VERIFY]` |
-| CMU Entra app registration access | Callback URL, client secret renewal | CMU ITSC `[TO VERIFY]` |
+| Vercel project member | Deployments, logs, cron job status, environment variables, rollback | Vercel project owner `[TO VERIFY: only if the platform is Vercel]` |
+| Supabase project member | SQL Editor, backups, Storage, usage, database password | Supabase organization owner `[TO VERIFY: only if Supabase is used]` |
+| Infisical project member | Read and change secrets in `dev` and `prod` | Infisical project admin `[TO VERIFY: only if production secrets stay in Infisical]` |
+| CMU Entra app registration access | Callback URL, client secret renewal | CMU ITSC |
 | CMU Email API client | Student emails | CMU Faculty of Nursing MIS (`docs/Email_API_Manual.md`) |
-| CMU LINE FON API token | Reviewer LINE messages | CMU ITSC / MIS `[TO VERIFY: issuer of the FON API token]` |
+| CMU LINE FON API token | Reviewer LINE messages | CMU ITSC / MIS |
 | Me_Tang SuperAdmin role | Grant roles, fund ledger, system settings | Another SuperAdmin, or SQL for the first one (Section 3.3) |
 | Git repository access | Updates (Section 6) | An owner of the GitHub organization `SE67-Metang-s-Project`. The repository `SE67-Metang-s-Project/metang` is public: anyone can clone it, but write access needs an organization owner `[TO VERIFY: confirm who takes ownership after hand-over]` |
 
 ### 3.2 Application roles
 
 A user gets the `student` role automatically at first sign-in when the CMU profile is a
-student account. A SuperAdmin grants every other role in the application.
+student account. The SuperAdmin screen (**ตั้งค่าระบบ** > **ผู้ใช้และบทบาท**) adds `admin` and
+`super_admin` users and switches a user to `executive`. No screen grants `advisor`: grant it
+with the SQL of Section 3.3, using `advisor` in place of `super_admin`, and record who ran it.
 
 | Role | Can do |
 |---|---|
@@ -230,7 +277,7 @@ student account. A SuperAdmin grants every other role in the application.
 | `advisor` | Approve, return, or reject requests of their own advisees. A comment is required. |
 | `admin` | Review requests, set the approved amount, record disbursement with a slip, confirm or reject repayment slips. The due-date email API (`POST /metang/api/notifications/outlook`) is open to admins, but version 0.1.0 has no button for it. |
 | `executive` | Final decision: approve, return to the admin, or reject. The database allows only one `executive`. |
-| `super_admin` | Everything an admin can do, plus grant and revoke roles, record fund transactions, and edit system settings. The last `super_admin` cannot be removed in the application. |
+| `super_admin` | Everything an admin can do, plus add, edit, and delete `admin` and `super_admin` users, grant and revoke roles, record fund transactions, and edit system settings. The last `super_admin` cannot be removed in the application. |
 
 Any CMU account can sign in. Staff pages depend only on the roles that a SuperAdmin grants.
 The student functions need a student ID that matches the Faculty of Nursing pattern
@@ -242,6 +289,19 @@ Role changes have side effects:
 - When a SuperAdmin revokes the `admin` role, that admin's requests in `pending_admin` and
   `pending_executive` move to the SuperAdmin who revoked the role. The audit log records
   `loan_request.admin_reassigned`.
+- Deleting an `admin` or `super_admin` user removes those two roles and moves the same requests to
+  the SuperAdmin who deletes. It does not disable the account: a person who keeps another role,
+  such as `advisor`, can still sign in. Only the SuperAdmin screen deletes users; the last
+  `super_admin` and the `executive` cannot be deleted there (edit the executive instead), and
+  nobody can delete their own account.
+- The `app_user` row is deleted only when no role is left and no other table refers to it. A
+  person with history, such as `audit_log` rows or loan approvals, keeps the row so that the
+  history stays. The `user.deleted` audit row has `after.rowDeleted` set to `true` or `false`.
+- Add user and Edit accept only addresses at `cmu.ac.th`, the domain the email API sends to. Add
+  user finds an existing person by the address or by the account name before `@`; it keeps their
+  old names in `before` of the `user_role.granted` audit row.
+- The audit log records these user changes as `user.created`, `user.updated`, `user.deleted`,
+  `user_role.granted`, and `user_role.removed`.
 - To change the executive, revoke the role from the current executive first. A second
   `executive` grant fails with `EXECUTIVE_ALREADY_EXISTS`.
 
@@ -304,7 +364,7 @@ AND user_id = (SELECT id FROM app_user WHERE email = 'replace-with-email@cmu.ac.
 - This guide never contains a secret value. Section 7.1 lists which settings are secrets.
 
 > **WARNING:** With `INFISICAL_ENV=prod` in `.env`, every `npm run db:*` command acts on the
-> production database, and `npm run build` uses the production secrets. `npm run db:seed` and
+> production database, and `npm run build:infisical` uses the production secrets. `npm run db:seed` and
 > `npm run db:reset` have no
 > production check. `db:reset` deletes all users, loans, payments, ledger rows, notifications,
 > and audit history. Keep `INFISICAL_ENV=dev` except during the production steps of Section 6.2.
@@ -438,8 +498,7 @@ Steps:
    SELECT count(*), min(created_at) AS oldest FROM payment WHERE status = 'pending_review';
    ```
 
-Expected result: the `oldest` values are recent. Tell the fund office about old items
-`[TO VERIFY: target review time agreed with the fund office]`.
+Expected result: the `oldest` values are recent. Tell the fund office about old items.
 
 ### 4.5 Verify backups
 
@@ -466,7 +525,7 @@ Steps:
 
 1. Open the Supabase Dashboard: **Organization** > **Usage**.
 2. Note the database size and the storage size.
-3. Compare them with the plan limits `[TO VERIFY: Supabase plan and its limits]`.
+3. Compare them with the plan limits `[TO VERIFY: only if Supabase is used: its plan and limits]`.
 4. Run this query to see which tables grow:
 
    ```sql
@@ -483,8 +542,8 @@ Purpose: keep `notification_outbox` small. The application never deletes rows fr
 
 Prerequisites:
 
-- The fund office agrees on how long to keep delivery history
-  `[TO VERIFY: retention period; 180 days is used below as an example]`.
+- The fund office agrees on how long to keep delivery history (this guide uses 180 days as an
+  example).
 - A backup from today (Section 5.2).
 
 > **WARNING:** Deleted rows cannot be recovered without a backup restore. Take a backup
@@ -589,10 +648,10 @@ Prerequisites: access to Infisical `prod` and to the issuer of the secret.
 
 | Secret | Effect when it stops working | Notes |
 |---|---|---|
-| `CLIENT_SECRET` | Nobody can sign in (`token_exchange_failed`). | Entra client secrets have an expiry date `[TO VERIFY: expiry date from CMU ITSC]`. |
+| `CLIENT_SECRET` | Nobody can sign in (`token_exchange_failed`). | Entra client secrets have an expiry date. Ask CMU ITSC for the date. |
 | `SESSION_SECRET` | Changing it signs out every user. | At least 32 characters. Create one with `openssl rand -base64 32`. |
 | `CRON_SECRET` | The job scheduler does not start. Outside callers of `/metang/api/cron/` get `401 Unauthorized`. | The scheduler sends it as `Authorization: Bearer <value>`. Restart the server after a change. |
-| `NOTIFY_API_TOKEN` | LINE messages fail. | Issued by CMU `[TO VERIFY]`. |
+| `NOTIFY_API_TOKEN` | LINE messages fail. | Issued by CMU. |
 | `EMAIL_API_CLIENT_ID`, `EMAIL_API_CLIENT_SECRET` | All student emails fail: reminders, request results, disbursements, and repayment slip results. | Issued by the CMU Faculty of Nursing, which runs the Email API at `https://mis.nurse.cmu.ac.th/thesis` (`docs/Email_API_Manual.md`). |
 | `SUPABASE_SERVICE_ROLE_KEY` | Slip upload and slip viewing fail. | Supabase Dashboard: **Project Settings** > **API**. |
 | Database password in `DATABASE_URL` and `DIRECT_URL` | The whole application fails. | Supabase Dashboard: **Project Settings** > **Database**. |
@@ -607,11 +666,12 @@ Steps:
 2. Open Infisical, select the project, and select the `prod` environment.
 3. Replace the value of the secret.
 4. Copy the value to Vercel **Settings** > **Environment Variables** (Production), if the
-   project does not sync from Infisical `[TO VERIFY]`.
+   project does not sync from Infisical
+   `[TO VERIFY: only if the platform is Vercel: whether the project syncs from Infisical]`.
 5. In Vercel, open **Deployments**, open the menu of the current production deployment, and
    select **Redeploy**.
-   Expected result: the new deployment becomes **Ready**. If the build fails with
-   `Missing .env`, the Build Command is `npm run build`. Set it to `next build` (Section 9).
+   Expected result: the new deployment becomes **Ready**. The Build Command is `npm run build`,
+   which is plain `next build` and needs no `.env`.
 6. Do the health check (Section 4.2).
 
 To undo: put the old value back and redeploy, if the old value is still valid.
@@ -628,8 +688,7 @@ Steps:
 1. Open the production URL in a browser.
 2. Check that the address starts with `https://` and the browser shows no certificate warning.
 
-Expected result: the certificate is valid. Vercel renews certificates for domains it manages
-`[TO VERIFY: custom domain and who manages its DNS]`.
+Expected result: the certificate is valid. Vercel renews certificates for domains it manages.
 
 ---
 
@@ -641,11 +700,11 @@ Expected result: the certificate is valid. Vercel renews certificates for domain
 |---|---|---|
 | Database (all tables in schema `public`) | Yes, on Pro plan or higher. Pro keeps 7 days. | Supabase automatic backup, plus a weekly manual dump (5.2). |
 | Slip files in `bank_payment_slips` | No. Database backups contain only file metadata. | Manual download (5.3). |
-| Secrets | No | Infisical keeps secret history. Export a copy to a password manager or safe `[TO VERIFY: client policy]`. |
+| Secrets | No | Infisical keeps secret history. Export a copy to a password manager or safe. |
 | Scheduled jobs and code | Not applicable | The Git repository. |
 
-Store off-site backup files outside Supabase, in storage that the client controls
-`[TO VERIFY: storage location]`. Backup files contain personal data and bank account numbers.
+Store off-site backup files outside Supabase, in storage that the client controls.
+Backup files contain personal data and bank account numbers.
 Encrypt them and limit access.
 
 ### 5.2 Take a manual database backup
@@ -753,8 +812,8 @@ Steps:
    bucket had 83 rows: 81 slip files and 2 placeholders. The script downloaded 81 files.
 5. Store the folder `slips-YYYYMMDD` with the database backup.
 
-`[TO VERIFY: the Supabase Dashboard download and the S3-compatible endpoint (for example with
-rclone) were not tested.]`
+Not tested: the Supabase Dashboard download and the S3-compatible endpoint (for example with
+rclone).
 
 ### 5.4 Restore the database
 
@@ -783,9 +842,9 @@ command in step 2. The command ran two times: into the empty database, and again
 restored data. Both runs ended with exit code 0 and no messages. Row counts, the fund balance,
 the latest migration, and the sequence values were the same as in the dev project.
 
-`[TO VERIFY: these were not tested: a restore into a new Supabase project, the bucket and
-upload in step 3, the settings change in step 4, and Section 5.5 steps 4 and 5. Test them once
-before you need them in an incident.]`
+Not tested: a restore into a new Supabase project, the bucket and upload in step 3, the settings
+change in step 4, and Section 5.5 steps 4 and 5. Test them once before you need them in an
+incident.
 
 1. Tell users to stop work until the restore is verified. The application has no maintenance
    mode.
@@ -842,22 +901,31 @@ before you need them in an incident.]`
 3. Run the fund balance query from Section 4.9. Expected result: the balance recorded at
    backup time.
 4. Sign in as a SuperAdmin. Open a disbursed loan and open its slip.
-   Expected result: the slip image or PDF opens.
+   Expected result: the slip image opens. A slip that was uploaded as a PDF before the image-only
+   rule is sent as a file download, not shown in the page.
 5. Do the health check (Section 4.2).
 
 ---
 
 ## 6. Updates and upgrades
 
-Updates need the source repository, Node.js 24, and npm. There is no continuous delivery
-pipeline (Jira NAT-213 is open). `[TO VERIFY: whether Vercel deploys automatically from the
-Git branch `main`. `vercel.json` has no `git` settings, so a Vercel project that is connected to
-the repository deploys each push to its production branch.]`
+Updates need the source repository, Node.js 24, and npm. The GitHub workflow `CI`
+(`.github/workflows/ci.yml`) runs on every push to every branch: lint, type check, build, the unit
+tests, and the API tests. It does not deploy: there is no automatic deployment yet (Jira
+NAT-228, because the client's platform is not chosen). `CI` passed on `main` at commit `1c69183`
+on 2026-09-29: all three jobs (unit tests, lint with type check and build, and API tests) were green.
+``[TO VERIFY: the first run of **Migrate production database** on GitHub. It needs a production
+database and the GitHub environment `production` (Section 6.2, after step 8), which do not exist yet.
+Only if the platform is Vercel: whether Vercel deploys automatically from the Git branch `main`.
+`vercel.json` has no `git` settings, so a Vercel project that is connected to the repository
+deploys each push to its production branch.]``
 
 ### 6.1 Pre-update checklist
 
 - [ ] Read the change list. Note every new folder under `db/migrations/`.
 - [ ] Read the SQL of each new migration. Look for `DROP`, `RENAME`, and data updates.
+- [ ] Open the **Actions** tab of the GitHub repository and check that the `CI` run for the
+      commit you deploy is green.
 - [ ] Take a database backup (Section 5.2).
 - [ ] Note the current production deployment in Vercel **Deployments**, for rollback.
 - [ ] Choose a time with few users. Tell the fund office.
@@ -872,7 +940,9 @@ the repository deploys each push to its production branch.]`
    npm ci
    ```
 
-   Expected result: no errors. Prisma Client is generated automatically.
+   Expected result: no errors. Prisma Client is generated automatically. `npm ci` also turns
+   on the pre-push hook (`.githooks/pre-push`), which runs `npm run lint` and `npx tsc --noEmit`
+   before every `git push`. Do not skip it with `git push --no-verify` on `main`.
 3. Run the code checks:
 
    ```bash
@@ -886,12 +956,11 @@ the repository deploys each push to its production branch.]`
    Then run the unit tests. They read the source files and need no database:
 
    ```bash
-   npx tsx --test tests/*.test.ts tests/*.test.mjs
+   npm test
    ```
 
-   Expected result: the summary line `ℹ fail 0`. On version 0.1.0, 16 tests fail (Jira
-   NAT-209). Compare the failed test names with the previous version: a new failure needs a
-   developer.
+   Expected result: the summary line `ℹ fail 0`. At the time of writing, 483 tests pass. A
+   failure needs a developer. CI runs the same command.
 4. Run the API tests. They use a temporary local PostgreSQL in Docker (port `5433`) and a
    test app on port `8081`. They never touch the real database.
 
@@ -926,12 +995,23 @@ the repository deploys each push to its production branch.]`
 
    Expected result: each new migration is reported as applied.
 8. Open `.env` and set `INFISICAL_ENV=dev` again.
-9. Deploy the application to production `[TO VERIFY: by Git push to the production branch, or
-   by `vercel deploy --prod`]`.
 
-   Note: `npm run build` fails on a computer or build server without a `.env` file, because
-   `scripts/with-infisical.mjs` requires it. Set the Vercel **Build Command** to `next build`
-   `[TO VERIFY with a test deployment]`.
+   Instead of steps 5 to 8, you can apply the migrations with the GitHub workflow **Migrate
+   production database**: **Actions** tab > **Migrate production database** > **Run workflow** on
+   `main`. Tick the backup box (Section 5.2), type `migrate production`, and a reviewer of the
+   `production` environment approves the run. The workflow runs `prisma migrate deploy` with
+   `DIRECT_URL` from a GitHub runner, so the database must be reachable from the internet. Set
+   it up once: in the repository **Settings** > **Environments**, create `production`, add required
+   reviewers, and add `DIRECT_URL` as a secret of that environment. Do not add it as a repository
+   secret, because the run would skip the approval. For a database inside a private network, use
+   the migration image (Section 6.4).
+9. Deploy the application to production
+   ``[TO VERIFY: only if the platform is Vercel: by Git push to the production branch, or by
+   `vercel deploy --prod`]``.
+
+   Note: the Build Command is `next build`, which is `npm run build`. CI runs it with placeholder
+   database addresses and no `.env` file, so it works on any build server. The build reads no secret. `npm run build:infisical` is the same build with the secrets
+   of `INFISICAL_ENV`, for a maintainer's computer.
 10. Wait until the deployment is **Ready**.
 11. Do the health check (Section 4.2). Sign in with each role you can and open its main page.
 
@@ -964,6 +1044,75 @@ reversed, for example `20260905110000_remove_payment_ocr` (drops columns) and
 2. If the database must return to its earlier state, restore the backup from the pre-update
    checklist (Section 5.4) and verify it (Section 5.5).
 
+### 6.4 Run the application as a container on your own server
+
+Use this when the application does not run on Vercel. The repository has a `Dockerfile`, a
+`.dockerignore`, and a sample reverse proxy setup in `deploy/nginx.conf.example`. The image needs
+no Infisical: all settings are environment variables (Section 7.1).
+The application image was built and started in a container, and the sign-in page, static files, and
+an API route answered under the sub path. The migration image was built and run against an empty
+PostgreSQL container: all 19 migrations were applied, a second run reported "No pending
+migrations to apply", and it also worked when only `DATABASE_URL` was given.
+`[TO VERIFY: both images on the client server, including the connection to the client's PostgreSQL
+(for example its TLS setting).]`
+
+1. Choose the sub path. The default is `/metang`. The sub path is fixed when the image is built
+   (Section 2.1), so build one image for each sub path.
+2. Build the image and the migration image from the release you want:
+
+   ```bash
+   docker build --build-arg PUBLIC_SUBPATH=/metang -t metang:<version> .
+   docker build --target migrate -t metang-migrate:<version> .
+   ```
+
+   Expected result: both builds end without an error. The migration image does not contain the built
+   application, so it does not depend on the sub path. The image contains no secret: the build uses
+   placeholder database addresses that are set only for the commands that need them.
+3. Back up the database (Section 5.2). Then apply the migrations. `DIRECT_URL` is the direct or
+   session-pooler connection of the database (`DATABASE_URL` is used when `DIRECT_URL` is not set):
+
+   ```bash
+   docker run --rm -e DIRECT_URL="postgresql://..." metang-migrate:<version>
+   ```
+
+   Expected result: each new migration is reported as applied, or "No pending migrations to
+   apply". On an empty database (the first deployment) all migrations in `db/migrations/` are
+   applied in order. The result was compared with `db/schema.prisma` using `prisma migrate diff`
+   and has no difference, so a new database needs no other step.
+4. Put the settings of Section 7.1 in a file that only the server administrator can read, for
+   example `/etc/metang/app.env`. One `NAME=value` per line, without quotes. Then start the
+   application:
+
+   ```bash
+   docker run -d --name metang --restart unless-stopped \
+     -p 127.0.0.1:3000:3000 --env-file /etc/metang/app.env metang:<version>
+   ```
+
+   Set `APP_BASE_URL` to the public address without a path, for example `https://<host>`. Set
+   `CRON_SECRET`. The container runs as the user `node` and listens on port 3000.
+5. Set up the reverse proxy from `deploy/nginx.conf.example`. The `location` prefix must equal the
+   sub path, and the proxy must set `Host`, `X-Forwarded-Host`, and `X-Forwarded-Proto` (Section
+   2.1). Set `client_max_body_size 2m`, because slips can be up to 1 MB and the upload adds a little. The nginx default of `1m` refuses a slip that is close to the limit.
+6. Jobs: the container runs the notification jobs itself while it keeps running (Section 2.3).
+   On a platform that stops idle containers, set `ENABLE_JOB_SCHEDULER=false` and call the routes
+   from outside (end of Section 2.3).
+7. Register the sign-in address in CMU Entra for this host, as a redirect URI of the Web
+   platform: `https://<host>/<sub path>/api/auth/callback`. It is the value of `CALLBACK_URL`, and
+   it must be identical in both places. Register it before the first sign-in on the new host.
+   Also register `https://<host>/<sub path>/login` if you use federated sign-out
+   (`/api/auth/logout?federated=true`, which no page calls yet). The normal sign-out button
+   needs no Entra address.
+8. Do the health check (Section 4.2). Open `https://<host>/<sub path>/login`: expected result is
+   the sign-in page.
+
+Rollback: start the previous image tag with the same settings (`docker rm -f metang`, then the
+`docker run` command above with the old tag). The database follows the rules of Section 6.3.
+
+> **WARNING:** `next build` copies the `.env` files it finds into `.next/standalone`. The
+> `.dockerignore` keeps `.env` out of the image build. If you build the standalone output without
+> Docker (`NEXT_OUTPUT=standalone`), build it on a computer without a `.env` file, or delete
+> `.next/standalone/.env` before you copy the output to the server.
+
 ---
 
 ## 7. Configuration reference
@@ -979,14 +1128,15 @@ production deployment ("Redeploy") before it takes effect.
 | `DIRECT_URL` | The value of `DATABASE_URL` (`prisma.config.ts`) | PostgreSQL URL, direct connection | Used by migrations (`npm run db:*`) and manual backups. | No (maintainer tools only) | Yes |
 | `AUTH_URL` | None | URL | CMU Entra authorize endpoint. | Yes | No |
 | `TOKEN_URL` | None | URL | CMU Entra token endpoint. | Yes | No |
-| `CALLBACK_URL` | None | URL, exactly as registered in Entra, for example `https://<host>/metang/api/auth/callback` | Where CMU Entra returns after sign-in. The old path `https://<host>/api/auth/callback` also works: the `/api/:path*` redirect sends the browser on to `/metang/api/auth/callback`. Change the value and the Entra registration together. If only one changes, sign-in fails with `token_exchange_failed`. | Yes, and register it in Entra | No |
-| `LOGOUT_URL` | None | Entra logout URL with `post_logout_redirect_uri` | Sign-out redirect. | Yes | No |
+| `CALLBACK_URL` | None | URL, exactly as registered in Entra, for example `https://<host>/metang/api/auth/callback` | Where CMU Entra returns after sign-in. Include the sub path. The old path `https://<host>/api/auth/callback` still works while it is registered: the `/api/:path*` redirect sends the browser on to `/metang/api/auth/callback`. Change the value and the Entra registration together. If only one changes, sign-in fails with `token_exchange_failed`. | Yes, and register it in Entra | No |
+| `LOGOUT_URL` | None | Entra logout URL | Sign-out redirect. Used only by federated sign-out (`/api/auth/logout?federated=true`, not called by any page yet). The application sets its `post_logout_redirect_uri` to `https://<host>/<sub path>/login`, whatever the value contains, so that address must be registered in Entra. | Yes | No |
 | `CLIENT_ID` | None | Entra application ID | OAuth client. | Yes | No |
 | `CLIENT_SECRET` | None | Entra client secret | OAuth client secret. | Yes | Yes |
 | `SCOPE` | None | Space-separated scopes, for example `api://cmu/Mis.Account.Read.Me.Basicinfo offline_access` | Permissions requested at sign-in. | Yes | No |
 | `BASICINFO_URL` | None | URL | CMU profile API. | Yes | No |
 | `SESSION_SECRET` | None | Text of 32 characters or more | Encrypts the sign-in cookies. Changing it signs out all users. | Yes | Yes |
-| `APP_BASE_URL` | `http://localhost:8080` | Absolute `https://` URL of the production site, for example `https://<host>` | Base of links in LINE messages and emails. If not set, links point to localhost. A path in the value is not used: links start with `/metang` (for example `/metang/student/...`), so `https://<host>` and `https://<host>/metang` give the same links. If the value is not a valid `http` or `https` URL, every delivery job run returns `500` before it claims rows, so notifications wait in the outbox. | Yes | No |
+| `PUBLIC_SUBPATH` | Not set (`/metang`) | A path such as `/loan` or `loan`. A missing leading `/` and a trailing `/` are corrected | Sub path under which all pages and API routes are served (`lib/base-path.ts`). Empty or `/` serves the application from the root and turns off the redirects from old paths. Also change by hand: `CALLBACK_URL` and its Entra registration, the callback and post-logout (`/login`) addresses registered in Entra, the `path` values in `vercel.json`, and `servers` in `next.openapi.json` (then run `npm run openapi:generate`). | Yes, and a new build | No |
+| `APP_BASE_URL` | Development: `http://localhost:8080`. Production: none. | Absolute `https://` URL of the production site, for example `https://<host>` | Base of links in LINE messages and emails. In production (`NODE_ENV=production`) the value is required: if it is not set, every delivery job run returns `500` with `APP_BASE_URL is not set` before it claims rows, so notifications wait in the outbox. In development, links point to localhost. A path in the value is not used: links start with `/metang` (for example `/metang/student/...`), so `https://<host>` and `https://<host>/metang` give the same links. If the value is not a valid `http` or `https` URL, every delivery job run returns `500` before it claims rows, so notifications wait in the outbox. | Yes | No |
 | `CRON_SECRET` | None. The job scheduler does not start, and `/metang/api/cron/` returns `401`. | Random text | Protects `/metang/api/cron/` routes. The job scheduler uses it too. | Yes | Yes |
 | `ENABLE_JOB_SCHEDULER` | Not set (detect the host) | `true`, `false`, or not set | `true` forces the built-in scheduler, `false` turns it off. Not set: built-in scheduler on servers that keep running, Vercel Cron on Vercel (Section 2.3). | Yes (restart) | No |
 | `NOTIFY_API_URL` | None | URL | CMU LINE FON API. | Yes | No |
@@ -997,7 +1147,7 @@ production deployment ("Redeploy") before it takes effect.
 | `SUPABASE_URL` | None | `https://<project-ref>.supabase.co` | Supabase Storage address. | Yes | No |
 | `SUPABASE_SERVICE_ROLE_KEY` | None | Supabase service role key | Full access to Storage. | Yes | Yes |
 | `SUPABASE_SLIP_BUCKET` | `bank_payment_slips` | Name of a private bucket | Bucket for slip files. | Yes | No |
-| `INFISICAL_ENV` | `dev` | `dev` or `prod` | Only in a maintainer's local `.env`. Selects the Infisical environment for `npm run dev`, `npm run build`, and `npm run db:*`. Has no effect when the Infisical CLI is not installed (Section 3.4). | Not applicable | No |
+| `INFISICAL_ENV` | `dev` | `dev` or `prod` | Only in a maintainer's local `.env`. Selects the Infisical environment for `npm run dev`, `npm run build:infisical`, and `npm run db:*`. Has no effect when the Infisical CLI is not installed (Section 3.4). | Not applicable | No |
 | `DEV_API_BYPASS` | Off | `true` or not set | Development only. Must not be set in production. Works only when `INFISICAL_ENV=dev` and `NODE_ENV=development`. | Not applicable | No |
 | `DEV_AS_ADVISOR`, `DEV_AS_ADMIN`, `DEV_AS_SUPERADMIN`, `DEV_AS_EXECUTIVE` | Off | `true` or not set | Development only. Must not be set in production. Same condition as `DEV_API_BYPASS`. | Not applicable | No |
 | `DEV_ADVISOR_USER_ID`, `DEV_ADMIN_USER_ID`, `DEV_SUPERADMIN_USER_ID`, `DEV_EXECUTIVE_USER_ID` | Test user IDs | User UUID | Development only. Must not be set in production. | Not applicable | No |
@@ -1053,11 +1203,11 @@ Change a schedule in both `lib/jobs/start-scheduler.ts` (built-in scheduler) and
 
 | Value | Setting |
 |---|---|
-| Slip file types accepted by the server and the admin disbursement form | `image/jpeg`, `image/png`, `application/pdf` |
-| Slip file size limit on the server and the admin disbursement form | 10 MB |
+| Slip file types accepted by the server (both slip uploads) | `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `image/bmp`, `image/avif`. PDF, SVG, HEIC and TIFF are refused. |
+| Slip file size limit on the server (both slip uploads) | 1 MB |
 | Repayment slip accepted by the student form | JPG or PNG, at most 1 MB |
 | Installments per loan | 1 to 3 (server check and database `CHECK`) |
-| Signed slip link lifetime | 300 seconds |
+| How long a browser keeps a slip it has opened (`Cache-Control: private, max-age=300`) | 300 seconds |
 | Sign-in session lifetime | 8 hours |
 | Sign-in attempt lifetime | 10 minutes |
 | Notification attempts | 5, with waits of 1, 5, 15, and 60 minutes |
@@ -1075,7 +1225,8 @@ Change a schedule in both `lib/jobs/start-scheduler.ts` (built-in scheduler) and
 ## 8. Monitoring
 
 The delivered software sends no alerts. Check these items by hand (Section 4.2), or set up
-alerts in Vercel and Supabase `[TO VERIFY: available alert features on the chosen plans]`.
+alerts in Vercel and Supabase
+`[TO VERIFY: only if the platform is Vercel and Supabase: the alert features of the chosen plans]`.
 
 | What to monitor | Where | Normal value | Warning threshold | Action |
 |---|---|---|---|---|
@@ -1106,7 +1257,7 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 |---|---|---|---|
 | Notifications stop on Vercel after a deployment, and **Logs** show no `/metang/api/cron/` calls | A `path` in `vercel.json` does not start with `/metang`. Vercel Cron gets the `307` redirect, treats it as the final response, and does not log the call. | Start every `path` in `vercel.json` with `/metang/api/cron/`. Redeploy. | 2.1 |
 | Notifications stop on serverless hosting | On Vercel, Vercel Cron did not call the jobs: `CRON_SECRET` is missing, or the plan does not allow the `vercel.json` schedules. On other serverless hosts (AWS Lambda, Netlify), nothing calls the jobs. | On Vercel, set `CRON_SECRET` and check **Settings** > **Cron Jobs**. On other hosts, add an outside scheduler that calls the `/metang/api/cron/` routes with `CRON_SECRET`, or host Me_Tang on a server that keeps running (`next start`). | 2.3 |
-| Build fails with `Missing .env. Create it from .env.example and set INFISICAL_ENV.` | The build runs `npm run build` on a machine without `.env`. | Set the Vercel Build Command to `next build`, or create `.env` with `INFISICAL_ENV`. | 6.2 |
+| Build fails with `Missing .env. Create it from .env.example and set INFISICAL_ENV.` | The build runs `npm run build:infisical` (or `npm run db:*`) on a machine without `.env`. | Use `npm run build` (plain `next build`), or create `.env` with `INFISICAL_ENV`. On a server without Infisical, apply migrations with `npm run db:deploy:env`, which reads `DIRECT_URL` from the environment. | 6.2 |
 | Site does not load, every page returns an error | Missing `DATABASE_URL`, database down, or a failed deployment. | Check Vercel **Logs** for `DATABASE_URL is not set`. Check Supabase project status. Roll back if a deployment caused it. | 4.2, 6.3 |
 | Sign-in page shows `ผู้ดูแลระบบต้องตั้งค่า CMU Entra environment variables ก่อนเปิดใช้งาน` | One of the CMU Entra settings is missing. | Set all settings in Section 7.1 from `AUTH_URL` to `SESSION_SECRET`. Redeploy. | 4.10 |
 | Sign-in fails with `ไม่สามารถยืนยันการเข้าสู่ระบบกับ CMU ได้` (`token_exchange_failed`) | `CLIENT_SECRET` expired or wrong, or `CALLBACK_URL` not registered. | Renew the client secret. Check the callback URL in Entra. | 4.10 |
@@ -1118,7 +1269,9 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 | Notifications are not sent, outbox rows wait | The jobs do not run: `ENABLE_JOB_SCHEDULER=false`, `CRON_SECRET` is missing (`Job scheduler not started: CRON_SECRET is not set`, or `401` on Vercel Cron calls), the host is serverless without Vercel Cron, or `APP_BASE_URL` is not valid. | Set `CRON_SECRET`. Remove `ENABLE_JOB_SCHEDULER=false`. Fix `APP_BASE_URL`. Restart the server or redeploy. | 2.3, 4.2 |
 | Outbox rows become `failed` with a LINE error | `NOTIFY_API_TOKEN` or `NOTIFY_API_URL` wrong or expired. | Renew, redeploy, then retry the rows. | 4.10, 4.3 |
 | Outbox rows become `failed` with an email error | Email API credentials wrong or expired, or the student email is not `@cmu.ac.th`. | Renew credentials, redeploy, retry. | 4.10, 4.3 |
-| Links in LINE messages or emails open `localhost` | `APP_BASE_URL` not set in production. | Set it to the production URL. Redeploy. | 7.1 |
+| Every save or upload returns `403 FORBIDDEN` with `A same-origin JSON request is required`, or sign-in and sign-out send the browser to an internal address such as `127.0.0.1:3000` | The reverse proxy does not pass the public host. The application sees its own address as the origin. | Set `Host` (or `X-Forwarded-Host`) and `X-Forwarded-Proto` in the proxy (Section 2.1). Restart the proxy. | 2.1 |
+| Delivery jobs return `500` with `APP_BASE_URL is not set` (or the manual email returns `422` with the same text) | `APP_BASE_URL` is not set in production. | Set it to the production address, for example `https://<host>`, without a path. Redeploy. | 7.1 |
+| Links in LINE messages or emails open `localhost` | The server runs with `NODE_ENV` other than `production` and no `APP_BASE_URL` (for example `next dev`). | Set `APP_BASE_URL`. Run the production build with `next start`. | 7.1 |
 | Delivery jobs return `500` with `APP_BASE_URL must be a valid URL` or `APP_BASE_URL must use HTTP or HTTPS` | `APP_BASE_URL` has a wrong value. | Fix the value. Redeploy. | 7.1 |
 | Students get no reminder emails, and no `installment_reminder` rows exist | The daily `installment-reminders` job did not run. | Check Vercel cron logs. Missed days are not created later. | 2.3, 4.2 |
 | Students do not get the email about a rejected request, a disbursement, or a confirmed or rejected repayment slip | The job scheduler is not running, or the Email API fails. Look for `loan_outcome` and `payment_outcome` rows in `notification_outbox`. | Same fixes as for reminder emails. Retry `failed` rows after the fix. | 4.2, 4.3 |
@@ -1217,8 +1370,8 @@ cannot reach.
 | Code or message | Meaning | Action |
 |---|---|---|
 | `VALIDATION_ERROR`: `A slip file is required` (422) | No file was attached. | Attach a slip. |
-| `VALIDATION_ERROR`: `Unsupported slip file type` (422) / `ไฟล์สลิปไม่ถูกต้อง` | The server reads the first bytes of the file and accepts only JPEG, PNG, or PDF, whatever type the browser reports. | Use a JPEG or PNG (students), or a JPEG, PNG, or PDF (admin disbursement). |
-| `VALIDATION_ERROR`: `Slip file exceeds the 10MB limit` (422) | File larger than 10 MB. | Use a smaller file. |
+| `VALIDATION_ERROR`: `Unsupported slip file type` (422) / `ไฟล์สลิปไม่ถูกต้อง` | The server reads the first bytes of the file and accepts only JPEG, PNG, GIF, WebP, BMP, or AVIF images, whatever type the browser reports. PDF is refused. | Use an image. Save or photograph a PDF as JPEG or PNG. |
+| `VALIDATION_ERROR`: `Slip file exceeds the 1MB limit` (422) | File larger than 1 MB. | Use a smaller image, for example a screenshot. |
 | `กรุณาอัปโหลดไฟล์ JPG หรือ PNG` (`Please upload a JPG or PNG file.`) | The student repayment form accepts only JPG or PNG. | Upload a JPG or PNG image. |
 | `ไฟล์รูปภาพต้องมีขนาดไม่เกิน 1 MB` (`The image file must be 1 MB or smaller.`) | The student repayment form accepts images of 1 MB or less. | Use a smaller image, for example a screenshot. |
 | `กรุณาระบุจำนวนเงินเป็นจำนวนเต็มบาท` (`Enter a whole number of baht.`) | The repayment amount is not a whole number of baht. | Enter whole baht. |
@@ -1237,7 +1390,7 @@ cannot reach.
 | `ไม่สามารถคัดลอกเลขที่บัญชีได้` / `Could not copy account number.` | The browser blocked copying. | Copy by hand. |
 | `NOT_FOUND`: `Slip not found` (404) | No slip for this record. | Check the record. |
 | `FORBIDDEN`: `Not allowed to read this slip` (403) | The user may not view this slip. | Expected. |
-| `INTERNAL_ERROR`: `Unable to read slip` (500) | Storage could not create a signed link. | Check Storage settings. |
+| `INTERNAL_ERROR`: `Unable to read slip` (500) | Storage could not return the file. The log line `Supabase Storage download failed with HTTP <status>` names the reason. | Check Storage settings. |
 | `VALIDATION_ERROR`: `id must be a payment uuid, not an installment id` (422) | Wrong ID type in the request. | Report to support. |
 
 ### 10.4 Staff review and disbursement
@@ -1282,6 +1435,12 @@ cannot reach.
 | `FINAL_SUPER_ADMIN`: `The final SuperAdmin role cannot be removed` (409) / `ไม่สามารถยกเลิกบทบาทผู้ดูแลระบบคนสุดท้ายได้` | At least one SuperAdmin must remain. | Grant another SuperAdmin first. |
 | `EXECUTIVE_ALREADY_EXISTS`: `มีผู้บริหารในระบบอยู่แล้ว ไม่สามารถแต่งตั้งเพิ่มได้ (จำกัด 1 คน)` (409) / `มีผู้บริหารในระบบแล้ว (<name>) กรุณาเปลี่ยนบทบาทผู้บริหารเดิมก่อน` | Only one executive is allowed. | Remove the current executive role first. |
 | `CONFLICT`: `The role assignment changed; please retry` (409) | Concurrent change. | Retry. |
+| `CONFLICT`: `ผู้ใช้งานนี้มีบทบาทนี้อยู่แล้ว` (409) | Adding a user who already has the chosen role. | None. |
+| `CONFLICT`: `อีเมลนี้มีผู้ใช้งานในระบบแล้ว` (409) | The new email of an executive, or its account name before `@`, belongs to another user. | Use another email. |
+| `FINAL_SUPER_ADMIN`: `ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายได้ (ต้องมีผู้ดูแลระบบอย่างน้อย 1 คนในระบบ)` (409) | Deleting the last SuperAdmin. | Add another SuperAdmin first. |
+| `BAD_REQUEST`: `ไม่สามารถลบผู้บริหารได้ กรุณาแก้ไขข้อมูลผู้บริหารแทน` (400) | Deleting the executive. | Edit the executive instead. |
+| `BAD_REQUEST`: `ไม่สามารถลบบัญชีของตนเองได้ ให้ผู้ดูแลระบบคนอื่นเป็นผู้ลบ` (400) | A SuperAdmin deleting their own account. | Ask another SuperAdmin. |
+| `VALIDATION_ERROR`: `กรุณาระบุชื่อ-นามสกุล`, `กรุณาระบุอีเมลที่ถูกต้อง`, `กรุณาระบุอีเมล CMU (ลงท้ายด้วย @cmu.ac.th)`, `บทบาทต้องเป็น 'admin' หรือ 'super_admin'`, `Invalid JSON request`, `Request body must be an object` (422) | Add-user or edit-user form values that are not valid. | Correct the form. |
 | `ไม่สามารถโหลดรายชื่อผู้ใช้จากฐานข้อมูลได้`, `ไม่สามารถเพิ่มบทบาทผู้ใช้ได้`, `เกิดข้อผิดพลาดในการเปลี่ยนบทบาท` | Role screen errors. | Retry. Check logs. |
 | `VALIDATION_ERROR`: `request body is invalid`, `action is invalid`, `role is invalid` (422) | Invalid role request. | Report to support. |
 | `VALIDATION_ERROR`: `amount is invalid` / `kind is invalid` (422) | Fund amount not a positive whole number, or an unknown transaction kind. | Correct it. |
@@ -1294,7 +1453,7 @@ cannot reach.
 | `INTERNAL_ERROR`: `System settings are not initialized` (500) | The `system_setting` row is missing. | Restore it (Section 9). |
 | `VALIDATION_ERROR`: `<field> is required`, `<field> is invalid`, `contactPhone is invalid`, `contactEmail is invalid`, `at least one field is required` (422) / `กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง` | Invalid system settings value. See Section 7.2. | Correct the value. |
 | `ไม่สามารถโหลดข้อมูลและการติดต่อได้ กรุณาลองใหม่อีกครั้ง`, `เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง`, `ไม่สามารถแสดงข้อมูลและการติดต่อได้` | Contact settings screen errors. | Retry. |
-| `INTERNAL_ERROR`: `Unable to list fund transactions`, `Unable to create fund transaction`, `Unable to read system settings`, `Unable to update system settings`, `Unable to mutate user role`, `Unable to list users and roles` (500) | Server error. | Check Vercel logs. |
+| `INTERNAL_ERROR`: `Unable to list fund transactions`, `Unable to create fund transaction`, `Unable to read system settings`, `Unable to update system settings`, `Unable to mutate user role`, `Unable to list users and roles`, `Unable to create/add user`, `Unable to update user`, `Unable to delete user` (500) | Server error. | Check Vercel logs. |
 
 ### 10.6 Notifications and scheduled jobs
 
@@ -1306,7 +1465,7 @@ cannot reach.
 | `Job scheduler: using Vercel Cron from vercel.json` (server log) | Normal on Vercel. Vercel Cron calls the jobs. | None. |
 | `Job scheduler not started (<reason>). Call the /api/cron routes from an outside scheduler.` (server log) | `ENABLE_JOB_SCHEDULER=false`, or a serverless host without a scheduler. | Add an outside scheduler, or remove `ENABLE_JOB_SCHEDULER=false`. |
 | `Scheduled job <path> returned <status>: <body>` / `Scheduled job <path> failed` (server log) | A job run failed. The body is one of the messages in this section. | Fix the cause. The job runs again on its next interval. |
-| `INTERNAL_ERROR` (500) with `APP_BASE_URL must be a valid URL` or `APP_BASE_URL must use HTTP or HTTPS` | Wrong `APP_BASE_URL`. | Fix it. Redeploy. |
+| `INTERNAL_ERROR` (500) with `APP_BASE_URL is not set`, `APP_BASE_URL must be a valid URL`, or `APP_BASE_URL must use HTTP or HTTPS` | `APP_BASE_URL` is missing (production) or wrong. | Set or fix it. Redeploy. |
 | `RATE_LIMITED`: `A notification for this step was already sent recently` (429) | A manual LINE reminder was sent in the last 60 seconds. | Wait one minute. |
 | `CONFLICT`: `The loan has no reviewer awaiting action` (409) | The request is not waiting for a reviewer. | None. |
 | `CONFLICT`: `No reviewer is available to notify for this loan` (409) | No user has the needed role. | Grant the role (Section 3.2). |
@@ -1336,7 +1495,7 @@ cannot reach.
 | `Missing INFISICAL_ENV in .env. Set it to the Infisical environment to use.` | `.env` exists but has no `INFISICAL_ENV`. The command stops instead of guessing `dev`. | Add `INFISICAL_ENV=dev` to `.env`. |
 | `Usage: node scripts/with-infisical.mjs <command> [...args]` | The wrapper script ran with no command. | Use the `npm run` commands in Section 6. |
 | `Supabase Storage upload failed with HTTP <status>: <text>` / `Supabase Storage sign failed with HTTP <status>: <text>` (in logs) | Supabase Storage refused the request. | Check the bucket and the service role key. |
-| `Unsupported slip content type: <type>` / `Slip exceeds the 10485760-byte limit` (in logs) | A slip failed the storage checks. | Students upload a JPG or PNG of 1 MB or less. Admins upload a JPEG, PNG, or PDF of 10 MB or less. |
+| `Unsupported slip content type: <type>` / `Slip exceeds the 1048576-byte limit` (in logs) | A slip failed the storage checks. | Students and admins upload an image of 1 MB or less. |
 | `the app exited early with code <code>` / `nothing is listening on 8081` (from `npm run api:test`) | The test app did not start, often because another `npm run dev` runs in the same folder. | Stop the other server and retry. |
 | `another next dev server is running (pid <pid>, <url>)` / `port 8081 is already in use` (from `npm run api:test`) | The check before the tests found a running dev server or a used port. | Stop the other server or program and retry. |
 | `docker is required` / `postgres did not become ready within 60s` / `the app did not start within 120s` (from `npm run api:test`) | Docker is missing or slow, or the test app was slow to start. | Start Docker and retry. |
@@ -1354,7 +1513,7 @@ Contact support when:
 - You need a database change other than the SQL in this guide.
 - You suspect a leaked secret or unauthorized access. Renew the secret first (Section 4.10).
 
-Contact details: `[TO VERIFY: support team, email, phone, and service hours]`
+Contact details: enter the support team, email, phone, and service hours here at hand-over.
 
 Include this information:
 
@@ -1388,12 +1547,12 @@ Include this information:
 | Loan request | A student's application. Its ID has the form `REQYYYYMMDDNNNN`. |
 | Loan status | The stage of a loan request: `draft`, `returned`, `pending_advisor`, `pending_admin`, `pending_executive`, `pending_disbursement`, `disbursed`, `closed`, `rejected`, `cancelled`. |
 | Maintainer | The person who performs the tasks in this guide. |
-| Migration | A versioned database change in `db/migrations/`. Applied with `npm run db:deploy`. |
+| Migration | A versioned database change in `db/migrations/`. Applied with `npm run db:deploy`, with the GitHub workflow **Migrate production database**, or with the migration image (Section 6.4). |
 | Notification outbox | Table `notification_outbox`. Messages that wait to be sent, or were sent. |
 | Production | The live system that users use. Secrets in Infisical `prod`. |
 | Redeploy | Build and publish the application again in Vercel so that new settings take effect. |
 | Repayment slip | A JPG or PNG image of a bank transfer that a student uploads to repay. |
-| Signed link | A temporary (300 seconds) address that opens one slip file. |
+| Slip link | The address `/api/payments/{id}/slip` or `/api/fund-transactions/{id}/slip`. It needs a signed-in user who may read that slip, and it answers with the image itself. No storage address is ever returned. |
 | Slip storage | The private Supabase Storage bucket `bank_payment_slips`. |
 | SuperAdmin | The system owner in the application. Role `super_admin`. |
 | System settings | The bank account and office contact details in table `system_setting`. |
@@ -1404,5 +1563,8 @@ Include this information:
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
-| 1.0 draft | 2026-09-28 | Me_Tang development team (Git user `nacs-970`) `[TO VERIFY: real author names]` | First version for Jira NAT-214. Written from the repository at commit `f7fc3cd`, plus the Jira NAT-206 change (student email on slip confirmation or rejection), student emails on request rejection and disbursement, and the backend job scheduler. |
+| 1.0 draft | 2026-09-28 | Me_Tang development team (Git user `nacs-970`) | First version for Jira NAT-214. Written from the repository at commit `f7fc3cd`, plus the Jira NAT-206 change (student email on slip confirmation or rejection), student emails on request rejection and disbursement, and the backend job scheduler. |
 | 1.1 draft | 2026-09-28 | Me_Tang development team | Jira NAT-240: corrected against the code at commit `d05ac00`. Scheduled jobs on Vercel, student cancel and executive return, eligibility rules, installment count (1 to 3), phone and slip rules, notifications sent without the outbox, fund ledger limits, the production database warning, unit tests, rollback behavior, and missing error messages in Section 10. |
+| 1.2 draft | 2026-09-29 | Me_Tang development team | Jira NAT-214: SuperAdmin user and role screen, roles and audit actions, and error codes brought up to the code of 2026-09-29. The deploy platform is not chosen: `[TO VERIFY]` markers that assume Vercel or Supabase now say so, and markers for facts that the client or CMU ITSC will supply at hand-over were removed. |
+| 1.3 draft | 2026-09-29 | Me_Tang development team | Jira NAT-243 and NAT-244: delete keeps the account row of a person with history, nobody deletes their own account, and Add user and Edit accept CMU addresses only. |
+| 1.4 draft | 2026-09-30 | Me_Tang development team | Sections 5.3 and 5.4: the two untested procedures are now plain "Not tested" notes, not `[TO VERIFY]` markers. |

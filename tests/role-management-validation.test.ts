@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseRoleMutationInput, predefinedRoleNames } from "@/lib/role-management";
+import { holdsAdminAccess, parseRoleMutationInput, predefinedRoleNames } from "@/lib/role-management";
 
 test("accepts every predefined grant and remove operation", () => {
   for (const role of predefinedRoleNames) {
@@ -22,3 +22,13 @@ test("rejects malformed role mutation bodies", () => {
     assert.throws(() => parseRoleMutationInput(value), /body|action|role/i);
   }
 });
+
+test("admin-step work stays with anyone still holding admin or super_admin", () => {
+  assert.equal(holdsAdminAccess(["admin"]), true);
+  assert.equal(holdsAdminAccess(["super_admin"]), true);
+  assert.equal(holdsAdminAccess(["advisor", "super_admin"]), true);
+  // Left with neither, their open loans move to the SuperAdmin who removed them.
+  assert.equal(holdsAdminAccess([]), false);
+  assert.equal(holdsAdminAccess(["advisor", "executive", "student"]), false);
+});
+

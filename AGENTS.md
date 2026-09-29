@@ -29,7 +29,7 @@ Use the `@/` alias for root-relative imports, for example `@/lib/prisma`.
 
 ## Coding Style & Naming Conventions
 
-Use two-space indentation, double quotes, semicolons, trailing commas, and a 100-character line width, matching `.prettierrc`. Name React components in PascalCase, functions and variables in camelCase, and route directories in lowercase. Keep database query functions explicit and reusable, such as `getAllStudents`. Server Components are the default; add `"use client"` only when browser interactivity requires it.
+Use two-space indentation, double quotes, semicolons, trailing commas, and a 100-character line width, matching `.prettierrc`. Name React components in PascalCase, functions and variables in camelCase, and route directories in lowercase. Keep database query functions explicit and reusable, such as `getAllLoanRequest`. Server Components are the default; add `"use client"` only when browser interactivity requires it.
 
 ## Testing Guidelines
 

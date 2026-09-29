@@ -1,5 +1,6 @@
 import { checkCronAuth } from "@/lib/notifications/cron-auth";
 import { apiOk, apiError } from "@/lib/api-response";
+import { getAppBaseUrl } from "@/lib/app-base-url";
 import {
   LOAN_OUTCOME_EVENT,
   claimDueNotifications,
@@ -26,8 +27,9 @@ async function handle(request: Request) {
   if (authError) return authError;
 
   // Probed before claiming, so a bad APP_BASE_URL fails the run instead of every claimed row.
-  const baseUrl = process.env.APP_BASE_URL ?? "http://localhost:8080";
+  let baseUrl: string;
   try {
+    baseUrl = getAppBaseUrl();
     buildStudentLoanDetailUrl(baseUrl);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

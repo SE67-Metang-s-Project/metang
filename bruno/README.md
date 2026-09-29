@@ -58,8 +58,7 @@ requests then write to the **real dev database** — the isolation only exists u
 ### What runs
 
 **Reads** — every staff list and detail endpoint, plus every redirect (`/auth/login` 307,
-`/auth/nurse/login` 307, `POST /auth/logout` 303, `/fund-transactions/:id/slip` 302, `/openapi`
-302), asserted but never followed.
+`/auth/nurse/login` 307, `POST /auth/logout` 303, `/openapi` 302), asserted but never followed.
 
 **Invariants checked on the wire, not in source text:**
 
@@ -94,7 +93,7 @@ assertions only.
 |---|---|
 | `POST /admin/loan-requests/:id/disburse` | uploads to Supabase Storage — needs `SUPABASE_URL` and a bucket the container does not provide |
 | `POST /student/payments` | uploads the repayment slip to Supabase Storage — same missing credentials as the disburse upload, so it has no request file at all |
-| `GET /payments/:id/slip` | signs a Supabase Storage object; the container has no credentials, and the seeded payments carry placeholder slip paths rather than real bucket objects |
+| `GET /payments/:id/slip`, `GET /fund-transactions/:id/slip` | download a Supabase Storage object; the container has no credentials, and the seeded payments carry placeholder slip paths rather than real bucket objects |
 | `POST /notifications/fon`, `POST /notifications/outlook` | send a real LINE message and a real email |
 | `GET /auth/callback` | needs a live OAuth code from CMU Entra |
 
@@ -157,6 +156,6 @@ environment files are lost. Import into a scratch directory and diff instead.
 
 The suite reads `db/seed.ts` fixtures directly and asserts on their exact values: loan ids
 `REQ20260906000{1..11}` one per status, the dev-bypass student `…0101` holding the draft,
-advisor `อาจารย์ที่ปรึกษา ทดสอบ` (matched by exact `fullNameTh`), and the `95750` starting balance.
+advisor `สุภาวดี วงศ์คำ` (matched by exact `fullNameTh`), and the `95750` starting balance.
 Changing those fixtures breaks this suite — that is intended, but it means seed edits and
 collection edits travel together.

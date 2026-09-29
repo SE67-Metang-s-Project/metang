@@ -4,6 +4,7 @@ import React, { useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { withBasePath } from "@/lib/base-path";
 import {
   LayoutDashboard,
   FileCheck,
@@ -137,7 +138,7 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
               aria-label="หน้าหลัก"
             >
               <Image
-                src="/metang/metang-logo-transparent.png"
+                src={withBasePath("/metang-logo7.png")}
                 alt="METANG"
                 width={50}
                 height={50}

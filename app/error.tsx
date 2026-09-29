@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { BASE_PATH } from "@/lib/base-path";
 
 export default function ErrorBoundary({
   error,
@@ -53,7 +54,7 @@ export default function ErrorBoundary({
           <button
             onClick={() => {
               if (typeof window !== "undefined") {
-                window.location.href = "/metang";
+                window.location.href = BASE_PATH || "/";
               }
             }}
             className="px-5 py-2.5 rounded-xl border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium text-sm transition-colors cursor-pointer"

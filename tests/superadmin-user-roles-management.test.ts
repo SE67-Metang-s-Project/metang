@@ -62,29 +62,51 @@ test("Backend routes and queries enforce super admin guard, role deletion, and e
   const userQueries = read("db/queries/users.ts");
   const usersRoute = read("app/api/super-admin/users/route.ts");
   const userIdRoute = read("app/api/super-admin/users/[id]/route.ts");
+  const deleteFn = userQueries.slice(userQueries.indexOf("export async function deleteManagedUser"));
 
-  // 1. db/queries/users.ts must export createManagedUser, deleteManagedUser, and updateManagedUser
+  // 1. db/queries/users.ts exports the three staff mutations
   assert.match(userQueries, /export async function createManagedUser/);
   assert.match(userQueries, /export async function deleteManagedUser/);
-  assert.match(userQueries, /export async function updateManagedUser/);
+  assert.match(userQueries, /export async function editExecutive/);
 
-  // 2. deleteManagedUser must protect the final super admin
+  // 2. at least one super admin, and never yourself: a leaving SuperAdmin is removed by a successor
   assert.match(userQueries, /const superAdminCount = await tx\.userRole\.count\(\{ where: \{ role: "super_admin" \} \}\);/);
-  assert.match(userQueries, /if \(superAdminCount <= 1\)\s*\{\s*throw new RoleMutationError\("FINAL_SUPER_ADMIN"\);/);
+  assert.match(userQueries, /if \(superAdminCount <= 1\) throw new RoleMutationError\("FINAL_SUPER_ADMIN"\);/);
+  assert.match(userQueries, /if \(targetUserId === actorId\) throw new RoleMutationError\("SELF_DEMOTION"\);/);
 
-  // 3. deleteManagedUser must prevent executive deletion (executive can only be edited)
-  assert.match(userQueries, /EXECUTIVE_CANNOT_BE_DELETED/);
+  // 3. the executive is never deleted or removed, only replaced by editing
+  assert.match(userQueries, /beforeRoles\.includes\("executive"\)\) throw new RoleMutationError\("EXECUTIVE_CANNOT_BE_DELETED"\)/);
+  assert.match(userQueries, /if \(role === "executive"\) throw new RoleMutationError\("EXECUTIVE_ROLE_LOCKED"\);/);
+  assert.match(userQueries, /throw new RoleMutationError\("NOT_EXECUTIVE"\)/);
+  assert.match(userQueries, /executive\.handed_over/);
 
-  // 4. deleteManagedUser must reassign admin loans
+  // 3b. an email (or CMU account) that belongs to another user is refused, never handed the role
+  const editFn = userQueries.slice(userQueries.indexOf("export async function editExecutive"));
+  const editBody = editFn.slice(0, editFn.indexOf("\nexport "));
+  assert.match(editBody, /OR: \[\{ email: cleanEmail \}, \{ cmuAccount \}\], id: \{ not: targetUserId \}/);
+  assert.match(editBody, /if \(taken\) throw new RoleMutationError\("EMAIL_ALREADY_IN_USE"\);/);
+  assert.ok(editBody.indexOf("EMAIL_ALREADY_IN_USE") < editBody.indexOf("executive.handed_over"), "refuse before handing over");
+  assert.doesNotMatch(editBody, /successor\?\.id/, "no handover to an existing account");
+
+  // 4. removing a staff member hands their open loans over and keeps the row for history:
+  //    deleting a user with approvals or payouts aborts the whole Postgres transaction
+  assert.match(userQueries, /async function reassignOpenAdminLoans/);
+  assert.match(userQueries, /if \(holdsAdminAccess\(remainingRoles\)\) return;/);
   assert.match(userQueries, /loan_request\.admin_reassigned/);
+  assert.match(userQueries, /REASSIGNMENT_CONFLICT/);
+  assert.doesNotMatch(deleteFn.slice(0, deleteFn.indexOf("export async function editExecutive")), /appUser\.delete/);
 
-  // 5. updateManagedUser must prevent duplicate email
-  assert.match(userQueries, /EMAIL_ALREADY_IN_USE/);
-
-  // 6. API routes exist and enforce getSuperAdminAccess
+  // 5. API routes exist, enforce getSuperAdminAccess, and map the guards to 409
   assert.match(usersRoute, /export async function POST/);
   assert.match(userIdRoute, /export async function DELETE/);
   assert.match(userIdRoute, /export async function PATCH/);
   assert.match(userIdRoute, /getSuperAdminAccess/);
-  assert.match(userIdRoute, /FINAL_SUPER_ADMIN/);
+  assert.match(userIdRoute, /isSameOrigin\(request\)/);
+  for (const code of ["FINAL_SUPER_ADMIN", "SELF_DEMOTION", "NOT_EXECUTIVE", "NOT_MANAGED_USER", "REASSIGNMENT_CONFLICT", "EMAIL_ALREADY_IN_USE"]) {
+    assert.match(userIdRoute, new RegExp(code));
+  }
+  const rolesRoute = read("app/api/super-admin/users/[id]/roles/route.ts");
+  for (const code of ["SELF_DEMOTION", "EXECUTIVE_ROLE_LOCKED", "REASSIGNMENT_CONFLICT"]) {
+    assert.match(rolesRoute, new RegExp(code));
+  }
 });

@@ -1,6 +1,25 @@
 // The app is served under this prefix (next.config.ts `basePath`). Next.js adds it to <Link>,
 // router, and redirect() paths, but not to fetch(), new URL(), or response Location headers.
-export const BASE_PATH = "/metang";
+//
+// PUBLIC_SUBPATH sets it at build time. next.config.ts passes the resolved value to `env`, so
+// Next.js writes it into both the server and the browser bundles: changing it needs a rebuild,
+// and the server must start with the same value. Unset keeps "/metang"; "" or "/" serves from the root.
+
+/**
+ * Returns the base path for a PUBLIC_SUBPATH value. Next.js needs a leading "/" and no trailing
+ * "/", and people type "loan" or "/loan/", so those are tidied. "" and "/" both mean the root.
+ */
+export function resolveBasePath(value: string | undefined): string {
+  if (value === undefined) return "/metang";
+  const trimmed = value.trim().replace(/^\/+|\/+$/g, "");
+  return trimmed && `/${trimmed}`;
+}
+
+export const BASE_PATH = resolveBasePath(process.env.PUBLIC_SUBPATH);
+
+// Cookies are scoped to the base path, so other applications on the same domain do not receive
+// them.
+export const COOKIE_PATH = BASE_PATH || "/";
 
 /** Prefixes an app-root path such as "/api/student/payments" with the base path. */
 export function withBasePath(path: string): string {

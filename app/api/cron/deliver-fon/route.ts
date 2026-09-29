@@ -1,5 +1,6 @@
 import { checkCronAuth } from "@/lib/notifications/cron-auth";
 import { apiOk, apiError } from "@/lib/api-response";
+import { getAppBaseUrl } from "@/lib/app-base-url";
 import {
   REVIEWER_NOTIFICATION_EVENT,
   claimDueNotifications,
@@ -31,8 +32,9 @@ async function handle(request: Request) {
   const authError = checkCronAuth(request);
   if (authError) return authError;
 
-  const baseUrl = process.env.APP_BASE_URL ?? "http://localhost:8080";
+  let baseUrl: string;
   try {
+    baseUrl = getAppBaseUrl();
     // Probe with throwaway arguments before claiming anything: buildRequestUrlForPath throws on a
     // bad base URL, and inside the row loop that would permanently fail every claimed row over
     // what is really one misconfigured environment variable.
