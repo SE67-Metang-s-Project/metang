@@ -241,7 +241,7 @@ These gaps exist in the delivered software. They affect maintenance.
 | No monitoring or alerting | Nobody is told when a job fails. You must check by hand. | Section 8 |
 | Two ways to run the scheduled jobs | On Vercel, the `vercel.json` schedules need the Pro plan (Hobby allows only daily jobs and rejects the deployment). On other serverless hosts, an outside scheduler must call the routes. | Section 2.3 |
 | No automatic deployment | GitHub Actions checks every push (Section 6), but nothing deploys the result. Updates are manual: `npm test` runs the unit tests, `npm run api:test` runs the API tests (Section 6.2). (Jira NAT-228 to NAT-230, open.) | Section 6 |
-| No SuperAdmin setup screen | The first SuperAdmin must be added with SQL. | Section 3.3 |
+| No screen for the first SuperAdmin or for the `advisor` role | The first SuperAdmin must be added with SQL. Later admins and SuperAdmins are added on the SuperAdmin screen. No screen grants `advisor` (Section 3.2). | Section 3.3 |
 | Some fields on the SuperAdmin contact and bank settings screen are not saved to the database | Opening hours, the closed-days note, and the faculty address details are kept only in the browser (`localStorage` key `metang-system-address`) of the person who saved them. Other users do not see the change. The bank code is not stored: the screen finds it again from the stored bank name. (Jira NAT-200/NAT-203 are marked Done, but this part is not built.) | Section 7.2 |
 | Loan reports are printed from the browser | There is no server-generated PDF file. The report uses the browser print dialog. | None |
 | Automated tests check source text, not a running user interface | Passing tests do not prove that the pages work. Test by hand after each update. | Section 6.2 |
@@ -268,7 +268,9 @@ You need these accounts. Never share one account between people.
 ### 3.2 Application roles
 
 A user gets the `student` role automatically at first sign-in when the CMU profile is a
-student account. A SuperAdmin grants every other role in the application.
+student account. The SuperAdmin screen (**ตั้งค่าระบบ** > **ผู้ใช้และบทบาท**) adds `admin` and
+`super_admin` users and switches a user to `executive`. No screen grants `advisor`: grant it
+with the SQL of Section 3.3, using `advisor` in place of `super_admin`, and record who ran it.
 
 | Role | Can do |
 |---|---|
@@ -276,7 +278,7 @@ student account. A SuperAdmin grants every other role in the application.
 | `advisor` | Approve, return, or reject requests of their own advisees. A comment is required. |
 | `admin` | Review requests, set the approved amount, record disbursement with a slip, confirm or reject repayment slips. The due-date email API (`POST /metang/api/notifications/outlook`) is open to admins, but version 0.1.0 has no button for it. |
 | `executive` | Final decision: approve, return to the admin, or reject. The database allows only one `executive`. |
-| `super_admin` | Everything an admin can do, plus grant and revoke roles, record fund transactions, and edit system settings. The last `super_admin` cannot be removed in the application. |
+| `super_admin` | Everything an admin can do, plus add, edit, and delete `admin` and `super_admin` users, grant and revoke roles, record fund transactions, and edit system settings. The last `super_admin` cannot be removed in the application. |
 
 Any CMU account can sign in. Staff pages depend only on the roles that a SuperAdmin grants.
 The student functions need a student ID that matches the Faculty of Nursing pattern
@@ -288,6 +290,12 @@ Role changes have side effects:
 - When a SuperAdmin revokes the `admin` role, that admin's requests in `pending_admin` and
   `pending_executive` move to the SuperAdmin who revoked the role. The audit log records
   `loan_request.admin_reassigned`.
+- Deleting an `admin` or `super_admin` user removes those two roles and moves the same requests to
+  the SuperAdmin who deletes. It does not disable the account: a person who keeps another role,
+  such as `advisor`, can still sign in. Only the SuperAdmin screen deletes users; the last
+  `super_admin` and the `executive` cannot be deleted there (edit the executive instead).
+- The audit log records these user changes as `user.created`, `user.updated`, `user.deleted`,
+  `user_role.granted`, and `user_role.removed`.
 - To change the executive, revoke the role from the current executive first. A second
   `executive` grant fails with `EXECUTIVE_ALREADY_EXISTS`.
 
@@ -1417,6 +1425,11 @@ cannot reach.
 | `FINAL_SUPER_ADMIN`: `The final SuperAdmin role cannot be removed` (409) / `ไม่สามารถยกเลิกบทบาทผู้ดูแลระบบคนสุดท้ายได้` | At least one SuperAdmin must remain. | Grant another SuperAdmin first. |
 | `EXECUTIVE_ALREADY_EXISTS`: `มีผู้บริหารในระบบอยู่แล้ว ไม่สามารถแต่งตั้งเพิ่มได้ (จำกัด 1 คน)` (409) / `มีผู้บริหารในระบบแล้ว (<name>) กรุณาเปลี่ยนบทบาทผู้บริหารเดิมก่อน` | Only one executive is allowed. | Remove the current executive role first. |
 | `CONFLICT`: `The role assignment changed; please retry` (409) | Concurrent change. | Retry. |
+| `CONFLICT`: `ผู้ใช้งานนี้มีบทบาทนี้อยู่แล้ว` (409) | Adding a user who already has the chosen role. | None. |
+| `CONFLICT`: `อีเมลนี้มีผู้ใช้งานในระบบแล้ว` (409) | The new email of an executive belongs to another user. | Use another email. |
+| `FINAL_SUPER_ADMIN`: `ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายได้ (ต้องมีผู้ดูแลระบบอย่างน้อย 1 คนในระบบ)` (409) | Deleting the last SuperAdmin. | Add another SuperAdmin first. |
+| `BAD_REQUEST`: `ไม่สามารถลบผู้บริหารได้ กรุณาแก้ไขข้อมูลผู้บริหารแทน` (400) | Deleting the executive. | Edit the executive instead. |
+| `VALIDATION_ERROR`: `กรุณาระบุชื่อ-นามสกุล`, `กรุณาระบุอีเมลที่ถูกต้อง`, `บทบาทต้องเป็น 'admin' หรือ 'super_admin'`, `Invalid JSON request`, `Request body must be an object` (422) | Add-user or edit-user form values that are not valid. | Correct the form. |
 | `ไม่สามารถโหลดรายชื่อผู้ใช้จากฐานข้อมูลได้`, `ไม่สามารถเพิ่มบทบาทผู้ใช้ได้`, `เกิดข้อผิดพลาดในการเปลี่ยนบทบาท` | Role screen errors. | Retry. Check logs. |
 | `VALIDATION_ERROR`: `request body is invalid`, `action is invalid`, `role is invalid` (422) | Invalid role request. | Report to support. |
 | `VALIDATION_ERROR`: `amount is invalid` / `kind is invalid` (422) | Fund amount not a positive whole number, or an unknown transaction kind. | Correct it. |
@@ -1429,7 +1442,7 @@ cannot reach.
 | `INTERNAL_ERROR`: `System settings are not initialized` (500) | The `system_setting` row is missing. | Restore it (Section 9). |
 | `VALIDATION_ERROR`: `<field> is required`, `<field> is invalid`, `contactPhone is invalid`, `contactEmail is invalid`, `at least one field is required` (422) / `กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง` | Invalid system settings value. See Section 7.2. | Correct the value. |
 | `ไม่สามารถโหลดข้อมูลและการติดต่อได้ กรุณาลองใหม่อีกครั้ง`, `เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง`, `ไม่สามารถแสดงข้อมูลและการติดต่อได้` | Contact settings screen errors. | Retry. |
-| `INTERNAL_ERROR`: `Unable to list fund transactions`, `Unable to create fund transaction`, `Unable to read system settings`, `Unable to update system settings`, `Unable to mutate user role`, `Unable to list users and roles` (500) | Server error. | Check Vercel logs. |
+| `INTERNAL_ERROR`: `Unable to list fund transactions`, `Unable to create fund transaction`, `Unable to read system settings`, `Unable to update system settings`, `Unable to mutate user role`, `Unable to list users and roles`, `Unable to create/add user`, `Unable to update user`, `Unable to delete user` (500) | Server error. | Check Vercel logs. |
 
 ### 10.6 Notifications and scheduled jobs
 
