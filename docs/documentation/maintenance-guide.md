@@ -90,6 +90,18 @@ variable `PUBLIC_SUBPATH` (Section 7.1), for example a client server that serves
 under `/loan`. The value is fixed when the application is built: change it, then build again. The
 server must start with the same value.
 
+Behind a reverse proxy, the proxy must tell the application which address the browser used.
+Next.js reads only `X-Forwarded-Proto` by itself and takes the host from its own listen address
+(for example `127.0.0.1:3000`), so the application reads the public host from `X-Forwarded-Host`,
+or from `Host` when that is not set (`lib/public-origin.ts`). The same-origin check on POST
+requests and the redirects after sign-in and sign-out depend on it. With nginx:
+
+```nginx
+proxy_set_header Host $host;
+proxy_set_header X-Forwarded-Host $host;
+proxy_set_header X-Forwarded-Proto $scheme;
+```
+
 The Vercel project needs the Pro plan or higher. The `vercel.json` schedules run every minute and
 every 3 minutes, and the Hobby plan allows only daily cron jobs (Section 2.3).
 
@@ -1124,6 +1136,7 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 | Notifications are not sent, outbox rows wait | The jobs do not run: `ENABLE_JOB_SCHEDULER=false`, `CRON_SECRET` is missing (`Job scheduler not started: CRON_SECRET is not set`, or `401` on Vercel Cron calls), the host is serverless without Vercel Cron, or `APP_BASE_URL` is not valid. | Set `CRON_SECRET`. Remove `ENABLE_JOB_SCHEDULER=false`. Fix `APP_BASE_URL`. Restart the server or redeploy. | 2.3, 4.2 |
 | Outbox rows become `failed` with a LINE error | `NOTIFY_API_TOKEN` or `NOTIFY_API_URL` wrong or expired. | Renew, redeploy, then retry the rows. | 4.10, 4.3 |
 | Outbox rows become `failed` with an email error | Email API credentials wrong or expired, or the student email is not `@cmu.ac.th`. | Renew credentials, redeploy, retry. | 4.10, 4.3 |
+| Every save or upload returns `403 FORBIDDEN` with `A same-origin JSON request is required`, or sign-in and sign-out send the browser to an internal address such as `127.0.0.1:3000` | The reverse proxy does not pass the public host. The application sees its own address as the origin. | Set `Host` (or `X-Forwarded-Host`) and `X-Forwarded-Proto` in the proxy (Section 2.1). Restart the proxy. | 2.1 |
 | Links in LINE messages or emails open `localhost` | `APP_BASE_URL` not set in production. | Set it to the production URL. Redeploy. | 7.1 |
 | Delivery jobs return `500` with `APP_BASE_URL must be a valid URL` or `APP_BASE_URL must use HTTP or HTTPS` | `APP_BASE_URL` has a wrong value. | Fix the value. Redeploy. | 7.1 |
 | Students get no reminder emails, and no `installment_reminder` rows exist | The daily `installment-reminders` job did not run. | Check Vercel cron logs. Missed days are not created later. | 2.3, 4.2 |

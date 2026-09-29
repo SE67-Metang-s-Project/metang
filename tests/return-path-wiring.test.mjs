@@ -32,7 +32,8 @@ test("callback error redirects go through redirectCallback with an app-root /log
 test("the callback adds the base path to every app-root destination it redirects to", () => {
   // Success and error redirects both go through redirectCallback, and NextResponse.redirect does
   // not add the base path the way redirect() from next/navigation does.
-  assert.match(callback, /new URL\(withBasePath\(destination\), request\.nextUrl\.origin\)/);
+  // The origin is the public one (lib/public-origin.ts), not the address Next.js listens on.
+  assert.match(callback, /new URL\(withBasePath\(destination\), getPublicOrigin\(request\)\)/);
   assert.equal(callback.match(/NextResponse\.redirect\(/g)?.length, 1);
 });
 
@@ -45,7 +46,10 @@ test("return paths stay app-root from the proxy through the guard to the callbac
 });
 
 test("the sign-in start falls back to the login page under the base path", () => {
-  assert.match(startLogin, /URL\(withBasePath\("\/login\?error=configuration"\), request\.url\)/);
+  assert.match(
+    startLogin,
+    /URL\(withBasePath\("\/login\?error=configuration"\), getPublicOrigin\(request\)\)/,
+  );
   assert.doesNotMatch(startLogin, /new URL\("\//);
 });
 

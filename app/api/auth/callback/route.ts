@@ -16,6 +16,7 @@ import { syncUserFromCmuProfile } from "@/db/queries/users";
 import { getUserHomePath } from "@/lib/loan-auth";
 import { sanitizeReturnPath } from "@/lib/return-path";
 import { withBasePath } from "@/lib/base-path";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 type TokenResponse = {
   access_token?: string;
@@ -25,7 +26,7 @@ type TokenResponse = {
 // `destination` is an app-root path ("/login", a sanitized return path, or the role home path).
 // NextResponse.redirect does not add the base path, so it is added here.
 function redirectCallback(request: NextRequest, destination: string, error?: string) {
-  const url = new URL(withBasePath(destination), request.nextUrl.origin);
+  const url = new URL(withBasePath(destination), getPublicOrigin(request));
 
   if (error) {
     url.searchParams.set("error", error);

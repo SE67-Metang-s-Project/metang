@@ -1,7 +1,8 @@
 import { apiError } from "@/lib/api-response";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 export function isSameOrigin(request: Request) {
-  const requestOrigin = new URL(request.url).origin;
+  const requestOrigin = getPublicOrigin(request);
   const origin = request.headers.get("origin");
 
   if (origin) {
