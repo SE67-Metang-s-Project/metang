@@ -48,6 +48,7 @@ export type RoleMutationErrorCode =
   | "SELF_DEMOTION"
   | "EXECUTIVE_ALREADY_EXISTS"
   | "EXECUTIVE_ROLE_LOCKED"
+  | "EMAIL_ALREADY_IN_USE"
   | "EXECUTIVE_CANNOT_BE_DELETED"
   | "NOT_EXECUTIVE"
   | "NOT_MANAGED_USER"
@@ -317,8 +318,9 @@ export async function deleteManagedUser({
 
 /**
  * Edits the executive. Same email: fixes the names in place. New email: hands the executive role
- * to that person - found by email or CMU account, or created - and the previous executive keeps
- * their row, other roles and history, so past executive decisions still carry their name.
+ * to a new person created from it, and the previous executive keeps their row, other roles and
+ * history, so past executive decisions still carry their name. An email (or CMU account) that
+ * already belongs to another user is refused: the role is never handed to an existing account.
  */
 export async function editExecutive({
   actorId,
@@ -345,13 +347,15 @@ export async function editExecutive({
     const cmuAccount = cleanEmail.split("@")[0];
     const names = { fullNameTh: fullNameTh.trim(), fullNameEn: fullNameEn?.trim() || null };
 
-    const successor = await tx.appUser.findFirst({
-      where: { OR: [{ email: cleanEmail }, { cmuAccount }] },
+    // Both columns are unique, so either one belonging to someone else blocks the change.
+    const taken = await tx.appUser.findFirst({
+      where: { OR: [{ email: cleanEmail }, { cmuAccount }], id: { not: targetUserId } },
       select: { id: true },
     });
+    if (taken) throw new RoleMutationError("EMAIL_ALREADY_IN_USE");
 
     // Same person (same email, or their own account): fix the details in place.
-    if (target.email?.toLowerCase() === cleanEmail || successor?.id === targetUserId) {
+    if (target.email?.toLowerCase() === cleanEmail || target.cmuAccount === cmuAccount) {
       const updated = await tx.appUser.update({
         where: { id: targetUserId },
         data: { email: cleanEmail, cmuAccount, ...names },
@@ -370,13 +374,13 @@ export async function editExecutive({
       return updated;
     }
 
-    // Hand over: someone new (or someone who has signed in before) becomes the executive.
-    const successorId =
-      successor?.id ??
-      (await tx.appUser.create({
+    // Hand over: a new person, created from the new email, becomes the executive.
+    const successorId = (
+      await tx.appUser.create({
         data: { email: cleanEmail, cmuAccount, ...names, educationLevel: "0" },
         select: { id: true },
-      })).id;
+      })
+    ).id;
     await tx.userRole.delete({ where: { userId_role: { userId: targetUserId, role: "executive" } } });
     await tx.userRole.create({ data: { userId: successorId, role: "executive", grantedBy: actorId } });
     await tx.auditLog.create({

@@ -85,7 +85,7 @@ export async function DELETE(request: Request, { params }: Params) {
 
 /**
  * Edit the executive's name and email.
- * @description Only the executive can be edited. The same email fixes the names in place. A different email hands the executive role to that person - an existing user found by email or CMU account, or a new one - and the response is the new executive; the previous executive keeps their other roles and history.
+ * @description Only the executive can be edited. The same email fixes the names in place. A different email hands the executive role to a new person created from it, and the response is the new executive; the previous executive keeps their other roles and history. An email or CMU account that already belongs to another user is refused with 409.
  * @tag SuperAdmin roles
  * @pathParams UserIdParams
  * @body EditExecutiveBody
@@ -149,6 +149,9 @@ export async function PATCH(request: Request, { params }: Params) {
   } catch (error) {
     if (error instanceof RoleMutationError) {
       if (error.code === "USER_NOT_FOUND") return apiError("NOT_FOUND", "User not found", 404);
+      if (error.code === "EMAIL_ALREADY_IN_USE") {
+        return apiError("CONFLICT", "อีเมลนี้มีผู้ใช้งานในระบบแล้ว", 409);
+      }
       if (error.code === "NOT_EXECUTIVE") {
         return apiError("CONFLICT", "แก้ไขได้เฉพาะข้อมูลผู้บริหารเท่านั้น", 409);
       }
