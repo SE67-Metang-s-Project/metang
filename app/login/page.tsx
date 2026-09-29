@@ -50,11 +50,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <div className="fixed inset-0 pointer-events-none z-0">
         <Grainient
           color1="#e2e8f0"
-          color2="#ffffff"
-          color3="#f1f5f9"
-          timeSpeed={0.25}
-          colorBalance={0.0}
-          warpStrength={1.5}
+          color2="#A7A9AC"
+          color3="#ede8e5"
+          timeSpeed={0.3}
+          colorBalance={-0.1}
+          warpStrength={1.8}
           grainScale={1.2}
           zoom={0.8}
         />
