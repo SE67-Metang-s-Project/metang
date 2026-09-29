@@ -1015,8 +1015,10 @@ reversed, for example `20260905110000_remove_payment_ocr` (drops columns) and
 Use this when the application does not run on Vercel. The repository has a `Dockerfile`, a
 `.dockerignore`, and a sample reverse proxy setup in `deploy/nginx.conf.example`. The image needs
 no Infisical: all settings are environment variables (Section 7.1).
-`[TO VERIFY: a full image build on the client server. The Dockerfile passed
-"docker buildx build --check", and the standalone output was started and tested outside Docker.]`
+`[TO VERIFY: the migration image (step 2, second command) on the client server. The application image
+was built and started in a container, and the sign-in page, static files, and an API route
+answered under the sub path. The migration image was not built there: the Prisma engine that it
+runs was tested inside node:24-slim.]`
 
 1. Choose the sub path. The default is `/metang`. The sub path is fixed when the image is built
    (Section 2.1), so build one image for each sub path.
@@ -1037,7 +1039,9 @@ no Infisical: all settings are environment variables (Section 7.1).
    ```
 
    Expected result: each new migration is reported as applied, or "No pending migrations to
-   apply".
+   apply". On an empty database (the first deployment) all migrations in `db/migrations/` are
+   applied in order. The result was compared with `db/schema.prisma` using `prisma migrate diff`
+   and has no difference, so a new database needs no other step.
 4. Put the settings of Section 7.1 in a file that only the server administrator can read, for
    example `/etc/metang/app.env`. One `NAME=value` per line, without quotes. Then start the
    application:

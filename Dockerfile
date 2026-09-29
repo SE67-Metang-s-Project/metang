@@ -1,15 +1,16 @@
-# Stage 1: Install dependencies
-FROM node:24-slim AS deps
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
-
-# Stage 2: Build the application
+# Stage 1: Install dependencies and build the application. The dependency layer comes before the
+# source copy, so it is reused until package-lock.json changes.
 FROM node:24-slim AS build
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
+# Prisma's schema engine (prisma migrate deploy, in the migrate target below) needs libssl. The
+# runner image does not: the app talks to PostgreSQL through the pg driver adapter.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
 COPY . .
 
 ARG PUBLIC_SUBPATH=/metang
@@ -22,11 +23,11 @@ ENV DIRECT_URL=postgresql://build:build@localhost:5432/build
 RUN npx prisma generate
 RUN npx next build
 
-# Stage 3: Database migrations runner
+# Stage 2: Database migrations runner
 FROM build AS migrate
 CMD ["npx", "prisma", "migrate", "deploy"]
 
-# Stage 4: Production runner (must be last)
+# Stage 3: Production runner (must be last)
 FROM node:24-slim AS runner
 WORKDIR /app
 
