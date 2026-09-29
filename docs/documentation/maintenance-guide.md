@@ -1,8 +1,8 @@
 # Me_Tang Maintenance Guide
 
 Version covered: Me_Tang 0.1.0 (`package.json` version `0.1.0`)
-Document version: 1.4 draft
-Date: 2026-09-29
+Document version: 1.5 draft
+Date: 2026-09-30
 
 ---
 
@@ -268,7 +268,7 @@ You need these accounts. Never share one account between people.
 
 A user gets the `student` role automatically at first sign-in when the CMU profile is a
 student account. The SuperAdmin screen (**ตั้งค่าระบบ** > **ผู้ใช้และบทบาท**) adds `admin` and
-`super_admin` users and switches a user to `executive`. No screen grants `advisor`: grant it
+`super_admin` users, and edits or replaces the `executive`. No screen grants `advisor`: grant it
 with the SQL of Section 3.3, using `advisor` in place of `super_admin`, and record who ran it.
 
 | Role | Can do |
@@ -276,8 +276,8 @@ with the SQL of Section 3.3, using `advisor` in place of `super_admin`, and reco
 | `student` | Apply for a loan, correct and resubmit, cancel until the executive approves (not in `pending_disbursement` or later), upload repayment slips. |
 | `advisor` | Approve, return, or reject requests of their own advisees. A comment is required. |
 | `admin` | Review requests, set the approved amount, record disbursement with a slip, confirm or reject repayment slips. The due-date email API (`POST /metang/api/notifications/outlook`) is open to admins, but version 0.1.0 has no button for it. |
-| `executive` | Final decision: approve, return to the admin, or reject. The database allows only one `executive`. |
-| `super_admin` | Everything an admin can do, plus add, edit, and delete `admin` and `super_admin` users, grant and revoke roles, record fund transactions, and edit system settings. The last `super_admin` cannot be removed in the application. |
+| `executive` | Final decision: approve, return to the admin, or reject. The database allows only one `executive`, and the application never removes the role: the SuperAdmin replaces the executive with **แก้ไข** (see below). |
+| `super_admin` | Everything an admin can do, plus add and delete `admin` and `super_admin` users, edit the executive, grant and revoke roles, record fund transactions, and edit system settings. The last `super_admin` cannot be removed in the application. |
 
 Any CMU account can sign in. Staff pages depend only on the roles that a SuperAdmin grants.
 The student functions need a student ID that matches the Faculty of Nursing pattern
@@ -290,20 +290,40 @@ Role changes have side effects:
   `pending_executive` move to the SuperAdmin who revoked the role. The audit log records
   `loan_request.admin_reassigned`.
 - Deleting an `admin` or `super_admin` user removes those two roles and moves the same requests to
-  the SuperAdmin who deletes. It does not disable the account: a person who keeps another role,
-  such as `advisor`, can still sign in. Only the SuperAdmin screen deletes users; the last
-  `super_admin` and the `executive` cannot be deleted there (edit the executive instead), and
-  nobody can delete their own account.
-- The `app_user` row is deleted only when no role is left and no other table refers to it. A
-  person with history, such as `audit_log` rows or loan approvals, keeps the row so that the
-  history stays. The `user.deleted` audit row has `after.rowDeleted` set to `true` or `false`.
+  the SuperAdmin who deletes. It never deletes the `app_user` row: the person's approvals, payouts,
+  and audit rows point at it and keep their name. A person who keeps another role, such as
+  `advisor`, can still sign in. Only the SuperAdmin screen deletes users. The delete is refused
+  for the last `super_admin` (`FINAL_SUPER_ADMIN`), for the `executive` (edit the executive
+  instead), for a user with neither role (`NOT_MANAGED_USER`), and for your own account
+  (`SELF_DEMOTION`): promote a successor, and the successor deletes you. The `user.deleted` audit
+  row has `before.roles` and `after.roles`, the roles left after the delete.
 - Add user and Edit accept only addresses at `cmu.ac.th`, the domain the email API sends to. Add
   user finds an existing person by the address or by the account name before `@`; it keeps their
   old names in `before` of the `user_role.granted` audit row.
+- Nobody removes their own `super_admin` role, even when another SuperAdmin exists
+  (`SELF_DEMOTION`): promote a successor, and the successor removes it.
+- The executive is never removed. The role cannot be revoked (`EXECUTIVE_ROLE_LOCKED`) or deleted.
+  **แก้ไข** (`PATCH /api/super-admin/users/{id}`) has two outcomes. The same email, or the same
+  account name before `@`, fixes the names in place (`user.updated`). A different email creates a
+  new user and moves the `executive` role to that user (`executive.handed_over`); the previous
+  executive keeps their row, other roles, and history, so past decisions still carry their name.
+  An email or account name that belongs to another user is refused (`EMAIL_ALREADY_IN_USE`): the
+  role never goes to an existing account. Only the executive can be edited (`NOT_EXECUTIVE`).
 - The audit log records these user changes as `user.created`, `user.updated`, `user.deleted`,
-  `user_role.granted`, and `user_role.removed`.
-- To change the executive, revoke the role from the current executive first. A second
-  `executive` grant fails with `EXECUTIVE_ALREADY_EXISTS`.
+  `executive.handed_over`, `user_role.granted`, and `user_role.removed`.
+- An `executive` grant to a second person fails with `EXECUTIVE_ALREADY_EXISTS`.
+- A returned request stays with the `admin` who forwarded it (`assignedAdminId`). Since commit
+  `c2f0d9b` the admin and SuperAdmin pages hide a `pending_admin` request assigned to another
+  admin, as `GET /api/admin/loan-requests` and the decide route already did.
+- Known screen defects in `components/superadmin/setting/UserRolesTab.tsx`, not yet fixed (Jira
+  NAT-248). Both a refused delete (for example your own account) and a refused role removal show
+  the `ไม่สามารถ...คนสุดท้ายได้` message, because the screen treats any 409 as that error. On the executive row, the role selector
+  grants the new role first and then fails to remove `executive`, so the user can end up with
+  both roles. After a hand-over the list still shows the previous executive until the page reloads. A SuperAdmin who
+  picks another role on their own row ends up with both roles for the same reason. The selector
+  shows the highest role (`super_admin`, then `executive`, then `admin`), so picking it again
+  does nothing: remove the extra role with `POST /api/super-admin/users/{id}/roles` and
+  `action: remove`.
 
 ### 3.3 Add the first SuperAdmin
 
@@ -1279,7 +1299,7 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 | Slip does not open, `Unable to read slip` | Same as above, or the file was deleted from Storage. | Check Storage settings. Check that the file exists in **Storage**. | 4.8 |
 | Student sees `ไม่พบข้อมูลบัญชีรับชำระเงิน` | The `system_setting` row is missing (`System settings are not initialized`). | Restore the row from a backup, or ask the developers to re-apply the default row. | 5.4 |
 | Admin cannot disburse: `Insufficient fund balance for this disbursement` | The fund ledger balance is lower than the approved amount. | A SuperAdmin raises **วงเงินรวม** in **ตั้งค่าระบบ** > **วงเงินระบบ**. The screen records a `credit_adjustment`. The API also accepts `top_up` (Section 4.9). | 4.9 |
-| SuperAdmin cannot add a second executive | Only one `executive` is allowed. | Remove the role from the current executive first. | 3.2 |
+| SuperAdmin cannot add a second executive | Only one `executive` is allowed, and its role cannot be removed. | Use **แก้ไข** on the executive row with the new person's email. | 3.2 |
 | Users see `The request changed; please retry` often | Two people changed the same record at the same time. | Ask the user to reload and retry. If frequent, check database load. | 8 |
 | The executive or SuperAdmin financial overview shows all zeros | The overview could not read the database. It returns zeros with HTTP `200` instead of an error, and logs `Unable to load executive financial overview from DB` or `Unable to load financial overview from DB for SuperAdmin`. | Check the Vercel logs and the database connection. | 8 |
 | Slow first page after a quiet period | Database connections were closed after 5 minutes idle, and serverless functions were cold. | Normal. The next requests are faster. | None |
@@ -1433,13 +1453,17 @@ cannot reach.
 | `CONFLICT`: `Role is already granted` (409) | The user has the role. | None. |
 | `CONFLICT`: `Role is not currently granted` (409) | The user does not have the role. | None. |
 | `FINAL_SUPER_ADMIN`: `The final SuperAdmin role cannot be removed` (409) / `ไม่สามารถยกเลิกบทบาทผู้ดูแลระบบคนสุดท้ายได้` | At least one SuperAdmin must remain. | Grant another SuperAdmin first. |
-| `EXECUTIVE_ALREADY_EXISTS`: `มีผู้บริหารในระบบอยู่แล้ว ไม่สามารถแต่งตั้งเพิ่มได้ (จำกัด 1 คน)` (409) / `มีผู้บริหารในระบบแล้ว (<name>) กรุณาเปลี่ยนบทบาทผู้บริหารเดิมก่อน` | Only one executive is allowed. | Remove the current executive role first. |
+| `EXECUTIVE_ROLE_LOCKED`: `The executive role cannot be removed; edit the executive's name and email instead` (409) | Removing the `executive` role. | Use **แก้ไข** on the executive row. |
+| `SELF_DEMOTION`: `You cannot remove your own SuperAdmin role` (409) | A SuperAdmin removing their own `super_admin` role. | Promote a successor; the successor removes the role. |
+| `EXECUTIVE_ALREADY_EXISTS`: `มีผู้บริหารในระบบอยู่แล้ว ไม่สามารถแต่งตั้งเพิ่มได้ (จำกัด 1 คน)` (409) / `มีผู้บริหารในระบบแล้ว (<name>) กรุณาเปลี่ยนบทบาทผู้บริหารเดิมก่อน` | Only one executive is allowed. | Use **แก้ไข** on the current executive's row with the new person's email. |
 | `CONFLICT`: `The role assignment changed; please retry` (409) | Concurrent change. | Retry. |
 | `CONFLICT`: `ผู้ใช้งานนี้มีบทบาทนี้อยู่แล้ว` (409) | Adding a user who already has the chosen role. | None. |
 | `CONFLICT`: `อีเมลนี้มีผู้ใช้งานในระบบแล้ว` (409) | The new email of an executive, or its account name before `@`, belongs to another user. | Use another email. |
 | `FINAL_SUPER_ADMIN`: `ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายได้ (ต้องมีผู้ดูแลระบบอย่างน้อย 1 คนในระบบ)` (409) | Deleting the last SuperAdmin. | Add another SuperAdmin first. |
 | `BAD_REQUEST`: `ไม่สามารถลบผู้บริหารได้ กรุณาแก้ไขข้อมูลผู้บริหารแทน` (400) | Deleting the executive. | Edit the executive instead. |
-| `BAD_REQUEST`: `ไม่สามารถลบบัญชีของตนเองได้ ให้ผู้ดูแลระบบคนอื่นเป็นผู้ลบ` (400) | A SuperAdmin deleting their own account. | Ask another SuperAdmin. |
+| `SELF_DEMOTION`: `ไม่สามารถลบบัญชีของตนเองได้ กรุณาแต่งตั้งผู้ดูแลระบบคนใหม่ แล้วให้ผู้ดูแลระบบคนนั้นลบบัญชีของคุณ` (409) | A SuperAdmin deleting their own account. | Promote a successor; the successor deletes the account. |
+| `CONFLICT`: `ผู้ใช้งานนี้ไม่ได้เป็นเจ้าหน้าที่หรือผู้ดูแลระบบ` (409) | Deleting a user who has neither `admin` nor `super_admin`. | None. |
+| `CONFLICT`: `แก้ไขได้เฉพาะข้อมูลผู้บริหารเท่านั้น` (409) | Editing a user who is not the executive, for example after another SuperAdmin replaced the executive. | Reload the list. |
 | `VALIDATION_ERROR`: `กรุณาระบุชื่อ-นามสกุล`, `กรุณาระบุอีเมลที่ถูกต้อง`, `กรุณาระบุอีเมล CMU (ลงท้ายด้วย @cmu.ac.th)`, `บทบาทต้องเป็น 'admin' หรือ 'super_admin'`, `Invalid JSON request`, `Request body must be an object` (422) | Add-user or edit-user form values that are not valid. | Correct the form. |
 | `ไม่สามารถโหลดรายชื่อผู้ใช้จากฐานข้อมูลได้`, `ไม่สามารถเพิ่มบทบาทผู้ใช้ได้`, `เกิดข้อผิดพลาดในการเปลี่ยนบทบาท` | Role screen errors. | Retry. Check logs. |
 | `VALIDATION_ERROR`: `request body is invalid`, `action is invalid`, `role is invalid` (422) | Invalid role request. | Report to support. |
@@ -1568,3 +1592,4 @@ Include this information:
 | 1.2 draft | 2026-09-29 | Me_Tang development team | Jira NAT-214: SuperAdmin user and role screen, roles and audit actions, and error codes brought up to the code of 2026-09-29. The deploy platform is not chosen: `[TO VERIFY]` markers that assume Vercel or Supabase now say so, and markers for facts that the client or CMU ITSC will supply at hand-over were removed. |
 | 1.3 draft | 2026-09-29 | Me_Tang development team | Jira NAT-243 and NAT-244: delete keeps the account row of a person with history, nobody deletes their own account, and Add user and Edit accept CMU addresses only. |
 | 1.4 draft | 2026-09-30 | Me_Tang development team | Sections 5.3 and 5.4: the two untested procedures are now plain "Not tested" notes, not `[TO VERIFY]` markers. |
+| 1.5 draft | 2026-09-30 | Me_Tang development team | Jira NAT-240: user management brought up to the code of commit `c2f0d9b`. Delete never removes the account row and refuses your own account with 409 `SELF_DEMOTION`, the executive is replaced with **แก้ไข** and a new email (`executive.handed_over`), the executive role cannot be revoked, the new error codes, and admins no longer see another admin's returned request. The screen defects of `UserRolesTab.tsx` are recorded in Section 3.2. |
