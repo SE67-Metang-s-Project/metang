@@ -12,6 +12,10 @@ import {
   CheckCircle2,
   AlertCircle,
   X,
+  UserPlus,
+  Trash2,
+  Pencil,
+  AlertTriangle,
 } from "lucide-react";
 import TablePagination from "@/components/shared/TablePagination";
 import type { PredefinedRoleName, SuperAdminUser } from "@/lib/loan-api-types";
@@ -77,6 +81,28 @@ export default function UserRolesTab({
   const [prevInitial, setPrevInitial] = useState(initialUsers);
   const [mutatingUserId, setMutatingUserId] = useState<string | null>(null);
 
+  // Add User Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addForm, setAddForm] = useState<{
+    fullNameTh: string;
+    email: string;
+    role: "admin" | "super_admin";
+  }>({ fullNameTh: "", email: "", role: "admin" });
+  const [isAddingUser, setIsAddingUser] = useState(false);
+
+  // Edit Executive Modal State
+  const [editUser, setEditUser] = useState<SuperAdminUser | null>(null);
+  const [editForm, setEditForm] = useState<{
+    fullNameTh: string;
+    fullNameEn: string;
+    email: string;
+  }>({ fullNameTh: "", fullNameEn: "", email: "" });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // Delete User Confirmation Modal State
+  const [userToDelete, setUserToDelete] = useState<SuperAdminUser | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+
   if (prevInitial !== initialUsers) {
     setPrevInitial(initialUsers);
     setUsersList(initialUsers);
@@ -94,6 +120,10 @@ export default function UserRolesTab({
       setToast(null);
     }, 4000);
   };
+
+  const superAdminCount = usersList.filter((u) =>
+    u.roles.some((r) => r.role === "super_admin"),
+  ).length;
 
   // If initialUsers was empty, fetch client-side
   useEffect(() => {
@@ -204,7 +234,7 @@ export default function UserRolesTab({
       const displayName = user.fullNameTh || user.fullNameEn || user.email;
       showToast("success", `เปลี่ยนบทบาทของ ${displayName} เป็น "${newThaiRole}" เรียบร้อยแล้ว`);
 
-      // NAT-114: Refresh session permissions if own role was changed
+      // Refresh session permissions if own role was changed
       if (currentUserId && user.id === currentUserId) {
         startTransition(() => {
           router.refresh();
@@ -218,7 +248,145 @@ export default function UserRolesTab({
     }
   };
 
-  // Filter users by search query and role
+  // Handle Add User (Admin or Super Admin)
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addForm.fullNameTh.trim()) {
+      showToast("error", "กรุณากรอกชื่อ-นามสกุล");
+      return;
+    }
+    if (!addForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(addForm.email.trim())) {
+      showToast("error", "กรุณากรอกอีเมลให้ถูกต้อง");
+      return;
+    }
+
+    setIsAddingUser(true);
+    try {
+      const res = await fetch(withBasePath("/api/super-admin/users"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullNameTh: addForm.fullNameTh.trim(),
+          email: addForm.email.trim().toLowerCase(),
+          role: addForm.role,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error?.message || "ไม่สามารถเพิ่มผู้ใช้งานได้");
+      }
+
+      const createdUser: SuperAdminUser = json.data;
+      setUsersList((prev) => {
+        const existsIndex = prev.findIndex((u) => u.id === createdUser.id);
+        if (existsIndex >= 0) {
+          const copy = [...prev];
+          copy[existsIndex] = createdUser;
+          return copy;
+        }
+        return [createdUser, ...prev];
+      });
+
+      setIsAddModalOpen(false);
+      setAddForm({ fullNameTh: "", email: "", role: "admin" });
+      const displayName = createdUser.fullNameTh || createdUser.email;
+      showToast(
+        "success",
+        `เพิ่มผู้ใช้งาน ${displayName} (${ROLE_TO_THAI[addForm.role]}) เรียบร้อยแล้ว`,
+      );
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการเพิ่มผู้ใช้งาน";
+      showToast("error", msg);
+    } finally {
+      setIsAddingUser(false);
+    }
+  };
+
+  // Handle Edit Executive (Name and Email)
+  const handleSaveExecutiveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editUser) return;
+    if (!editForm.fullNameTh.trim()) {
+      showToast("error", "กรุณากรอกชื่อ-นามสกุล");
+      return;
+    }
+    if (!editForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email.trim())) {
+      showToast("error", "กรุณากรอกอีเมลให้ถูกต้อง");
+      return;
+    }
+
+    setIsSavingEdit(true);
+    try {
+      const res = await fetch(withBasePath(`/api/super-admin/users/${editUser.id}`), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullNameTh: editForm.fullNameTh.trim(),
+          fullNameEn: editForm.fullNameEn.trim() || undefined,
+          email: editForm.email.trim().toLowerCase(),
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error?.message || "ไม่สามารถแก้ไขข้อมูลได้");
+      }
+
+      const updatedUser: SuperAdminUser = json.data;
+      setUsersList((prev) =>
+        prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)),
+      );
+
+      setEditUser(null);
+      showToast("success", "แก้ไขข้อมูลผู้บริหารเรียบร้อยแล้ว");
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการแก้ไขข้อมูล";
+      showToast("error", msg);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  // Handle Delete User (Admin or Super Admin)
+  const handleDeleteUser = async (user: SuperAdminUser) => {
+    if (user.roles.some((r) => r.role === "super_admin") && superAdminCount <= 1) {
+      showToast("error", "ไม่สามารถลบได้ เนื่องจากต้องมีผู้ดูแลระบบ (Super Admin) อย่างน้อย 1 คนในระบบ");
+      setUserToDelete(null);
+      return;
+    }
+
+    setIsDeletingUser(true);
+    try {
+      const res = await fetch(withBasePath(`/api/super-admin/users/${user.id}`), {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (err.error?.code === "FINAL_SUPER_ADMIN" || res.status === 409) {
+          throw new Error("ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายได้ (ต้องมีผู้ดูแลระบบอย่างน้อย 1 คนในระบบ)");
+        }
+        throw new Error(err.error?.message || "ไม่สามารถลบผู้ใช้งานได้");
+      }
+
+      setUsersList((prev) => prev.filter((u) => u.id !== user.id));
+      setUserToDelete(null);
+      const displayName = user.fullNameTh || user.fullNameEn || user.email;
+      showToast("success", `ลบผู้ใช้งาน ${displayName} เรียบร้อยแล้ว`);
+
+      if (currentUserId && user.id === currentUserId) {
+        startTransition(() => {
+          router.refresh();
+        });
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการลบผู้ใช้งาน";
+      showToast("error", msg);
+    } finally {
+      setIsDeletingUser(false);
+    }
+  };
+
   // Filter users by search query and role (managing only admin, executive, super_admin)
   const filteredUsers = usersList.filter((user) => {
     const hasManagedRole = user.roles.some((r) => MANAGED_ROLES.has(r.role));
@@ -275,14 +443,14 @@ export default function UserRolesTab({
           <span className="text-sm font-medium">{toast.message}</span>
           <button
             onClick={() => setToast(null)}
-            className="text-gray-400 hover:text-white ml-2"
+            className="text-gray-400 hover:text-white ml-2 cursor-pointer"
           >
             <X size={16} />
           </button>
         </div>
       )}
 
-      {/* Filter & Search */}
+      {/* Filter & Search & Add User */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -306,6 +474,16 @@ export default function UserRolesTab({
             <option value="ผู้ดูแลระบบ">ผู้ดูแลระบบ</option>
           </select>
         </div>
+        <button
+          onClick={() => {
+            setAddForm({ fullNameTh: "", email: "", role: "admin" });
+            setIsAddModalOpen(true);
+          }}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-[#ea580c] hover:bg-[#c2410c] text-white rounded-lg text-sm font-medium transition-colors shadow-sm shrink-0 cursor-pointer"
+        >
+          <UserPlus size={16} />
+          <span>เพิ่มผู้ใช้งาน</span>
+        </button>
       </div>
 
       {/* User List Container */}
@@ -349,6 +527,9 @@ export default function UserRolesTab({
                 (u) => u.id !== user.id && u.roles.some((r) => r.role === "executive"),
               );
 
+              const isSuperAdmin = user.roles.some((r) => r.role === "super_admin");
+              const isExecutive = user.roles.some((r) => r.role === "executive");
+
               return (
                 <div
                   key={user.id}
@@ -391,35 +572,83 @@ export default function UserRolesTab({
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                    <div className="text-[12px] text-gray-600 truncate pr-2">{user.email}</div>
+                  <div className="flex items-center justify-between border-t border-gray-100 pt-3 gap-2">
+                    <div className="text-[12px] text-gray-600 truncate flex-1">{user.email}</div>
 
-                    {/* Role Dropdown */}
-                    <div className="relative shrink-0">
-                      {isMutating ? (
-                        <div className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-gray-500 bg-gray-100 rounded-lg">
-                          <Loader2 size={12} className="animate-spin text-orange-500" />
-                          กำลังบันทึก...
-                        </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Role Dropdown */}
+                      <div className="relative">
+                        {isMutating ? (
+                          <div className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-gray-500 bg-gray-100 rounded-lg">
+                            <Loader2 size={12} className="animate-spin text-orange-500" />
+                            กำลังบันทึก...
+                          </div>
+                        ) : (
+                          <>
+                            <select
+                              value={primaryRole}
+                              onChange={(e) => handleRoleChange(user, e.target.value)}
+                              disabled={isMutating}
+                              className="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-[12px] font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 outline-none cursor-pointer transition-all focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
+                            >
+                              <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
+                              <option value="ผู้บริหาร" disabled={isAnotherUserExecutive}>
+                                ผู้บริหาร{isAnotherUserExecutive ? " (มีผู้บริหารแล้ว)" : ""}
+                              </option>
+                              <option value="ผู้ดูแลระบบ">ผู้ดูแลระบบ</option>
+                            </select>
+                            <ChevronDown
+                              size={14}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500"
+                            />
+                          </>
+                        )}
+                      </div>
+
+                      {/* Action Button: Edit for Executive, Delete for Admin/SuperAdmin */}
+                      {isExecutive ? (
+                        <button
+                          onClick={() => {
+                            setEditUser(user);
+                            setEditForm({
+                              fullNameTh: user.fullNameTh || "",
+                              fullNameEn: user.fullNameEn || "",
+                              email: user.email || "",
+                            });
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg cursor-pointer"
+                          title="แก้ไขชื่อและอีเมล"
+                        >
+                          <Pencil size={12} />
+                          <span>แก้ไข</span>
+                        </button>
                       ) : (
-                        <>
-                          <select
-                            value={primaryRole}
-                            onChange={(e) => handleRoleChange(user, e.target.value)}
-                            disabled={isMutating}
-                            className="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-[12px] font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 outline-none cursor-pointer transition-all focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
-                          >
-                            <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
-                            <option value="ผู้บริหาร" disabled={isAnotherUserExecutive}>
-                              ผู้บริหาร{isAnotherUserExecutive ? " (มีผู้บริหารแล้ว)" : ""}
-                            </option>
-                            <option value="ผู้ดูแลระบบ">ผู้ดูแลระบบ</option>
-                          </select>
-                          <ChevronDown
-                            size={14}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500"
-                          />
-                        </>
+                        <button
+                          onClick={() => {
+                            if (isSuperAdmin && superAdminCount <= 1) {
+                              showToast(
+                                "error",
+                                "ไม่สามารถลบได้ เนื่องจากต้องมีผู้ดูแลระบบ (Super Admin) อย่างน้อย 1 คนในระบบ",
+                              );
+                              return;
+                            }
+                            setUserToDelete(user);
+                          }}
+                          disabled={isSuperAdmin && superAdminCount <= 1}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg ${
+                            isSuperAdmin && superAdminCount <= 1
+                              ? "text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed"
+                              : "text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 cursor-pointer"
+                          }`}
+                          title={
+                            isSuperAdmin && superAdminCount <= 1
+                              ? "ไม่สามารถลบได้ ต้องมีผู้ดูแลระบบอย่างน้อย 1 คนในระบบ"
+                              : "ลบผู้ใช้งาน"
+                          }
+                        >
+                          <Trash2 size={12} />
+                          <span>ลบ</span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -433,9 +662,10 @@ export default function UserRolesTab({
         <div className="hidden md:block overflow-x-auto relative">
           <table className="w-full text-left border-collapse bg-white">
             <colgroup>
-              <col className="w-[40%]" />
               <col className="w-[35%]" />
-              <col className="w-[25%]" />
+              <col className="w-[28%]" />
+              <col className="w-[22%]" />
+              <col className="w-[15%]" />
             </colgroup>
             <thead>
               <tr className="bg-gray-100/70 border-b border-gray-200 text-gray-700 text-[13px]">
@@ -445,13 +675,16 @@ export default function UserRolesTab({
                 <th className="py-3.5 px-6 font-semibold border-r border-gray-200">
                   อีเมล / รหัสประจำตัว
                 </th>
-                <th className="py-3.5 px-6 font-semibold text-center">บทบาท</th>
+                <th className="py-3.5 px-6 font-semibold text-center border-r border-gray-200">
+                  บทบาท
+                </th>
+                <th className="py-3.5 px-6 font-semibold text-center">จัดการ</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={3}>
+                  <td colSpan={4}>
                     <div className="flex flex-col items-center justify-center py-12 text-gray-500">
                       <Loader2 className="h-8 w-8 mb-2 animate-spin text-orange-500" />
                       <p className="text-sm">กำลังโหลดข้อมูลผู้ใช้...</p>
@@ -460,7 +693,7 @@ export default function UserRolesTab({
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={3}>
+                  <td colSpan={4}>
                     <div className="flex flex-col items-center justify-center py-12 text-gray-500">
                       <SearchX className="h-8 w-8 mb-2 text-gray-400" />
                       <p className="text-sm">ไม่พบผู้ใช้งานที่ค้นหา</p>
@@ -480,6 +713,9 @@ export default function UserRolesTab({
                   const isAnotherUserExecutive = usersList.some(
                     (u) => u.id !== user.id && u.roles.some((r) => r.role === "executive"),
                   );
+
+                  const isSuperAdmin = user.roles.some((r) => r.role === "super_admin");
+                  const isExecutive = user.roles.some((r) => r.role === "executive");
 
                   return (
                     <tr
@@ -523,7 +759,7 @@ export default function UserRolesTab({
                         <div className="text-[13px] text-gray-700">{user.email}</div>
                         <div className="text-[12px] text-gray-400 mt-0.5">{displayId}</div>
                       </td>
-                      <td className="py-3 px-6 align-middle">
+                      <td className="py-3 px-6 border-r border-gray-100 align-middle">
                         <div className="flex justify-center">
                           <div className="relative inline-block w-40">
                             {isMutating ? (
@@ -554,6 +790,54 @@ export default function UserRolesTab({
                           </div>
                         </div>
                       </td>
+                      <td className="py-3 px-6 align-middle">
+                        <div className="flex justify-center items-center gap-2">
+                          {isExecutive ? (
+                            <button
+                              onClick={() => {
+                                setEditUser(user);
+                                setEditForm({
+                                  fullNameTh: user.fullNameTh || "",
+                                  fullNameEn: user.fullNameEn || "",
+                                  email: user.email || "",
+                                });
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg transition-colors cursor-pointer"
+                              title="แก้ไขชื่อและอีเมล"
+                            >
+                              <Pencil size={13} />
+                              <span>แก้ไข</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                if (isSuperAdmin && superAdminCount <= 1) {
+                                  showToast(
+                                    "error",
+                                    "ไม่สามารถลบได้ เนื่องจากต้องมีผู้ดูแลระบบ (Super Admin) อย่างน้อย 1 คนในระบบ",
+                                  );
+                                  return;
+                                }
+                                setUserToDelete(user);
+                              }}
+                              disabled={isSuperAdmin && superAdminCount <= 1}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                                isSuperAdmin && superAdminCount <= 1
+                                  ? "text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed"
+                                  : "text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 cursor-pointer"
+                              }`}
+                              title={
+                                isSuperAdmin && superAdminCount <= 1
+                                  ? "ไม่สามารถลบได้ ต้องมีผู้ดูแลระบบอย่างน้อย 1 คนในระบบ"
+                                  : "ลบผู้ใช้งาน"
+                              }
+                            >
+                              <Trash2 size={13} />
+                              <span>ลบ</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })
@@ -570,6 +854,235 @@ export default function UserRolesTab({
           />
         )}
       </div>
+
+      {/* Modal: Add User (Admin or Super Admin) */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 relative">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-semibold">
+                  <UserPlus size={18} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-base">เพิ่มผู้ใช้งานใหม่</h3>
+                  <p className="text-xs text-gray-500">เพิ่มเจ้าหน้าที่ หรือ ผู้ดูแลระบบในระบบ</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddUser} className="space-y-4 mt-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  ชื่อ-นามสกุล <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="เช่น นายสมชาย ใจดี"
+                  value={addForm.fullNameTh}
+                  onChange={(e) => setAddForm({ ...addForm, fullNameTh: e.target.value })}
+                  className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  อีเมล CMU / อีเมล <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="เช่น somchai.j@cmu.ac.th"
+                  value={addForm.email}
+                  onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                  className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  บทบาท <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={addForm.role}
+                  onChange={(e) =>
+                    setAddForm({ ...addForm, role: e.target.value as "admin" | "super_admin" })
+                  }
+                  className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 cursor-pointer"
+                >
+                  <option value="admin">เจ้าหน้าที่</option>
+                  <option value="super_admin">ผู้ดูแลระบบ</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  disabled={isAddingUser}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={isAddingUser}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#ea580c] hover:bg-[#c2410c] rounded-lg shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isAddingUser && <Loader2 size={14} className="animate-spin" />}
+                  บันทึก
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Executive (Name and Email) */}
+      {editUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 relative">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-semibold">
+                  <Pencil size={18} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-base">แก้ไขข้อมูลผู้บริหาร</h3>
+                  <p className="text-xs text-gray-500">แก้ไขชื่อ-นามสกุล และอีเมลของผู้บริหาร</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditUser(null)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveExecutiveEdit} className="space-y-4 mt-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  ชื่อ-นามสกุล (ภาษาไทย) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="เช่น ผศ.ดร. นันทนา สุขใจ"
+                  value={editForm.fullNameTh}
+                  onChange={(e) => setEditForm({ ...editForm, fullNameTh: e.target.value })}
+                  className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  ชื่อ-นามสกุล (ภาษาอังกฤษ)
+                </label>
+                <input
+                  type="text"
+                  placeholder="เช่น Asst. Prof. Dr. Nantana Sukjai"
+                  value={editForm.fullNameEn}
+                  onChange={(e) => setEditForm({ ...editForm, fullNameEn: e.target.value })}
+                  className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  อีเมล <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="เช่น nantana.s@cmu.ac.th"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setEditUser(null)}
+                  disabled={isSavingEdit}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEdit}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#ea580c] hover:bg-[#c2410c] rounded-lg shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingEdit && <Loader2 size={14} className="animate-spin" />}
+                  บันทึกข้อมูล
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Confirm Deletion (Admin or Super Admin) */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 relative">
+            <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
+              <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                <AlertTriangle size={20} />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 text-base">ยืนยันการลบผู้ใช้งาน</h3>
+                <p className="text-xs text-gray-500">การดำเนินการนี้จะไม่สามารถย้อนกลับได้</p>
+              </div>
+            </div>
+
+            <div className="py-4 text-sm text-gray-600 space-y-2">
+              <p>
+                คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้งาน{" "}
+                <strong className="text-gray-900 font-semibold">
+                  {userToDelete.fullNameTh || userToDelete.fullNameEn || userToDelete.email}
+                </strong>{" "}
+                ({getPrimaryRole(userToDelete.roles)}) ออกจากระบบ?
+              </p>
+              {userToDelete.roles.some((r) => r.role === "admin") && (
+                <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                  หมายเหตุ: หากเจ้าหน้าที่มีคำร้องรอตรวจสอบอยู่ ระบบจะโอนคำร้องไปยังผู้ดูแลระบบโดยอัตโนมัติ
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setUserToDelete(null)}
+                disabled={isDeletingUser}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteUser(userToDelete)}
+                disabled={isDeletingUser}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isDeletingUser && <Loader2 size={14} className="animate-spin" />}
+                ยืนยันการลบ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

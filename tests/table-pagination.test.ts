@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getVisiblePages } from "../components/shared/TablePagination";
+import { getVisiblePages } from "../lib/pagination";
 
 test("getVisiblePages returns empty array for 0 or negative pages", () => {
   assert.deepEqual(getVisiblePages(1, 0), []);

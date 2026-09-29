@@ -148,9 +148,11 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
             </Link>
             <div>
               <h1 className="font-semibold text-[15px] text-gray-900 leading-tight">
-                CMU Student Loan
+                FON - Metang
               </h1>
-              <p className="text-[12px] text-gray-500">ระบบทุนกู้ยืม</p>
+              <p className="text-[12px] text-gray-500 leading-tight mt-0.5">
+                ระบบกู้ยืมเงินนักศึกษาพยาบาล มช
+              </p>
             </div>
           </div>
           <button
