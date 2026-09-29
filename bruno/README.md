@@ -156,6 +156,6 @@ environment files are lost. Import into a scratch directory and diff instead.
 
 The suite reads `db/seed.ts` fixtures directly and asserts on their exact values: loan ids
 `REQ20260906000{1..11}` one per status, the dev-bypass student `…0101` holding the draft,
-advisor `อาจารย์ที่ปรึกษา ทดสอบ` (matched by exact `fullNameTh`), and the `95750` starting balance.
+advisor `สุภาวดี วงศ์คำ` (matched by exact `fullNameTh`), and the `95750` starting balance.
 Changing those fixtures breaks this suite — that is intended, but it means seed edits and
 collection edits travel together.

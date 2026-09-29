@@ -12,13 +12,13 @@ http:
     type: json
     data: |-
       {
-        "advisorName": "อาจารย์ที่ปรึกษา ทดสอบ",
+        "advisorName": "สุภาวดี วงศ์คำ",
         "amount": 2000000000,
         "studentYear": 2,
         "purpose": "ค่าเทอม 1/2569",
         "bankName": "ไทยพาณิชย์",
         "bankAccountNo": "1234567890",
-        "bankAccountName": "นักศึกษา ทดสอบ 1",
+        "bankAccountName": "พิมพ์ชนก สุขประเสริฐ",
         "installmentCount": 3
       }
 
