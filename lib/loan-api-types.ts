@@ -499,6 +499,23 @@ export type SuperAdminUserResponse = {
   data: SuperAdminUser;
 };
 
+export type CreateManagedUserBody = {
+  fullNameTh: string;
+  email: string;
+  fullNameEn?: string;
+  role: "admin" | "super_admin";
+};
+
+export type EditExecutiveBody = {
+  fullNameTh: string;
+  email: string;
+  fullNameEn?: string;
+};
+
+export type SuperAdminUserDeleteResponse = {
+  data: { success: boolean; message: string };
+};
+
 export type FundLedgerKind =
   | "top_up"
   | "withdrawal"
