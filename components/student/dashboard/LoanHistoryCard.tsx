@@ -1,4 +1,5 @@
 import type { LoanRequestHistoryItem } from "@/app/student/studentMockData";
+import { ChevronRight } from "lucide-react";
 import styles from "@/app/student/student.module.css";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import AdaptiveKeyValueRow from "@/components/shared/AdaptiveKeyValueRow";
@@ -23,11 +24,13 @@ export default function LoanHistoryCard({
     request.statusType === "completed" ||
     request.amountLabel === "ชำระแล้ว" ||
     ["ชำระแล้ว", "ชำระเรียบร้อยแล้ว", "ชำระเสร็จสิ้น", "Paid"].includes(request.statusLabel);
+  const detailLabel = t("ดูรายละเอียดคำร้อง", "View request details");
 
   return (
     <article
       className={styles.historyCard}
       data-status={request.statusType}
+      aria-label={onOpenRequest ? `${detailLabel}: ${request.requestNumber}` : undefined}
       onClick={onOpenRequest ? () => onOpenRequest(request.requestNumber) : undefined}
       onKeyDown={
         onOpenRequest
@@ -93,6 +96,12 @@ export default function LoanHistoryCard({
             amount
           )}
         </strong>
+        {onOpenRequest ? (
+          <span className={styles.historyDetailLink}>
+            {detailLabel}
+            <ChevronRight aria-hidden="true" size={16} strokeWidth={2.5} />
+          </span>
+        ) : null}
       </div>
     </article>
   );

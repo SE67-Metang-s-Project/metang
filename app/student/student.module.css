@@ -3000,6 +3000,21 @@
   font-weight: 600 !important;
 }
 
+.historyDetailLink {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  margin-top: 5px;
+  color: var(--color-primary);
+  font-size: 13px !important;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.historyDetailLink svg {
+  flex: 0 0 auto;
+}
+
 .contactFooter {
   grid-column: 1 / -1;
   display: grid;
