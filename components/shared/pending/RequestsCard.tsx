@@ -1584,10 +1584,14 @@ export default function RequestsCard({
               {completedDecision.action === "approve"
                 ? userRole === "advisor"
                   ? "ดำเนินการอนุมัติคำร้องเสร็จสิ้น"
-                  : "ดำเนินการคำร้องเสร็จสิ้น"
+                  : isAdminOrSuperAdmin
+                    ? "ดำเนินการส่งพิจารณาคำร้องเสร็จสิ้น"
+                    : "ดำเนินการคำร้องเสร็จสิ้น"
                 : completedDecision.action === "return"
                   ? "ดำเนินการส่งกลับคำร้องเสร็จสิ้น"
-                  : "ดำเนินการไม่อนุมัติคำร้องเสร็จสิ้น"}
+                  : isAdminOrSuperAdmin
+                    ? "ดำเนินการยกเลิกคำร้องเสร็จสิ้น"
+                    : "ดำเนินการไม่อนุมัติคำร้องเสร็จสิ้น"}
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               {completedDecision.action === "approve"
