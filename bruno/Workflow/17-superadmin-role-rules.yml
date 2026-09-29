@@ -1,0 +1,86 @@
+info:
+  name: 17 SuperAdmin role rules - self, final, executive, staff removal
+  type: http
+  seq: 17
+  tags:
+    - Workflow
+
+http:
+  method: GET
+  url: "{{baseUrl}}/super-admin/users"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+  scripts:
+    - type: tests
+      code: |-
+        // Runs last: it removes staff and hands the executive role over, which no earlier step may
+        // see. The dev bypass acts as SuperAdmin ...0002, the only SuperAdmin in the seed.
+        const base = bru.interpolate("{{baseUrl}}") + "/super-admin/users";
+        const U = (n) => "00000000-0000-0000-0000-" + String(n).padStart(12, "0");
+        const statusOf = (r) => r?.status ?? r?.response?.status ?? 0;
+        // A rejected sendRequest (4xx) carries only the status, never the body, so 4xx checks are
+        // status-only; the error codes are pinned in tests/superadmin-user-roles-management.test.ts.
+        const bodyOf = (r) => r?.data ?? r?.response?.data ?? {};
+        const call = (method, path, data) =>
+          bru
+            .sendRequest({ method, url: base + path, headers: { "Content-Type": "application/json" }, data })
+            .catch((error) => error)
+            .then((r) => ({ status: statusOf(r), body: bodyOf(r) }));
+        const role = (n, action, roleName) => call("POST", `/${U(n)}/roles`, { action, role: roleName });
+
+        const selfDelete = await call("DELETE", `/${U(2)}`);
+        const selfDemote = await role(2, "remove", "super_admin");
+        test("a SuperAdmin can neither delete nor demote themself", function () {
+          expect(selfDelete.status).to.equal(409);
+          expect(selfDemote.status).to.equal(409);
+        });
+
+        const promote = await role(3, "grant", "super_admin");
+        const selfDemoteWithTwo = await role(2, "remove", "super_admin");
+        const successorRemoves = await role(3, "remove", "super_admin");
+        test("a second SuperAdmin doesn't unlock self-demotion; removing the other one works", function () {
+          expect(promote.status).to.equal(200);
+          expect(selfDemoteWithTwo.status).to.equal(409);
+          expect(successorRemoves.status).to.equal(200);
+        });
+
+        const removeExecutive = await role(1, "remove", "executive");
+        const deleteExecutive = await call("DELETE", `/${U(1)}`);
+        const editStudent = await call("PATCH", `/${U(103)}`, { fullNameTh: "x", email: "x@cmu.ac.th" });
+        test("the executive is never removed or deleted, and only the executive is editable", function () {
+          expect(removeExecutive.status).to.equal(409);
+          expect(deleteExecutive.status).to.equal(400);
+          expect(editStudent.status).to.equal(409);
+        });
+
+        // Admin 8 has hundreds of seeded approvals and payouts: the row must stay, only the role goes.
+        const deleteAdmin = await call("DELETE", `/${U(8)}`);
+        const list = await call("GET", "");
+        const admin8 = (list.body.data?.users ?? []).find((u) => u.id === U(8));
+        test("an admin with history is removed: 200, row kept, no admin role", function () {
+          expect(deleteAdmin.status).to.equal(200);
+          expect(admin8).to.not.equal(undefined);
+          expect(admin8.roles.map((r) => r.role)).to.not.include("admin");
+        });
+
+        const handOver = await call("PATCH", `/${U(1)}`, { fullNameTh: "ผู้บริหาร คนใหม่", email: "new.executive@cmu.ac.th" });
+        test("a new email hands the executive role to a new user; the old one keeps their row", function () {
+          expect(handOver.status).to.equal(200);
+          expect(handOver.body.data.id).to.not.equal(U(1));
+          expect(handOver.body.data.roles.map((r) => r.role)).to.include("executive");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  The user-management rules: at least one SuperAdmin, none can remove themself (a successor
+  removes them), exactly one executive who is replaced by editing name and email, and staff
+  removal that keeps the user row (history) and hands open loans to the remover.

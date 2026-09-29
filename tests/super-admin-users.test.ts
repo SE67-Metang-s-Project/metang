@@ -46,16 +46,18 @@ test("the delete route runs the same-origin check before anything else", () => {
   );
   assert.ok(del.indexOf("isSameOrigin(request)") > -1);
   assert.ok(del.indexOf("isSameOrigin(request)") < del.indexOf("getSuperAdminAccess()"));
-  assert.match(del, /CANNOT_DELETE_SELF/);
+  assert.match(del, /SELF_DEMOTION/);
 });
 
-test("deleting a user with history keeps the row instead of aborting the transaction", () => {
+test("deleting a user keeps the row, so history never aborts the transaction", () => {
   const del = fn("deleteManagedUser");
-  // A failed DELETE aborts a PostgreSQL transaction (25P02): only a savepoint makes the catch safe.
-  assert.match(del, /SAVEPOINT delete_app_user/);
-  assert.match(del, /ROLLBACK TO SAVEPOINT delete_app_user/);
-  assert.match(del, /error\.code !== "P2003"/);
-  assert.match(del, /targetUserId === actorId/);
+  // The row is never deleted: only the roles go, so an audit_log or loan_approval reference cannot
+  // make PostgreSQL abort the transaction (25P02), and past decisions keep their name.
+  assert.doesNotMatch(del, /appUser\.delete\(/);
+  assert.doesNotMatch(del, /SAVEPOINT/);
+  // The removed admin's open loans move to the SuperAdmin who removed them.
+  assert.match(del, /reassignOpenAdminLoans\(tx,/);
+  assert.match(del, /if \(targetUserId === actorId\) throw new RoleMutationError\("SELF_DEMOTION"\)/);
 });
 
 test("adding a user records the old names, and editing checks cmuAccount as well as email", () => {
@@ -63,5 +65,5 @@ test("adding a user records the old names, and editing checks cmuAccount as well
     fn("createManagedUser"),
     /before: \{ fullNameTh: existing\.fullNameTh, fullNameEn: existing\.fullNameEn \}/,
   );
-  assert.match(fn("updateManagedUser"), /OR: \[\{ email: cleanEmail \}, \{ cmuAccount \}\]/);
+  assert.match(fn("editExecutive"), /OR: \[\{ email: cleanEmail \}, \{ cmuAccount \}\]/);
 });
