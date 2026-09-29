@@ -58,7 +58,7 @@ export default function AdminDashboard({
       ===================================================== */}
       <section className="mb-10">
         <SectionHeader
-          title="คำร้องรอพิจารณา"
+          title="คำร้องรอตรวจสอบ"
           description="รายการคำร้องที่ต้องตรวจสอบและดำเนินการ"
           href="/admin/pending"
         />
