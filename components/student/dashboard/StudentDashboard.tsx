@@ -460,7 +460,7 @@ export default function StudentDashboard({
                 : undefined
             }
             onShowTransferSlip={
-              hasAdminTransferredFunds
+              isWaitingForTransferConfirmation || hasAdminTransferredFunds
                 ? () => {
                     if (transferSlipImage) {
                       setIsTransferSlipOpen(true);

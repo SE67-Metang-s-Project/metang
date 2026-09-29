@@ -105,15 +105,17 @@ export default function TransferSlipModal({
           </div>
         </header>
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4 sm:p-6">
-          <ImageWithSkeleton
-            alt={t("รูปสลิปการโอนเงินจากเจ้าหน้าที่", "Transfer proof image")}
-            className="h-auto max-h-[calc(100vh-10rem)] w-full max-w-full rounded-xl object-contain"
-            containerClassName="flex w-full max-w-full items-center justify-center"
-            loadingAspectRatio={342 / 400}
-            loadingContainerClassName="!w-[342px] sm:!w-96"
-            loadingImageClassName="!h-full !w-full object-contain"
-            src={imageSrc}
-          />
+          <div className="inline-flex max-w-full overflow-hidden rounded-xl">
+            <ImageWithSkeleton
+              alt={t("รูปสลิปการโอนเงินจากเจ้าหน้าที่", "Transfer proof image")}
+              className="block h-auto max-h-[calc(100vh-10rem)] w-auto max-w-full rounded-xl object-contain"
+              containerClassName="w-auto max-w-full overflow-hidden rounded-xl"
+              loadingAspectRatio={342 / 400}
+              loadingContainerClassName="!w-[342px] sm:!w-96"
+              loadingImageClassName="!h-full !w-full object-contain"
+              src={imageSrc}
+            />
+          </div>
         </div>
       </section>
     </div>

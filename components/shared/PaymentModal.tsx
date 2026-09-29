@@ -108,7 +108,8 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
     !receiptFile ||
     !transferDate ||
     !hasSelectedTime ||
-    !transferAmount;
+    !transferAmount ||
+    exceedsTotalBalance;
   const hasTransferDetailsError = Boolean(
     formErrors.transferDate || formErrors.transferTime || formErrors.transferAmount,
   );
@@ -235,6 +236,11 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
       errors.transferAmount = requiredFieldMessage;
     } else if (!Number.isSafeInteger(amount)) {
       errors.transferAmount = t("กรุณาระบุจำนวนเงินเป็นจำนวนเต็มบาท", "Enter a whole number of baht.");
+    } else if (exceedsTotalBalance) {
+      errors.transferAmount = t(
+        "จำนวนเงินที่ระบุเกินยอดหนี้คงค้างทั้งหมด",
+        "The amount exceeds the total remaining balance.",
+      );
     }
     if (transferDate && hasSelectedTime && new Date(getPaidAt()).getTime() > Date.now()) {
       errors.transferTime = t("เวลาโอนต้องไม่อยู่ในอนาคต", "The transfer time cannot be in the future.");
@@ -330,9 +336,11 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
             </span>
             <div className="min-w-0 text-left">
               <h2 className="text-xl font-semibold leading-tight text-gray-900" id="payment-modal-title">
-                {t("ชำระงวดที่", "Pay installment")} {installment.installmentNumber}
+                {t("ชำระงวดที่", "Pay Installment")} {installment.installmentNumber}
                 {installment.paymentAttempt && installment.paymentAttempt > 1
-                  ? ` ${t("(ครั้งที่", "(Attempt")} ${installment.paymentAttempt})`
+                  ? language === "th"
+                    ? ` (ครั้งที่ ${installment.paymentAttempt})`
+                    : ` (${installment.paymentAttempt})`
                   : ""}
               </h2>
               <p className="mt-1 text-sm font-normal text-gray-600">
@@ -547,7 +555,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
               {t("รายละเอียดการโอนเงิน", "Transfer Details")}
               <span aria-hidden="true" className="text-red-500">*</span>
             </h3>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-4">
               <div
                 className="relative"
                 ref={(node) => {
@@ -743,7 +751,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
               </div>
 
               <label
-                className="block sm:col-span-2"
+                className="col-span-2 block"
                 ref={(node) => {
                   fieldRefs.current.transferAmount = node;
                 }}

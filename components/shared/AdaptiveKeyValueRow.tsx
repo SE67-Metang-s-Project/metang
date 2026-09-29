@@ -10,6 +10,9 @@ type AdaptiveKeyValueRowProps = {
   valueClassName?: string;
   labelAs?: "dt" | "small";
   valueAs?: "dd" | "strong";
+  valueAlignment?: "left" | "right";
+  alwaysInline?: boolean;
+  alwaysStacked?: boolean;
 };
 
 const inlineGap = 16;
@@ -22,6 +25,9 @@ export default function AdaptiveKeyValueRow({
   valueClassName = "",
   labelAs: Label = "dt",
   valueAs: Value = "dd",
+  valueAlignment,
+  alwaysInline = false,
+  alwaysStacked = false,
 }: AdaptiveKeyValueRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [isInline, setIsInline] = useState(false);
@@ -29,6 +35,10 @@ export default function AdaptiveKeyValueRow({
   useEffect(() => {
     const row = rowRef.current;
     if (!row) return;
+
+    if (alwaysInline || alwaysStacked) {
+      return;
+    }
 
     const updateLayout = () => {
       const measureWidth = (element: HTMLElement | null) => {
@@ -55,14 +65,16 @@ export default function AdaptiveKeyValueRow({
     void document.fonts?.ready.then(updateLayout);
 
     return () => observer.disconnect();
-  }, [label, value]);
+  }, [alwaysInline, alwaysStacked, label, value]);
+
+  const layoutIsInline = alwaysInline || (!alwaysStacked && isInline);
 
   return (
     <div
       ref={rowRef}
-      data-layout={isInline ? "inline" : "stacked"}
+      data-layout={layoutIsInline ? "inline" : "stacked"}
       className={`relative !grid min-w-0 ${
-        isInline
+        layoutIsInline
           ? "!grid-cols-[max-content_minmax(0,1fr)] !items-start !gap-x-4 !gap-y-0"
           : "!grid-cols-1 !gap-y-1"
       } ${className}`}
@@ -70,7 +82,7 @@ export default function AdaptiveKeyValueRow({
       <Label data-adaptive-label className={labelClassName}>{label}</Label>
       <Value
         data-adaptive-value
-        className={`${isInline ? "!text-right" : "!text-left"} ${valueClassName}`}
+        className={`${valueAlignment ? `!text-${valueAlignment}` : layoutIsInline ? "!text-right" : "!text-left"} ${valueClassName}`}
       >
         {value}
       </Value>
