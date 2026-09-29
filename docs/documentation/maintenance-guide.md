@@ -1,8 +1,8 @@
 # Me_Tang Maintenance Guide
 
 Version covered: Me_Tang 0.1.0 (`package.json` version `0.1.0`)
-Document version: 1.1 draft
-Date: 2026-09-28
+Document version: 1.2 draft
+Date: 2026-09-29
 
 ---
 
@@ -20,8 +20,7 @@ bank transfer, and the student repays in installments by uploading bank-transfer
 
 ### 1.2 Audience and required skills
 
-This guide is for the IT staff who operate Me_Tang after delivery
-`[TO VERIFY: confirm the receiving team and their skill level with the client]`.
+This guide is for the IT staff who operate Me_Tang after delivery.
 
 You need these skills:
 
@@ -111,7 +110,7 @@ proxy_set_header X-Forwarded-Proto $scheme;
 The Vercel project needs the Pro plan or higher. The `vercel.json` schedules run every minute and
 every 3 minutes, and the Hobby plan allows only daily cron jobs (Section 2.3).
 
-`[TO VERIFY: the production Vercel project, the Vercel plan in use, the Supabase project, and the Supabase plan. Production deployment (Jira NAT-15) was not complete when this guide was written.]`
+`[TO VERIFY: the deploy platform is not chosen (Jira NAT-15, NAT-228). If it is Vercel and Supabase, confirm the production Vercel project and plan and the Supabase project and plan. If the client hosts the application itself, use Section 6.4 and ignore the Vercel parts of this guide.]`
 
 ### 2.2 How the components connect
 
@@ -221,7 +220,7 @@ works with `curl -i` on one route: `200` and a JSON body with a count means the 
 |---|---|
 | Application data | Supabase PostgreSQL, schema `public`. Main tables: `app_user`, `user_role`, `loan_request`, `loan_approval`, `installment`, `payment`, `fund_transaction`, `notification_outbox`, `audit_log`, `system_setting`, `_prisma_migrations`. |
 | Slip files | Supabase Storage bucket `bank_payment_slips` (or the name in `SUPABASE_SLIP_BUCKET`). Object names are `disbursement/<loan-id>-<timestamp>.<ext>` and `repayment/<loan-id>-<timestamp>.<ext>`. |
-| Secrets and environment settings | Infisical project `721bea71-5be4-426d-9b76-23e2e4333286`, environments `dev` and `prod`. Vercel project **Settings** > **Environment Variables** `[TO VERIFY: how production secrets reach Vercel, by Infisical integration or by manual copy]`. |
+| Secrets and environment settings | Infisical project `721bea71-5be4-426d-9b76-23e2e4333286`, environments `dev` and `prod`. Vercel project **Settings** > **Environment Variables** `[TO VERIFY: only if the platform is Vercel: how production secrets reach Vercel, by Infisical integration or by manual copy]`. |
 | In-app settings (bank account and office contact shown to users) | Table `system_setting` (one row). Edited by a SuperAdmin in the application. |
 | Scheduled job definitions | `lib/jobs/start-scheduler.ts` in the repository. |
 | Application logs | Vercel Dashboard: project > **Logs**. The application writes errors to the console only. There is no other log store and no error-tracking service. |
@@ -256,12 +255,12 @@ You need these accounts. Never share one account between people.
 
 | Account | Used for | Who issues it |
 |---|---|---|
-| Vercel project member | Deployments, logs, cron job status, environment variables, rollback | Vercel project owner `[TO VERIFY]` |
-| Supabase project member | SQL Editor, backups, Storage, usage, database password | Supabase organization owner `[TO VERIFY]` |
-| Infisical project member | Read and change secrets in `dev` and `prod` | Infisical project admin `[TO VERIFY]` |
-| CMU Entra app registration access | Callback URL, client secret renewal | CMU ITSC `[TO VERIFY]` |
+| Vercel project member | Deployments, logs, cron job status, environment variables, rollback | Vercel project owner `[TO VERIFY: only if the platform is Vercel]` |
+| Supabase project member | SQL Editor, backups, Storage, usage, database password | Supabase organization owner `[TO VERIFY: only if Supabase is used]` |
+| Infisical project member | Read and change secrets in `dev` and `prod` | Infisical project admin `[TO VERIFY: only if production secrets stay in Infisical]` |
+| CMU Entra app registration access | Callback URL, client secret renewal | CMU ITSC |
 | CMU Email API client | Student emails | CMU Faculty of Nursing MIS (`docs/Email_API_Manual.md`) |
-| CMU LINE FON API token | Reviewer LINE messages | CMU ITSC / MIS `[TO VERIFY: issuer of the FON API token]` |
+| CMU LINE FON API token | Reviewer LINE messages | CMU ITSC / MIS |
 | Me_Tang SuperAdmin role | Grant roles, fund ledger, system settings | Another SuperAdmin, or SQL for the first one (Section 3.3) |
 | Git repository access | Updates (Section 6) | An owner of the GitHub organization `SE67-Metang-s-Project`. The repository `SE67-Metang-s-Project/metang` is public: anyone can clone it, but write access needs an organization owner `[TO VERIFY: confirm who takes ownership after hand-over]` |
 
@@ -492,8 +491,7 @@ Steps:
    SELECT count(*), min(created_at) AS oldest FROM payment WHERE status = 'pending_review';
    ```
 
-Expected result: the `oldest` values are recent. Tell the fund office about old items
-`[TO VERIFY: target review time agreed with the fund office]`.
+Expected result: the `oldest` values are recent. Tell the fund office about old items.
 
 ### 4.5 Verify backups
 
@@ -520,7 +518,7 @@ Steps:
 
 1. Open the Supabase Dashboard: **Organization** > **Usage**.
 2. Note the database size and the storage size.
-3. Compare them with the plan limits `[TO VERIFY: Supabase plan and its limits]`.
+3. Compare them with the plan limits `[TO VERIFY: only if Supabase is used: its plan and limits]`.
 4. Run this query to see which tables grow:
 
    ```sql
@@ -537,8 +535,8 @@ Purpose: keep `notification_outbox` small. The application never deletes rows fr
 
 Prerequisites:
 
-- The fund office agrees on how long to keep delivery history
-  `[TO VERIFY: retention period; 180 days is used below as an example]`.
+- The fund office agrees on how long to keep delivery history (this guide uses 180 days as an
+  example).
 - A backup from today (Section 5.2).
 
 > **WARNING:** Deleted rows cannot be recovered without a backup restore. Take a backup
@@ -643,10 +641,10 @@ Prerequisites: access to Infisical `prod` and to the issuer of the secret.
 
 | Secret | Effect when it stops working | Notes |
 |---|---|---|
-| `CLIENT_SECRET` | Nobody can sign in (`token_exchange_failed`). | Entra client secrets have an expiry date `[TO VERIFY: expiry date from CMU ITSC]`. |
+| `CLIENT_SECRET` | Nobody can sign in (`token_exchange_failed`). | Entra client secrets have an expiry date. Ask CMU ITSC for the date. |
 | `SESSION_SECRET` | Changing it signs out every user. | At least 32 characters. Create one with `openssl rand -base64 32`. |
 | `CRON_SECRET` | The job scheduler does not start. Outside callers of `/metang/api/cron/` get `401 Unauthorized`. | The scheduler sends it as `Authorization: Bearer <value>`. Restart the server after a change. |
-| `NOTIFY_API_TOKEN` | LINE messages fail. | Issued by CMU `[TO VERIFY]`. |
+| `NOTIFY_API_TOKEN` | LINE messages fail. | Issued by CMU. |
 | `EMAIL_API_CLIENT_ID`, `EMAIL_API_CLIENT_SECRET` | All student emails fail: reminders, request results, disbursements, and repayment slip results. | Issued by the CMU Faculty of Nursing, which runs the Email API at `https://mis.nurse.cmu.ac.th/thesis` (`docs/Email_API_Manual.md`). |
 | `SUPABASE_SERVICE_ROLE_KEY` | Slip upload and slip viewing fail. | Supabase Dashboard: **Project Settings** > **API**. |
 | Database password in `DATABASE_URL` and `DIRECT_URL` | The whole application fails. | Supabase Dashboard: **Project Settings** > **Database**. |
@@ -661,7 +659,8 @@ Steps:
 2. Open Infisical, select the project, and select the `prod` environment.
 3. Replace the value of the secret.
 4. Copy the value to Vercel **Settings** > **Environment Variables** (Production), if the
-   project does not sync from Infisical `[TO VERIFY]`.
+   project does not sync from Infisical
+   `[TO VERIFY: only if the platform is Vercel: whether the project syncs from Infisical]`.
 5. In Vercel, open **Deployments**, open the menu of the current production deployment, and
    select **Redeploy**.
    Expected result: the new deployment becomes **Ready**. The Build Command is `npm run build`,
@@ -682,8 +681,7 @@ Steps:
 1. Open the production URL in a browser.
 2. Check that the address starts with `https://` and the browser shows no certificate warning.
 
-Expected result: the certificate is valid. Vercel renews certificates for domains it manages
-`[TO VERIFY: custom domain and who manages its DNS]`.
+Expected result: the certificate is valid. Vercel renews certificates for domains it manages.
 
 ---
 
@@ -695,11 +693,11 @@ Expected result: the certificate is valid. Vercel renews certificates for domain
 |---|---|---|
 | Database (all tables in schema `public`) | Yes, on Pro plan or higher. Pro keeps 7 days. | Supabase automatic backup, plus a weekly manual dump (5.2). |
 | Slip files in `bank_payment_slips` | No. Database backups contain only file metadata. | Manual download (5.3). |
-| Secrets | No | Infisical keeps secret history. Export a copy to a password manager or safe `[TO VERIFY: client policy]`. |
+| Secrets | No | Infisical keeps secret history. Export a copy to a password manager or safe. |
 | Scheduled jobs and code | Not applicable | The Git repository. |
 
-Store off-site backup files outside Supabase, in storage that the client controls
-`[TO VERIFY: storage location]`. Backup files contain personal data and bank account numbers.
+Store off-site backup files outside Supabase, in storage that the client controls.
+Backup files contain personal data and bank account numbers.
 Encrypt them and limit access.
 
 ### 5.2 Take a manual database backup
@@ -997,8 +995,9 @@ the repository deploys each push to its production branch.]`
    reviewers, and add `DIRECT_URL` as a secret of that environment. Do not add it as a repository
    secret, because the run would skip the approval. For a database inside a private network, use
    the migration image (Section 6.4).
-9. Deploy the application to production `[TO VERIFY: by Git push to the production branch, or
-   by `vercel deploy --prod`]`.
+9. Deploy the application to production
+   ``[TO VERIFY: only if the platform is Vercel: by Git push to the production branch, or by
+   `vercel deploy --prod`]``.
 
    Note: the Build Command is `next build`, which is `npm run build`. CI runs it with placeholder
    database addresses and no `.env` file, so it works on any build server. The build reads no secret. `npm run build:infisical` is the same build with the secrets
@@ -1216,7 +1215,8 @@ Change a schedule in both `lib/jobs/start-scheduler.ts` (built-in scheduler) and
 ## 8. Monitoring
 
 The delivered software sends no alerts. Check these items by hand (Section 4.2), or set up
-alerts in Vercel and Supabase `[TO VERIFY: available alert features on the chosen plans]`.
+alerts in Vercel and Supabase
+`[TO VERIFY: only if the platform is Vercel and Supabase: the alert features of the chosen plans]`.
 
 | What to monitor | Where | Normal value | Warning threshold | Action |
 |---|---|---|---|---|
@@ -1502,7 +1502,7 @@ Contact support when:
 - You need a database change other than the SQL in this guide.
 - You suspect a leaked secret or unauthorized access. Renew the secret first (Section 4.10).
 
-Contact details: `[TO VERIFY: support team, email, phone, and service hours]`
+Contact details: enter the support team, email, phone, and service hours here at hand-over.
 
 Include this information:
 
@@ -1552,5 +1552,6 @@ Include this information:
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
-| 1.0 draft | 2026-09-28 | Me_Tang development team (Git user `nacs-970`) `[TO VERIFY: real author names]` | First version for Jira NAT-214. Written from the repository at commit `f7fc3cd`, plus the Jira NAT-206 change (student email on slip confirmation or rejection), student emails on request rejection and disbursement, and the backend job scheduler. |
+| 1.0 draft | 2026-09-28 | Me_Tang development team (Git user `nacs-970`) | First version for Jira NAT-214. Written from the repository at commit `f7fc3cd`, plus the Jira NAT-206 change (student email on slip confirmation or rejection), student emails on request rejection and disbursement, and the backend job scheduler. |
 | 1.1 draft | 2026-09-28 | Me_Tang development team | Jira NAT-240: corrected against the code at commit `d05ac00`. Scheduled jobs on Vercel, student cancel and executive return, eligibility rules, installment count (1 to 3), phone and slip rules, notifications sent without the outbox, fund ledger limits, the production database warning, unit tests, rollback behavior, and missing error messages in Section 10. |
+| 1.2 draft | 2026-09-29 | Me_Tang development team | Jira NAT-214: SuperAdmin user and role screen, roles and audit actions, and error codes brought up to the code of 2026-09-29. The deploy platform is not chosen: `[TO VERIFY]` markers that assume Vercel or Supabase now say so, and markers for facts that the client or CMU ITSC will supply at hand-over were removed. |
