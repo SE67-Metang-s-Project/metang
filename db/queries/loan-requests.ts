@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getAdminAccess } from "@/lib/loan-auth";
 import { withBasePath } from "@/lib/base-path";
 import { Prisma, type ApprovalStep as LoanApprovalStep, type Decision } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
@@ -912,8 +913,22 @@ export async function getAdvisorStudentRequests(advisorId: string): Promise<Acti
   return filterAdvisorStudents(requests);
 }
 
+/**
+ * Loans for the Admin and SuperAdmin pages. A pending_admin loan assigned to another admin - an
+ * executive return goes back only to the admin who forwarded it - is theirs alone: hidden here, as
+ * in GET /api/admin/loan-requests, and refused by decideAdminLoanRequest. SuperAdmins included.
+ */
 export async function getAdminActionRequests(): Promise<ActionRequest[]> {
-  return getActionRequests({});
+  const access = await getAdminAccess();
+  if (access.status !== "authorized") return [];
+  const viewerId = access.context.user.id;
+  return getActionRequests({
+    OR: [
+      { status: { not: "pending_admin" } },
+      { assignedAdminId: null },
+      { assignedAdminId: viewerId },
+    ],
+  });
 }
 
 export async function getExecutiveActionRequests(): Promise<ActionRequest[]> {
