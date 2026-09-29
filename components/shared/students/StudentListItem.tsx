@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { SearchX } from "lucide-react";
+import TablePagination from "@/components/shared/TablePagination";
 import type { PaymentEvidenceRecord } from "./PaymentEvidenceHistory";
 
 // ==========================================
@@ -74,6 +75,20 @@ function EmptyStudentsState() {
 }
 
 export default function StudentListTable({ students, onStudentSelect }: StudentListTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [prevStudents, setPrevStudents] = useState(students);
+
+  if (prevStudents !== students) {
+    setPrevStudents(students);
+    setCurrentPage(1);
+  }
+
+  const totalPages = Math.ceil(students.length / 5);
+  const validCurrentPage = totalPages > 0 ? Math.min(Math.max(currentPage, 1), totalPages) : 1;
+  const paginatedStudents = students.length > 5
+    ? students.slice((validCurrentPage - 1) * 5, validCurrentPage * 5)
+    : students;
+
   return (
     <div className="w-full">
       {/* 1. มุมมองสำหรับ Mobile */}
@@ -81,7 +96,7 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
         {students.length === 0 ? (
           <EmptyStudentsState />
         ) : (
-          students.map((student, idx) => (
+          paginatedStudents.map((student, idx) => (
             <div
               key={idx}
               className={`bg-white border border-gray-100 rounded-xl p-4 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow ${onStudentSelect ? "cursor-pointer" : ""}`}
@@ -186,7 +201,7 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
                 </td>
               </tr>
             ) : (
-              students.map((student, idx) => (
+              paginatedStudents.map((student, idx) => (
                 <tr
                   key={idx}
                   className={`border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px] ${onStudentSelect ? "cursor-pointer" : ""}`}
@@ -262,6 +277,14 @@ export default function StudentListTable({ students, onStudentSelect }: StudentL
           </tbody>
         </table>
       </div>
+
+      {students.length > 5 && (
+        <TablePagination
+          currentPage={validCurrentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      )}
     </div>
   );
 }

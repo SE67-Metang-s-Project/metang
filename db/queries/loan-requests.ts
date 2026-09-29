@@ -14,6 +14,7 @@ import type {
   BankDetails,
   PaymentBehaviorInfo,
 } from "@/components/shared/pending/RequestsCard";
+import { filterAdvisorStudents } from "@/lib/advisor-students";
 
 
 export type LoanRequestVisibility = { scope: "global" } | { scope: "assigned"; advisorId: string };
@@ -899,13 +900,15 @@ export async function getAdvisorActionRequests(advisorId: string): Promise<Actio
 }
 
 export async function getAdvisorStudentRequests(advisorId: string): Promise<ActionRequest[]> {
-  return getActionRequests(
+  const requests = await getActionRequests(
     {
       advisorId,
-      status: { not: "draft" },
+      status: "disbursed",
     },
     { hideBankDetails: true },
   );
+
+  return filterAdvisorStudents(requests);
 }
 
 export async function getAdminActionRequests(): Promise<ActionRequest[]> {
@@ -917,6 +920,17 @@ export async function getExecutiveActionRequests(): Promise<ActionRequest[]> {
     { status: { not: "draft" } },
     { hideBankDetails: true },
   );
+}
+
+export async function getExecutiveStudentRequests(): Promise<ActionRequest[]> {
+  const requests = await getActionRequests(
+    {
+      status: "disbursed",
+    },
+    { hideBankDetails: true },
+  );
+
+  return filterAdvisorStudents(requests);
 }
 
 export async function getDisbursementActionRequests(): Promise<ActionRequest[]> {

@@ -29,6 +29,7 @@ import type { ActionRequest as DisburseActionRequest } from "@/components/shared
 import { tempLoanApplicationLimit } from "@/app/student/temp/tempMockData";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import RequestTimeline from "@/components/shared/RequestTimeline";
+import TablePagination from "@/components/shared/TablePagination";
 import styles from "@/app/student/student.module.css";
 import { withBasePath } from "@/lib/base-path";
 
@@ -431,6 +432,20 @@ export default function RequestsCard({
   const sortedRequests = React.useMemo(() => {
     return sortRequestsBySubmissionDateDesc(requests);
   }, [requests]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [prevRequests, setPrevRequests] = useState(requests);
+
+  if (prevRequests !== requests) {
+    setPrevRequests(requests);
+    setCurrentPage(1);
+  }
+
+  const totalPages = Math.ceil(sortedRequests.length / 5);
+  const validCurrentPage = totalPages > 0 ? Math.min(Math.max(currentPage, 1), totalPages) : 1;
+  const paginatedRequests = sortedRequests.length > 5
+    ? sortedRequests.slice((validCurrentPage - 1) * 5, validCurrentPage * 5)
+    : sortedRequests;
+
   const [selectedRequest, setSelectedRequest] = useState<ActionRequest | null>(null);
   const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | "return" | null>(null);
   const [completedDecision, setCompletedDecision] = useState<{
@@ -784,7 +799,7 @@ export default function RequestsCard({
         {sortedRequests.length === 0 ? (
           <EmptyRequestsState />
         ) : (
-          sortedRequests.map((req, idx) => (
+          paginatedRequests.map((req, idx) => (
             <div
               key={idx}
               className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md"
@@ -886,7 +901,7 @@ export default function RequestsCard({
                 </td>
               </tr>
             ) : (
-              sortedRequests.map((req, idx) => (
+              paginatedRequests.map((req, idx) => (
                 <tr
                   key={idx}
                   className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
@@ -937,6 +952,14 @@ export default function RequestsCard({
           </tbody>
         </table>
       </div>
+
+      {sortedRequests.length > 5 && (
+        <TablePagination
+          currentPage={validCurrentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      )}
 
       {/* 3. Modal หลัก: ตรวจสอบรายละเอียดคำร้อง */}
       {selectedRequest && (

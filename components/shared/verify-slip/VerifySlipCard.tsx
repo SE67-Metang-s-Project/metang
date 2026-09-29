@@ -3,6 +3,7 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import TablePagination from "@/components/shared/TablePagination";
 import {
   paymentDecisionErrorMessage,
   PAYMENT_DECISION_NETWORK_ERROR,
@@ -353,6 +354,20 @@ function getEvidenceBilledAmount(request: ActionRequest, evidenceId: string) {
 // ==========================================
 export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
   const router = useRouter();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [prevRequests, setPrevRequests] = useState(requests);
+
+  if (prevRequests !== requests) {
+    setPrevRequests(requests);
+    setCurrentPage(1);
+  }
+
+  const totalPages = Math.ceil(requests.length / 5);
+  const validCurrentPage = totalPages > 0 ? Math.min(Math.max(currentPage, 1), totalPages) : 1;
+  const paginatedRequests = requests.length > 5
+    ? requests.slice((validCurrentPage - 1) * 5, validCurrentPage * 5)
+    : requests;
+
   // Selection is kept by id and read from `requests`, so router.refresh() after a decision shows
   // the new status instead of a stale copy of the pending slip.
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
@@ -517,7 +532,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
         {requests.length === 0 ? (
           <EmptySlipState />
         ) : (
-          requests.map((req, idx) => (
+          paginatedRequests.map((req, idx) => (
             <div
               key={idx}
               className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md"
@@ -614,7 +629,7 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
                 </td>
               </tr>
             ) : (
-              requests.map((req, idx) => (
+              paginatedRequests.map((req, idx) => (
                 <tr
                   key={idx}
                   className="border-b border-gray-200 hover:bg-orange-50/20 transition-colors text-[14px]"
@@ -663,6 +678,14 @@ export default function VerifySlipCard({ requests }: VerifySlipCardProps) {
           </tbody>
         </table>
       </div>
+
+      {requests.length > 5 && (
+        <TablePagination
+          currentPage={validCurrentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      )}
 
       {/* ========================================== */}
       {/* 3. Modal 1: รายละเอียดคำร้องและตารางชำระเงิน */}

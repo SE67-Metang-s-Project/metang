@@ -1,22 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
-
-function filterAdvisorStudents(requests: ActionRequest[]): ActionRequest[] {
-  return requests.filter((req) => {
-    if (req.requestStatus !== "disbursed") return false;
-    const totalDue =
-      req.installments && req.installments.length > 0
-        ? req.installments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0)
-        : Number(req.approvedAmount ?? req.amount ?? 0);
-    const totalPaid =
-      req.installments && req.installments.length > 0
-        ? req.installments.reduce((sum, inst) => sum + Number(inst.paidAmount || 0), 0)
-        : 0;
-    const remainingBalance = Math.max(0, totalDue - totalPaid);
-    return remainingBalance > 0;
-  });
-}
+import { filterAdvisorStudents } from "@/lib/advisor-students";
 
 function createMockRequest(
   id: string,
@@ -84,5 +69,41 @@ test("advisor students list displays only disbursed loans with unpaid debt", () 
   assert.equal(filtered.length, 1);
   assert.equal(filtered[0].id, "REQ05");
   assert.equal(filtered[0].studentId, "STU05");
+  assert.equal(filtered[0].requestStatus, "disbursed");
+});
+
+test("advisor students list deduplicates multiple requests for the same student", () => {
+  const requests: ActionRequest[] = [
+    createMockRequest("REQ05_A", "STU05", "disbursed", 5000, 5000, [
+      { amount: 2500, paidAmount: 0 },
+    ]),
+    createMockRequest("REQ05_B", "STU05", "disbursed", 5000, 5000, [
+      { amount: 2500, paidAmount: 0 },
+    ]),
+  ];
+
+  const filtered = filterAdvisorStudents(requests);
+  assert.equal(filtered.length, 1);
+  assert.equal(filtered[0].id, "REQ05_A");
+  assert.equal(filtered[0].studentId, "STU05");
+});
+
+test("executive students list also filters only disbursed loans with unpaid debt", () => {
+  const requests: ActionRequest[] = [
+    createMockRequest("REQ_EXEC_01", "STU10", "pending_executive", 5000, 5000),
+    createMockRequest("REQ_EXEC_02", "STU11", "pending_disbursement", 5000, 5000),
+    createMockRequest("REQ_EXEC_03", "STU12", "disbursed", 4000, 4000, [
+      { amount: 2000, paidAmount: 0 },
+      { amount: 2000, paidAmount: 0 },
+    ]),
+    createMockRequest("REQ_EXEC_04", "STU13", "closed", 4000, 4000, [
+      { amount: 4000, paidAmount: 4000 },
+    ]),
+  ];
+
+  const filtered = filterAdvisorStudents(requests);
+  assert.equal(filtered.length, 1);
+  assert.equal(filtered[0].id, "REQ_EXEC_03");
+  assert.equal(filtered[0].studentId, "STU12");
   assert.equal(filtered[0].requestStatus, "disbursed");
 });
