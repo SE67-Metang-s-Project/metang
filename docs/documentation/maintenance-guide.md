@@ -321,7 +321,7 @@ AND user_id = (SELECT id FROM app_user WHERE email = 'replace-with-email@cmu.ac.
 - This guide never contains a secret value. Section 7.1 lists which settings are secrets.
 
 > **WARNING:** With `INFISICAL_ENV=prod` in `.env`, every `npm run db:*` command acts on the
-> production database, and `npm run build` uses the production secrets. `npm run db:seed` and
+> production database, and `npm run build:infisical` uses the production secrets. `npm run db:seed` and
 > `npm run db:reset` have no
 > production check. `db:reset` deletes all users, loans, payments, ledger rows, notifications,
 > and audit history. Keep `INFISICAL_ENV=dev` except during the production steps of Section 6.2.
@@ -627,8 +627,8 @@ Steps:
    project does not sync from Infisical `[TO VERIFY]`.
 5. In Vercel, open **Deployments**, open the menu of the current production deployment, and
    select **Redeploy**.
-   Expected result: the new deployment becomes **Ready**. If the build fails with
-   `Missing .env`, the Build Command is `npm run build`. Set it to `next build` (Section 9).
+   Expected result: the new deployment becomes **Ready**. The Build Command is `npm run build`,
+   which is plain `next build` and needs no `.env`.
 6. Do the health check (Section 4.2).
 
 To undo: put the old value back and redeploy, if the old value is still valid.
@@ -946,9 +946,9 @@ the repository deploys each push to its production branch.]`
 9. Deploy the application to production `[TO VERIFY: by Git push to the production branch, or
    by `vercel deploy --prod`]`.
 
-   Note: `npm run build` fails on a computer or build server without a `.env` file, because
-   `scripts/with-infisical.mjs` requires it. Set the Vercel **Build Command** to `next build`
-   `[TO VERIFY with a test deployment]`.
+   Note: `npm run build` is plain `next build`, so it works on any build server without a `.env`
+   file. The build reads no secret. `npm run build:infisical` is the same build with the secrets
+   of `INFISICAL_ENV`, for a maintainer's computer.
 10. Wait until the deployment is **Ready**.
 11. Do the health check (Section 4.2). Sign in with each role you can and open its main page.
 
@@ -1015,7 +1015,7 @@ production deployment ("Redeploy") before it takes effect.
 | `SUPABASE_URL` | None | `https://<project-ref>.supabase.co` | Supabase Storage address. | Yes | No |
 | `SUPABASE_SERVICE_ROLE_KEY` | None | Supabase service role key | Full access to Storage. | Yes | Yes |
 | `SUPABASE_SLIP_BUCKET` | `bank_payment_slips` | Name of a private bucket | Bucket for slip files. | Yes | No |
-| `INFISICAL_ENV` | `dev` | `dev` or `prod` | Only in a maintainer's local `.env`. Selects the Infisical environment for `npm run dev`, `npm run build`, and `npm run db:*`. Has no effect when the Infisical CLI is not installed (Section 3.4). | Not applicable | No |
+| `INFISICAL_ENV` | `dev` | `dev` or `prod` | Only in a maintainer's local `.env`. Selects the Infisical environment for `npm run dev`, `npm run build:infisical`, and `npm run db:*`. Has no effect when the Infisical CLI is not installed (Section 3.4). | Not applicable | No |
 | `DEV_API_BYPASS` | Off | `true` or not set | Development only. Must not be set in production. Works only when `INFISICAL_ENV=dev` and `NODE_ENV=development`. | Not applicable | No |
 | `DEV_AS_ADVISOR`, `DEV_AS_ADMIN`, `DEV_AS_SUPERADMIN`, `DEV_AS_EXECUTIVE` | Off | `true` or not set | Development only. Must not be set in production. Same condition as `DEV_API_BYPASS`. | Not applicable | No |
 | `DEV_ADVISOR_USER_ID`, `DEV_ADMIN_USER_ID`, `DEV_SUPERADMIN_USER_ID`, `DEV_EXECUTIVE_USER_ID` | Test user IDs | User UUID | Development only. Must not be set in production. | Not applicable | No |
@@ -1124,7 +1124,7 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 |---|---|---|---|
 | Notifications stop on Vercel after a deployment, and **Logs** show no `/metang/api/cron/` calls | A `path` in `vercel.json` does not start with `/metang`. Vercel Cron gets the `307` redirect, treats it as the final response, and does not log the call. | Start every `path` in `vercel.json` with `/metang/api/cron/`. Redeploy. | 2.1 |
 | Notifications stop on serverless hosting | On Vercel, Vercel Cron did not call the jobs: `CRON_SECRET` is missing, or the plan does not allow the `vercel.json` schedules. On other serverless hosts (AWS Lambda, Netlify), nothing calls the jobs. | On Vercel, set `CRON_SECRET` and check **Settings** > **Cron Jobs**. On other hosts, add an outside scheduler that calls the `/metang/api/cron/` routes with `CRON_SECRET`, or host Me_Tang on a server that keeps running (`next start`). | 2.3 |
-| Build fails with `Missing .env. Create it from .env.example and set INFISICAL_ENV.` | The build runs `npm run build` on a machine without `.env`. | Set the Vercel Build Command to `next build`, or create `.env` with `INFISICAL_ENV`. | 6.2 |
+| Build fails with `Missing .env. Create it from .env.example and set INFISICAL_ENV.` | The build runs `npm run build:infisical` (or `npm run db:*`) on a machine without `.env`. | Use `npm run build` (plain `next build`), or create `.env` with `INFISICAL_ENV`. On a server without Infisical, apply migrations with `npm run db:deploy:env`, which reads `DIRECT_URL` from the environment. | 6.2 |
 | Site does not load, every page returns an error | Missing `DATABASE_URL`, database down, or a failed deployment. | Check Vercel **Logs** for `DATABASE_URL is not set`. Check Supabase project status. Roll back if a deployment caused it. | 4.2, 6.3 |
 | Sign-in page shows `ผู้ดูแลระบบต้องตั้งค่า CMU Entra environment variables ก่อนเปิดใช้งาน` | One of the CMU Entra settings is missing. | Set all settings in Section 7.1 from `AUTH_URL` to `SESSION_SECRET`. Redeploy. | 4.10 |
 | Sign-in fails with `ไม่สามารถยืนยันการเข้าสู่ระบบกับ CMU ได้` (`token_exchange_failed`) | `CLIENT_SECRET` expired or wrong, or `CALLBACK_URL` not registered. | Renew the client secret. Check the callback URL in Entra. | 4.10 |
