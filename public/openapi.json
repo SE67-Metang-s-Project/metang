@@ -2541,12 +2541,12 @@
         "properties": {
           "fullNameTh": {
             "type": "string",
-            "description": "A different email hands the executive role to that person.",
+            "description": "A different email hands the executive role to a new person; one already in use is refused.",
             "nullable": false
           },
           "email": {
             "type": "string",
-            "description": "A different email hands the executive role to that person.",
+            "description": "A different email hands the executive role to a new person; one already in use is refused.",
             "nullable": false
           },
           "fullNameEn": {
@@ -9507,7 +9507,7 @@
       "patch": {
         "operationId": "patch-super-admin-users-{id}",
         "summary": "Edit the executive's name and email.",
-        "description": "Only the executive can be edited. The same email fixes the names in place. A different email hands the executive role to that person - an existing user found by email or CMU account, or a new one - and the response is the new executive; the previous executive keeps their other roles and history.",
+        "description": "Only the executive can be edited. The same email fixes the names in place. A different email hands the executive role to a new person created from it, and the response is the new executive; the previous executive keeps their other roles and history. An email or CMU account that already belongs to another user is refused with 409.",
         "tags": [
           "SuperAdmin roles"
         ],
