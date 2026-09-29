@@ -1,0 +1,70 @@
+name: CI
+
+# The team pushes directly to main and does not use pull requests, so every push to every branch
+# is checked (NAT-227).
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  check:
+    name: Lint, type check, and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      # `npm run build` goes through scripts/with-infisical.mjs, which fails without .env. The build
+      # only needs the variables to exist - it never connects - so CI uses placeholders, never a
+      # real secret.
+      - run: npx next build
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          DIRECT_URL: postgresql://ci:ci@localhost:5432/ci
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # TODO(NAT-209): 16 of 412 tests fail on main today. Remove continue-on-error, and switch to
+    # `npm test`, once NAT-209 makes the suite green and adds the script.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx tsx --test tests/*.test.ts tests/*.test.mjs
+
+  api-tests:
+    name: API tests (Bruno)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Starts a throwaway postgres:17 container and a dev server; never touches a real database.
+      - run: npm run api:test
