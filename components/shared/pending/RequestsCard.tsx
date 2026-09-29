@@ -1571,9 +1571,13 @@ export default function RequestsCard({
               )}
             </div>
             <h2 id="completion-modal-title" className="mt-4 text-xl font-semibold text-gray-900">
-              {completedDecision.action === "approve" || completedDecision.action === "return"
-                ? "ดำเนินการคำร้องเสร็จสิ้น"
-                : "ดำเนินการไม่อนุมัติคำร้องเสร็จสิ้น"}
+              {completedDecision.action === "approve"
+                ? userRole === "advisor"
+                  ? "ดำเนินการอนุมัติคำร้องเสร็จสิ้น"
+                  : "ดำเนินการคำร้องเสร็จสิ้น"
+                : completedDecision.action === "return"
+                  ? "ดำเนินการส่งกลับคำร้องเสร็จสิ้น"
+                  : "ดำเนินการไม่อนุมัติคำร้องเสร็จสิ้น"}
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               {completedDecision.action === "approve"
@@ -1588,12 +1592,13 @@ export default function RequestsCard({
               คำร้อง {completedDecision.requestId} เรียบร้อยแล้ว
             </p>
             <p className="mt-1 text-sm text-gray-500">
-              คำร้องนี้เสร็จสิ้นในขั้นตอนของ
-              {userRole === "advisor"
-                ? "อาจารย์ที่ปรึกษา"
-                : userRole === "executive"
-                  ? "ผู้บริหาร"
-                  : "เจ้าหน้าที่"}
+              {completedDecision.action === "return"
+                ? "นักศึกษาสามารถแก้ไขและส่งคำร้องเพื่อพิจารณาใหม่ได้"
+                : <>คำร้องนี้เสร็จสิ้นในขั้นตอนของ{userRole === "advisor"
+                  ? "อาจารย์ที่ปรึกษา"
+                  : userRole === "executive"
+                    ? "ผู้บริหาร"
+                    : "เจ้าหน้าที่"}</>}
             </p>
             <button
               type="button"
