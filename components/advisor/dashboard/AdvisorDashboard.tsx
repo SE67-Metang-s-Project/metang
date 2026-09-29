@@ -161,13 +161,11 @@ export default function AdvisorDashboard({
         </div>
 
         {pendingRequests.length > 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <RequestsCard
-              requests={pendingRequests}
-              userRole="advisor"
-              onRequestDecided={handleRequestDecided}
-            />
-          </div>
+          <RequestsCard
+            requests={pendingRequests}
+            userRole="advisor"
+            onRequestDecided={handleRequestDecided}
+          />
         ) : (
           <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center">
             <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
@@ -202,7 +200,7 @@ export default function AdvisorDashboard({
           </Link>
         </div>
 
-        <StudentListTable students={studentsList.slice(0, 5)} />
+        <StudentListTable students={studentsList} />
       </section>
     </div>
   );

@@ -63,14 +63,12 @@ export default function AdminDashboard({
           href="/admin/pending"
         />
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <SharedRequestsList
-            dashboardMode="pending"
-            hideFilters
-            userRole="admin"
-            initialRequests={requests}
-          />
-        </div>
+        <SharedRequestsList
+          dashboardMode="pending"
+          hideFilters
+          userRole="admin"
+          initialRequests={requests}
+        />
       </section>
 
       {/* =====================================================
