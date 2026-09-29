@@ -18,9 +18,9 @@ function handleLogout(request: Request) {
   if (federated) {
     try {
       redirectUrl = new URL(getCmuAuthConfig().logoutUrl);
-      // Kept at the root path, so the post-logout URI registered in CMU Entra does not change. The
-      // /login redirect in next.config.ts sends the browser on to the base-path login page.
-      redirectUrl.searchParams.set("post_logout_redirect_uri", `${origin}/login`);
+      // Replaces any post_logout_redirect_uri in LOGOUT_URL. CMU Entra must have this exact address
+      // registered (<origin>/<sub path>/login), or it will not send the browser back.
+      redirectUrl.searchParams.set("post_logout_redirect_uri", new URL(loginPath, origin).href);
     } catch {
       redirectUrl = new URL(loginPath, origin);
     }

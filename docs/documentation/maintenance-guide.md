@@ -1059,8 +1059,10 @@ runs was tested inside node:24-slim.]`
 6. Jobs: the container runs the notification jobs itself while it keeps running (Section 2.3).
    On a platform that stops idle containers, set `ENABLE_JOB_SCHEDULER=false` and call the routes
    from outside (end of Section 2.3).
-7. Register the sign-in address in CMU Entra for this host: `CALLBACK_URL` is
-   `https://<host>/<sub path>/api/auth/callback`, and the value in Entra must be identical.
+7. Register two addresses in CMU Entra for this host, as redirect URIs of the Web platform:
+   `https://<host>/<sub path>/api/auth/callback` (the value of `CALLBACK_URL`, identical in both
+   places) and `https://<host>/<sub path>/login` (where federated sign-out returns). Register them
+   before the first sign-in on the new host.
 8. Do the health check (Section 4.2). Open `https://<host>/<sub path>/login`: expected result is
    the sign-in page.
 
@@ -1087,14 +1089,14 @@ production deployment ("Redeploy") before it takes effect.
 | `DIRECT_URL` | The value of `DATABASE_URL` (`prisma.config.ts`) | PostgreSQL URL, direct connection | Used by migrations (`npm run db:*`) and manual backups. | No (maintainer tools only) | Yes |
 | `AUTH_URL` | None | URL | CMU Entra authorize endpoint. | Yes | No |
 | `TOKEN_URL` | None | URL | CMU Entra token endpoint. | Yes | No |
-| `CALLBACK_URL` | None | URL, exactly as registered in Entra, for example `https://<host>/metang/api/auth/callback` | Where CMU Entra returns after sign-in. The old path `https://<host>/api/auth/callback` also works: the `/api/:path*` redirect sends the browser on to `/metang/api/auth/callback`. Change the value and the Entra registration together. If only one changes, sign-in fails with `token_exchange_failed`. | Yes, and register it in Entra | No |
-| `LOGOUT_URL` | None | Entra logout URL with `post_logout_redirect_uri` | Sign-out redirect. | Yes | No |
+| `CALLBACK_URL` | None | URL, exactly as registered in Entra, for example `https://<host>/metang/api/auth/callback` | Where CMU Entra returns after sign-in. Include the sub path. The old path `https://<host>/api/auth/callback` still works while it is registered: the `/api/:path*` redirect sends the browser on to `/metang/api/auth/callback`. Change the value and the Entra registration together. If only one changes, sign-in fails with `token_exchange_failed`. | Yes, and register it in Entra | No |
+| `LOGOUT_URL` | None | Entra logout URL | Sign-out redirect. The application sets its `post_logout_redirect_uri` to `https://<host>/<sub path>/login`, whatever the value contains, so that address must be registered in Entra. | Yes | No |
 | `CLIENT_ID` | None | Entra application ID | OAuth client. | Yes | No |
 | `CLIENT_SECRET` | None | Entra client secret | OAuth client secret. | Yes | Yes |
 | `SCOPE` | None | Space-separated scopes, for example `api://cmu/Mis.Account.Read.Me.Basicinfo offline_access` | Permissions requested at sign-in. | Yes | No |
 | `BASICINFO_URL` | None | URL | CMU profile API. | Yes | No |
 | `SESSION_SECRET` | None | Text of 32 characters or more | Encrypts the sign-in cookies. Changing it signs out all users. | Yes | Yes |
-| `PUBLIC_SUBPATH` | Not set (`/metang`) | A path such as `/loan` or `loan`. A missing leading `/` and a trailing `/` are corrected | Sub path under which all pages and API routes are served (`lib/base-path.ts`). Empty or `/` serves the application from the root and turns off the redirects from old paths. Also change by hand: `CALLBACK_URL` and its Entra registration, the post-logout address registered in Entra, the `path` values in `vercel.json`, and `servers` in `next.openapi.json` (then run `npm run openapi:generate`). | Yes, and a new build | No |
+| `PUBLIC_SUBPATH` | Not set (`/metang`) | A path such as `/loan` or `loan`. A missing leading `/` and a trailing `/` are corrected | Sub path under which all pages and API routes are served (`lib/base-path.ts`). Empty or `/` serves the application from the root and turns off the redirects from old paths. Also change by hand: `CALLBACK_URL` and its Entra registration, the callback and post-logout (`/login`) addresses registered in Entra, the `path` values in `vercel.json`, and `servers` in `next.openapi.json` (then run `npm run openapi:generate`). | Yes, and a new build | No |
 | `APP_BASE_URL` | Development: `http://localhost:8080`. Production: none. | Absolute `https://` URL of the production site, for example `https://<host>` | Base of links in LINE messages and emails. In production (`NODE_ENV=production`) the value is required: if it is not set, every delivery job run returns `500` with `APP_BASE_URL is not set` before it claims rows, so notifications wait in the outbox. In development, links point to localhost. A path in the value is not used: links start with `/metang` (for example `/metang/student/...`), so `https://<host>` and `https://<host>/metang` give the same links. If the value is not a valid `http` or `https` URL, every delivery job run returns `500` before it claims rows, so notifications wait in the outbox. | Yes | No |
 | `CRON_SECRET` | None. The job scheduler does not start, and `/metang/api/cron/` returns `401`. | Random text | Protects `/metang/api/cron/` routes. The job scheduler uses it too. | Yes | Yes |
 | `ENABLE_JOB_SCHEDULER` | Not set (detect the host) | `true`, `false`, or not set | `true` forces the built-in scheduler, `false` turns it off. Not set: built-in scheduler on servers that keep running, Vercel Cron on Vercel (Section 2.3). | Yes (restart) | No |

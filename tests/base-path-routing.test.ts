@@ -49,7 +49,7 @@ test("logout sends the browser to the login page under the base path", async () 
   assert.equal(response.headers.get("location"), "https://metang.example/metang/login");
 });
 
-test("federated logout keeps the root post-logout URI registered in CMU Entra", async () => {
+test("federated logout returns to the login page under the base path, as registered in CMU Entra", async () => {
   const env: Record<string, string> = {
     AUTH_URL: "https://login.example/authorize",
     TOKEN_URL: "https://login.example/token",
@@ -70,7 +70,7 @@ test("federated logout keeps the root post-logout URI registered in CMU Entra", 
     assert.equal(`${location.origin}${location.pathname}`, "https://login.example/logout");
     assert.equal(
       location.searchParams.get("post_logout_redirect_uri"),
-      "https://metang.example/login",
+      "https://metang.example/metang/login",
     );
   } finally {
     for (const [name, value] of Object.entries(saved)) {

@@ -143,8 +143,10 @@ it must not be implemented only as a UI visibility check.
 ### 4. Logout
 
 The page submits `POST /metang/api/auth/logout`. The route expires `cmu_session` and sends a `303`
-redirect to `LOGOUT_URL`. The configured Entra endpoint then returns the browser to the URL in
-`post_logout_redirect_uri`.
+redirect to `LOGOUT_URL`. The route sets `post_logout_redirect_uri` on that URL to the public origin
+plus the base path plus `/login`, for example `https://metang.example/metang/login`, and replaces
+any value already in `LOGOUT_URL`. The Entra endpoint then returns the browser to that address. It
+does so only when the address is registered as a redirect URI on the Entra application.
 
 ## Entra application registration
 
@@ -159,10 +161,19 @@ secret.
    http://localhost:8080/metang/api/auth/callback
    ```
 
-4. Under **Certificates & secrets**, create a client secret and store its value securely.
+4. Register the sign-out return address in the same Web platform, next to the callback. It is the
+   login page under the base path:
+
+   ```text
+   http://localhost:8080/metang/login
+   ```
+
+   Without it, federated sign-out ends on the Microsoft sign-out page and does not return to the
+   application.
+5. Under **Certificates & secrets**, create a client secret and store its value securely.
    Track its expiry and rotate it before it expires.
-5. Under **API permissions**, select **APIs my organization uses**, then **CMU API**.
-6. Add the delegated permission:
+6. Under **API permissions**, select **APIs my organization uses**, then **CMU API**.
+7. Add the delegated permission:
 
    ```text
    Mis.Account.Read.Me.Basicinfo
@@ -171,18 +182,24 @@ secret.
 The callback URI must match `CALLBACK_URL` exactly, including scheme, host, port, and path.
 Register the HTTPS production callback separately when deploying.
 
-Either callback path works under the `/metang` base path, as long as `CALLBACK_URL` and the
-Entra registration are the same string:
+Register both addresses with the base path: `<origin>/<sub path>/api/auth/callback` and
+`<origin>/<sub path>/login`, where `<sub path>` is the value of `PUBLIC_SUBPATH` (Section 2.1 of the
+maintenance guide).
 
-- `/metang/api/auth/callback` goes straight to the callback route.
-- `/api/auth/callback` (the path registered before the base path was added) also works. The
-  `/api/:path*` redirect in `next.config.ts` sends the browser on to `/metang/api/auth/callback`
-  with the `code` and `state` query unchanged, and the token request sends the same
-  `CALLBACK_URL` that the sign-in request used. It costs one extra redirect, and it stops
-  working if that redirect is removed.
+The path registered before the base path was added, `/api/auth/callback`, still reaches the
+callback while it stays registered. The `/api/:path*` redirect in `next.config.ts` sends the browser
+on to `/metang/api/auth/callback` with the `code` and `state` query unchanged. Do not rely on it: it
+costs one extra redirect, and it stops working if that redirect is removed.
 
-To move from one path to the other, change the Entra registration and `CALLBACK_URL` together.
-If only one of them changes, sign-in fails with `token_exchange_failed`.
+To move an environment from the old addresses to the new ones:
+
+1. In Entra, add `<origin>/<sub path>/api/auth/callback` and `<origin>/<sub path>/login`. Keep the
+   old `/api/auth/callback` and `/login` registered.
+2. Set `CALLBACK_URL` to the new callback address in the secret store, and deploy this release.
+   `CALLBACK_URL` and the Entra registration must match; if they do not, sign-in fails with
+   `token_exchange_failed`.
+3. Sign in, then sign out with the federated logout, and confirm both return to the application.
+4. Remove the old `/api/auth/callback` and `/login` registrations from Entra.
 
 ## Environment variables
 
@@ -198,7 +215,7 @@ All authentication variables are server-side. None of them needs the `NEXT_PUBLI
 | `SESSION_SECRET` | Yes | Encrypts and authenticates local cookies |
 | `SCOPE` | No | Delegated CMU API scopes requested during login |
 | `BASICINFO_URL` | No | CMU BasicInfo resource endpoint |
-| `LOGOUT_URL` | No | Entra logout endpoint and post-logout redirect |
+| `LOGOUT_URL` | No | Entra logout endpoint. The application replaces its `post_logout_redirect_uri` with `<origin>/<sub path>/login` |
 | `EXT_PORT` | No | Reference/development port; the Next.js code does not read it |
 
 Example development configuration:
@@ -285,7 +302,8 @@ sessions to a server-side store and keep only an opaque session identifier in th
 
 - Register the exact HTTPS production callback in Entra.
 - Set `CALLBACK_URL` to that registered HTTPS URI.
-- Change `post_logout_redirect_uri` in `LOGOUT_URL` to the HTTPS application origin.
+- Register `https://<host>/<sub path>/login` in Entra as the sign-out return address. The
+  application sets `post_logout_redirect_uri` to it, whatever `LOGOUT_URL` contains.
 - Store `CLIENT_SECRET` and `SESSION_SECRET` in the deployment secret manager.
 - Use one stable `SESSION_SECRET` across all instances.
 - Do not log authorization codes, access tokens, refresh tokens, or cookie values.
