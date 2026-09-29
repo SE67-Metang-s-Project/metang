@@ -186,6 +186,29 @@ Delivery rules:
 - If `installment-reminders` does not run on a day, the reminders for that day are not
   created later. There is no catch-up.
 
+#### Jobs on a host that stops idle servers
+
+Container platforms that stop or scale an idle instance (for example Cloud Run or Knative) can
+stop the built-in timers. Set `ENABLE_JOB_SCHEDULER=false` and let a scheduler outside the
+application call the five routes. Each call is a `GET` with the header
+`Authorization: Bearer <CRON_SECRET>`. A missing or wrong secret returns `401`. Use the public
+address and the sub path of the deployment (`PUBLIC_SUBPATH`, `/metang` by default). System cron
+example, with the schedules of `vercel.json`:
+
+```cron
+# m   h  dom mon dow  command  (server time zone: UTC; the daily job runs at 08:00 Bangkok time)
+0     1  *   *   *    curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://<host>/metang/api/cron/installment-reminders
+*/3   *  *   *   *    curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://<host>/metang/api/cron/deliver-reminders
+*     *  *   *   *    curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://<host>/metang/api/cron/deliver-fon
+*/3   *  *   *   *    curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://<host>/metang/api/cron/deliver-payment-outcomes
+*/3   *  *   *   *    curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://<host>/metang/api/cron/deliver-loan-outcomes
+```
+
+Set `CRON_SECRET` in the environment of the cron user (a Kubernetes `CronJob` or a systemd timer
+works the same way). Use the public `https` address, not an internal one, and do not rely on a
+redirect: a scheduler that does not follow redirects would stop without an error. Check that it
+works with `curl -i` on one route: `200` and a JSON body with a count means the job ran.
+
 ### 2.4 Locations of data, logs, configuration, and backups
 
 | What | Where |
