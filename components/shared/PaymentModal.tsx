@@ -216,7 +216,19 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
   const selectTransferDate = (date: Date) => {
     if (toDateInputValue(date) > getBangkokToday()) return;
 
-    setTransferDate(toDateInputValue(date));
+    const selectedDate = toDateInputValue(date);
+    if (selectedDate === getBangkokToday()) {
+      const now = bangkokParts(new Date());
+      const selectedTime = Number(`${selectedHour}${selectedMinute}`);
+      const currentTime = now.hour * 100 + now.minute;
+
+      if (selectedTime > currentTime) {
+        setSelectedHour(String(now.hour).padStart(2, "0"));
+        setSelectedMinute(String(now.minute).padStart(2, "0"));
+      }
+    }
+
+    setTransferDate(selectedDate);
     setCalendarMonth(new Date(date.getFullYear(), date.getMonth(), 1));
     setIsCalendarOpen(false);
     setFormErrors((current) => ({ ...current, transferDate: "" }));
@@ -224,6 +236,14 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
 
   // The picked date and time are read as Bangkok wall-clock time, whatever the browser's zone.
   const getPaidAt = () => `${transferDate}T${selectedHour}:${selectedMinute}:00+07:00`;
+
+  const isToday = transferDate === getBangkokToday();
+  const currentBangkokTime = bangkokParts(new Date());
+  const isFutureHour = (hour: string) => isToday && Number(hour) > currentBangkokTime.hour;
+  const isFutureMinute = (minute: string) =>
+    isToday &&
+    (Number(selectedHour) > currentBangkokTime.hour ||
+      (Number(selectedHour) === currentBangkokTime.hour && Number(minute) > currentBangkokTime.minute));
 
   const validatePaymentForm = () => {
     const errors: PaymentFormErrors = {};
@@ -359,7 +379,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
             </div>
             <div className="mt-3 flex items-center justify-between gap-4 border-t border-gray-200 pt-3">
               <span className="text-base font-normal text-gray-500">{t("ชำระแล้ว", "Paid")}</span>
-              <span className="text-lg font-semibold text-black">
+              <span className="text-lg font-medium text-black">
                 {paidAmount}
                 {installmentAmount ? <span className="ml-1 text-gray-500">/{installmentAmount}</span> : null}
               </span>
@@ -393,7 +413,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                 <dt className="shrink-0 text-gray-500">{t(account.accountNameLabel, "Account name")}</dt>
                 <dd className="text-right font-normal text-gray-900">{localizeStudentContent(account.accountName, language)}</dd>
               </div>
-              <div className="flex items-start justify-between gap-5 py-2.5">
+              <div className="flex items-start justify-between gap-5 pb-0 pt-2.5">
                 <dt className="shrink-0 text-gray-500">{t(account.accountNumberLabel, "Account number")}</dt>
                 <dd className="flex min-w-0 items-center justify-end gap-2 text-right font-normal text-gray-900">
                   <span className="break-all">{account.accountNumber}</span>
@@ -679,17 +699,18 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                           {Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, "0")).map((hour) => (
                             <button
                               aria-selected={selectedHour === hour}
-                              className={`mb-1 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                              className={`mb-1 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:text-gray-300 ${
                                 selectedHour === hour
                                   ? "border border-orange-300 bg-orange-50 font-semibold text-orange-700"
                                   : "text-gray-700 hover:bg-gray-100"
                               }`}
                               data-time-value={hour}
+                              disabled={isFutureHour(hour)}
                               key={hour}
-                            onClick={() => {
-                              setSelectedHour(hour);
-                              setHasSelectedTime(true);
-                              setFormErrors((current) => ({ ...current, transferTime: "" }));
+                              onClick={() => {
+                                setSelectedHour(hour);
+                                setHasSelectedTime(true);
+                                setFormErrors((current) => ({ ...current, transferTime: "" }));
                               }}
                               role="option"
                               type="button"
@@ -713,17 +734,18 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                           {Array.from({ length: 60 }, (_, minute) => String(minute).padStart(2, "0")).map((minute) => (
                             <button
                               aria-selected={selectedMinute === minute}
-                              className={`mb-1 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                              className={`mb-1 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:text-gray-300 ${
                                 selectedMinute === minute
                                   ? "border border-orange-300 bg-orange-50 font-semibold text-orange-700"
                                   : "text-gray-700 hover:bg-gray-100"
                               }`}
                               data-time-value={minute}
+                              disabled={isFutureMinute(minute)}
                               key={minute}
-                            onClick={() => {
-                              setSelectedMinute(minute);
-                              setHasSelectedTime(true);
-                              setFormErrors((current) => ({ ...current, transferTime: "" }));
+                              onClick={() => {
+                                setSelectedMinute(minute);
+                                setHasSelectedTime(true);
+                                setFormErrors((current) => ({ ...current, transferTime: "" }));
                               }}
                               role="option"
                               type="button"
