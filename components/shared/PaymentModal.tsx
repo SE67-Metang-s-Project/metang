@@ -113,6 +113,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
   const hasTransferDetailsError = Boolean(
     formErrors.transferDate || formErrors.transferTime || formErrors.transferAmount,
   );
+  const [paidAmount, installmentAmount] = installment.paidAmountSummary.split("/");
   const dueDate = localizeStudentContent(installment.dueDateLabel, language).replace(
     /^(ครบกำหนด|Due)\s*/,
     "",
@@ -337,11 +338,6 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
             <div className="min-w-0 text-left">
               <h2 className="text-xl font-semibold leading-tight text-gray-900" id="payment-modal-title">
                 {t("ชำระงวดที่", "Pay Installment")} {installment.installmentNumber}
-                {installment.paymentAttempt && installment.paymentAttempt > 1
-                  ? language === "th"
-                    ? ` (ครั้งที่ ${installment.paymentAttempt})`
-                    : ` (${installment.paymentAttempt})`
-                  : ""}
               </h2>
               <p className="mt-1 text-sm font-normal text-gray-600">
                 {t("ครบกำหนด", "Due")} {dueDate} {t("23:59 น.", "23:59")}
@@ -356,23 +352,18 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
         >
           <section className="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
             <div className="flex items-center justify-between gap-4">
-              <p className="text-sm font-medium text-black">{t("ค้างชำระ", "Outstanding")}</p>
-              <strong className="text-2xl font-semibold text-black">
+              <p className="text-base font-normal text-gray-500">{t("ค้างชำระ", "Outstanding")}</p>
+              <strong className="text-lg font-semibold text-black">
                 {installment.outstandingAmount} {t("บาท", "THB")}
               </strong>
             </div>
-            {installment.paymentAttempts?.length ? (
-              <div className="mt-3 divide-y divide-gray-200 border-t border-gray-200">
-                {installment.paymentAttempts.map((payment, index) => (
-                  <div className="flex items-center justify-between gap-4 py-3" key={index}>
-                    <span className="text-sm text-gray-500">
-                      {t("ครั้งที่", "Attempt")} {index + 1}
-                    </span>
-                    <span className="text-sm font-normal text-black">{payment.amount}</span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+            <div className="mt-3 flex items-center justify-between gap-4 border-t border-gray-200 pt-3">
+              <span className="text-base font-normal text-gray-500">{t("ชำระแล้ว", "Paid")}</span>
+              <span className="text-lg font-semibold text-black">
+                {paidAmount}
+                {installmentAmount ? <span className="ml-1 text-gray-500">/{installmentAmount}</span> : null}
+              </span>
+            </div>
           </section>
 
           <section className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -405,6 +396,7 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
               <div className="flex items-start justify-between gap-5 py-2.5">
                 <dt className="shrink-0 text-gray-500">{t(account.accountNumberLabel, "Account number")}</dt>
                 <dd className="flex min-w-0 items-center justify-end gap-2 text-right font-normal text-gray-900">
+                  <span className="break-all">{account.accountNumber}</span>
                   <button
                     aria-label={
                       isAccountNumberCopied
@@ -422,7 +414,6 @@ export default function PaymentModal({ installment, account, onClose, onConfirm 
                   >
                     {isAccountNumberCopied ? <Check aria-hidden="true" size={16} /> : <Copy aria-hidden="true" size={16} />}
                   </button>
-                  <span className="break-all">{account.accountNumber}</span>
                 </dd>
               </div>
             </dl>
