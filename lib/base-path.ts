@@ -17,6 +17,10 @@ export function resolveBasePath(value: string | undefined): string {
 
 export const BASE_PATH = resolveBasePath(process.env.PUBLIC_SUBPATH);
 
+// Cookies are scoped to the base path, so other applications on the same domain do not receive
+// them.
+export const COOKIE_PATH = BASE_PATH || "/";
+
 /** Prefixes an app-root path such as "/api/student/payments" with the base path. */
 export function withBasePath(path: string): string {
   if (!path.startsWith("/")) throw new Error(`withBasePath expects a path starting with "/": ${path}`);

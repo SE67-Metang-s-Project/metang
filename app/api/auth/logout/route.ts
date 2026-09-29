@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
-import { CMU_OAUTH_COOKIE, CMU_SESSION_COOKIE, getCmuAuthConfig } from "@/lib/cmu-auth";
-import { withBasePath } from "@/lib/base-path";
+import {
+  CMU_OAUTH_COOKIE,
+  CMU_SESSION_COOKIE,
+  expireRootPathCookies,
+  getCmuAuthConfig,
+} from "@/lib/cmu-auth";
+import { COOKIE_PATH, withBasePath } from "@/lib/base-path";
 import { getPublicOrigin } from "@/lib/public-origin";
 
 function handleLogout(request: Request) {
@@ -30,7 +35,7 @@ function handleLogout(request: Request) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/",
+    path: COOKIE_PATH,
     maxAge: 0,
   });
 
@@ -39,9 +44,12 @@ function handleLogout(request: Request) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/",
+    path: COOKIE_PATH,
     maxAge: 0,
   });
+
+  // Sessions issued before the cookies were scoped to the base path live at "/".
+  expireRootPathCookies(response, CMU_SESSION_COOKIE, CMU_OAUTH_COOKIE);
 
   return response;
 }

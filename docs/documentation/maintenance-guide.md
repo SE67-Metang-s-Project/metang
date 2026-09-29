@@ -90,6 +90,12 @@ variable `PUBLIC_SUBPATH` (Section 7.1), for example a client server that serves
 under `/loan`. The value is fixed when the application is built: change it, then build again. The
 server must start with the same value.
 
+The sign-in cookies (`cmu_session` and `cmu_oauth`) are set for the base path only, for example
+`Path=/metang`. Other applications on the same domain do not receive them. When the application is
+served from the root (`PUBLIC_SUBPATH` empty), the path is `/`. Sessions that were issued before
+this change have a cookie with path `/`. Such a cookie keeps working until the user signs in again
+or signs out; both actions remove it.
+
 Behind a reverse proxy, the proxy must tell the application which address the browser used.
 Next.js reads only `X-Forwarded-Proto` by itself and takes the host from its own listen address
 (for example `127.0.0.1:3000`), so the application reads the public host from `X-Forwarded-Host`,

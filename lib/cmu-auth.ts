@@ -10,7 +10,7 @@ import {
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { sanitizeReturnPath } from "@/lib/return-path";
-import { withBasePath } from "@/lib/base-path";
+import { COOKIE_PATH, withBasePath } from "@/lib/base-path";
 import { getPublicOrigin } from "@/lib/public-origin";
 
 export const CMU_SESSION_COOKIE = "cmu_session";
@@ -184,6 +184,30 @@ export function createOAuthState() {
   return randomBytes(32).toString("base64url");
 }
 
+/**
+ * Expires cookies that earlier builds set at path "/", before the cookies were scoped to
+ * COOKIE_PATH. A browser keeps them apart from the base-path cookies, so without this a user with
+ * an old cookie could not sign out and could hold two cookies of the same name. Does nothing when
+ * the app is served from the root.
+ *
+ * Call it after the last `response.cookies.set`: that keys cookies by name and rewrites the whole
+ * Set-Cookie header, so it would replace the base-path expiry with this one (or drop it).
+ */
+export function expireRootPathCookies(response: NextResponse, ...names: string[]) {
+  if (COOKIE_PATH === "/") {
+    return;
+  }
+
+  for (const name of names) {
+    response.headers.append(
+      "set-cookie",
+      `${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=lax${
+        process.env.NODE_ENV === "production" ? "; Secure" : ""
+      }`,
+    );
+  }
+}
+
 export function startCmuLogin(request: Request, mode: CmuLoginMode) {
   try {
     const config = getCmuAuthConfig();
@@ -213,7 +237,7 @@ export function startCmuLogin(request: Request, mode: CmuLoginMode) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/",
+      path: COOKIE_PATH,
       maxAge: OAUTH_TRANSACTION_MAX_AGE,
     });
 

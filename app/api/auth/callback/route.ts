@@ -3,6 +3,7 @@ import {
   CMU_OAUTH_COOKIE,
   CMU_SESSION_COOKIE,
   SESSION_MAX_AGE,
+  expireRootPathCookies,
   getCmuAuthConfig,
   sanitizeCmuProfile,
   seal,
@@ -15,7 +16,7 @@ import { getNurseAccessDecision } from "@/lib/nurse-auth";
 import { syncUserFromCmuProfile } from "@/db/queries/users";
 import { getUserHomePath } from "@/lib/loan-auth";
 import { sanitizeReturnPath } from "@/lib/return-path";
-import { withBasePath } from "@/lib/base-path";
+import { COOKIE_PATH, withBasePath } from "@/lib/base-path";
 import { getPublicOrigin } from "@/lib/public-origin";
 
 type TokenResponse = {
@@ -37,14 +38,14 @@ function redirectCallback(request: NextRequest, destination: string, error?: str
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/",
+    path: COOKIE_PATH,
     maxAge: 0,
   });
 
   return response;
 }
 
-export async function GET(request: NextRequest) {
+async function handleCallback(request: NextRequest) {
   const providerError = request.nextUrl.searchParams.get("error");
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
@@ -116,7 +117,7 @@ export async function GET(request: NextRequest) {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "lax",
-          path: "/",
+          path: COOKIE_PATH,
           maxAge: 0,
         });
 
@@ -145,7 +146,7 @@ export async function GET(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/",
+      path: COOKIE_PATH,
       maxAge: SESSION_MAX_AGE,
     });
 
@@ -154,4 +155,18 @@ export async function GET(request: NextRequest) {
     console.error("CMU login callback failed", error);
     return redirectCallback(request, "/login", "login_failed");
   }
+}
+
+export async function GET(request: NextRequest) {
+  const response = await handleCallback(request);
+
+  // Cookies set before they were scoped to the base path live at "/". The OAuth transaction cookie
+  // is always cleared here, and the session cookie whenever this response sets or clears it.
+  expireRootPathCookies(
+    response,
+    CMU_OAUTH_COOKIE,
+    ...(response.cookies.has(CMU_SESSION_COOKIE) ? [CMU_SESSION_COOKIE] : []),
+  );
+
+  return response;
 }
