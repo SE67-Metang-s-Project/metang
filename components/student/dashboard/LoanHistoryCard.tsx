@@ -1,5 +1,4 @@
 import type { LoanRequestHistoryItem } from "@/app/student/studentMockData";
-import { ChevronRight } from "lucide-react";
 import styles from "@/app/student/student.module.css";
 import { localizeStudentContent, useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import AdaptiveKeyValueRow from "@/components/shared/AdaptiveKeyValueRow";
@@ -96,12 +95,6 @@ export default function LoanHistoryCard({
             amount
           )}
         </strong>
-        {onOpenRequest ? (
-          <span className={styles.historyDetailLink}>
-            {detailLabel}
-            <ChevronRight aria-hidden="true" size={16} strokeWidth={2.5} />
-          </span>
-        ) : null}
       </div>
     </article>
   );
