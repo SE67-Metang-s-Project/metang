@@ -55,6 +55,19 @@ if (!direction) throw new Error("Missing FundTransactionItem.direction schema");
 direction.type = "integer";
 direction.enum = [1, -1];
 
+// The slip routes answer the file itself, which a JSDoc @response can't describe.
+for (const path of ["/payments/{id}/slip", "/fund-transactions/{id}/slip"]) {
+  const responses = document.paths?.[path]?.get?.responses;
+  if (!responses) throw new Error(`Missing GET ${path}`);
+  const binary = { schema: { type: "string", format: "binary" } };
+  responses["200"] = {
+    description: "The slip file.",
+    content: Object.fromEntries(
+      ["image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp", "image/avif"].map((type) => [type, binary]),
+    ),
+  };
+}
+
 for (const [path, operations] of Object.entries(document.paths ?? {})) {
   for (const operation of Object.values(operations)) {
     if (!operation || typeof operation !== "object") continue;

@@ -5876,7 +5876,7 @@
           },
           "slip": {
             "type": "string",
-            "description": "The transfer slip: image/jpeg, image/png or application/pdf, up to 10MB.",
+            "description": "The transfer slip: an image (JPEG, PNG, GIF, WebP, BMP or AVIF), up to 1MB.",
             "nullable": false
           }
         },
@@ -7828,8 +7828,8 @@
     "/fund-transactions/{id}/slip": {
       "get": {
         "operationId": "get-fund-transactions-{id}-slip",
-        "summary": "Redirect to a short-lived signed URL for a fund transaction's slip evidence.",
-        "description": "Use it as an image source - `<img src=\"/api/fund-transactions/{id}/slip\">`. Testing it from this page fails with \"Failed to fetch\": the 302 target is cross-origin and Supabase answers `Access-Control-Allow-Origin: `, which a credentialed fetch rejects. An `<img>` load is not a credentialed CORS request, so it is unaffected.",
+        "summary": "Stream a fund transaction's slip evidence.",
+        "description": "Answers the slip image itself (JPEG, PNG, GIF, WebP, BMP or AVIF), so use it as an image source: `<img src=\"/api/fund-transactions/{id}/slip\">`. No storage URL is ever returned.",
         "tags": [
           "Fund slips"
         ],
@@ -7852,14 +7852,43 @@
           }
         ],
         "responses": {
-          "302": {
-            "description": "Successful response",
-            "headers": {
-              "Location": {
-                "description": "Redirect target URL",
+          "200": {
+            "description": "The slip file.",
+            "content": {
+              "image/jpeg": {
                 "schema": {
                   "type": "string",
-                  "format": "uri"
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/bmp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/avif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -8189,8 +8218,8 @@
     "/payments/{id}/slip": {
       "get": {
         "operationId": "get-payments-{id}-slip",
-        "summary": "Redirect to a short-lived signed URL for a payment's repayment slip evidence.",
-        "description": "Use it as an image source - `<img src=\"/api/payments/{id}/slip\">`. Testing it from this page fails with \"Failed to fetch\": the 302 target is cross-origin and Supabase answers `Access-Control-Allow-Origin: `, which a credentialed fetch rejects. An `<img>` load is not a credentialed CORS request, so it is unaffected.",
+        "summary": "Stream a payment's repayment slip evidence.",
+        "description": "Answers the slip image itself (JPEG, PNG, GIF, WebP, BMP or AVIF), so use it as an image source: `<img src=\"/api/payments/{id}/slip\">`. No storage URL is ever returned.",
         "tags": [
           "Payment slips"
         ],
@@ -8213,14 +8242,43 @@
           }
         ],
         "responses": {
-          "302": {
-            "description": "Successful response",
-            "headers": {
-              "Location": {
-                "description": "Redirect target URL",
+          "200": {
+            "description": "The slip file.",
+            "content": {
+              "image/jpeg": {
                 "schema": {
                   "type": "string",
-                  "format": "uri"
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/bmp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/avif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -9288,6 +9346,79 @@
                 }
               }
             }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-super-admin-users",
+        "summary": "Add a new managed user (admin or super_admin).",
+        "description": "",
+        "tags": [
+          "SuperAdmin roles"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/super-admin/users/{id}": {
+      "patch": {
+        "operationId": "patch-super-admin-users-{id}",
+        "summary": "Update user details (name, email).",
+        "description": "",
+        "tags": [
+          "SuperAdmin roles"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {}
+      },
+      "delete": {
+        "operationId": "delete-super-admin-users-{id}",
+        "summary": "Delete a managed user (admin or super_admin).",
+        "description": "",
+        "tags": [
+          "SuperAdmin roles"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
           }
         }
       }
