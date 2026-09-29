@@ -1,0 +1,44 @@
+# Example nginx server block for serving Me_Tang under a subpath behind a reverse proxy.
+#
+# Important Notes:
+# 1. The location prefix (/metang/) MUST equal PUBLIC_SUBPATH configured at build time.
+# 2. proxy_pass must NOT have a URI part (no trailing slash after host:port), so the
+#    entire request path (including /metang/...) is passed to the Next.js app unchanged.
+# 3. The app reads the public address from X-Forwarded-Host / Host and X-Forwarded-Proto
+#    (see lib/public-origin.ts), so these headers are strictly required.
+# 4. client_max_body_size is set to 10m to allow payment slip uploads up to 10 MB.
+
+server {
+  listen 80;
+  server_name example.com;
+
+  # TLS termination example (recommended in production):
+  # listen 443 ssl;
+  # http2 on;
+  # ssl_certificate /etc/ssl/certs/example.com.crt;
+  # ssl_certificate_key /etc/ssl/private/example.com.key;
+  # ssl_protocols TLSv1.2 TLSv1.3;
+  # ssl_ciphers HIGH:!aNULL:!MD5;
+
+  # Client upload size limit (payment slips up to 10 MB)
+  client_max_body_size 10m;
+
+  # Proxy subpath to the Next.js standalone container
+  location /metang/ {
+    # NO URI part on proxy_pass so the path (/metang/...) is passed unchanged to the app:
+    proxy_pass http://app:3000;
+
+    proxy_http_version 1.1;
+
+    # Forwarded headers required for origin resolution (lib/public-origin.ts)
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    # Sensible proxy timeouts
+    proxy_connect_timeout 60s;
+    proxy_send_timeout 60s;
+    proxy_read_timeout 60s;
+  }
+}

@@ -1010,6 +1010,64 @@ reversed, for example `20260905110000_remove_payment_ocr` (drops columns) and
 2. If the database must return to its earlier state, restore the backup from the pre-update
    checklist (Section 5.4) and verify it (Section 5.5).
 
+### 6.4 Run the application as a container on your own server
+
+Use this when the application does not run on Vercel. The repository has a `Dockerfile`, a
+`.dockerignore`, and a sample reverse proxy setup in `deploy/nginx.conf.example`. The image needs
+no Infisical: all settings are environment variables (Section 7.1).
+`[TO VERIFY: a full image build on the client server. The Dockerfile passed
+"docker buildx build --check", and the standalone output was started and tested outside Docker.]`
+
+1. Choose the sub path. The default is `/metang`. The sub path is fixed when the image is built
+   (Section 2.1), so build one image for each sub path.
+2. Build the image and the migration image from the release you want:
+
+   ```bash
+   docker build --build-arg PUBLIC_SUBPATH=/metang -t metang:<version> .
+   docker build --build-arg PUBLIC_SUBPATH=/metang --target migrate -t metang-migrate:<version> .
+   ```
+
+   Expected result: both builds end without an error. The image contains no secret: the build uses
+   placeholder database addresses that are not part of the final image.
+3. Back up the database (Section 5.2). Then apply the migrations. `DIRECT_URL` is the direct or
+   session-pooler connection of the database:
+
+   ```bash
+   docker run --rm -e DIRECT_URL="postgresql://..." metang-migrate:<version>
+   ```
+
+   Expected result: each new migration is reported as applied, or "No pending migrations to
+   apply".
+4. Put the settings of Section 7.1 in a file that only the server administrator can read, for
+   example `/etc/metang/app.env`. One `NAME=value` per line, without quotes. Then start the
+   application:
+
+   ```bash
+   docker run -d --name metang --restart unless-stopped \
+     -p 127.0.0.1:3000:3000 --env-file /etc/metang/app.env metang:<version>
+   ```
+
+   Set `APP_BASE_URL` to the public address without a path, for example `https://<host>`. Set
+   `CRON_SECRET`. The container runs as the user `node` and listens on port 3000.
+5. Set up the reverse proxy from `deploy/nginx.conf.example`. The `location` prefix must equal the
+   sub path, and the proxy must set `Host`, `X-Forwarded-Host`, and `X-Forwarded-Proto` (Section
+   2.1). Set `client_max_body_size 10m`, because payment slips can be up to 10 MB.
+6. Jobs: the container runs the notification jobs itself while it keeps running (Section 2.3).
+   On a platform that stops idle containers, set `ENABLE_JOB_SCHEDULER=false` and call the routes
+   from outside (end of Section 2.3).
+7. Register the sign-in address in CMU Entra for this host: `CALLBACK_URL` is
+   `https://<host>/<sub path>/api/auth/callback`, and the value in Entra must be identical.
+8. Do the health check (Section 4.2). Open `https://<host>/<sub path>/login`: expected result is
+   the sign-in page.
+
+Rollback: start the previous image tag with the same settings (`docker rm -f metang`, then the
+`docker run` command above with the old tag). The database follows the rules of Section 6.3.
+
+> **WARNING:** `next build` copies the `.env` files it finds into `.next/standalone`. The
+> `.dockerignore` keeps `.env` out of the image build. If you build the standalone output without
+> Docker (`NEXT_OUTPUT=standalone`), build it on a computer without a `.env` file, or delete
+> `.next/standalone/.env` before you copy the output to the server.
+
 ---
 
 ## 7. Configuration reference

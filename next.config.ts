@@ -31,6 +31,7 @@ const ROOT_PATHS = [
 ];
 
 const nextConfig: NextConfig = {
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   basePath: BASE_PATH,
   // Without this, PUBLIC_SUBPATH would reach the server only: Next.js writes only NEXT_PUBLIC_*
   // and `env` values into the browser bundles.
