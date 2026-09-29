@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "API for the CMU student emergency loan workflow."
   },
-  "servers": [{ "url": "/api", "description": "Current application" }],
+  "servers": [{ "url": "/metang/api", "description": "Current application" }],
   "components": {
     "securitySchemes": {
       "cookieAuth": {

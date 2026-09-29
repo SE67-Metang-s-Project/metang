@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "/api",
+      "url": "/metang/api",
       "description": "Current application"
     }
   ],
@@ -8164,15 +8164,15 @@
     "/openapi": {
       "get": {
         "operationId": "get-openapi",
-        "summary": "",
+        "summary": "Redirect to the generated OpenAPI document.",
         "description": "",
         "tags": [
           "Openapi"
         ],
         "parameters": [],
         "responses": {
-          "307": {
-            "description": "Redirect response",
+          "302": {
+            "description": "Successful response",
             "headers": {
               "Location": {
                 "description": "Redirect target URL",
