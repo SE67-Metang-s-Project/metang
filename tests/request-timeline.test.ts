@@ -121,6 +121,14 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepInitial[4].action, "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว");
   assert.equal(stepInitial[4].isUpcoming, true);
 
+  const cancelledRequest = buildFiveStepTimeline({
+    requestStatus: "cancelled",
+    studentName: "นายสมชาย ใจดี",
+    submitDate: "14 ต.ค. 2567",
+  });
+  assert.equal(cancelledRequest[0].isFailed, true);
+  assert.equal(cancelledRequest[0].isCompleted, false);
+
   // Case 2: Advisor returned for revision (status = returned by advisor).
   // The student-facing status card shows the advisor's latest guidance directly.
   const stepAdvReturned = buildFiveStepTimeline({

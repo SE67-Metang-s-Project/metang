@@ -16,6 +16,7 @@ import {
   Pencil,
   SearchX,
   Loader2,
+  FileX2,
   FileText,
   Download,
   RotateCcw,
@@ -557,6 +558,16 @@ export default function RequestsCard({
   });
 
   const closeCompletionModal = () => {
+    if (completedDecision && onRequestDecided) {
+      onRequestDecided(
+        completedDecision.requestId,
+        completedDecision.action === "approve"
+          ? "approved"
+          : completedDecision.action === "return"
+            ? "returned"
+            : "rejected",
+      );
+    }
     setCompletedDecision(null);
     router.refresh();
   };
@@ -665,13 +676,8 @@ export default function RequestsCard({
       }
 
       const targetId = selectedRequest.id;
-      const targetDecision = payload.decision;
 
       closeAllModals();
-
-      if (onRequestDecided) {
-        onRequestDecided(targetId, targetDecision);
-      }
 
       setCompletedDecision({
         requestId: targetId,
@@ -818,7 +824,7 @@ export default function RequestsCard({
                       </span>
                     )}
                   </div>
-                  <div className="text-[13px] text-gray-500 mt-1">{formatStudentDetails(req)}</div>
+                  <div className="text-[14px] leading-5 text-gray-500 mt-1">{formatStudentDetails(req)}</div>
                 </div>
                 <div className="text-[11px] text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md shrink-0 border border-gray-200 flex flex-col items-end leading-tight">
                   <span>{req.submitDate}</span>
@@ -924,7 +930,7 @@ export default function RequestsCard({
                     <div className="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
                       <span>{req.name}</span>
                     </div>
-                    <div className="mt-0.5 text-[13px] text-gray-500">
+                    <div className="mt-0.5 text-[14px] leading-5 text-gray-500">
                       {formatStudentDetails(req)}
                     </div>
                   </td>
@@ -1561,11 +1567,13 @@ export default function RequestsCard({
               ) : completedDecision.action === "return" ? (
                 <ShieldAlert size={30} />
               ) : (
-                <XCircle size={30} />
+                <FileX2 size={30} />
               )}
             </div>
             <h2 id="completion-modal-title" className="mt-4 text-xl font-semibold text-gray-900">
-              ดำเนินการคำร้องเสร็จสิ้น
+              {completedDecision.action === "approve" || completedDecision.action === "return"
+                ? "ดำเนินการคำร้องเสร็จสิ้น"
+                : "ดำเนินการไม่อนุมัติคำร้องเสร็จสิ้น"}
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               {completedDecision.action === "approve"

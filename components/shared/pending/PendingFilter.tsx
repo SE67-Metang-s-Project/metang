@@ -34,7 +34,6 @@ export const COMPLETE_REQUEST_STATUS_OPTIONS: DropdownStatusOption[] = [
   { id: "returned", label: "ส่งกลับแก้ไข" },
   { id: "rejected", label: "ไม่อนุมัติ" },
   { id: "cancelled", label: "ยกเลิกคำร้อง" },
-  { id: "draft", label: "แบบร่าง" },
 ];
 
 interface PendingFilterProps {
