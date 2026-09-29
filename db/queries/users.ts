@@ -36,6 +36,7 @@ export type RoleMutationErrorCode =
   | "FINAL_SUPER_ADMIN"
   | "EXECUTIVE_ALREADY_EXISTS"
   | "EXECUTIVE_CANNOT_BE_DELETED"
+  | "CANNOT_DELETE_SELF"
   | "EMAIL_ALREADY_IN_USE";
 
 export class RoleMutationError extends Error {
@@ -180,15 +181,11 @@ export async function createManagedUser({
         },
       });
 
-      if (cleanFullNameTh) {
-        await tx.appUser.update({
-          where: { id: existing.id },
-          data: {
-            fullNameTh: cleanFullNameTh,
-            ...(cleanFullNameEn ? { fullNameEn: cleanFullNameEn } : {}),
-          },
-        });
-      }
+      const names = {
+        fullNameTh: cleanFullNameTh,
+        ...(cleanFullNameEn ? { fullNameEn: cleanFullNameEn } : {}),
+      };
+      await tx.appUser.update({ where: { id: existing.id }, data: names });
 
       await tx.auditLog.create({
         data: {
@@ -196,7 +193,8 @@ export async function createManagedUser({
           action: "user_role.granted",
           entityType: "app_user",
           entityId: existing.id,
-          after: { role },
+          before: { fullNameTh: existing.fullNameTh, fullNameEn: existing.fullNameEn },
+          after: { role, ...names },
         },
       });
     } else {
@@ -253,6 +251,7 @@ export async function deleteManagedUser({
       select: superAdminUserSelect,
     });
     if (!target) throw new RoleMutationError("USER_NOT_FOUND");
+    if (targetUserId === actorId) throw new RoleMutationError("CANNOT_DELETE_SELF");
 
     const targetRoleNames = target.roles.map((r) => r.role);
 
@@ -322,11 +321,21 @@ export async function deleteManagedUser({
 
     // If user has no remaining roles, attempt to delete AppUser
     const remainingRoles = await tx.userRole.count({ where: { userId: targetUserId } });
+    let rowDeleted = false;
     if (remainingRoles === 0) {
+      // A user with history (audit_log, loan_approval, ...) is still referenced, so PostgreSQL
+      // refuses the DELETE and aborts the whole transaction. The savepoint keeps the transaction
+      // alive: the row stays for the history and only the roles are removed.
+      await tx.$executeRaw`SAVEPOINT delete_app_user`;
       try {
         await tx.appUser.delete({ where: { id: targetUserId } });
-      } catch {
-        // Kept for FK audit/history integrity
+        rowDeleted = true;
+        await tx.$executeRaw`RELEASE SAVEPOINT delete_app_user`;
+      } catch (error) {
+        if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2003") {
+          throw error;
+        }
+        await tx.$executeRaw`ROLLBACK TO SAVEPOINT delete_app_user`;
       }
     }
 
@@ -341,6 +350,7 @@ export async function deleteManagedUser({
           fullNameTh: target.fullNameTh,
           roles: targetRoleNames,
         },
+        after: { rowDeleted },
       },
     });
 
@@ -371,11 +381,12 @@ export async function updateManagedUser({
     const cleanEmail = email.trim().toLowerCase();
     const cleanFullNameTh = fullNameTh.trim();
     const cleanFullNameEn = fullNameEn ? fullNameEn.trim() : null;
+    const cmuAccount = cleanEmail.split("@")[0];
 
-    // Check email collision
+    // Check email and cmuAccount collision (both are unique)
     const existingWithEmail = await tx.appUser.findFirst({
       where: {
-        email: cleanEmail,
+        OR: [{ email: cleanEmail }, { cmuAccount }],
         id: { not: targetUserId },
       },
     });
@@ -387,7 +398,7 @@ export async function updateManagedUser({
       where: { id: targetUserId },
       data: {
         email: cleanEmail,
-        cmuAccount: cleanEmail.split("@")[0],
+        cmuAccount,
         fullNameTh: cleanFullNameTh,
         fullNameEn: cleanFullNameEn,
       },

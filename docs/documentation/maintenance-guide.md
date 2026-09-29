@@ -1,7 +1,7 @@
 # Me_Tang Maintenance Guide
 
 Version covered: Me_Tang 0.1.0 (`package.json` version `0.1.0`)
-Document version: 1.2 draft
+Document version: 1.3 draft
 Date: 2026-09-29
 
 ---
@@ -292,7 +292,14 @@ Role changes have side effects:
 - Deleting an `admin` or `super_admin` user removes those two roles and moves the same requests to
   the SuperAdmin who deletes. It does not disable the account: a person who keeps another role,
   such as `advisor`, can still sign in. Only the SuperAdmin screen deletes users; the last
-  `super_admin` and the `executive` cannot be deleted there (edit the executive instead).
+  `super_admin` and the `executive` cannot be deleted there (edit the executive instead), and
+  nobody can delete their own account.
+- The `app_user` row is deleted only when no role is left and no other table refers to it. A
+  person with history, such as `audit_log` rows or loan approvals, keeps the row so that the
+  history stays. The `user.deleted` audit row has `after.rowDeleted` set to `true` or `false`.
+- Add user and Edit accept only addresses at `cmu.ac.th`, the domain the email API sends to. Add
+  user finds an existing person by the address or by the account name before `@`; it keeps their
+  old names in `before` of the `user_role.granted` audit row.
 - The audit log records these user changes as `user.created`, `user.updated`, `user.deleted`,
   `user_role.granted`, and `user_role.removed`.
 - To change the executive, revoke the role from the current executive first. A second
@@ -1429,10 +1436,11 @@ cannot reach.
 | `EXECUTIVE_ALREADY_EXISTS`: `มีผู้บริหารในระบบอยู่แล้ว ไม่สามารถแต่งตั้งเพิ่มได้ (จำกัด 1 คน)` (409) / `มีผู้บริหารในระบบแล้ว (<name>) กรุณาเปลี่ยนบทบาทผู้บริหารเดิมก่อน` | Only one executive is allowed. | Remove the current executive role first. |
 | `CONFLICT`: `The role assignment changed; please retry` (409) | Concurrent change. | Retry. |
 | `CONFLICT`: `ผู้ใช้งานนี้มีบทบาทนี้อยู่แล้ว` (409) | Adding a user who already has the chosen role. | None. |
-| `CONFLICT`: `อีเมลนี้มีผู้ใช้งานในระบบแล้ว` (409) | The new email of an executive belongs to another user. | Use another email. |
+| `CONFLICT`: `อีเมลนี้มีผู้ใช้งานในระบบแล้ว` (409) | The new email of an executive, or its account name before `@`, belongs to another user. | Use another email. |
 | `FINAL_SUPER_ADMIN`: `ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายได้ (ต้องมีผู้ดูแลระบบอย่างน้อย 1 คนในระบบ)` (409) | Deleting the last SuperAdmin. | Add another SuperAdmin first. |
 | `BAD_REQUEST`: `ไม่สามารถลบผู้บริหารได้ กรุณาแก้ไขข้อมูลผู้บริหารแทน` (400) | Deleting the executive. | Edit the executive instead. |
-| `VALIDATION_ERROR`: `กรุณาระบุชื่อ-นามสกุล`, `กรุณาระบุอีเมลที่ถูกต้อง`, `บทบาทต้องเป็น 'admin' หรือ 'super_admin'`, `Invalid JSON request`, `Request body must be an object` (422) | Add-user or edit-user form values that are not valid. | Correct the form. |
+| `BAD_REQUEST`: `ไม่สามารถลบบัญชีของตนเองได้ ให้ผู้ดูแลระบบคนอื่นเป็นผู้ลบ` (400) | A SuperAdmin deleting their own account. | Ask another SuperAdmin. |
+| `VALIDATION_ERROR`: `กรุณาระบุชื่อ-นามสกุล`, `กรุณาระบุอีเมลที่ถูกต้อง`, `กรุณาระบุอีเมล CMU (ลงท้ายด้วย @cmu.ac.th)`, `บทบาทต้องเป็น 'admin' หรือ 'super_admin'`, `Invalid JSON request`, `Request body must be an object` (422) | Add-user or edit-user form values that are not valid. | Correct the form. |
 | `ไม่สามารถโหลดรายชื่อผู้ใช้จากฐานข้อมูลได้`, `ไม่สามารถเพิ่มบทบาทผู้ใช้ได้`, `เกิดข้อผิดพลาดในการเปลี่ยนบทบาท` | Role screen errors. | Retry. Check logs. |
 | `VALIDATION_ERROR`: `request body is invalid`, `action is invalid`, `role is invalid` (422) | Invalid role request. | Report to support. |
 | `VALIDATION_ERROR`: `amount is invalid` / `kind is invalid` (422) | Fund amount not a positive whole number, or an unknown transaction kind. | Correct it. |
@@ -1558,3 +1566,4 @@ Include this information:
 | 1.0 draft | 2026-09-28 | Me_Tang development team (Git user `nacs-970`) | First version for Jira NAT-214. Written from the repository at commit `f7fc3cd`, plus the Jira NAT-206 change (student email on slip confirmation or rejection), student emails on request rejection and disbursement, and the backend job scheduler. |
 | 1.1 draft | 2026-09-28 | Me_Tang development team | Jira NAT-240: corrected against the code at commit `d05ac00`. Scheduled jobs on Vercel, student cancel and executive return, eligibility rules, installment count (1 to 3), phone and slip rules, notifications sent without the outbox, fund ledger limits, the production database warning, unit tests, rollback behavior, and missing error messages in Section 10. |
 | 1.2 draft | 2026-09-29 | Me_Tang development team | Jira NAT-214: SuperAdmin user and role screen, roles and audit actions, and error codes brought up to the code of 2026-09-29. The deploy platform is not chosen: `[TO VERIFY]` markers that assume Vercel or Supabase now say so, and markers for facts that the client or CMU ITSC will supply at hand-over were removed. |
+| 1.3 draft | 2026-09-29 | Me_Tang development team | Jira NAT-243 and NAT-244: delete keeps the account row of a person with history, nobody deletes their own account, and Add user and Edit accept CMU addresses only. |

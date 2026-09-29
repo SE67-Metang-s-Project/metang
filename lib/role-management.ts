@@ -33,3 +33,12 @@ export function parseRoleMutationInput(value: unknown): RoleMutationInput {
 
   return { action: input.action, role: input.role as UserRoleName };
 }
+
+/**
+ * True for an address at cmu.ac.th, the only domain the email API sends to. People sign in with a
+ * CMU account and the account name is the part before "@", so an address elsewhere cannot belong
+ * to a CMU user.
+ */
+export function isCmuEmail(email: string) {
+  return /^[^\s@]+@cmu\.ac\.th$/i.test(email.trim());
+}

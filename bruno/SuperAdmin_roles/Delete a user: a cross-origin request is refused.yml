@@ -1,0 +1,40 @@
+info:
+  name: "Delete a user: a cross-origin request is refused"
+  type: http
+  seq: 4
+  tags:
+    - SuperAdmin_roles
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/super-admin/users/:id"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+    - name: Origin
+      value: https://other-site.example
+  params:
+    - name: id
+      value: "00000000-0000-0000-0000-000000000102"
+      type: path
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+    - expression: res.body.error.code
+      operator: eq
+      value: FORBIDDEN
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

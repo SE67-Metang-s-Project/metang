@@ -2,7 +2,7 @@ import { createManagedUser, listUsersWithRoles, RoleMutationError } from "@/db/q
 import { apiError, apiOk } from "@/lib/api-response";
 import { getSuperAdminAccess } from "@/lib/loan-auth";
 import { validateJsonRequest } from "@/lib/request-security";
-import { predefinedRoleNames } from "@/lib/role-management";
+import { isCmuEmail, predefinedRoleNames } from "@/lib/role-management";
 import { serializeJson } from "@/lib/serialization";
 
 /**
@@ -68,6 +68,10 @@ export async function POST(request: Request) {
 
   if (typeof email !== "string" || !email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return apiError("VALIDATION_ERROR", "กรุณาระบุอีเมลที่ถูกต้อง", 422);
+  }
+
+  if (!isCmuEmail(email)) {
+    return apiError("VALIDATION_ERROR", "กรุณาระบุอีเมล CMU (ลงท้ายด้วย @cmu.ac.th)", 422);
   }
 
   if (role !== "admin" && role !== "super_admin") {

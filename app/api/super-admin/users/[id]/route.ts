@@ -2,7 +2,8 @@ import { deleteManagedUser, RoleMutationError, updateManagedUser } from "@/db/qu
 import { apiError, apiOk } from "@/lib/api-response";
 import { getSuperAdminAccess } from "@/lib/loan-auth";
 import { isUuid } from "@/lib/loan-validation";
-import { validateJsonRequest } from "@/lib/request-security";
+import { isSameOrigin, validateJsonRequest } from "@/lib/request-security";
+import { isCmuEmail } from "@/lib/role-management";
 import { serializeJson } from "@/lib/serialization";
 
 type Params = { params: Promise<{ id: string }> };
@@ -12,7 +13,11 @@ type Params = { params: Promise<{ id: string }> };
  * @tag SuperAdmin roles
  * @auth cookieAuth
  */
-export async function DELETE(_request: Request, { params }: Params) {
+export async function DELETE(request: Request, { params }: Params) {
+  if (!isSameOrigin(request)) {
+    return apiError("FORBIDDEN", "A same-origin request is required", 403);
+  }
+
   const access = await getSuperAdminAccess();
   if (access.status === "unauthenticated") {
     return apiError("UNAUTHORIZED", "Authentication required", 401);
@@ -39,6 +44,9 @@ export async function DELETE(_request: Request, { params }: Params) {
           "ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายได้ (ต้องมีผู้ดูแลระบบอย่างน้อย 1 คนในระบบ)",
           409,
         );
+      }
+      if (error.code === "CANNOT_DELETE_SELF") {
+        return apiError("BAD_REQUEST", "ไม่สามารถลบบัญชีของตนเองได้ ให้ผู้ดูแลระบบคนอื่นเป็นผู้ลบ", 400);
       }
       if (error.code === "EXECUTIVE_CANNOT_BE_DELETED") {
         return apiError("BAD_REQUEST", "ไม่สามารถลบผู้บริหารได้ กรุณาแก้ไขข้อมูลผู้บริหารแทน", 400);
@@ -88,6 +96,10 @@ export async function PATCH(request: Request, { params }: Params) {
 
   if (typeof email !== "string" || !email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return apiError("VALIDATION_ERROR", "กรุณาระบุอีเมลที่ถูกต้อง", 422);
+  }
+
+  if (!isCmuEmail(email)) {
+    return apiError("VALIDATION_ERROR", "กรุณาระบุอีเมล CMU (ลงท้ายด้วย @cmu.ac.th)", 422);
   }
 
   try {
