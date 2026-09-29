@@ -18,7 +18,7 @@ export default function DisburseDebtPage({
     <div>
       <div className="mb-6">
         <h1 className="text-xl sm:text-2xl font-semibold text-[#1e293b] mb-1">
-          เบิกจ่ายเงินให้นักศึกษา (Disbursement)
+          เบิกจ่ายเงินให้นักศึกษา
         </h1>
         <p className="text-[13px] text-gray-500">
           รายการคำร้องที่ผ่านการอนุมัติจากผู้บริหารแล้ว

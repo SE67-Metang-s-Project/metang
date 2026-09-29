@@ -24,6 +24,12 @@ export type DropdownStatusOption = {
   label: string;
 };
 
+export type MainFilterOption = {
+  id: string;
+  label: string;
+  count?: number;
+};
+
 export const COMPLETE_REQUEST_STATUS_OPTIONS: DropdownStatusOption[] = [
   { id: "pending_advisor", label: "รออาจารย์พิจารณา" },
   { id: "pending_admin", label: "รอเจ้าหน้าที่ตรวจสอบ" },
@@ -48,6 +54,54 @@ interface PendingFilterProps {
   pendingLabel?: string; // เพิ่ม Prop นี้เพื่อให้แต่ละ Role ตั้งชื่อแท็บได้เอง
   statusOptions?: DropdownStatusOption[];
   showAllStatusOption?: boolean;
+}
+
+interface PendingMainFilterTabsProps {
+  currentFilter: string;
+  onFilterChange: (filter: string) => void;
+  options: MainFilterOption[];
+}
+
+export function PendingMainFilterTabs({
+  currentFilter,
+  onFilterChange,
+  options,
+}: PendingMainFilterTabsProps) {
+  return (
+    <div className="flex w-fit flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-1.5 shadow-sm">
+      {options.map((option) => {
+        const isActive = currentFilter === option.id;
+
+        return (
+          <button
+            key={option.id}
+            onClick={() => onFilterChange(option.id)}
+            className={`relative flex items-center justify-center rounded-lg border px-4 py-2 text-[14px] font-medium transition-all duration-200 ${
+              isActive
+                ? "border-[#ffedd5] bg-[#fff7ed] text-[#ea580c] shadow-sm"
+                : "border-transparent bg-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+            }`}
+          >
+            {option.label}
+
+            {option.count !== undefined && option.count > 0 && (
+              <span
+                className={`ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-semibold ${
+                  isActive
+                    ? "bg-[#ea580c] text-white"
+                    : option.id === "pending_executive"
+                      ? "bg-amber-100 text-amber-800"
+                      : "bg-[#fee2e2] text-[#dc2626]"
+                }`}
+              >
+                {option.count}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function PendingFilter({
@@ -123,44 +177,11 @@ export default function PendingFilter({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
       {/* 1. ปุ่มตัวกรองสถานะหลัก */}
-      <div className="flex flex-wrap items-center gap-2 bg-white p-1.5 rounded-xl border border-gray-200 shadow-sm w-fit">
-        {mainFilterOptions.map((option) => {
-          const isActive = currentFilter === option.id;
-
-          return (
-            <button
-              key={option.id}
-              onClick={() => onFilterChange(option.id)}
-              className={`
-                relative flex items-center justify-center px-4 py-2 rounded-lg text-[14px] font-medium transition-all duration-200
-                ${
-                  isActive
-                    ? "bg-[#fff7ed] text-[#ea580c] shadow-sm border border-[#ffedd5]"
-                    : "bg-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-50 border border-transparent"
-                }
-              `}
-            >
-              {option.label}
-
-              {option.count !== undefined && option.count > 0 && (
-                <span
-                  className={`ml-2 inline-flex items-center justify-center px-1.5 min-w-[20px] h-5 text-[11px] font-semibold rounded-full
-                    ${
-                      isActive
-                        ? "bg-[#ea580c] text-white"
-                        : option.id === "pending_executive"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-[#fee2e2] text-[#dc2626]"
-                    }
-                  `}
-                >
-                  {option.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      <PendingMainFilterTabs
+        currentFilter={currentFilter}
+        onFilterChange={(filter) => onFilterChange(filter as FilterStatus)}
+        options={mainFilterOptions}
+      />
 
       {/* 2. ดรอปดาวน์ และ ช่องค้นหา */}
       <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">

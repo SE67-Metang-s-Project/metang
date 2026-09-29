@@ -1586,7 +1586,7 @@ export default function RequestsCard({
                   ? "ดำเนินการอนุมัติคำร้องเสร็จสิ้น"
                   : isAdminOrSuperAdmin
                     ? "ดำเนินการส่งพิจารณาคำร้องเสร็จสิ้น"
-                    : "ดำเนินการคำร้องเสร็จสิ้น"
+                    : "ดำเนินการอนุมัติคำร้องเสร็จสิ้น"
                 : completedDecision.action === "return"
                   ? "ดำเนินการส่งกลับคำร้องเสร็จสิ้น"
                   : isAdminOrSuperAdmin

@@ -2,11 +2,13 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Search, ChevronDown } from "lucide-react";
+import { PendingMainFilterTabs } from "@/components/shared/pending/PendingFilter";
 
 interface StudentFiltersProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   filterTabs?: string[];
+  filterTabCounts?: Record<string, number>;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   degreeFilter: string;
@@ -17,6 +19,7 @@ const StudentFilters: React.FC<StudentFiltersProps> = ({
   activeTab,
   setActiveTab,
   filterTabs = [],
+  filterTabCounts,
   searchQuery,
   setSearchQuery,
   degreeFilter,
@@ -58,25 +61,20 @@ const StudentFilters: React.FC<StudentFiltersProps> = ({
   };
 
   return (
-    <>
-      {/* Search Bar & Dropdown */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        {/* ช่องค้นหา */}
-        <div className="relative w-full flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-[8px] bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#ea580c] text-[13px] transition-all"
-            placeholder="ค้นหารหัสคำร้อง ชื่อ..."
-          />
-        </div>
+    <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <PendingMainFilterTabs
+        currentFilter={activeTab}
+        onFilterChange={setActiveTab}
+        options={filterTabs.map((tab) => ({
+          id: tab,
+          label: tab,
+          count: filterTabCounts?.[tab],
+        }))}
+      />
 
+      <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
         {/* Custom Dropdown ระดับการศึกษา */}
-        <div className="relative w-full sm:w-[220px] shrink-0" ref={dropdownRef}>
+        <div className="relative w-full shrink-0 sm:w-[220px]" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -129,25 +127,22 @@ const StudentFilters: React.FC<StudentFiltersProps> = ({
             </div>
           )}
         </div>
-      </div>
 
-      {/* Filter Tabs */}
-      <div className="bg-[#eff2f5] p-1.5 rounded-[12px] flex items-center space-x-1 overflow-x-auto mb-6 scrollbar-hide border border-gray-200/50">
-        {filterTabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-[8px] text-[13px] font-semibold whitespace-nowrap transition-all duration-200 ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm border border-gray-200/50"
-                : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+        {/* ช่องค้นหา */}
+        <div className="relative w-full sm:w-[220px]">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+            <Search className="h-4 w-4 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="block w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-[14px] text-gray-900 placeholder-gray-400 shadow-sm transition-colors focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+            placeholder="ค้นหารหัสคำร้อง ชื่อ..."
+          />
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 

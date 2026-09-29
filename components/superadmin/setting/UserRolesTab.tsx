@@ -4,7 +4,6 @@
 import React, { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Search,
   ChevronDown,
   Star,
   SearchX,
@@ -65,24 +64,28 @@ function getInitials(name?: string | null, email?: string | null): string {
 interface UserRolesTabProps {
   initialUsers?: SuperAdminUser[];
   currentUserId?: string;
+  searchQuery: string;
+  roleFilter: string;
+  isAddModalOpen: boolean;
+  onAddModalOpenChange: (isOpen: boolean) => void;
 }
 
 export default function UserRolesTab({
   initialUsers = [],
   currentUserId,
+  searchQuery,
+  roleFilter,
+  isAddModalOpen,
+  onAddModalOpenChange,
 }: UserRolesTabProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState("ทุกบทบาท");
   const [usersList, setUsersList] = useState<SuperAdminUser[]>(initialUsers);
   const [isLoading, setIsLoading] = useState(initialUsers.length === 0);
   const [prevInitial, setPrevInitial] = useState(initialUsers);
   const [mutatingUserId, setMutatingUserId] = useState<string | null>(null);
 
-  // Add User Modal State
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addForm, setAddForm] = useState<{
     fullNameTh: string;
     email: string;
@@ -288,7 +291,7 @@ export default function UserRolesTab({
         return [createdUser, ...prev];
       });
 
-      setIsAddModalOpen(false);
+      onAddModalOpenChange(false);
       setAddForm({ fullNameTh: "", email: "", role: "admin" });
       const displayName = createdUser.fullNameTh || createdUser.email;
       showToast(
@@ -449,42 +452,6 @@ export default function UserRolesTab({
           </button>
         </div>
       )}
-
-      {/* Filter & Search & Add User */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="ค้นหาชื่อ / อีเมล / รหัส CMU"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-sm"
-          />
-        </div>
-        <div className="w-full sm:w-48">
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 shadow-sm cursor-pointer appearance-none"
-          >
-            <option value="ทุกบทบาท">ทุกบทบาท</option>
-            <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
-            <option value="ผู้บริหาร">ผู้บริหาร</option>
-            <option value="ผู้ดูแลระบบ">ผู้ดูแลระบบ</option>
-          </select>
-        </div>
-        <button
-          onClick={() => {
-            setAddForm({ fullNameTh: "", email: "", role: "admin" });
-            setIsAddModalOpen(true);
-          }}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-[#ea580c] hover:bg-[#c2410c] text-white rounded-lg text-sm font-medium transition-colors shadow-sm shrink-0 cursor-pointer"
-        >
-          <UserPlus size={16} />
-          <span>เพิ่มผู้ใช้งาน</span>
-        </button>
-      </div>
 
       {/* User List Container */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -870,7 +837,10 @@ export default function UserRolesTab({
                 </div>
               </div>
               <button
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={() => {
+                  setAddForm({ fullNameTh: "", email: "", role: "admin" });
+                  onAddModalOpenChange(false);
+                }}
                 className="text-gray-400 hover:text-gray-600 p-1 rounded-lg cursor-pointer"
               >
                 <X size={18} />
@@ -925,7 +895,10 @@ export default function UserRolesTab({
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
                 <button
                   type="button"
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={() => {
+                    setAddForm({ fullNameTh: "", email: "", role: "admin" });
+                    onAddModalOpenChange(false);
+                  }}
                   disabled={isAddingUser}
                   className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                 >

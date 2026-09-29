@@ -58,7 +58,13 @@ export default function AdminDashboard({
       ===================================================== */}
       <section className="mb-10">
         <SectionHeader
-          title="คำร้องรอตรวจสอบ"
+          title={
+            <>
+              คำร้องรอตรวจสอบ
+              <span aria-hidden="true" className="mx-2 inline-block size-2 rounded-full bg-current align-middle" />
+              ในฐานะเจ้าหน้าที่
+            </>
+          }
           description="รายการคำร้องที่ต้องตรวจสอบและดำเนินการ"
           href="/admin/pending"
         />
@@ -130,7 +136,7 @@ function SectionHeader({
   description,
   href,
 }: {
-  title: string;
+  title: React.ReactNode;
   description: string;
   href: string;
 }) {

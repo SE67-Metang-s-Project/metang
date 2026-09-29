@@ -8,7 +8,7 @@ import PagedListError from "@/components/shared/PagedListError";
 import { useServerPagedList } from "@/hooks/useServerPagedList";
 
 // EXPERIMENT disburse-debt-paging (revert: EXPERIMENT-disburse-debt-paging.local.md)
-// With `initialTotal` set (Admin and SuperAdmin pages) the server sends only page 1 of the "all" tab and this
+// With `initialTotal` set (Admin and SuperAdmin pages) the server sends only page 1 of the "pending" tab and this
 // list fetches every other page, tab, search and degree filter from
 // GET /api/admin/disburse-debt. Without it it behaves as before.
 const PAGE_SIZE = 5;
@@ -27,7 +27,7 @@ export default function SharedDisburseDebtList({
   const requests = initialRequests;
 
   // State สำหรับตัวกรอง
-  const [activeTab, setActiveTab] = useState("ทั้งหมด");
+  const [activeTab, setActiveTab] = useState("รอโอนเงิน");
   const filterTabs = ["ทั้งหมด", "รอโอนเงิน", "โอนแล้ว"];
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,14 +36,14 @@ export default function SharedDisburseDebtList({
   const serverPaged = initialTotal !== undefined;
   const [page, setPage] = useState(1);
 
-  // The unfiltered first page is what the server rendered, and router.refresh() replaces it after
+  // The pending first page is what the server rendered, and router.refresh() replaces it after
   // a disbursement. Any other view is fetched.
   const tab = TAB_PARAM[activeTab] ?? "all";
   const degree = degreeFilter === "ทั้งหมด" ? "" : degreeFilter;
   const paged = useServerPagedList<ActionRequest>({
     endpoint: "/api/admin/disburse-debt",
     params: { tab, q: searchQuery, degree, page, limit: PAGE_SIZE },
-    atInitialView: !serverPaged || (tab === "all" && !searchQuery && !degree && page === 1),
+    atInitialView: !serverPaged || (tab === "pending" && !searchQuery && !degree && page === 1),
     initialItems: requests,
     initialTotal: initialTotal ?? 0,
 
@@ -75,6 +75,9 @@ export default function SharedDisburseDebtList({
   });
 
   const shown = serverPaged ? paged.items : filteredRequests;
+  const pendingCount = serverPaged
+    ? (initialTotal ?? 0)
+    : requests.filter((request) => request.requestStatus === "pending_disbursement").length;
 
   // Any filter change goes back to page 1.
   const onFilter = <T,>(set: (value: T) => void) => (value: T) => {
@@ -89,6 +92,7 @@ export default function SharedDisburseDebtList({
           activeTab={activeTab}
           setActiveTab={onFilter(setActiveTab)}
           filterTabs={filterTabs}
+          filterTabCounts={{ "รอโอนเงิน": pendingCount }}
           searchQuery={searchQuery}
           setSearchQuery={onFilter(setSearchQuery)}
           degreeFilter={degreeFilter}

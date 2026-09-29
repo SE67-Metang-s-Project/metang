@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, CircleDollarSign, FileCheck2, WalletCards } from "lucide-react";
 import type { ExecutiveFinancialOverviewData } from "@/lib/financial-overview-types";
 import { withBasePath } from "@/lib/base-path";
@@ -10,6 +11,7 @@ type Period = "monthly" | "quarterly";
 type Overview = ExecutiveFinancialOverviewData;
 
 type Point = Overview["monthly"][number];
+type ChartTooltipAnchor = { x: number; zeroY: number };
 const CURRENT_THAI_YEAR = new Date().getFullYear() + 543;
 const YEAR_OPTIONS = Array.from({ length: 6 }, (_, index) => CURRENT_THAI_YEAR - index);
 
@@ -85,6 +87,7 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
   const [selectedYear, setSelectedYear] = useState(initialData?.year ?? CURRENT_THAI_YEAR);
   const [period, setPeriod] = useState<Period>("monthly");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [chartTooltipAnchor, setChartTooltipAnchor] = useState<ChartTooltipAnchor | null>(null);
   const [hoveredPieIndex, setHoveredPieIndex] = useState<number | null>(null);
   const [pieTooltipPosition, setPieTooltipPosition] = useState({ x: 150, y: 150 });
   const pieRef = useRef<HTMLDivElement>(null);
@@ -189,15 +192,13 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
   const balanceLabelPosition = pieLabelPosition(0, balancePercent);
   const approvedLabelPosition = pieLabelPosition(balancePercent, approvedPercent);
   const active = hoveredIndex === null ? null : points[hoveredIndex];
-  const tooltipLeft = `${(((hoveredIndex ?? 0) + 0.5) / points.length) * 100}%`;
-  const maxTotal = Math.max(1, ...points.map((point) => point.loans + point.repayments));
+  const highestBarTotal = Math.max(0, ...points.map((point) => point.loans + point.repayments));
+  const maxTotal = Math.max(1, highestBarTotal);
   const activeTotal = active ? active.loans + active.repayments : 0;
   const tooltipOnRight = (hoveredIndex ?? 0) < points.length / 2;
-  const tooltipTop = `${100 - (activeTotal / maxTotal) * 50}%`;
   const tooltipTransform = tooltipOnRight
-    ? "translate(14px, -50%)"
-    : "translate(calc(-100% - 14px), -50%)";
-
+    ? "translateX(14px)"
+    : "translateX(calc(-100% - 14px))";
   return (
     <section
       aria-label="รายงานและสถิติทางการเงิน"
@@ -403,15 +404,15 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
             />
           </div>
           <div className="mt-8 grid h-64 grid-cols-[auto_minmax(0,1fr)] gap-3 sm:h-72">
-            <div className="flex flex-col justify-between pb-7 text-xs text-slate-500">
-              <span>{compactMoney(maxTotal)}</span>
+            <div className="flex flex-col justify-between pb-7 pt-7 text-xs text-slate-500">
+              <span>{money(highestBarTotal)}</span>
               <span>{compactMoney(maxTotal * 0.75)}</span>
               <span>{compactMoney(maxTotal * 0.5)}</span>
               <span>{compactMoney(maxTotal * 0.25)}</span>
               <span>0</span>
             </div>
             <div className="min-w-0 overflow-x-auto pb-2">
-              <div className="relative grid h-full grid-rows-[1fr_auto] max-[1144px]:min-w-[1100px]">
+              <div className="relative mt-7 grid h-[calc(100%-1.75rem)] grid-rows-[1fr_auto] max-[1144px]:min-w-[1100px]">
               <div className="pointer-events-none absolute inset-x-0 top-0 bottom-7 flex flex-col justify-between">
                 {[0, 1, 2, 3].map((line) => (
                   <span key={line} className="border-t border-[#eee8e2]" />
@@ -419,13 +420,17 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
               </div>
               <div className="relative flex items-end justify-around gap-1 border-b border-[#e5ddd5] px-1">
                 {points.map((point, index) => (
-                  <div key={point.label} className="relative flex h-full min-w-0 flex-1 items-end justify-center">
+                  <div
+                    key={point.label}
+                    data-chart-column
+                    className="relative flex h-full min-w-0 flex-1 items-end justify-center"
+                  >
                     {point.loans + point.repayments > 0 ? (
                       <span
                         className="pointer-events-none absolute z-10 -translate-y-1 whitespace-nowrap text-[10px] font-semibold text-black sm:text-xs"
                         style={{ bottom: `${((point.loans + point.repayments) / maxTotal) * 100}%` }}
                       >
-                        {compactMoney(point.loans + point.repayments)}
+                        {money(point.loans + point.repayments)}
                       </span>
                     ) : null}
                     <div className="flex h-full w-[70px] flex-col justify-end">
@@ -435,16 +440,40 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
                         roundedTop
                         valueLabel={compactMoney(point.loans)}
                         label={`${point.label}: ยอดการกู้ยืม ${money(point.loans)}`}
-                        onEnter={() => setHoveredIndex(index)}
-                        onLeave={() => setHoveredIndex(null)}
+                        onEnter={(event) => {
+                          const rect = event.currentTarget
+                            .closest<HTMLElement>("[data-chart-column]")
+                            ?.getBoundingClientRect();
+                          setHoveredIndex(index);
+                          setChartTooltipAnchor({
+                            x: rect ? rect.left + rect.width / 2 : event.currentTarget.getBoundingClientRect().right,
+                            zeroY: rect?.bottom ?? event.currentTarget.getBoundingClientRect().bottom,
+                          });
+                        }}
+                        onLeave={() => {
+                          setHoveredIndex(null);
+                          setChartTooltipAnchor(null);
+                        }}
                       />
                       <Pole
                         color="#5345ba"
                         height={(point.repayments / maxTotal) * 100}
                         valueLabel={compactMoney(point.repayments)}
                         label={`${point.label}: ยอดการคืนเงิน ${money(point.repayments)}`}
-                        onEnter={() => setHoveredIndex(index)}
-                        onLeave={() => setHoveredIndex(null)}
+                        onEnter={(event) => {
+                          const rect = event.currentTarget
+                            .closest<HTMLElement>("[data-chart-column]")
+                            ?.getBoundingClientRect();
+                          setHoveredIndex(index);
+                          setChartTooltipAnchor({
+                            x: rect ? rect.left + rect.width / 2 : event.currentTarget.getBoundingClientRect().right,
+                            zeroY: rect?.bottom ?? event.currentTarget.getBoundingClientRect().bottom,
+                          });
+                        }}
+                        onLeave={() => {
+                          setHoveredIndex(null);
+                          setChartTooltipAnchor(null);
+                        }}
                       />
                     </div>
                   </div>
@@ -463,33 +492,39 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
                   </span>
                 ))}
               </div>
-              {active && (
-                <div
-                  className="pointer-events-none absolute z-10 w-52 rounded-xl border border-[#e5ddd5] bg-white p-4 shadow-lg"
-                  style={{ left: tooltipLeft, top: tooltipTop, transform: tooltipTransform }}
-                >
-                  <p className="font-semibold text-slate-800">
-                    {active.label} {data.year}
-                  </p>
-                  <Tooltip
-                    color="#6173f4"
-                    label="ยอดการกู้ยืม"
-                    amount={active.loans}
-                    count={active.loanCount}
-                    percent={activeTotal > 0 ? (active.loans / activeTotal) * 100 : 0}
-                  />
-                  <Tooltip
-                    color="#5345ba"
-                    label="ยอดการคืนเงิน"
-                    amount={active.repayments}
-                    count={active.repaymentCount}
-                    percent={activeTotal > 0 ? (active.repayments / activeTotal) * 100 : 0}
-                  />
-                </div>
-              )}
             </div>
             </div>
           </div>
+          {active && chartTooltipAnchor &&
+            createPortal(
+              <div
+                className="pointer-events-none fixed z-50 w-52 rounded-xl border border-[#e5ddd5] bg-white p-4 shadow-lg"
+                style={{
+                  left: chartTooltipAnchor.x,
+                  bottom: Math.max(0, window.innerHeight - chartTooltipAnchor.zeroY),
+                  transform: tooltipTransform,
+                }}
+              >
+                <p className="font-semibold text-slate-800">
+                  {active.label} {data.year}
+                </p>
+                <Tooltip
+                  color="#6173f4"
+                  label="ยอดการกู้ยืม"
+                  amount={active.loans}
+                  count={active.loanCount}
+                  percent={activeTotal > 0 ? (active.loans / activeTotal) * 100 : 0}
+                />
+                <Tooltip
+                  color="#5345ba"
+                  label="ยอดการคืนเงิน"
+                  amount={active.repayments}
+                  count={active.repaymentCount}
+                  percent={activeTotal > 0 ? (active.repayments / activeTotal) * 100 : 0}
+                />
+              </div>,
+              document.body,
+            )}
         </article>
       </div>
       <TransferredRequestsChart
@@ -550,6 +585,7 @@ function TransferredRequestsChart({
 }) {
   const [period, setPeriod] = useState<Period>("monthly");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [chartTooltipAnchor, setChartTooltipAnchor] = useState<ChartTooltipAnchor | null>(null);
   const points = useMemo(() => {
     if (period === "monthly") return requests;
 
@@ -580,10 +616,8 @@ function TransferredRequestsChart({
       ),
     );
   }, [period, requests]);
-  const max = Math.max(
-    1,
-    ...points.map((request) => request.totalRequestCount),
-  );
+  const highestBarTotal = Math.max(0, ...points.map((request) => request.totalRequestCount));
+  const max = Math.max(1, highestBarTotal);
   const totals = points.reduce(
     (sum, request) => ({
       totalRequestCount: sum.totalRequestCount + request.totalRequestCount,
@@ -618,13 +652,22 @@ function TransferredRequestsChart({
       totals.cancelledAmount,
   );
   const active = hoveredIndex === null ? null : points[hoveredIndex];
-  const tooltipLeft = `${(((hoveredIndex ?? 0) + 0.5) / points.length) * 100}%`;
   const tooltipOnRight = (hoveredIndex ?? 0) < points.length / 2;
-  const activeTotal = active?.totalRequestCount ?? 0;
-  const tooltipTop = `${100 - (activeTotal / max) * 50}%`;
   const tooltipTransform = tooltipOnRight
-    ? "translate(14px, -50%)"
-    : "translate(calc(-100% - 14px), -50%)";
+    ? "translateX(14px)"
+    : "translateX(calc(-100% - 14px))";
+  const showChartTooltip = (index: number, target: HTMLButtonElement) => {
+    const rect = target.closest<HTMLElement>("[data-chart-column]")?.getBoundingClientRect();
+    setHoveredIndex(index);
+    setChartTooltipAnchor({
+      x: rect ? rect.left + rect.width / 2 : target.getBoundingClientRect().right,
+      zeroY: rect?.bottom ?? target.getBoundingClientRect().bottom,
+    });
+  };
+  const hideChartTooltip = () => {
+    setHoveredIndex(null);
+    setChartTooltipAnchor(null);
+  };
 
   return (
     <article className="rounded-2xl border border-[#e9e3dc] bg-[#fffefd] p-5 shadow-[0_3px_14px_rgba(69,51,39,0.06)] sm:p-6">
@@ -671,8 +714,8 @@ function TransferredRequestsChart({
       </div>
 
       <div className="mt-8 grid h-64 grid-cols-[auto_minmax(0,1fr)] gap-3 sm:h-72">
-        <div className="flex flex-col justify-between pb-7 text-xs text-slate-500">
-          <span>{max}</span>
+        <div className="flex flex-col justify-between pb-7 pt-7 text-xs text-slate-500">
+          <span>{highestBarTotal}</span>
           <span>{Math.ceil(max * 0.75)}</span>
           <span>{Math.ceil(max * 0.5)}</span>
           <span>{Math.ceil(max * 0.25)}</span>
@@ -680,7 +723,7 @@ function TransferredRequestsChart({
         </div>
 
         <div className="min-w-0 overflow-x-auto pb-2">
-          <div className="relative grid h-full grid-rows-[1fr_auto] max-[1144px]:min-w-[1100px]">
+          <div className="relative mt-7 grid h-[calc(100%-1.75rem)] grid-rows-[1fr_auto] max-[1144px]:min-w-[1100px]">
           <div className="pointer-events-none absolute inset-x-0 top-0 bottom-7 flex flex-col justify-between">
             {[0, 1, 2, 3].map((line) => (
               <span key={line} className="border-t border-[#eee8e2]" />
@@ -690,6 +733,7 @@ function TransferredRequestsChart({
             {points.map((request, index) => (
               <div
                 key={request.label}
+                data-chart-column
                 className="relative flex h-full min-w-0 flex-1 items-end justify-center"
               >
                 {request.totalRequestCount > 0 ? (
@@ -706,16 +750,16 @@ function TransferredRequestsChart({
                     height={(request.transferredCount / max) * 100}
                     roundedTop={request.transferredCount > 0}
                     label={`${request.label}: โอนเงินแล้ว ${request.transferredCount} คำร้อง`}
-                    onEnter={() => setHoveredIndex(index)}
-                    onLeave={() => setHoveredIndex(null)}
+                    onEnter={(event) => showChartTooltip(index, event.currentTarget)}
+                    onLeave={hideChartTooltip}
                   />
                   <Pole
                     color="#00a58a"
                     height={(request.rejectedCount / max) * 100}
                     roundedTop={request.transferredCount === 0 && request.rejectedCount > 0}
                     label={`${request.label}: ไม่ผ่านการอนุมัติ ${request.rejectedCount} คำร้อง`}
-                    onEnter={() => setHoveredIndex(index)}
-                    onLeave={() => setHoveredIndex(null)}
+                    onEnter={(event) => showChartTooltip(index, event.currentTarget)}
+                    onLeave={hideChartTooltip}
                   />
                   <Pole
                     color="#7dd37b"
@@ -726,8 +770,8 @@ function TransferredRequestsChart({
                       request.cancelledCount > 0
                     }
                     label={`${request.label}: ยกเลิกโดยนักศึกษา ${request.cancelledCount} คำร้อง`}
-                    onEnter={() => setHoveredIndex(index)}
-                    onLeave={() => setHoveredIndex(null)}
+                    onEnter={(event) => showChartTooltip(index, event.currentTarget)}
+                    onLeave={hideChartTooltip}
                   />
                   <Pole
                     color="#ffd72d"
@@ -746,8 +790,8 @@ function TransferredRequestsChart({
                       request.totalRequestCount > 0
                     }
                     label={`${request.label}: รอดำเนินการ ${Math.max(0, request.totalRequestCount - request.transferredCount - request.rejectedCount - request.cancelledCount)} คำร้อง`}
-                    onEnter={() => setHoveredIndex(index)}
-                    onLeave={() => setHoveredIndex(null)}
+                    onEnter={(event) => showChartTooltip(index, event.currentTarget)}
+                    onLeave={hideChartTooltip}
                   />
                 </div>
               </div>
@@ -766,79 +810,85 @@ function TransferredRequestsChart({
               </span>
             ))}
           </div>
-          {active && (
-            <div
-              className="pointer-events-none absolute z-10 w-[244px] rounded-xl border border-[#e5ddd5] bg-white p-4 shadow-lg"
-              style={{ left: tooltipLeft, top: tooltipTop, transform: tooltipTransform }}
-            >
-              <p className="font-semibold text-slate-800">
-                {active.label} {year}
-              </p>
-              <RequestTooltip
-                color="#007284"
-                label="คำร้องที่โอนเงินแล้ว"
-                count={active.transferredCount}
-                percent={
-                  active.totalRequestCount > 0
-                    ? (active.transferredCount / active.totalRequestCount) * 100
-                    : 0
-                }
-              />
-              <RequestTooltip
-                color="#00a58a"
-                label="คำร้องที่ไม่ผ่านการอนุมัติ"
-                count={active.rejectedCount}
-                percent={
-                  active.totalRequestCount > 0
-                    ? (active.rejectedCount / active.totalRequestCount) * 100
-                    : 0
-                }
-              />
-              <RequestTooltip
-                color="#7dd37b"
-                label="คำร้องที่ถูกยกเลิกโดยนักศึกษา"
-                count={active.cancelledCount}
-                percent={
-                  active.totalRequestCount > 0
-                    ? (active.cancelledCount / active.totalRequestCount) * 100
-                    : 0
-                }
-              />
-              <RequestTooltip
-                color="#ffd72d"
-                label="คำร้องที่รอดำเนินการ"
-                count={Math.max(
-                  0,
-                  active.totalRequestCount -
-                    active.transferredCount -
-                    active.rejectedCount -
-                    active.cancelledCount,
-                )}
-                percent={
-                  active.totalRequestCount > 0
-                    ? (Math.max(
-                        0,
-                        active.totalRequestCount -
-                          active.transferredCount -
-                          active.rejectedCount -
-                          active.cancelledCount,
-                      ) /
-                        active.totalRequestCount) *
-                      100
-                    : 0
-                }
-              />
-            </div>
-          )}
         </div>
         </div>
       </div>
 
+      {active && chartTooltipAnchor &&
+        createPortal(
+          <div
+            className="pointer-events-none fixed z-50 w-[244px] rounded-xl border border-[#e5ddd5] bg-white p-4 shadow-lg"
+            style={{
+              left: chartTooltipAnchor.x,
+              bottom: Math.max(0, window.innerHeight - chartTooltipAnchor.zeroY),
+              transform: tooltipTransform,
+            }}
+          >
+            <p className="font-semibold text-slate-800">
+              {active.label} {year}
+            </p>
+            <RequestTooltip
+              color="#007284"
+              label="คำร้องที่โอนเงินแล้ว"
+              count={active.transferredCount}
+              percent={
+                active.totalRequestCount > 0
+                  ? (active.transferredCount / active.totalRequestCount) * 100
+                  : 0
+              }
+            />
+            <RequestTooltip
+              color="#00a58a"
+              label="คำร้องที่ไม่ผ่านการอนุมัติ"
+              count={active.rejectedCount}
+              percent={
+                active.totalRequestCount > 0
+                  ? (active.rejectedCount / active.totalRequestCount) * 100
+                  : 0
+              }
+            />
+            <RequestTooltip
+              color="#7dd37b"
+              label="คำร้องที่ถูกยกเลิกโดยนักศึกษา"
+              count={active.cancelledCount}
+              percent={
+                active.totalRequestCount > 0
+                  ? (active.cancelledCount / active.totalRequestCount) * 100
+                  : 0
+              }
+            />
+            <RequestTooltip
+              color="#ffd72d"
+              label="คำร้องที่รอดำเนินการ"
+              count={Math.max(
+                0,
+                active.totalRequestCount -
+                  active.transferredCount -
+                  active.rejectedCount -
+                  active.cancelledCount,
+              )}
+              percent={
+                active.totalRequestCount > 0
+                  ? (Math.max(
+                      0,
+                      active.totalRequestCount -
+                        active.transferredCount -
+                        active.rejectedCount -
+                        active.cancelledCount,
+                    ) /
+                      active.totalRequestCount) *
+                    100
+                  : 0
+              }
+            />
+          </div>,
+          document.body,
+        )}
+
       <div className="mt-6 grid gap-3 border-t border-[#eee8e2] pt-5 text-center sm:grid-cols-2 lg:grid-cols-5">
         <Summary
-          label="รวมคำร้องทั้งหมด"
+          label="รวมคำร้องการกู้ยืมทั้งปี"
           value={`${totals.totalRequestCount} คำร้อง`}
-          detail={`ยอดเงินรวม ${wholeMoney(totals.totalRequestAmount)}`}
         />
         <Summary
           label="รวมคำร้องที่โอนเงินแล้ว"
@@ -958,7 +1008,7 @@ function Pole({
   roundedTop?: boolean;
   valueLabel?: string;
   label: string;
-  onEnter: () => void;
+  onEnter: (event: { currentTarget: HTMLButtonElement }) => void;
   onLeave: () => void;
 }) {
   return (

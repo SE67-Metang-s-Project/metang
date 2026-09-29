@@ -603,7 +603,7 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
                   <h2 className="text-lg sm:text-xl font-semibold text-gray-900 leading-tight">
                     {isCompleted ? "หลักฐานการเบิกจ่ายเงิน" : "ดำเนินการเบิกจ่ายเงิน"}
                   </h2>
-                  <p className="text-[13px] text-gray-500 mt-0.5">
+                  <p className="mt-0.5 text-[14px] text-gray-500">
                     อ้างอิงคำร้อง: {selectedRequest.id}
                   </p>
                 </div>
@@ -887,37 +887,9 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
                         <span className="mt-1 max-w-full break-all text-sm font-normal text-gray-500">
                           {uploadedSlip
                             ? slipFile?.name
-                            : "รองรับ JPG หรือ PNG (ขนาดไม่เกิน 500 KB)"}
+                            : "รองรับ JPG หรือ PNG (ขนาดไม่เกิน 1MB)"}
                         </span>
                       </button>
-
-                      {uploadedSlip && (
-                        <div className="flex items-center gap-2 pb-4 px-5 w-full justify-center">
-                          <button
-                            type="button"
-                            onClick={() => setPreviewSlipUrl(uploadedSlip)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <ZoomIn size={14} />
-                            <span>ดูตัวอย่าง</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (uploadedSlip) {
-                                if (previewSlipUrl === uploadedSlip) setPreviewSlipUrl(null);
-                                URL.revokeObjectURL(uploadedSlip);
-                              }
-                              setUploadedSlip(null);
-                              setSlipFile(null);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <span>เปลี่ยนรูปภาพ</span>
-                          </button>
-                        </div>
-                      )}
 
                       <input
                         type="file"
@@ -928,10 +900,10 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
                       />
                     </div>
 
-                    <div className="flex gap-2 text-[12px] text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                    <div className="flex gap-2 rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-[14px] text-amber-700">
                       <AlertCircle size={16} className="shrink-0 mt-0.5" />
                       <span>
-                        โปรดตรวจสอบชื่อบัญชีและเลขที่บัญชีให้ตรงกับข้อมูลนักศึกษาก่อนกดยืนยันการโอนเงินทุกครั้ง
+                        โปรดตรวจสอบชื่อบัญชีและเลขที่บัญชีให้ตรงกับข้อมูลนักศึกษาก่อนกดยืนยันการโอนเงิน
                       </span>
                     </div>
                   </div>
@@ -969,8 +941,8 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
                 </div>
                 <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
                   <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <div className="text-[11px] text-gray-500">ประวัติกู้ยืม</div>
-                    <div className="font-semibold text-[15px] text-gray-900 mt-0.5">
+                    <div className="text-[14px] text-gray-500">ประวัติกู้ยืม</div>
+                    <div className="mt-0.5 text-[14px] font-semibold text-gray-900">
                       {selectedRequest.paymentBehavior?.totalLoanRequests ?? 0} ครั้ง
                     </div>
                   </div>
@@ -986,8 +958,8 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
                       className={
                         (selectedRequest.paymentBehavior?.totalInstallments ?? 0) > 0 &&
                         (selectedRequest.paymentBehavior?.onTimeInstallments ?? 0) > 0
-                          ? "text-[11px] text-emerald-700 font-medium"
-                          : "text-[11px] text-gray-500"
+                          ? "text-[14px] font-medium text-emerald-700"
+                          : "text-[14px] text-gray-500"
                       }
                     >
                       ตรงเวลา
@@ -996,16 +968,16 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
                       className={
                         (selectedRequest.paymentBehavior?.totalInstallments ?? 0) > 0 &&
                         (selectedRequest.paymentBehavior?.onTimeInstallments ?? 0) > 0
-                          ? "font-semibold text-[15px] text-emerald-800 mt-0.5"
-                          : "font-semibold text-[15px] text-gray-900 mt-0.5"
+                          ? "mt-0.5 text-[14px] font-semibold text-emerald-800"
+                          : "mt-0.5 text-[14px] font-semibold text-gray-900"
                       }
                     >
                       {selectedRequest.paymentBehavior?.onTimeInstallments ?? 0} งวด
                     </div>
                   </div>
                   <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <div className="text-[11px] text-gray-500">ล่าช้า</div>
-                    <div className="font-semibold text-[15px] text-gray-900 mt-0.5">
+                    <div className="text-[14px] text-gray-500">ล่าช้า</div>
+                    <div className="mt-0.5 text-[14px] font-semibold text-gray-900">
                       {selectedRequest.paymentBehavior?.lateInstallments ?? 0} งวด
                     </div>
                   </div>
@@ -1073,9 +1045,7 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
                           <Loader2 size={18} className="animate-spin" /> กำลังบันทึก...
                         </>
                       ) : (
-                        <>
-                          <CheckCircle2 size={18} /> ยืนยันว่าโอนเงินแล้ว
-                        </>
+                        <>ยืนยันการโอนเงิน</>
                       )}
                     </button>
                   </div>
