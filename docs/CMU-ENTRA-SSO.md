@@ -142,11 +142,16 @@ it must not be implemented only as a UI visibility check.
 
 ### 4. Logout
 
-The page submits `POST /metang/api/auth/logout`. The route expires `cmu_session` and sends a `303`
-redirect to `LOGOUT_URL`. The route sets `post_logout_redirect_uri` on that URL to the public origin
-plus the base path plus `/login`, for example `https://metang.example/metang/login`, and replaces
-any value already in `LOGOUT_URL`. The Entra endpoint then returns the browser to that address. It
-does so only when the address is registered as a redirect URI on the Entra application.
+The page submits `POST /metang/api/auth/logout`. The route expires `cmu_session` and the OAuth
+cookie, and sends a `303` redirect to the login page under the base path. This ends the
+application session only. The user's Microsoft session stays, and Entra is not contacted.
+
+With `?federated=true` (for example `GET /metang/api/auth/logout?federated=true`) the route sends
+the `303` to `LOGOUT_URL` instead. It sets `post_logout_redirect_uri` on that URL to the public
+origin plus the base path plus `/login`, for example `https://metang.example/metang/login`, and
+replaces any value already in `LOGOUT_URL`. The Entra endpoint then returns the browser to that
+address. It does so only when the address is registered as a redirect URI on the Entra
+application. No page of the application uses `federated=true` yet.
 
 ## Entra application registration
 
@@ -168,8 +173,9 @@ secret.
    http://localhost:8080/metang/login
    ```
 
-   Without it, federated sign-out ends on the Microsoft sign-out page and does not return to the
-   application.
+   This address is used only by federated sign-out (Section 4). Without it, federated sign-out
+   ends on the Microsoft sign-out page and does not return to the application. Sign-in and the
+   normal sign-out button do not need it.
 5. Under **Certificates & secrets**, create a client secret and store its value securely.
    Track its expiry and rotate it before it expires.
 6. Under **API permissions**, select **APIs my organization uses**, then **CMU API**.
@@ -295,15 +301,17 @@ sessions to a server-side store and keep only an opaque session identifier in th
 5. Select **เข้าสู่ระบบด้วย CMU Account**.
 6. Complete CMU sign-in and consent.
 7. Confirm the page displays the expected BasicInfo profile.
-8. Test **ออกจากระบบ** and confirm both the local session and Entra session are cleared as
-   expected.
+8. Test **ออกจากระบบ** and confirm the local session is cleared and the login page opens. To test
+   the Entra sign-out too, open `/metang/api/auth/logout?federated=true` and confirm that the
+   browser returns to `/metang/login`.
 
 ## Production checklist
 
 - Register the exact HTTPS production callback in Entra.
 - Set `CALLBACK_URL` to that registered HTTPS URI.
-- Register `https://<host>/<sub path>/login` in Entra as the sign-out return address. The
-  application sets `post_logout_redirect_uri` to it, whatever `LOGOUT_URL` contains.
+- To use federated sign-out, register `https://<host>/<sub path>/login` in Entra as the
+  sign-out return address. The application sets `post_logout_redirect_uri` to it, whatever
+  `LOGOUT_URL` contains.
 - Store `CLIENT_SECRET` and `SESSION_SECRET` in the deployment secret manager.
 - Use one stable `SESSION_SECRET` across all instances.
 - Do not log authorization codes, access tokens, refresh tokens, or cookie values.

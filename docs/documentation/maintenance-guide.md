@@ -1079,10 +1079,12 @@ migrations to apply", and it also worked when only `DATABASE_URL` was given.
 6. Jobs: the container runs the notification jobs itself while it keeps running (Section 2.3).
    On a platform that stops idle containers, set `ENABLE_JOB_SCHEDULER=false` and call the routes
    from outside (end of Section 2.3).
-7. Register two addresses in CMU Entra for this host, as redirect URIs of the Web platform:
-   `https://<host>/<sub path>/api/auth/callback` (the value of `CALLBACK_URL`, identical in both
-   places) and `https://<host>/<sub path>/login` (where federated sign-out returns). Register them
-   before the first sign-in on the new host.
+7. Register the sign-in address in CMU Entra for this host, as a redirect URI of the Web
+   platform: `https://<host>/<sub path>/api/auth/callback`. It is the value of `CALLBACK_URL`, and
+   it must be identical in both places. Register it before the first sign-in on the new host.
+   Also register `https://<host>/<sub path>/login` if you use federated sign-out
+   (`/api/auth/logout?federated=true`, which no page calls yet). The normal sign-out button
+   needs no Entra address.
 8. Do the health check (Section 4.2). Open `https://<host>/<sub path>/login`: expected result is
    the sign-in page.
 
@@ -1110,7 +1112,7 @@ production deployment ("Redeploy") before it takes effect.
 | `AUTH_URL` | None | URL | CMU Entra authorize endpoint. | Yes | No |
 | `TOKEN_URL` | None | URL | CMU Entra token endpoint. | Yes | No |
 | `CALLBACK_URL` | None | URL, exactly as registered in Entra, for example `https://<host>/metang/api/auth/callback` | Where CMU Entra returns after sign-in. Include the sub path. The old path `https://<host>/api/auth/callback` still works while it is registered: the `/api/:path*` redirect sends the browser on to `/metang/api/auth/callback`. Change the value and the Entra registration together. If only one changes, sign-in fails with `token_exchange_failed`. | Yes, and register it in Entra | No |
-| `LOGOUT_URL` | None | Entra logout URL | Sign-out redirect. The application sets its `post_logout_redirect_uri` to `https://<host>/<sub path>/login`, whatever the value contains, so that address must be registered in Entra. | Yes | No |
+| `LOGOUT_URL` | None | Entra logout URL | Sign-out redirect. Used only by federated sign-out (`/api/auth/logout?federated=true`, not called by any page yet). The application sets its `post_logout_redirect_uri` to `https://<host>/<sub path>/login`, whatever the value contains, so that address must be registered in Entra. | Yes | No |
 | `CLIENT_ID` | None | Entra application ID | OAuth client. | Yes | No |
 | `CLIENT_SECRET` | None | Entra client secret | OAuth client secret. | Yes | Yes |
 | `SCOPE` | None | Space-separated scopes, for example `api://cmu/Mis.Account.Read.Me.Basicinfo offline_access` | Permissions requested at sign-in. | Yes | No |
