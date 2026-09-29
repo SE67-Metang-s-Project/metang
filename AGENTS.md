@@ -39,6 +39,10 @@ There is currently no JavaScript test framework or coverage requirement. Before 
 
 Recent history uses concise Conventional Commit subjects such as `feat(db): database design (v1.0)`. Prefer `type(scope): summary`, for example `fix(db): enforce advisor assignment`. Pull requests should explain the change, link the relevant issue, list validation commands, and include screenshots for visible UI changes. Call out schema changes and migration requirements explicitly.
 
+### Commit Skill
+
+Whenever asked to commit, write a commit message, or run `/commit-skill`, read and follow `.claude/skills/commit-skill/SKILL.md` before writing the message. It defines the message parts (subject, body, schema/migration notes, footer) and the rules. Do not commit unless the user asks.
+
 ## Security & Configuration
 
 Set `INFISICAL_ENV=dev` or `INFISICAL_ENV=prod` in local `.env` and store secrets in the matching Infisical environment. Never import `lib/prisma.ts` into a Client Component. Use `DATABASE_URL` for the application pool and `DIRECT_URL` for Prisma migrations. Confirm both target your own Supabase project before pushing, seeding, or checking the database.
