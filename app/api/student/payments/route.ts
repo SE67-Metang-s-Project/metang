@@ -20,7 +20,7 @@ import {
 
 /**
  * Submit a repayment slip for the student's own loan (multipart/form-data: a `slip` file -
- * image/jpeg, image/png or application/pdf up to 10MB - plus `amount`, and optionally `paidAt`).
+ * an image (JPEG, PNG, GIF, WebP, BMP or AVIF) up to 1MB - plus `amount`, and optionally `paidAt`).
  * @description Takes no loan id: a student may hold only one non-terminal loan, so the server resolves the disbursed one itself and the client needs a single request. The slip is stored privately and read back only through GET /api/payments/{id}/slip. The student must first confirm receipt of the loan transfer (POST /api/student/loan-requests/{id}/confirm-transfer), or the submission is refused with 409. Only one submission may await review at a time, and the amount may not exceed what is still owed on the loan (422). Repayment history is served by GET /api/student/loan-requests/{id}, which returns the loan's payments.
  * @tag Student payments
  * @body StudentPaymentBody
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     return apiError("VALIDATION_ERROR", "Unsupported slip file type", 422);
   }
   if (slip.size > MAX_SLIP_BYTES) {
-    return apiError("VALIDATION_ERROR", "Slip file exceeds the 10MB limit", 422);
+    return apiError("VALIDATION_ERROR", "Slip file exceeds the 1MB limit", 422);
   }
 
   // Resolved before the upload only because the slip path is keyed by loan; createStudentPayment
