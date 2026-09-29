@@ -15,14 +15,14 @@ http:
     type: json
     data: |-
       {
-        "advisorName": "อาจารย์ที่ปรึกษา ทดสอบ",
+        "advisorName": "สุภาวดี วงศ์คำ",
         "amount": 5000,
         "studentYear": 2,
         "purpose": "ค่าใช้จ่ายฉุกเฉิน",
         "additionalNote": "ค่าใช้จ่ายสำหรับอุปกรณ์การเรียน",
         "bankName": "ธนาคารกรุงไทย",
         "bankAccountNo": "1234567890",
-        "bankAccountName": "นักศึกษาทดสอบ",
+        "bankAccountName": "พิมพ์ชนก สุขประเสริฐ",
         "installmentCount": 1
       }
   auth:

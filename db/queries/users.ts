@@ -34,7 +34,9 @@ export type RoleMutationErrorCode =
   | "ROLE_ALREADY_GRANTED"
   | "ROLE_NOT_GRANTED"
   | "FINAL_SUPER_ADMIN"
-  | "EXECUTIVE_ALREADY_EXISTS";
+  | "EXECUTIVE_ALREADY_EXISTS"
+  | "EXECUTIVE_CANNOT_BE_DELETED"
+  | "EMAIL_ALREADY_IN_USE";
 
 export class RoleMutationError extends Error {
   constructor(readonly code: RoleMutationErrorCode) {
@@ -127,6 +129,279 @@ export async function mutateUserRole({
         entityId: targetUserId,
         before: { roles: beforeRoles },
         after: { roles: updated.roles.map(({ role: currentRole }) => currentRole) },
+      },
+    });
+
+    return updated;
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+}
+
+export async function createManagedUser({
+  actorId,
+  email,
+  fullNameTh,
+  fullNameEn,
+  role,
+}: {
+  actorId: string;
+  email: string;
+  fullNameTh: string;
+  fullNameEn?: string | null;
+  role: "admin" | "super_admin";
+}) {
+  return prisma.$transaction(async (tx) => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanFullNameTh = fullNameTh.trim();
+    const cleanFullNameEn = fullNameEn ? fullNameEn.trim() : null;
+    const cmuAccount = cleanEmail.split("@")[0];
+
+    const existing = await tx.appUser.findFirst({
+      where: {
+        OR: [{ email: cleanEmail }, { cmuAccount }],
+      },
+      include: {
+        roles: { select: { role: true } },
+      },
+    });
+
+    let targetUserId: string;
+
+    if (existing) {
+      targetUserId = existing.id;
+      if (existing.roles.some((r) => r.role === role)) {
+        throw new RoleMutationError("ROLE_ALREADY_GRANTED");
+      }
+
+      await tx.userRole.create({
+        data: {
+          userId: existing.id,
+          role,
+          grantedBy: actorId,
+        },
+      });
+
+      if (cleanFullNameTh) {
+        await tx.appUser.update({
+          where: { id: existing.id },
+          data: {
+            fullNameTh: cleanFullNameTh,
+            ...(cleanFullNameEn ? { fullNameEn: cleanFullNameEn } : {}),
+          },
+        });
+      }
+
+      await tx.auditLog.create({
+        data: {
+          actorId,
+          action: "user_role.granted",
+          entityType: "app_user",
+          entityId: existing.id,
+          after: { role },
+        },
+      });
+    } else {
+      const newUser = await tx.appUser.create({
+        data: {
+          email: cleanEmail,
+          cmuAccount,
+          fullNameTh: cleanFullNameTh,
+          fullNameEn: cleanFullNameEn,
+          educationLevel: "0",
+        },
+      });
+
+      targetUserId = newUser.id;
+
+      await tx.userRole.create({
+        data: {
+          userId: newUser.id,
+          role,
+          grantedBy: actorId,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          actorId,
+          action: "user.created",
+          entityType: "app_user",
+          entityId: newUser.id,
+          after: { email: cleanEmail, fullNameTh: cleanFullNameTh, role },
+        },
+      });
+    }
+
+    const created = await tx.appUser.findUnique({
+      where: { id: targetUserId },
+      select: superAdminUserSelect,
+    });
+    if (!created) throw new RoleMutationError("USER_NOT_FOUND");
+    return created;
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+}
+
+export async function deleteManagedUser({
+  actorId,
+  targetUserId,
+}: {
+  actorId: string;
+  targetUserId: string;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const target = await tx.appUser.findUnique({
+      where: { id: targetUserId },
+      select: superAdminUserSelect,
+    });
+    if (!target) throw new RoleMutationError("USER_NOT_FOUND");
+
+    const targetRoleNames = target.roles.map((r) => r.role);
+
+    // Guard: Check super admin count
+    if (targetRoleNames.includes("super_admin")) {
+      const superAdminCount = await tx.userRole.count({ where: { role: "super_admin" } });
+      if (superAdminCount <= 1) {
+        throw new RoleMutationError("FINAL_SUPER_ADMIN");
+      }
+    }
+
+    // Guard: Executive cannot be deleted
+    const isOnlyExecutive = targetRoleNames.length === 1 && targetRoleNames[0] === "executive";
+    if (isOnlyExecutive) {
+      throw new RoleMutationError("EXECUTIVE_CANNOT_BE_DELETED");
+    }
+
+    // Reassign active admin loans if target has admin
+    if (targetRoleNames.includes("admin")) {
+      const activeLoans = await tx.loanRequest.findMany({
+        where: {
+          assignedAdminId: targetUserId,
+          status: { in: ["pending_admin", "pending_executive"] },
+        },
+        select: { id: true, status: true, assignedAdminId: true },
+      });
+      if (activeLoans.length > 0) {
+        await tx.loanRequest.updateMany({
+          where: {
+            assignedAdminId: targetUserId,
+            status: { in: ["pending_admin", "pending_executive"] },
+          },
+          data: { assignedAdminId: actorId },
+        });
+        for (const loan of activeLoans) {
+          await tx.auditLog.create({
+            data: {
+              actorId,
+              action: "loan_request.admin_reassigned",
+              entityType: "loan_request",
+              entityId: loan.id,
+              before: { assignedAdminId: loan.assignedAdminId, status: loan.status },
+              after: { assignedAdminId: actorId, status: loan.status },
+            },
+          });
+        }
+      }
+    }
+
+    // Delete managed roles
+    await tx.userRole.deleteMany({
+      where: {
+        userId: targetUserId,
+        role: { in: ["admin", "super_admin"] },
+      },
+    });
+
+    // Nullify grantedBy references and updatedById references
+    await tx.userRole.updateMany({
+      where: { grantedBy: targetUserId },
+      data: { grantedBy: null },
+    });
+    await tx.systemSetting.updateMany({
+      where: { updatedById: targetUserId },
+      data: { updatedById: null },
+    });
+
+    // If user has no remaining roles, attempt to delete AppUser
+    const remainingRoles = await tx.userRole.count({ where: { userId: targetUserId } });
+    if (remainingRoles === 0) {
+      try {
+        await tx.appUser.delete({ where: { id: targetUserId } });
+      } catch {
+        // Kept for FK audit/history integrity
+      }
+    }
+
+    await tx.auditLog.create({
+      data: {
+        actorId,
+        action: "user.deleted",
+        entityType: "app_user",
+        entityId: targetUserId,
+        before: {
+          email: target.email,
+          fullNameTh: target.fullNameTh,
+          roles: targetRoleNames,
+        },
+      },
+    });
+
+    return { success: true };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+}
+
+export async function updateManagedUser({
+  actorId,
+  targetUserId,
+  email,
+  fullNameTh,
+  fullNameEn,
+}: {
+  actorId: string;
+  targetUserId: string;
+  email: string;
+  fullNameTh: string;
+  fullNameEn?: string | null;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const target = await tx.appUser.findUnique({
+      where: { id: targetUserId },
+      select: superAdminUserSelect,
+    });
+    if (!target) throw new RoleMutationError("USER_NOT_FOUND");
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanFullNameTh = fullNameTh.trim();
+    const cleanFullNameEn = fullNameEn ? fullNameEn.trim() : null;
+
+    // Check email collision
+    const existingWithEmail = await tx.appUser.findFirst({
+      where: {
+        email: cleanEmail,
+        id: { not: targetUserId },
+      },
+    });
+    if (existingWithEmail) {
+      throw new RoleMutationError("EMAIL_ALREADY_IN_USE");
+    }
+
+    const updated = await tx.appUser.update({
+      where: { id: targetUserId },
+      data: {
+        email: cleanEmail,
+        cmuAccount: cleanEmail.split("@")[0],
+        fullNameTh: cleanFullNameTh,
+        fullNameEn: cleanFullNameEn,
+      },
+      select: superAdminUserSelect,
+    });
+
+    await tx.auditLog.create({
+      data: {
+        actorId,
+        action: "user.updated",
+        entityType: "app_user",
+        entityId: targetUserId,
+        before: { email: target.email, fullNameTh: target.fullNameTh },
+        after: { email: updated.email, fullNameTh: updated.fullNameTh },
       },
     });
 

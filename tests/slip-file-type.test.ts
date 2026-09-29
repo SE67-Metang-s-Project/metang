@@ -6,15 +6,22 @@ import { detectSlipContentType } from "../lib/slip-file-type";
 
 const JPEG = [0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46];
 const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d];
+const GIF = [...Buffer.from("GIF89a\x01\x00", "latin1")];
+const WEBP = [...Buffer.from("RIFF\x24\x00\x00\x00WEBPVP8 ", "latin1")];
+const BMP = [...Buffer.from("BM\x36\x00\x00\x00", "latin1")];
+const AVIF = [...Buffer.from("\x00\x00\x00\x1cftypavif", "latin1")];
 const PDF = [...Buffer.from("%PDF-1.7\n%\xe2\xe3\xcf\xd3\n", "latin1")];
 
 const file = (bytes: number[] | string, type: string) =>
   new File([typeof bytes === "string" ? bytes : new Uint8Array(bytes)], "slip", { type });
 
-test("detects JPEG, PNG and PDF from their leading bytes", async () => {
+test("detects each allowed image type from its leading bytes", async () => {
   assert.equal(await detectSlipContentType(file(JPEG, "image/jpeg")), "image/jpeg");
   assert.equal(await detectSlipContentType(file(PNG, "image/png")), "image/png");
-  assert.equal(await detectSlipContentType(file(PDF, "application/pdf")), "application/pdf");
+  assert.equal(await detectSlipContentType(file(GIF, "image/gif")), "image/gif");
+  assert.equal(await detectSlipContentType(file(WEBP, "image/webp")), "image/webp");
+  assert.equal(await detectSlipContentType(file(BMP, "image/bmp")), "image/bmp");
+  assert.equal(await detectSlipContentType(file(AVIF, "image/avif")), "image/avif");
 });
 
 test("the bytes win over the declared type", async () => {
@@ -24,15 +31,17 @@ test("the bytes win over the declared type", async () => {
   // ...and a text file labelled image/png is refused.
   assert.equal(await detectSlipContentType(file("hello, this is not a png", "image/png")), null);
   assert.equal(await detectSlipContentType(file("<html><script>", "application/pdf")), null);
-  // GIF is not an allowed slip type, whatever it claims to be.
-  assert.equal(await detectSlipContentType(file("GIF89a......", "image/jpeg")), null);
+  // PDF and SVG (script-capable, served from our origin) are not allowed, whatever they claim.
+  assert.equal(await detectSlipContentType(file(PDF, "application/pdf")), null);
+  assert.equal(await detectSlipContentType(file('<svg xmlns="http://www.w3.org/2000/svg">', "image/svg+xml")), null);
+  // A RIFF container that is not WebP (e.g. WAV) is refused.
+  assert.equal(await detectSlipContentType(file("RIFF\x24\x00\x00\x00WAVE", "image/webp")), null);
 });
 
 test("an empty or truncated file matches nothing", async () => {
   assert.equal(await detectSlipContentType(file([], "image/png")), null);
   assert.equal(await detectSlipContentType(file([0xff, 0xd8], "image/jpeg")), null);
   assert.equal(await detectSlipContentType(file(PNG.slice(0, 7), "image/png")), null);
-  assert.equal(await detectSlipContentType(file("%PDF", "application/pdf")), null);
 });
 
 const root = resolve(import.meta.dirname, "..");

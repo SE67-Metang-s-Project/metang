@@ -3,24 +3,24 @@ import { getSignedInContext } from "@/lib/loan-auth";
 import { isUuid } from "@/lib/loan-validation";
 import { prisma } from "@/lib/prisma";
 import { canReadRepaymentSlip } from "@/lib/slip-access";
-import { SLIP_REDIRECT_CACHE_CONTROL, signSlipUrl } from "@/lib/slip-storage";
+import { serveSlip } from "@/lib/slip-storage";
 
 type Params = { params: Promise<{ id: string }> };
 
-// The slip bucket is private, so this route is the only way to read a repayment slip: the signed
-// URL is minted per request and never stored. Authorization runs on every request that reaches
-// the server; the browser may reuse a 302 for up to SLIP_REDIRECT_CACHE_CONTROL's max-age, keyed
-// on the session cookie (Vary: Cookie), so a revoked role keeps access to an already-opened slip
-// for at most that long - within the signed URL's own lifetime anyway.
+// The slip bucket is private, so this route is the only way to read a repayment slip: it streams
+// the bytes itself, so no storage URL - not even a short-lived signed one, which is a bearer link -
+// ever reaches the browser. Authorization runs on every request that reaches the server; the
+// browser may reuse the response for up to SLIP_CACHE_CONTROL's max-age, keyed on the session
+// cookie (Vary: Cookie), so a revoked role keeps an already-opened slip for at most that long.
 // Mirrors app/api/fund-transactions/[id]/slip/route.ts, which does the same for disbursement
 // evidence - the only differences are the id space (uuid, not BigInt) and the access rule.
 /**
- * Redirect to a short-lived signed URL for a payment's repayment slip evidence.
- * @description Use it as an image source - `<img src="/api/payments/{id}/slip">`. Testing it from this page fails with "Failed to fetch": the 302 target is cross-origin and Supabase answers `Access-Control-Allow-Origin: *`, which a credentialed fetch rejects. An `<img>` load is not a credentialed CORS request, so it is unaffected.
+ * Stream a payment's repayment slip evidence.
+ * @description Answers the slip image itself (JPEG, PNG, GIF, WebP, BMP or AVIF), so use it as an image source: `<img src="/api/payments/{id}/slip">`. No storage URL is ever returned.
  * @tag Payment slips
  * @pathParams PaymentIdParams
  * @auth cookieAuth
- * @response 302
+ * @response 200
  * @add 401:ApiErrorResponse
  * @add 403:ApiErrorResponse
  * @add 404:ApiErrorResponse
@@ -60,13 +60,9 @@ export async function GET(_request: Request, { params }: Params) {
     );
     if (!allowed) return apiError("FORBIDDEN", "Not allowed to read this slip", 403);
 
-    const url = await signSlipUrl({ path: payment.slipPath });
-    return new Response(null, {
-      status: 302,
-      headers: { Location: url, "Cache-Control": SLIP_REDIRECT_CACHE_CONTROL, Vary: "Cookie" },
-    });
+    return await serveSlip({ path: payment.slipPath });
   } catch (error) {
-    console.error("Unable to sign repayment slip URL", error);
+    console.error("Unable to read repayment slip", error);
     return apiError("INTERNAL_ERROR", "Unable to read slip", 500);
   }
 }

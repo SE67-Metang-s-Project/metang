@@ -254,22 +254,40 @@ function calculateInstallments(
     });
 
     const lastInstallmentIndex = schedule.length - 1;
-    const advancePaidToLastInstallment = schedule
-      .slice(0, lastInstallmentIndex)
-      .reduce((total, installment) => {
-        const verifiedAmount = installment.evidences.reduce(
-          (sum, evidence) =>
-            evidence.status === "verified" ? sum + Number(evidence.amount) : sum,
-          0,
-        );
-        return total + Math.max(0, verifiedAmount - installment.baseAmount);
-      }, 0);
+
+    // คำนวณยอดชำระเองของแต่ละงวด (จำกัดไม่เกิน baseAmount) และคำนวณยอดชำระเกินทั้งหมดที่จะนำไปหักลบ
+    const selfPaidByInstallment = schedule.map((installment) => {
+      const verifiedAmount = installment.evidences.reduce(
+        (sum, evidence) =>
+          evidence.status === "verified" ? sum + Number(evidence.amount) : sum,
+        0,
+      );
+      return Math.min(verifiedAmount, installment.baseAmount);
+    });
+
+    let totalExcess = schedule.reduce((total, installment) => {
+      const verifiedAmount = installment.evidences.reduce(
+        (sum, evidence) =>
+          evidence.status === "verified" ? sum + Number(evidence.amount) : sum,
+        0,
+      );
+      return total + Math.max(0, verifiedAmount - installment.baseAmount);
+    }, 0);
+
+    // กระจายยอดชำระเกิน: นำไปหักลบกับงวดสุดท้ายก่อน ถ้างวดสุดท้ายเต็มแล้วค่อยเลื่อนขึ้นมาเรื่อยๆ
+    const advancePaidByInstallment = Array(schedule.length).fill(0);
+    for (let i = lastInstallmentIndex; i >= 0 && totalExcess > 0; i--) {
+      const needed = Math.max(0, schedule[i].baseAmount - selfPaidByInstallment[i]);
+      if (needed > 0) {
+        const applied = Math.min(needed, totalExcess);
+        advancePaidByInstallment[i] += applied;
+        totalExcess -= applied;
+      }
+    }
 
     schedule.forEach((installment, index) => {
-      let remainingAmount = Math.max(
-        0,
-        installment.baseAmount - (index === lastInstallmentIndex ? advancePaidToLastInstallment : 0),
-      );
+      const advancePaid = advancePaidByInstallment[index];
+      let remainingAmount = Math.max(0, installment.baseAmount - advancePaid);
 
       let verifiedPaidSum = 0;
 
@@ -288,14 +306,21 @@ function calculateInstallments(
       const actualInst = installments?.find(
         (inst) => inst.installmentNumber === installment.installmentNumber,
       );
+      const calculatedPaid = Math.min(
+        installment.baseAmount,
+        Math.min(verifiedPaidSum, installment.baseAmount) + advancePaid,
+      );
+
       if (installment.evidences.length > 0) {
         // ยอดที่ admin ตรวจสอบเรียบร้อยแล้วว่า slip ถูกต้อง (status === "verified")
-        installment.paidAmount = verifiedPaidSum;
+        installment.paidAmount = calculatedPaid;
       } else if (actualInst) {
-        installment.paidAmount = Number(actualInst.paidAmount) || 0;
+        installment.paidAmount = Math.max(
+          Math.min(Number(actualInst.paidAmount) || 0, installment.baseAmount),
+          calculatedPaid,
+        );
       } else {
-        installment.paidAmount =
-          index === lastInstallmentIndex ? advancePaidToLastInstallment : 0;
+        installment.paidAmount = calculatedPaid;
       }
       installment.isPaid =
         installment.paidAmount >= installment.baseAmount && installment.baseAmount > 0;

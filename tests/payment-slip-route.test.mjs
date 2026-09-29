@@ -10,24 +10,20 @@ const route = read("app/api/payments/[id]/slip/route.ts");
 const fundRoute = read("app/api/fund-transactions/[id]/slip/route.ts");
 const access = read("lib/slip-access.ts");
 
-test("the storage path is never returned - the route 302s to a freshly signed URL", () => {
+test("no storage path or URL is ever returned - the route streams the slip itself", () => {
   // The bucket is private and has no RLS, so this route is the only way to read a repayment slip.
-  assert.match(route, /const url = await signSlipUrl\(\{ path: payment\.slipPath \}\);/);
-  assert.match(route, /status: 302/);
-  // The browser may reuse the redirect briefly, keyed on the session cookie so the next user on a
-  // shared browser misses the cache and is re-authorized (lib/slip-storage.ts ties the max-age to
-  // the signed URL's lifetime).
-  assert.match(
-    route,
-    /headers: \{ Location: url, "Cache-Control": SLIP_REDIRECT_CACHE_CONTROL, Vary: "Cookie" \}/,
-  );
+  // A signed URL would be a bearer link anyone could open until it expired, so none is minted;
+  // lib/slip-storage.ts serveSlip sets the type, private cache, Vary: Cookie and nosniff.
+  assert.match(route, /return await serveSlip\(\{ path: payment\.slipPath \}\);/);
+  assert.doesNotMatch(route, /status: 302/);
+  assert.doesNotMatch(route, /Location/);
+  assert.doesNotMatch(route, /signSlipUrl/);
 
-  // A signed URL is minted per request and never persisted, so nothing may echo the raw path.
   assert.doesNotMatch(route, /apiOk\(/);
   assert.doesNotMatch(route, /slipPath:\s*payment\.slipPath/);
 });
 
-test("authorization: signed in, then every role checked, before anything is signed", () => {
+test("authorization: signed in, then every role checked, before anything is served", () => {
   assert.match(route, /const context = await getSignedInContext\(\);/);
   assert.match(route, /if \(!context\) return apiError\("UNAUTHORIZED", "Authentication required", 401\);/);
 
@@ -38,8 +34,8 @@ test("authorization: signed in, then every role checked, before anything is sign
   );
   assert.match(route, /if \(!allowed\) return apiError\("FORBIDDEN", "Not allowed to read this slip", 403\);/);
 
-  // The check must precede the signing call, or a forbidden caller still gets a usable URL.
-  assert.ok(route.indexOf("if (!allowed)") < route.indexOf("await signSlipUrl("));
+  // The check must precede the download, or a forbidden caller still gets the slip.
+  assert.ok(route.indexOf("if (!allowed)") < route.indexOf("await serveSlip("));
 });
 
 test("advisors can never read a repayment slip", () => {
@@ -67,8 +63,7 @@ test("stays in step with the disbursement slip route it mirrors", () => {
   // Both routes solve the same problem; if one gains a guard the other should too.
   for (const shared of [
     /const context = await getSignedInContext\(\);/,
-    /"Cache-Control": SLIP_REDIRECT_CACHE_CONTROL, Vary: "Cookie"/,
-    /status: 302/,
+    /return await serveSlip\(\{ path: \w+\.slipPath \}\);/,
     /roles\.some\(/,
     /return apiError\("INTERNAL_ERROR", "Unable to read slip", 500\);/,
     // Starts the lazy PrismaPromise so it overlaps auth, and keeps an early return from leaving
@@ -91,11 +86,12 @@ test("stays in step with the disbursement slip route it mirrors", () => {
   assert.ok(fundRoute.indexOf("/^\\d{1,18}$/.test(id)") < fundRoute.indexOf("id: BigInt(id)"));
 });
 
-test("the OpenAPI contract documents a 302, not a JSON body", () => {
+test("the OpenAPI contract documents the file itself, not a redirect or a JSON body", () => {
   assert.match(route, /@tag Payment slips/);
   assert.match(route, /@pathParams PaymentIdParams/);
   assert.match(route, /@auth cookieAuth/);
-  assert.match(route, /@response 302/);
+  // scripts/normalize-openapi.mjs restates the 200 as the allowed image types.
+  assert.match(route, /@response 200\n/);
   for (const status of [401, 403, 404, 500]) {
     assert.match(route, new RegExp(`@add ${status}:ApiErrorResponse`));
   }

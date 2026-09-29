@@ -1,5 +1,5 @@
 info:
-  name: Redirect to a short-lived signed URL for a payment's repayment slip evidence
+  name: Stream a payment's repayment slip evidence
   type: http
   seq: 1
   tags:
@@ -25,7 +25,7 @@ runtime:
   assertions:
     - expression: res.status
       operator: eq
-      value: "302"
+      value: "200"
 
 settings:
   encodeUrl: true
@@ -39,12 +39,12 @@ docs: |-
 
   Excluded from `npm run api:test` (tag `Payment_slips`): the isolated container has no Supabase
   credentials, and the seeded payments carry placeholder slip paths rather than real bucket
-  objects, so signing would fail. Run it by hand against an environment with real storage.
+  objects, so the download would fail. Run it by hand against an environment with real storage.
 
   The seeded id above is payment 301 from db/seed.ts, whose loan is REQ202609060008.
 
 examples:
-  - name: 302 Response
+  - name: 200 Response
     description: Successful response
     request:
       url: "{{baseUrl}}/payments/:id/slip"
@@ -57,7 +57,7 @@ examples:
           value: 00000000-0000-0000-0000-000000000301
           type: path
     response:
-      status: 302
-      statusText: Found
+      status: 200
+      statusText: OK
       body:
         type: text

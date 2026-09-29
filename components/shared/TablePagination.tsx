@@ -2,7 +2,9 @@
 
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getVisiblePages } from "@/lib/table-pagination";
+
+import { getVisiblePages } from "@/lib/pagination";
+export { getVisiblePages };
 
 export interface TablePaginationProps {
   currentPage: number;

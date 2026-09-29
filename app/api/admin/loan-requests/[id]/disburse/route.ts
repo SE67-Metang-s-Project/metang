@@ -12,7 +12,7 @@ type Params = { params: Promise<{ id: string }> };
 
 /**
  * Disburse a loan request awaiting manual disbursement (multipart/form-data, a single "slip"
- * file field - image/jpeg, image/png, or application/pdf, up to 10MB).
+ * file field - an image (JPEG, PNG, GIF, WebP, BMP or AVIF), up to 1MB).
  * @tag Admin loans
  * @pathParams LoanRequestIdParams
  * @body DisburseLoanRequestBody
@@ -55,7 +55,7 @@ export async function POST(request: Request, { params }: Params) {
     return apiError("VALIDATION_ERROR", "Unsupported slip file type", 422);
   }
   if (slip.size > MAX_SLIP_BYTES) {
-    return apiError("VALIDATION_ERROR", "Slip file exceeds the 10MB limit", 422);
+    return apiError("VALIDATION_ERROR", "Slip file exceeds the 1MB limit", 422);
   }
 
   const slipPath = buildSlipPath({ kind: "disbursement", loanId: id, ext });
