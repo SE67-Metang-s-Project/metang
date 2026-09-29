@@ -136,6 +136,13 @@ application sends them to `/metang/login?next=<page>`. After CMU sign-in,
 `/metang/api/auth/callback` returns them to that page instead of their role home page. `proxy.ts` passes the current page to the
 page guard, and `lib/return-path.ts` rejects any value that is not a page on this site.
 
+Staff pages are server components, so everything their query returns is written into the page HTML,
+where anyone signed in to that role can read it in the browser. Each page therefore calls its own
+query in `db/queries/loan-requests.ts` (for example `getVerifySlipRequests`), and the query decides
+which loans and fields the page gets: bank details, slip links, and repayment history are included
+only for pages whose screen shows them. When you add a field to a staff screen, add it to that page's
+query too. Do not widen a query to "everything" to make a field appear.
+
 ### 2.3 How notifications work
 
 For most notifications, the application does not send at the moment an event happens. It writes
