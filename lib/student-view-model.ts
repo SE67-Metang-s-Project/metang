@@ -1,5 +1,6 @@
 import type { LoanStatus } from "@/lib/generated/prisma/client";
 import { bangkokDateKey, bangkokParts } from "@/lib/date";
+import { withBasePath } from "@/lib/base-path";
 import { deriveInstallmentConduct } from "@/lib/repayment-conduct";
 import type { ApprovalStep } from "@/components/shared/disburse-debt/DisburseDebtCard";
 import type {
@@ -151,7 +152,7 @@ function sortPaymentsOldestFirst(payments: RawPayment[] = []) {
 }
 
 export function paymentSlipUrl(payment: RawPayment): string {
-  return payment.hasSlip && payment.id ? `/api/payments/${payment.id}/slip` : "";
+  return payment.hasSlip && payment.id ? withBasePath(`/api/payments/${payment.id}/slip`) : "";
 }
 
 export type RawStudentLoan = {
@@ -283,7 +284,7 @@ export function mapToActiveLoanSummary(loan: RawStudentLoan | null): ActiveLoanS
     isDisbursed: loan.status === "disbursed",
     isTransferConfirmed: Boolean(loan.transferConfirmedAt),
     transferSlipImage: loan.fundTransactions?.[0]?.id
-      ? `/api/fund-transactions/${loan.fundTransactions[0].id}/slip`
+      ? withBasePath(`/api/fund-transactions/${loan.fundTransactions[0].id}/slip`)
       : undefined,
   };
 }
@@ -704,7 +705,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     additionalReason: loan.additionalNote ?? "-",
     downloadLabel: "ดาวน์โหลดแบบคำร้อง (PDF)",
     transferSlipImage: disbursementTransactionId
-      ? `/api/fund-transactions/${disbursementTransactionId}/slip`
+      ? withBasePath(`/api/fund-transactions/${disbursementTransactionId}/slip`)
       : "",
     isTransferConfirmed: Boolean(loan.transferConfirmedAt),
     timeline,

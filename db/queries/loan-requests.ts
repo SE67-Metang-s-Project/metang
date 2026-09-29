@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { withBasePath } from "@/lib/base-path";
 import { Prisma, type ApprovalStep as LoanApprovalStep, type Decision } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
 import { deriveInstallmentConduct } from "@/lib/repayment-conduct";
@@ -848,7 +849,7 @@ export async function getActionRequests(
         isOverpayment: p.status === "pending_review" && p.amount > totalOutstandingAmount,
         // The route, not the storage path: these props are serialized to the browser, and a bare
         // bucket path in an <img src> renders nothing. The 302 re-runs authorization per load.
-        slipImageUrl: p.slipPath ? `/api/payments/${p.id}/slip` : "",
+        slipImageUrl: p.slipPath ? withBasePath(`/api/payments/${p.id}/slip`) : "",
       };
     });
 
@@ -890,7 +891,7 @@ export async function getActionRequests(
       paymentBehavior,
       paymentHistory,
       installments,
-      ...(disbursement ? { slipUrl: `/api/fund-transactions/${disbursement.id}/slip` } : {}),
+      ...(disbursement ? { slipUrl: withBasePath(`/api/fund-transactions/${disbursement.id}/slip`) } : {}),
     };
   });
 }

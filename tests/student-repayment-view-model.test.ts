@@ -114,8 +114,8 @@ test("payment history is oldest first with installment numbers, slip URLs and re
     paymentHistory.map((item) => [item.installmentNumber, item.status, item.receiptImage, item.reviewNote]),
     [
       [1, "verified", "", undefined],
-      [2, "failed", "/api/payments/p2/slip", "wrong amount"],
-      [2, "checking", "/api/payments/p3/slip", undefined],
+      [2, "failed", "/metang/api/payments/p2/slip", "wrong amount"],
+      [2, "checking", "/metang/api/payments/p3/slip", undefined],
     ],
   );
   assert.equal(paymentHistory[1].statusLabel, "ไม่ผ่าน");
