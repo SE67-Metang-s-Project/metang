@@ -12,7 +12,7 @@ import StudentPaymentHistoryModal from "@/components/shared/students/StudentPaym
 import { filterAdvisorStudents } from "@/lib/advisor-students";
 import {
   ChevronRight,
-  ShieldCheck,
+  SearchX,
 } from "lucide-react";
 
 interface AdvisorDashboardProps {
@@ -171,14 +171,15 @@ export default function AdvisorDashboard({
           />
         ) : (
           <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center">
-            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
-              <ShieldCheck size={24} />
+            <div className="w-12 h-12 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mx-auto mb-3">
+              <SearchX size={24} />
             </div>
             <h3 className="font-semibold text-gray-800 text-base mb-1">
               ไม่มีคำร้องรอพิจารณาในขณะนี้
             </h3>
             <p className="text-sm text-gray-500 max-w-md mx-auto">
               ท่านได้พิจารณาคำร้องของนักศึกษาในความดูแลครบถ้วนแล้ว
+              <br />
               หากมีคำร้องใหม่จากนักศึกษาจะปรากฏในส่วนนี้ทันที
             </p>
           </div>
