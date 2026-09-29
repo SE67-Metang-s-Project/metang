@@ -71,7 +71,7 @@ hosted services.
 | Web application | Vercel (serverless functions) | Serves all pages and the API under `/metang/api/`. |
 | Scheduled jobs | Chosen at server start by `instrumentation.ts` (`lib/jobs/runtime.ts`) | On Vercel (`VERCEL=1`): Vercel Cron calls the five `/metang/api/cron/` routes from `vercel.json`. On a server that keeps running (`next start`, `npm run dev`): the server runs the same five jobs on its own timers. |
 | Database | Supabase PostgreSQL | Stores users, roles, loan requests, approvals, installments, payments, the fund ledger, the notification outbox, the audit log, and system settings. |
-| Slip storage | Supabase Storage, private bucket `bank_payment_slips` | Stores bank-transfer slip files (JPEG, PNG, PDF) for disbursements and repayments. |
+| Slip storage | Supabase Storage, private bucket `bank_payment_slips` | Stores bank-transfer slip files (images of 1 MB or less) for disbursements and repayments. |
 | Sign-in | CMU Entra ID (OAuth 2.0) and CMU BasicInfo API | Signs users in with their CMU IT Account and reads their profile. |
 | Reviewer notifications | CMU LINE notification API ("FON") | Sends LINE messages to the advisor, admin, or executive who must act on a request. |
 | Student emails | CMU Email API (Outlook) | Sends repayment due-date reminders to students. Tells students when their request is rejected, when the loan is disbursed, and when an admin confirms or rejects a repayment slip. |
@@ -888,7 +888,8 @@ before you need them in an incident.]`
 3. Run the fund balance query from Section 4.9. Expected result: the balance recorded at
    backup time.
 4. Sign in as a SuperAdmin. Open a disbursed loan and open its slip.
-   Expected result: the slip image or PDF opens.
+   Expected result: the slip image opens. A slip that was uploaded as a PDF before the image-only
+   rule is sent as a file download, not shown in the page.
 5. Do the health check (Section 4.2).
 
 ---
@@ -1058,7 +1059,7 @@ migrations to apply", and it also worked when only `DATABASE_URL` was given.
    `CRON_SECRET`. The container runs as the user `node` and listens on port 3000.
 5. Set up the reverse proxy from `deploy/nginx.conf.example`. The `location` prefix must equal the
    sub path, and the proxy must set `Host`, `X-Forwarded-Host`, and `X-Forwarded-Proto` (Section
-   2.1). Set `client_max_body_size 10m`, because payment slips can be up to 10 MB.
+   2.1). Set `client_max_body_size 2m`, because slips can be up to 1 MB and the upload adds a little. The nginx default of `1m` refuses a slip that is close to the limit.
 6. Jobs: the container runs the notification jobs itself while it keeps running (Section 2.3).
    On a platform that stops idle containers, set `ENABLE_JOB_SCHEDULER=false` and call the routes
    from outside (end of Section 2.3).
@@ -1167,11 +1168,11 @@ Change a schedule in both `lib/jobs/start-scheduler.ts` (built-in scheduler) and
 
 | Value | Setting |
 |---|---|
-| Slip file types accepted by the server and the admin disbursement form | `image/jpeg`, `image/png`, `application/pdf` |
-| Slip file size limit on the server and the admin disbursement form | 10 MB |
+| Slip file types accepted by the server (both slip uploads) | `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `image/bmp`, `image/avif`. PDF, SVG, HEIC and TIFF are refused. |
+| Slip file size limit on the server (both slip uploads) | 1 MB |
 | Repayment slip accepted by the student form | JPG or PNG, at most 1 MB |
 | Installments per loan | 1 to 3 (server check and database `CHECK`) |
-| Signed slip link lifetime | 300 seconds |
+| How long a browser keeps a slip it has opened (`Cache-Control: private, max-age=300`) | 300 seconds |
 | Sign-in session lifetime | 8 hours |
 | Sign-in attempt lifetime | 10 minutes |
 | Notification attempts | 5, with waits of 1, 5, 15, and 60 minutes |
@@ -1333,8 +1334,8 @@ cannot reach.
 | Code or message | Meaning | Action |
 |---|---|---|
 | `VALIDATION_ERROR`: `A slip file is required` (422) | No file was attached. | Attach a slip. |
-| `VALIDATION_ERROR`: `Unsupported slip file type` (422) / `ไฟล์สลิปไม่ถูกต้อง` | The server reads the first bytes of the file and accepts only JPEG, PNG, or PDF, whatever type the browser reports. | Use a JPEG or PNG (students), or a JPEG, PNG, or PDF (admin disbursement). |
-| `VALIDATION_ERROR`: `Slip file exceeds the 10MB limit` (422) | File larger than 10 MB. | Use a smaller file. |
+| `VALIDATION_ERROR`: `Unsupported slip file type` (422) / `ไฟล์สลิปไม่ถูกต้อง` | The server reads the first bytes of the file and accepts only JPEG, PNG, GIF, WebP, BMP, or AVIF images, whatever type the browser reports. PDF is refused. | Use an image. Save or photograph a PDF as JPEG or PNG. |
+| `VALIDATION_ERROR`: `Slip file exceeds the 1MB limit` (422) | File larger than 1 MB. | Use a smaller image, for example a screenshot. |
 | `กรุณาอัปโหลดไฟล์ JPG หรือ PNG` (`Please upload a JPG or PNG file.`) | The student repayment form accepts only JPG or PNG. | Upload a JPG or PNG image. |
 | `ไฟล์รูปภาพต้องมีขนาดไม่เกิน 1 MB` (`The image file must be 1 MB or smaller.`) | The student repayment form accepts images of 1 MB or less. | Use a smaller image, for example a screenshot. |
 | `กรุณาระบุจำนวนเงินเป็นจำนวนเต็มบาท` (`Enter a whole number of baht.`) | The repayment amount is not a whole number of baht. | Enter whole baht. |
@@ -1353,7 +1354,7 @@ cannot reach.
 | `ไม่สามารถคัดลอกเลขที่บัญชีได้` / `Could not copy account number.` | The browser blocked copying. | Copy by hand. |
 | `NOT_FOUND`: `Slip not found` (404) | No slip for this record. | Check the record. |
 | `FORBIDDEN`: `Not allowed to read this slip` (403) | The user may not view this slip. | Expected. |
-| `INTERNAL_ERROR`: `Unable to read slip` (500) | Storage could not create a signed link. | Check Storage settings. |
+| `INTERNAL_ERROR`: `Unable to read slip` (500) | Storage could not return the file. The log line `Supabase Storage download failed with HTTP <status>` names the reason. | Check Storage settings. |
 | `VALIDATION_ERROR`: `id must be a payment uuid, not an installment id` (422) | Wrong ID type in the request. | Report to support. |
 
 ### 10.4 Staff review and disbursement
@@ -1452,7 +1453,7 @@ cannot reach.
 | `Missing INFISICAL_ENV in .env. Set it to the Infisical environment to use.` | `.env` exists but has no `INFISICAL_ENV`. The command stops instead of guessing `dev`. | Add `INFISICAL_ENV=dev` to `.env`. |
 | `Usage: node scripts/with-infisical.mjs <command> [...args]` | The wrapper script ran with no command. | Use the `npm run` commands in Section 6. |
 | `Supabase Storage upload failed with HTTP <status>: <text>` / `Supabase Storage sign failed with HTTP <status>: <text>` (in logs) | Supabase Storage refused the request. | Check the bucket and the service role key. |
-| `Unsupported slip content type: <type>` / `Slip exceeds the 10485760-byte limit` (in logs) | A slip failed the storage checks. | Students upload a JPG or PNG of 1 MB or less. Admins upload a JPEG, PNG, or PDF of 10 MB or less. |
+| `Unsupported slip content type: <type>` / `Slip exceeds the 1048576-byte limit` (in logs) | A slip failed the storage checks. | Students and admins upload an image of 1 MB or less. |
 | `the app exited early with code <code>` / `nothing is listening on 8081` (from `npm run api:test`) | The test app did not start, often because another `npm run dev` runs in the same folder. | Stop the other server and retry. |
 | `another next dev server is running (pid <pid>, <url>)` / `port 8081 is already in use` (from `npm run api:test`) | The check before the tests found a running dev server or a used port. | Stop the other server or program and retry. |
 | `docker is required` / `postgres did not become ready within 60s` / `the app did not start within 120s` (from `npm run api:test`) | Docker is missing or slow, or the test app was slow to start. | Start Docker and retry. |
@@ -1509,7 +1510,7 @@ Include this information:
 | Production | The live system that users use. Secrets in Infisical `prod`. |
 | Redeploy | Build and publish the application again in Vercel so that new settings take effect. |
 | Repayment slip | A JPG or PNG image of a bank transfer that a student uploads to repay. |
-| Signed link | A temporary (300 seconds) address that opens one slip file. |
+| Slip link | The address `/api/payments/{id}/slip` or `/api/fund-transactions/{id}/slip`. It needs a signed-in user who may read that slip, and it answers with the image itself. No storage address is ever returned. |
 | Slip storage | The private Supabase Storage bucket `bank_payment_slips`. |
 | SuperAdmin | The system owner in the application. Role `super_admin`. |
 | System settings | The bank account and office contact details in table `system_setting`. |

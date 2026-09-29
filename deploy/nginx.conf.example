@@ -6,7 +6,8 @@
 #    entire request path (including /metang/...) is passed to the Next.js app unchanged.
 # 3. The app reads the public address from X-Forwarded-Host / Host and X-Forwarded-Proto
 #    (see lib/public-origin.ts), so these headers are strictly required.
-# 4. client_max_body_size is set to 10m to allow payment slip uploads up to 10 MB.
+# 4. client_max_body_size is set to 2m to allow slip uploads up to 1 MB (the nginx default of 1m
+#    refuses a slip close to the limit).
 
 server {
   listen 80;
@@ -20,8 +21,8 @@ server {
   # ssl_protocols TLSv1.2 TLSv1.3;
   # ssl_ciphers HIGH:!aNULL:!MD5;
 
-  # Client upload size limit (payment slips up to 10 MB)
-  client_max_body_size 10m;
+  # Client upload size limit (slips up to 1 MB, plus the upload overhead)
+  client_max_body_size 2m;
 
   # Proxy subpath to the Next.js standalone container
   location /metang/ {
