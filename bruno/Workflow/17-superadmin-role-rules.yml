@@ -67,6 +67,14 @@ runtime:
           expect(admin8.roles.map((r) => r.role)).to.not.include("admin");
         });
 
+        // An address that already belongs to another user is refused: nobody is handed the role.
+        const taken = (list.body.data?.users ?? []).find((u) => u.id !== U(1) && /@cmu\.ac\.th$/i.test(u.email ?? ""));
+        const refused = await call("PATCH", `/${U(1)}`, { fullNameTh: "ผู้บริหาร", email: taken?.email });
+        test("an email already in use is refused with 409 and the executive stays", function () {
+          expect(taken).to.not.equal(undefined);
+          expect(refused.status).to.equal(409);
+        });
+
         const handOver = await call("PATCH", `/${U(1)}`, { fullNameTh: "ผู้บริหาร คนใหม่", email: "new.executive@cmu.ac.th" });
         test("a new email hands the executive role to a new user; the old one keeps their row", function () {
           expect(handOver.status).to.equal(200);

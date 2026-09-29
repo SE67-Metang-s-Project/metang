@@ -80,6 +80,14 @@ test("Backend routes and queries enforce super admin guard, role deletion, and e
   assert.match(userQueries, /throw new RoleMutationError\("NOT_EXECUTIVE"\)/);
   assert.match(userQueries, /executive\.handed_over/);
 
+  // 3b. an email (or CMU account) that belongs to another user is refused, never handed the role
+  const editFn = userQueries.slice(userQueries.indexOf("export async function editExecutive"));
+  const editBody = editFn.slice(0, editFn.indexOf("\nexport "));
+  assert.match(editBody, /OR: \[\{ email: cleanEmail \}, \{ cmuAccount \}\], id: \{ not: targetUserId \}/);
+  assert.match(editBody, /if \(taken\) throw new RoleMutationError\("EMAIL_ALREADY_IN_USE"\);/);
+  assert.ok(editBody.indexOf("EMAIL_ALREADY_IN_USE") < editBody.indexOf("executive.handed_over"), "refuse before handing over");
+  assert.doesNotMatch(editBody, /successor\?\.id/, "no handover to an existing account");
+
   // 4. removing a staff member hands their open loans over and keeps the row for history:
   //    deleting a user with approvals or payouts aborts the whole Postgres transaction
   assert.match(userQueries, /async function reassignOpenAdminLoans/);
@@ -94,7 +102,7 @@ test("Backend routes and queries enforce super admin guard, role deletion, and e
   assert.match(userIdRoute, /export async function PATCH/);
   assert.match(userIdRoute, /getSuperAdminAccess/);
   assert.match(userIdRoute, /isSameOrigin\(request\)/);
-  for (const code of ["FINAL_SUPER_ADMIN", "SELF_DEMOTION", "NOT_EXECUTIVE", "NOT_MANAGED_USER", "REASSIGNMENT_CONFLICT"]) {
+  for (const code of ["FINAL_SUPER_ADMIN", "SELF_DEMOTION", "NOT_EXECUTIVE", "NOT_MANAGED_USER", "REASSIGNMENT_CONFLICT", "EMAIL_ALREADY_IN_USE"]) {
     assert.match(userIdRoute, new RegExp(code));
   }
   const rolesRoute = read("app/api/super-admin/users/[id]/roles/route.ts");
