@@ -1,7 +1,7 @@
 # Me_Tang Maintenance Guide
 
 Version covered: Me_Tang 0.1.0 (`package.json` version `0.1.0`)
-Document version: 1.3 draft
+Document version: 1.4 draft
 Date: 2026-09-29
 
 ---
@@ -812,8 +812,8 @@ Steps:
    bucket had 83 rows: 81 slip files and 2 placeholders. The script downloaded 81 files.
 5. Store the folder `slips-YYYYMMDD` with the database backup.
 
-`[TO VERIFY: the Supabase Dashboard download and the S3-compatible endpoint (for example with
-rclone) were not tested.]`
+Not tested: the Supabase Dashboard download and the S3-compatible endpoint (for example with
+rclone).
 
 ### 5.4 Restore the database
 
@@ -842,9 +842,9 @@ command in step 2. The command ran two times: into the empty database, and again
 restored data. Both runs ended with exit code 0 and no messages. Row counts, the fund balance,
 the latest migration, and the sequence values were the same as in the dev project.
 
-`[TO VERIFY: these were not tested: a restore into a new Supabase project, the bucket and
-upload in step 3, the settings change in step 4, and Section 5.5 steps 4 and 5. Test them once
-before you need them in an incident.]`
+Not tested: a restore into a new Supabase project, the bucket and upload in step 3, the settings
+change in step 4, and Section 5.5 steps 4 and 5. Test them once before you need them in an
+incident.
 
 1. Tell users to stop work until the restore is verified. The application has no maintenance
    mode.
@@ -1567,3 +1567,4 @@ Include this information:
 | 1.1 draft | 2026-09-28 | Me_Tang development team | Jira NAT-240: corrected against the code at commit `d05ac00`. Scheduled jobs on Vercel, student cancel and executive return, eligibility rules, installment count (1 to 3), phone and slip rules, notifications sent without the outbox, fund ledger limits, the production database warning, unit tests, rollback behavior, and missing error messages in Section 10. |
 | 1.2 draft | 2026-09-29 | Me_Tang development team | Jira NAT-214: SuperAdmin user and role screen, roles and audit actions, and error codes brought up to the code of 2026-09-29. The deploy platform is not chosen: `[TO VERIFY]` markers that assume Vercel or Supabase now say so, and markers for facts that the client or CMU ITSC will supply at hand-over were removed. |
 | 1.3 draft | 2026-09-29 | Me_Tang development team | Jira NAT-243 and NAT-244: delete keeps the account row of a person with history, nobody deletes their own account, and Add user and Edit accept CMU addresses only. |
+| 1.4 draft | 2026-09-30 | Me_Tang development team | Sections 5.3 and 5.4: the two untested procedures are now plain "Not tested" notes, not `[TO VERIFY]` markers. |
