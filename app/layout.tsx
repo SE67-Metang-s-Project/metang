@@ -1,29 +1,49 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Kanit, Prompt } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: "./fonts/Geist[wght].ttf",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  weight: "100 900",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "./fonts/GeistMono[wght].ttf",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: "100 900",
 });
 
-const kanit = Kanit({
-  display: "swap",
-  subsets: ["thai", "latin"],
+const kanit = localFont({
+  src: [
+    { path: "./fonts/Kanit-Thin.ttf", weight: "100", style: "normal" },
+    { path: "./fonts/Kanit-ExtraLight.ttf", weight: "200", style: "normal" },
+    { path: "./fonts/Kanit-Light.ttf", weight: "300", style: "normal" },
+    { path: "./fonts/Kanit-Regular.ttf", weight: "400", style: "normal" },
+    { path: "./fonts/Kanit-Medium.ttf", weight: "500", style: "normal" },
+    { path: "./fonts/Kanit-SemiBold.ttf", weight: "600", style: "normal" },
+    { path: "./fonts/Kanit-Bold.ttf", weight: "700", style: "normal" },
+    { path: "./fonts/Kanit-ExtraBold.ttf", weight: "800", style: "normal" },
+    { path: "./fonts/Kanit-Black.ttf", weight: "900", style: "normal" },
+  ],
   variable: "--font-kanit",
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
-const prompt = Prompt({
-  display: "swap",
-  subsets: ["thai", "latin"],
+const prompt = localFont({
+  src: [
+    { path: "./fonts/Prompt-Thin.ttf", weight: "100", style: "normal" },
+    { path: "./fonts/Prompt-ExtraLight.ttf", weight: "200", style: "normal" },
+    { path: "./fonts/Prompt-Light.ttf", weight: "300", style: "normal" },
+    { path: "./fonts/Prompt-Regular.ttf", weight: "400", style: "normal" },
+    { path: "./fonts/Prompt-Medium.ttf", weight: "500", style: "normal" },
+    { path: "./fonts/Prompt-SemiBold.ttf", weight: "600", style: "normal" },
+    { path: "./fonts/Prompt-Bold.ttf", weight: "700", style: "normal" },
+    { path: "./fonts/Prompt-ExtraBold.ttf", weight: "800", style: "normal" },
+    { path: "./fonts/Prompt-Black.ttf", weight: "900", style: "normal" },
+  ],
   variable: "--font-prompt",
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
