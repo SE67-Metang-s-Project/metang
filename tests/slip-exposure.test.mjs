@@ -92,6 +92,7 @@ test("the response type published to staff has no path or reference", () => {
 test("server-rendered page props link to the slip route, not the bucket path", () => {
   // These props are serialized to the browser. A bare storage path in an <img src> renders
   // nothing, so pointing at the path was both a leak and a broken image.
-  assert.match(query, /slipImageUrl: p\.slipPath \? withBasePath\(`\/api\/payments\/\$\{p\.id\}\/slip`\) : ""/);
-  assert.doesNotMatch(query, /slipImageUrl: p\.slipPath \?\? ""/);
+  const mapper = read("lib/action-request-view.ts");
+  assert.match(mapper, /slipImageUrl: p\.slipPath \? withBasePath\(`\/api\/payments\/\$\{p\.id\}\/slip`\) : ""/);
+  assert.doesNotMatch(mapper, /slipImageUrl: p\.slipPath \?\? ""/);
 });

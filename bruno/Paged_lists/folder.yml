@@ -1,0 +1,6 @@
+info:
+  name: Paged_lists
+  type: folder
+
+request:
+  auth: inherit

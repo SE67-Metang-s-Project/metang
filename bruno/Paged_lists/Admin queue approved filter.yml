@@ -1,0 +1,47 @@
+info:
+  name: Admin queue approved filter
+  type: http
+  seq: 5
+  tags:
+    - Paged_lists
+
+http:
+  method: GET
+  url: "{{baseUrl}}/admin/queue?filter=approved&q=&page=2&limit=5"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.items
+      operator: isDefined
+    - expression: res.body.data.total
+      operator: matches
+      value: "^[0-9]+$"
+    - expression: res.body.data.page
+      operator: matches
+      value: "^[0-9]+$"
+    - expression: res.body.error
+      operator: isUndefined
+    - expression: res.body.data.counts.pending
+      operator: matches
+      value: "^[0-9]+$"
+    - expression: res.body.data.counts.pendingExecutive
+      operator: matches
+      value: "^[0-9]+$"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

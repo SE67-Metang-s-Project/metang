@@ -1,0 +1,34 @@
+info:
+  name: Advisor students rejects an unknown degree
+  type: http
+  seq: 14
+  tags:
+    - Paged_lists
+
+http:
+  method: GET
+  url: "{{baseUrl}}/advisor/students?degree=bogus"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "422"
+    - expression: res.body.error.code
+      operator: eq
+      value: "VALIDATION_ERROR"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
