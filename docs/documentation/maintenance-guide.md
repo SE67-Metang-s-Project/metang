@@ -190,7 +190,7 @@ These gaps exist in the delivered software. They affect maintenance.
 | Limitation | Effect | Reference |
 |---|---|---|
 | No automatic cleanup of old data | `notification_outbox`, `audit_log`, `payment`, `fund_transaction`, and slip files grow forever. | Section 4.7 |
-| Failed slip uploads leave unused files | A disbursement retry, or a repayment whose database insert fails, leaves a slip file that no row uses. | Section 4.8 |
+| Failed slip uploads leave unused files | A disbursement retry, or a repayment that fails after its upload, leaves a slip file that no row uses. The repayment route checks the loan before the upload, so this happens only when the insert fails or two submissions arrive at the same time. | Section 4.8 |
 | No backup of slip files | Supabase database backups do not include Storage files. | Section 5 |
 | No monitoring or alerting | Nobody is told when a job fails. You must check by hand. | Section 8 |
 | Two ways to run the scheduled jobs | On Vercel, the `vercel.json` schedules need the Pro plan (Hobby allows only daily jobs and rejects the deployment). On other serverless hosts, an outside scheduler must call the routes. | Section 2.3 |
@@ -1217,7 +1217,7 @@ cannot reach.
 | Code or message | Meaning | Action |
 |---|---|---|
 | `VALIDATION_ERROR`: `A slip file is required` (422) | No file was attached. | Attach a slip. |
-| `VALIDATION_ERROR`: `Unsupported slip file type` (422) / `ไฟล์สลิปไม่ถูกต้อง` | The server accepts only JPEG, PNG, or PDF. | Use a JPEG or PNG (students), or a JPEG, PNG, or PDF (admin disbursement). |
+| `VALIDATION_ERROR`: `Unsupported slip file type` (422) / `ไฟล์สลิปไม่ถูกต้อง` | The server reads the first bytes of the file and accepts only JPEG, PNG, or PDF, whatever type the browser reports. | Use a JPEG or PNG (students), or a JPEG, PNG, or PDF (admin disbursement). |
 | `VALIDATION_ERROR`: `Slip file exceeds the 10MB limit` (422) | File larger than 10 MB. | Use a smaller file. |
 | `กรุณาอัปโหลดไฟล์ JPG หรือ PNG` (`Please upload a JPG or PNG file.`) | The student repayment form accepts only JPG or PNG. | Upload a JPG or PNG image. |
 | `ไฟล์รูปภาพต้องมีขนาดไม่เกิน 1 MB` (`The image file must be 1 MB or smaller.`) | The student repayment form accepts images of 1 MB or less. | Use a smaller image, for example a screenshot. |
@@ -1226,7 +1226,7 @@ cannot reach.
 | `VALIDATION_ERROR`: `paidAt is invalid` / `paidAt cannot be in the future` (422) | The transfer date is missing, not a date, or in the future. | Enter the real transfer date. |
 | `INTERNAL_ERROR`: `Unable to upload slip` (500) | Supabase Storage refused the upload. | Check Storage settings (Section 9). |
 | `CONFLICT`: `You have no loan open for repayment` (409) / `ไม่มีสัญญาที่ต้องชำระคืน`: `ไม่พบสัญญากู้ยืมที่อยู่ระหว่างชำระคืน กรุณาตรวจสอบสถานะล่าสุด` | The student has no disbursed loan. | Expected. |
-| `CONFLICT`: `Confirm receipt of the loan transfer before repaying` (409, internal code `TRANSFER_NOT_CONFIRMED`) / `ยังไม่ได้ยืนยันการรับเงิน`: `กรุณายืนยันการรับเงินก่อนชำระ` / `Please confirm receipt before paying` | The student has not confirmed receipt of the disbursed loan. The check runs after the slip upload, so the uploaded file is then unused (Section 4.8). | The student clicks **ยืนยันการรับเงิน** first. |
+| `CONFLICT`: `Confirm receipt of the loan transfer before repaying` (409, internal code `TRANSFER_NOT_CONFIRMED`) / `ยังไม่ได้ยืนยันการรับเงิน`: `กรุณายืนยันการรับเงินก่อนชำระ` / `Please confirm receipt before paying` | The student has not confirmed receipt of the disbursed loan. The check runs before the slip upload, so no file is stored. | The student clicks **ยืนยันการรับเงิน** first. |
 | `CONFLICT`: `A payment is already awaiting review` (409) / `มีหลักฐานการชำระรอตรวจสอบอยู่แล้ว`: `กรุณารอเจ้าหน้าที่ตรวจสอบหลักฐานการชำระครั้งก่อนให้เสร็จสิ้น แล้วจึงส่งหลักฐานใหม่` | A previous slip waits for review. | An admin reviews the earlier slip first. |
 | `VALIDATION_ERROR`: `amount exceeds the remaining repayment (<amount>)` (422) | The amount is more than the balance. | Enter the remaining amount or less. |
 | `CONFLICT`: `This loan has nothing left to repay` (409) / `ชำระครบแล้ว`: `สัญญากู้ยืมนี้ไม่มียอดค้างชำระแล้ว` | The loan is fully repaid. | Expected. |
