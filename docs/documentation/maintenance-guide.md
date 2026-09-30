@@ -1,8 +1,8 @@
 # Me_Tang Maintenance Guide
 
 Version covered: Me_Tang 0.1.0 (`package.json` version `0.1.0`)
-Document version: 1.6 draft
-Date: 2026-09-30
+Document version: 1.8 draft
+Date: 2026-10-01
 
 ---
 
@@ -39,7 +39,7 @@ Updates and upgrades (Section 6) need a copy of the source repository and Node.j
 | Framework | Next.js `16.2.10`, React `19.2.4` |
 | Database access | Prisma `7.9.1` with PostgreSQL |
 | Node.js | `24` (from `.nvmrc`) |
-| Database migrations | 19, the latest is `20260929120000_loan_request_transfer_confirmed` |
+| Database migrations | 22, the latest is `20261001130000_drop_loan_request_additional_note` |
 | Base path | `/metang` (`basePath` in `next.config.ts`) |
 
 ### 1.4 Conventions
@@ -69,11 +69,11 @@ hosted services.
 |---|---|---|
 | Web application | Vercel (serverless functions) | Serves all pages and the API under `/metang/api/`. |
 | Scheduled jobs | Chosen at server start by `instrumentation.ts` (`lib/jobs/runtime.ts`) | On Vercel (`VERCEL=1`): Vercel Cron calls the five `/metang/api/cron/` routes from `vercel.json`. On a server that keeps running (`next start`, `npm run dev`): the server runs the same five jobs on its own timers. |
-| Database | Supabase PostgreSQL | Stores users, roles, loan requests, approvals, installments, payments, the fund ledger, the notification outbox, the audit log, and system settings. |
+| Database | Supabase PostgreSQL | Stores staff users, roles, loan requests with their borrowers, approvals, installments, payments, the fund ledger, the notification outbox, the audit log, and system settings. |
 | Slip storage | Supabase Storage, private bucket `bank_payment_slips` | Stores bank-transfer slip files (images of 1 MB or less) for disbursements and repayments. |
 | Sign-in | CMU Entra ID (OAuth 2.0) and CMU BasicInfo API | Signs users in with their CMU IT Account and reads their profile. |
 | Reviewer notifications | CMU LINE notification API ("FON") | Sends LINE messages to the advisor, admin, or executive who must act on a request. |
-| Student emails | CMU Email API (Outlook) | Sends repayment due-date reminders to students. Tells students when their request is rejected, when the loan is disbursed, and when an admin confirms or rejects a repayment slip. |
+| Student emails | CMU Email API (Outlook) | Sends repayment due-date and overdue reminders to students. Since 2026-10-01 the application sends no other automatic email to students: it no longer tells them when their request is rejected, when the loan is disbursed, or when an admin confirms or rejects a repayment slip. |
 | Secrets | Infisical, environments `dev` and `prod` | Stores all passwords, keys, and tokens. |
 
 All pages and API routes are served under the base path `/metang`, for example
@@ -126,7 +126,7 @@ flowchart LR
   V -->|REST, service role key| S[(Supabase Storage: bank_payment_slips)]
   C[Vercel Cron] -->|Calls /metang/api/cron/ routes with CRON_SECRET| V
   V -->|Reviewer messages| L[CMU LINE FON API]
-  V -->|Student reminder and slip result emails| M[CMU Email API]
+  V -->|Student reminder emails| M[CMU Email API]
   I[Infisical] -.->|Secrets as environment variables| V
 ```
 
@@ -166,11 +166,24 @@ three rows.
 
 | Scheduled job | Schedule in `lib/jobs/start-scheduler.ts` | What it does |
 |---|---|---|
-| `/metang/api/cron/installment-reminders` | Once a day, at the first check after 08:00 Bangkok time | Finds unpaid installments due today, in 1 day, and in 3 days (Bangkok dates). Writes one `installment_reminder` row per installment and offset. |
-| `/metang/api/cron/deliver-reminders` | Every 3 minutes | Sends `installment_reminder` rows by email through the CMU Email API. |
+| `/metang/api/cron/installment-reminders` | Once a day, at the first check after 08:00 Bangkok time | Finds unpaid installments whose due date is 3, 1, or 0 days away, or 1, 3, or 7 days past (Bangkok dates). Writes one `installment_reminder` row per installment and offset. |
+| `/metang/api/cron/deliver-reminders` | Every 3 minutes | Sends `installment_reminder` rows by email through the CMU Email API. It uses the overdue wording when the due date is before today in Bangkok. It skips an installment that is already settled or whose loan is not disbursed. |
 | `/metang/api/cron/deliver-fon` | Every minute | Sends `reviewer_notification` rows by LINE through the FON API. |
-| `/metang/api/cron/deliver-loan-outcomes` | Every 3 minutes | Sends `loan_outcome` rows by email through the CMU Email API. A rejection by the advisor, admin, or executive writes one row; the email names who rejected and the reason. A disbursement writes one row; the email states the amount and the first installment. |
-| `/metang/api/cron/deliver-payment-outcomes` | Every 3 minutes | Sends `payment_outcome` rows by email through the CMU Email API. An admin's confirm or reject of a repayment slip writes one row. A rejection email includes the reviewer's reason. |
+| `/metang/api/cron/deliver-loan-outcomes` | Every 3 minutes | Sends `loan_outcome` rows by email through the CMU Email API. Since 2026-10-01 the application no longer writes these rows, so the job sends only rows that were queued before that date. A rejection by the advisor, admin, or executive, or an admin cancel, wrote one row; the email names who rejected and the reason. A disbursement wrote one row; the email states the amount and the first installment. |
+| `/metang/api/cron/deliver-payment-outcomes` | Every 3 minutes | Sends `payment_outcome` rows by email through the CMU Email API. Since 2026-10-01 the application no longer writes these rows, so the job sends only rows that were queued before that date. An admin's confirm or reject of a repayment slip wrote one row. A rejection email includes the reviewer's reason. |
+
+Students get automatic email only from the two installment reminder jobs. `installment-reminders`
+runs once a day (`0 1 * * *` UTC, which is 08:00 Bangkok time) and writes one outbox row for each
+unpaid installment whose due date is 3, 1, or 0 days away, or 1, 3, or 7 days past.
+`deliver-reminders` sends the rows. The subject is `แจ้งเตือนกำหนดชำระเงินกู้ยืม งวดที่ N` before or
+on the due date, and `แจ้งเตือนเกินกำหนดชำระเงินกู้ยืม งวดที่ N` when the due date is past. The
+overdue text gives the days late, the amount still owed, and the original due date.
+
+The application no longer writes `loan_outcome` rows (loan disbursed, request rejected, admin
+cancel) or `payment_outcome` rows (repayment slip confirmed or rejected). The two delivery routes
+above stay scheduled and send only rows that were queued before 2026-10-01, so rows of these two
+types can still exist in `notification_outbox`. The manual due-date email
+(`POST /metang/api/notifications/outlook`) and the LINE messages to reviewers did not change.
 
 At server start, `instrumentation.ts` logs which trigger it chose:
 
@@ -227,13 +240,13 @@ works with `curl -i` on one route: `200` and a JSON body with a count means the 
 
 | What | Where |
 |---|---|
-| Application data | Supabase PostgreSQL, schema `public`. Main tables: `app_user`, `user_role`, `loan_request`, `loan_approval`, `installment`, `payment`, `fund_transaction`, `notification_outbox`, `audit_log`, `system_setting`, `_prisma_migrations`. |
+| Application data | Supabase PostgreSQL, schema `public`. Main tables: `app_user`, `user_role`, `loan_request`, `loan_approval`, `installment`, `payment`, `fund_transaction`, `notification_outbox`, `audit_log`, `system_setting`, `_prisma_migrations`. Table `app_user` holds staff only. Each `loan_request` row holds its borrower in the columns `student_code`, `student_name_th`, `student_name_en`, `student_email`, `student_phone`, and `student_education_level`. |
 | Slip files | Supabase Storage bucket `bank_payment_slips` (or the name in `SUPABASE_SLIP_BUCKET`). Object names are `disbursement/<loan-id>-<timestamp>.<ext>` and `repayment/<loan-id>-<timestamp>.<ext>`. |
 | Secrets and environment settings | Infisical project `721bea71-5be4-426d-9b76-23e2e4333286`, environments `dev` and `prod`. On Vercel, the same settings are in the project **Settings** > **Environment Variables**. |
 | In-app settings (bank account and office contact shown to users) | Table `system_setting` (one row). Edited by a SuperAdmin in the application. |
 | Scheduled job definitions | `lib/jobs/start-scheduler.ts` in the repository. |
 | Application logs | Vercel Dashboard: project > **Logs**. The application writes errors to the console only. There is no other log store and no error-tracking service. |
-| Audit trail of user actions | Table `audit_log` (actor, action, entity, before and after values). |
+| Audit trail of user actions | Table `audit_log` (actor, action, entity, before and after values). A staff actor is in `actor_id`. A student actor is in `actor_student_code`. Exactly one is set. |
 | Notification delivery history | Table `notification_outbox` (status, attempts, last error). |
 | Backups | Supabase automatic daily backups on the Pro plan or higher only. The repository has no backup script. See Section 5. |
 
@@ -249,7 +262,7 @@ These gaps exist in the delivered software. They affect maintenance.
 | No monitoring or alerting | Nobody is told when a job fails. You must check by hand. | Section 8 |
 | Two ways to run the scheduled jobs | On Vercel, the `vercel.json` schedules need the Pro plan (Hobby allows only daily jobs and rejects the deployment). On other serverless hosts, an outside scheduler must call the routes. | Section 2.3 |
 | No automatic deployment | GitHub Actions checks every push (Section 6), but nothing deploys the result. Updates are manual: `npm test` runs the unit tests, `npm run api:test` runs the API tests (Section 6.2). The client chooses the host. | Section 6 |
-| No screen for the first SuperAdmin or for the `advisor` role | The first SuperAdmin must be added with SQL. Later admins and SuperAdmins are added on the SuperAdmin screen. No screen grants `advisor` (Section 3.2). | Section 3.3 |
+| No screen for the first SuperAdmin or for the `advisor` role | The first SuperAdmin must be added with SQL. You must also add each advisor with SQL, because sign-in does not create an `app_user` row. Later admins and SuperAdmins are added on the SuperAdmin screen. No screen grants `advisor` (Section 3.2). | Section 3.3 |
 | Some fields on the SuperAdmin contact and bank settings screen are not saved to the database | Opening hours, the closed-days note, and the faculty address details are kept only in the browser (`localStorage` key `metang-system-address`) of the person who saved them. Other users do not see the change. The bank code is not stored: the screen finds it again from the stored bank name. (Jira NAT-200/NAT-203 are marked Done, but this part is not built.) | Section 7.2 |
 | Loan reports are printed from the browser | There is no server-generated PDF file. The report uses the browser print dialog. | None |
 | Automated tests check source text, not a running user interface | Passing tests do not prove that the pages work. Test by hand after each update. | Section 6.2 |
@@ -275,15 +288,16 @@ You need these accounts. Never share one account between people.
 
 ### 3.2 Application roles
 
-A user gets the `student` role automatically at first sign-in when the CMU profile is a
-student account. The SuperAdmin screen (**ตั้งค่าระบบ** > **ผู้ใช้และบทบาท**) adds `admin` and
-`super_admin` users, and edits or replaces the `executive`. No screen grants `advisor`: grant it
-with the SQL of Section 3.3, using `advisor` in place of `super_admin`, and record who ran it.
+A student has no `app_user` row and no `user_role` row. The application treats a CMU sign-in with
+a Nursing student ID as a student. The SuperAdmin screen (**ตั้งค่าระบบ** > **ผู้ใช้และบทบาท**) adds
+`admin` and `super_admin` users, and edits or replaces the `executive`. No screen adds an
+`advisor`: add one with the SQL of Section 3.3, using `advisor` in place of `super_admin`, and
+record who ran it.
 
 | Role | Can do |
 |---|---|
-| `student` | Apply for a loan, correct and resubmit, cancel until the executive approves (not in `pending_disbursement` or later), upload repayment slips. |
-| `advisor` | Approve, return, or reject requests of their own advisees. A comment is required. |
+| `student` (no `user_role` row) | Apply for a loan, correct and resubmit, cancel until the executive approves (not in `pending_disbursement` or later), upload repayment slips. |
+| `advisor` | Approve, return, or reject requests of their own advisees. A comment is required. Read the repayment slips of the loans that they advise. |
 | `admin` | Review requests, set the approved amount, record disbursement with a slip, confirm or reject repayment slips. The due-date email API (`POST /metang/api/notifications/outlook`) is open to admins, but version 0.1.0 has no button for it. |
 | `executive` | Final decision: approve, return to the admin, or reject. The database allows only one `executive`, and the application never removes the role: the SuperAdmin replaces the executive with **แก้ไข** (see below). |
 | `super_admin` | Everything an admin can do, plus add and delete `admin` and `super_admin` users, edit the executive, grant and revoke roles, record fund transactions, and edit system settings. The last `super_admin` cannot be removed in the application. |
@@ -334,15 +348,17 @@ Role changes have side effects:
   does nothing: remove the extra role with `POST /api/super-admin/users/{id}/roles` and
   `action: remove`.
 
-### 3.3 Add the first SuperAdmin
+### 3.3 Add the first SuperAdmin or an advisor
 
 Purpose: give one person the `super_admin` role on a new or restored database. The
-application has no screen for this.
+application has no screen for this. To add an advisor, use `advisor` in place of `super_admin`
+in step 5.
 
 Prerequisites:
 
 - Supabase SQL Editor access to the production project.
-- The person has signed in to Me_Tang at least once, so their `app_user` row exists.
+- The person's CMU email, account name, and Thai full name. Sign-in does not create an
+  `app_user` row.
 
 > **WARNING:** A role added with SQL is not written to `audit_log`. Record who ran the
 > statement and when, for example in the change ticket.
@@ -358,8 +374,17 @@ Steps:
    SELECT id, email, full_name_th FROM app_user WHERE email = 'replace-with-email@cmu.ac.th';
    ```
 
-   Expected result: exactly one row.
-4. Run this statement with the same email.
+   Expected result: one row for a known person, or no row for a new person.
+4. If step 3 returned no row, add the person. Replace the three values. Use the lowercase text
+   before `@` as the account name.
+
+   ```sql
+   INSERT INTO app_user (email, cmu_account, full_name_th)
+   VALUES ('replace-with-email@cmu.ac.th', 'replace-with-account-name', 'replace-with-full-name');
+   ```
+
+   Expected result: `INSERT 0 1`.
+5. Run this statement with the same email.
 
    ```sql
    INSERT INTO user_role (user_id, role)
@@ -368,7 +393,8 @@ Steps:
    ```
 
    Expected result: `INSERT 0 1`.
-5. Ask the person to sign out and sign in again.
+6. Ask the person to sign out and sign in again. The next sign-in replaces the Thai name with the
+   name from CMU.
 
 Expected result: the person can open the SuperAdmin pages and grant other roles there.
 
@@ -681,7 +707,7 @@ Prerequisites: access to Infisical `prod` and to the issuer of the secret.
 | `SESSION_SECRET` | Changing it signs out every user. | At least 32 characters. Create one with `openssl rand -base64 32`. |
 | `CRON_SECRET` | The job scheduler does not start. Outside callers of `/metang/api/cron/` get `401 Unauthorized`. | The scheduler sends it as `Authorization: Bearer <value>`. Restart the server after a change. |
 | `NOTIFY_API_TOKEN` | LINE messages fail. | Issued by CMU. |
-| `EMAIL_API_CLIENT_ID`, `EMAIL_API_CLIENT_SECRET` | All student emails fail: reminders, request results, disbursements, and repayment slip results. | Issued by the CMU Faculty of Nursing, which runs the Email API at `https://mis.nurse.cmu.ac.th/thesis` (`docs/Email_API_Manual.md`). |
+| `EMAIL_API_CLIENT_ID`, `EMAIL_API_CLIENT_SECRET` | All student emails fail: the due-date and overdue reminders, and any older outcome rows that still wait (Section 2.3). | Issued by the CMU Faculty of Nursing, which runs the Email API at `https://mis.nurse.cmu.ac.th/thesis` (`docs/Email_API_Manual.md`). |
 | `SUPABASE_SERVICE_ROLE_KEY` | Slip upload and slip viewing fail. | Supabase Dashboard: **Project Settings** > **API**. |
 | Database password in `DATABASE_URL` and `DIRECT_URL` | The whole application fails. | Supabase Dashboard: **Project Settings** > **Database**. |
 
@@ -913,7 +939,7 @@ incident.
    ```
 
    Expected result: the value recorded at backup time (Section 5.2, step 4). For version
-   0.1.0 with all migrations applied, it is `20260929120000_loan_request_transfer_confirmed`.
+   0.1.0 with all migrations applied, it is `20261001130000_drop_loan_request_additional_note`.
 2. Run:
 
    ```sql
@@ -940,7 +966,7 @@ incident.
 Updates need the source repository, Node.js 24, and npm. The GitHub workflow `CI`
 (`.github/workflows/ci.yml`) runs on every push to every branch: lint, type check, build, the unit
 tests, and the API tests. It does not deploy: there is no automatic deployment, because the client
-chooses the host. `CI` passed on `main` at commit `1c69183` on 2026-09-29: all three jobs (unit
+chooses the host. `CI` passed on `main` at commit `ff20972` on 2026-09-30: all three jobs (unit
 tests, lint with type check and build, and API tests) were green.
 The workflow **Migrate production database** has never run, because the team has no production
 database. It needs a production database and the GitHub environment `production` (Section 6.2,
@@ -977,7 +1003,7 @@ connected to the repository deploys each push to its production branch.
    npx tsc --noEmit
    ```
 
-   Expected result: `npm run lint` reports `0 errors` (version 0.1.0 has 3 warnings about unused
+   Expected result: `npm run lint` reports `0 errors` (version 0.1.0 has 4 warnings about unused
    variables). `npx tsc --noEmit` prints nothing.
 
    Then run the unit tests. They read the source files and need no database:
@@ -986,7 +1012,7 @@ connected to the repository deploys each push to its production branch.
    npm test
    ```
 
-   Expected result: the summary line `ℹ fail 0`. At the time of writing, 483 tests pass. A
+   Expected result: the summary line `ℹ fail 0`. At the time of writing, 539 tests pass. A
    failure needs a developer. CI runs the same command.
 4. Run the API tests. They use a temporary local PostgreSQL in Docker (port `5433`) and a
    test app on port `8081`. They never touch the real database.
@@ -996,14 +1022,20 @@ connected to the repository deploys each push to its production branch.
    ```
 
    Expected result: `✓ suite passed, container removed`. On version 0.1.0 the command runs
-   the Bruno collection twice: 22 requests with 69 assertions, then the ordered workflow with
-   22 requests and 50 assertions. Docker must be running. If a test fails, the
+   the Bruno collection twice: 39 requests with 143 assertions, then the ordered workflow with
+   28 requests and 62 assertions. Docker must be running. If a test fails, the
    container `metang-test` stays up for inspection. Remove it with `docker rm -f metang-test`.
 
 > **WARNING:** When `INFISICAL_ENV=prod` is in `.env`, every `npm run db:*` command acts on
 > the production database. Never run `npm run db:push`, `npm run db:migrate`,
 > `npm run db:seed`, or `npm run db:reset` against production. `db:reset` deletes all users,
 > loans, payments, ledger rows, notifications, and audit history.
+
+> **WARNING:** Take a database backup before you apply
+> `20261001120000_student_identity_on_loan_request`. The migration deletes the `app_user` rows
+> that belong to students only, and all `user_role` rows with the role `student`. You cannot
+> reverse it. After it runs, the `users` count in the query of Section 5.5 is lower by the
+> number of `app_user` rows it deleted.
 
 5. Open `.env` and set `INFISICAL_ENV=prod`.
 6. Check the migration state:
@@ -1060,7 +1092,10 @@ Database rollback:
 
 Prisma migrations in this project have no "down" scripts. Several migrations cannot be
 reversed, for example `20260905110000_remove_payment_ocr` (drops columns) and
-`20260906030000_custom_loan_request_ids` (changes all loan IDs).
+`20260906030000_custom_loan_request_ids` (changes all loan IDs). Migration
+`20261001120000_student_identity_on_loan_request` deletes the `app_user` rows that belong to
+students only, and all `user_role` rows with the role `student`. Migration
+`20261001130000_drop_loan_request_additional_note` drops a column. You cannot reverse either one.
 
 > **WARNING:** Restoring the pre-update backup deletes all data written after the backup.
 > Prefer a new corrective migration from the developers when the data loss is not acceptable.
@@ -1081,6 +1116,9 @@ PostgreSQL container: all 19 migrations that the repository had then were applie
 reported "No pending migrations to apply", and it also worked when only `DATABASE_URL` was given.
 On 2026-09-30 the repository had 20 migrations, and `npx prisma migrate deploy` applied all 20 to an
 empty PostgreSQL 17 container. That run did not use the migration image.
+On 2026-10-01 the repository had 22 migrations. `npm run api:test` applied all 22 to an empty
+PostgreSQL 17 container, and `prisma migrate diff` between `db/migrations` and `db/schema.prisma`
+showed no difference.
 Not tested: both images on a client server, including the connection to the client's PostgreSQL
 (for example its TLS setting).
 
@@ -1199,7 +1237,7 @@ immediately. Every change is written to `audit_log` with the action `system_sett
 |---|---|---|---|
 | Bank name (`bankName`) | Yes | Text, at most 200 characters | Bank shown to students for repayment. |
 | Account name (`accountName`) | Yes | Text, at most 200 characters | Account name shown to students. |
-| Account number (`accountNumber`) | Yes | Text, at most 50 characters | Account number shown to students. |
+| Account number (`accountNumber`) | Yes | Text, at most 50 characters. The screen accepts only 10 digits in the form `xxx-x-xxxxx-x`. | Account number shown to students. |
 | Office location, Thai (`contactLocationTh`) | Yes | Text, at most 500 characters | Contact block. |
 | Office location, English (`contactLocationEn`) | No | Text, at most 500 characters | Contact block. |
 | Phone (`contactPhone`) | Yes | At most 32 characters: digits, `+`, `-`, spaces, parentheses | Contact block. |
@@ -1211,6 +1249,10 @@ hours, a closed-days note, and faculty address details. Version 0.1.0 saves thos
 the browser of the person who edits them (`localStorage` key `metang-system-address`). Other
 users keep seeing the default values. The screen also shows a bank code. It is not stored: the
 screen finds it from the stored bank name each time.
+
+The student contact footer shows fixed opening hours and a fixed holiday note (from
+`ContactFooter.tsx`). It shows the stored phone, extension, email, and location. If the settings
+request fails, it shows sample values.
 
 After installation, the settings row holds sample values, for example account number
 `521-0-12345-6`. Users see them until a SuperAdmin enters the real values.
@@ -1242,6 +1284,7 @@ Change a schedule in both `lib/jobs/start-scheduler.ts` (built-in scheduler) and
 | Notification claim lock | 15 minutes |
 | Rows per delivery job run | 20, with 5 sent at the same time |
 | Reminder days before due date | 3, 1, and 0 |
+| Reminder days after due date (overdue, while the installment is unpaid) | 1, 3, and 7 |
 | Manual LINE reminder cool-down | 60 seconds for each request and status |
 | Time zone for dates and loan IDs | `Asia/Bangkok` |
 | Loan ID format | `REQ` + date `YYYYMMDD` + 4-digit number. The number wraps after `9999`. |
@@ -1292,7 +1335,7 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 | Sign-in fails with `คำขอเข้าสู่ระบบหมดอายุหรือไม่ถูกต้อง กรุณาลองใหม่` (`invalid_state`) | The user waited more than 10 minutes, used two tabs, or `SESSION_SECRET` changed during sign-in. | Ask the user to close the tab and sign in again. | None |
 | All users are signed out at once | `SESSION_SECRET` changed. | Expected after a change. Users sign in again. | 4.10 |
 | A student sees `ระบบนี้อนุญาตให้นักศึกษาปริญญาตรี ภาคปกติ คณะพยาบาลศาสตร์ หรือบุคลากรคณะพยาบาลศาสตร์เท่านั้น` | The CMU profile is not a Nursing student ID and not Nursing staff. | Expected behavior. Confirm the person's faculty. | 3.2 |
-| A staff member sees `ไม่มีสิทธิ์เข้าถึงหน้านี้ (403 Forbidden)` | The user has no role for that page. | A SuperAdmin grants the role. | 3.2 |
+| A staff member sees `ไม่มีสิทธิ์เข้าถึงหน้านี้ (403 Forbidden)` | The user has no `app_user` row, or no role for that page. | If the user needs `admin` or `super_admin` and has no row, a SuperAdmin adds the user. If the user needs `advisor` and has no row, run the SQL of Section 3.3. If the row exists, a SuperAdmin grants the role. | 3.2, 3.3 |
 | Nobody can manage roles | No `super_admin` exists (new or restored database). | Add the first SuperAdmin with SQL. | 3.3 |
 | Notifications are not sent, outbox rows wait | The jobs do not run: `ENABLE_JOB_SCHEDULER=false`, `CRON_SECRET` is missing (`Job scheduler not started: CRON_SECRET is not set`, or `401` on Vercel Cron calls), the host is serverless without Vercel Cron, or `APP_BASE_URL` is not valid. | Set `CRON_SECRET`. Remove `ENABLE_JOB_SCHEDULER=false`. Fix `APP_BASE_URL`. Restart the server or redeploy. | 2.3, 4.2 |
 | Outbox rows become `failed` with a LINE error | `NOTIFY_API_TOKEN` or `NOTIFY_API_URL` wrong or expired. | Renew, redeploy, then retry the rows. | 4.10, 4.3 |
@@ -1302,7 +1345,7 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 | Links in LINE messages or emails open `localhost` | The server runs with `NODE_ENV` other than `production` and no `APP_BASE_URL` (for example `next dev`). | Set `APP_BASE_URL`. Run the production build with `next start`. | 7.1 |
 | Delivery jobs return `500` with `APP_BASE_URL must be a valid URL` or `APP_BASE_URL must use HTTP or HTTPS` | `APP_BASE_URL` has a wrong value. | Fix the value. Redeploy. | 7.1 |
 | Students get no reminder emails, and no `installment_reminder` rows exist | The daily `installment-reminders` job did not run. | Check Vercel cron logs. Missed days are not created later. | 2.3, 4.2 |
-| Students do not get the email about a rejected request, a disbursement, or a confirmed or rejected repayment slip | The job scheduler is not running, or the Email API fails. Look for `loan_outcome` and `payment_outcome` rows in `notification_outbox`. | Same fixes as for reminder emails. Retry `failed` rows after the fix. | 4.2, 4.3 |
+| Students do not get the email about a rejected request, a disbursement, or a confirmed or rejected repayment slip | Expected since 2026-10-01: the application no longer sends these emails or queues `loan_outcome` and `payment_outcome` rows. Students get email only from the due-date and overdue reminders. A row of these types that was queued before that date still sends; if one waits, the job scheduler is not running or the Email API fails. Look for such rows in `notification_outbox`. | No fix for new requests. For an older row that waits, use the same fixes as for reminder emails, and retry `failed` rows after the fix. | 2.3, 4.2, 4.3 |
 | Slip upload fails with `Unable to upload slip` | Supabase Storage settings wrong, bucket missing, or service role key expired. | Check `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and that the private bucket exists. | 4.10 |
 | Slip does not open, `Unable to read slip` | Same as above, or the file was deleted from Storage. | Check Storage settings. Check that the file exists in **Storage**. | 4.8 |
 | Student sees `ไม่พบข้อมูลบัญชีรับชำระเงิน` | The `system_setting` row is missing (`System settings are not initialized`). | Restore the row from a backup, or ask the developers to re-apply the default row. | 5.4 |
@@ -1337,10 +1380,10 @@ cannot reach.
 | `profile_failed` / `เข้าสู่ระบบสำเร็จ แต่ไม่สามารถอ่านข้อมูลบัญชี CMU ได้` | The CMU BasicInfo API failed. | Check `BASICINFO_URL` and `SCOPE`. Contact CMU ITSC if the API is down. |
 | `not_eligible` / `ระบบนี้อนุญาตให้นักศึกษาปริญญาตรี ภาคปกติ คณะพยาบาลศาสตร์ หรือบุคลากรคณะพยาบาลศาสตร์เท่านั้น` | Nurse sign-in mode only: the person is not a Nursing student or Nursing staff. The log shows `CMU nursing SSO rejected by access policy`. | Expected. |
 | `login_failed` / `เกิดข้อผิดพลาดระหว่างเข้าสู่ระบบ กรุณาลองใหม่` | Unexpected error during sign-in, for example a failed request to CMU. The log shows `CMU login callback failed`. | Check Vercel logs. |
-| `Failed to sync user to database during CMU login callback` (in logs) | The user record could not be saved at sign-in. Sign-in still succeeds. | Check the database connection. Roles or the student record may be out of date for that user. |
+| `Failed to sync user to database during CMU login callback` (in logs) | The application cannot refresh the names of a staff `app_user` row at sign-in. Sign-in still succeeds. | Check the database connection. |
 | `CMU token exchange failed` / `CMU BasicInfo request failed` (in logs) | The logged causes of `token_exchange_failed` and `profile_failed`. | See those rows. |
 | `กรุณาเข้าสู่ระบบก่อนใช้งาน` / `ไม่พบข้อมูลการเข้าสู่ระบบ หรือเซสชันหมดอายุ กรุณาเข้าสู่ระบบด้วย CMU IT Account เพื่อเข้าใช้งาน` | Not signed in, or the 8-hour session expired. | The user signs in. |
-| `ไม่มีสิทธิ์เข้าถึงหน้านี้ (403 Forbidden)` / `บัญชี CMU ของคุณยังไม่มีสิทธิ์ในการเข้าถึงหน้านี้ หากคุณมีหน้าที่รับผิดชอบในส่วนนี้ กรุณาติดต่อผู้ดูแลระบบเพื่อกำหนดสิทธิ์การใช้งาน` | The user has no role for the page. | A SuperAdmin grants the role. |
+| `ไม่มีสิทธิ์เข้าถึงหน้านี้ (403 Forbidden)` / `บัญชี CMU ของคุณยังไม่มีสิทธิ์ในการเข้าถึงหน้านี้ หากคุณมีหน้าที่รับผิดชอบในส่วนนี้ กรุณาติดต่อผู้ดูแลระบบเพื่อกำหนดสิทธิ์การใช้งาน` | The user has no `app_user` row or no role for the page. | A SuperAdmin grants the role. If the user has no row, see the 403 row in Section 9. |
 | `เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์` / `เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์การเข้าใช้งาน กรุณาลองใหม่อีกครั้ง` | Unexpected error while checking access. | Check Vercel logs. |
 | `Error code: <code>` (below the text on the error page) | The error code of the access problem. | Include it in a support request. |
 | `Student session rejected` with reason `student_id_not_eligible`, `employee_not_nursing`, or `profile_not_eligible` (in logs) | A signed-in user failed the Nursing faculty check for the student functions. | Expected for users outside the faculty. |
@@ -1360,6 +1403,7 @@ cannot reach.
 | `NOT_FOUND`: `Loan request not found` (404) / `ไม่พบข้อมูลคำร้อง`: `ไม่พบข้อมูลคำร้องขอกู้ยืมที่ระบุ` / `The loan request could not be found.` | The request does not exist or belongs to another user. | Check the request ID. |
 | `ไม่พบคำร้องที่ต้องการแก้ไข หรือคำร้องอาจถูกลบไปแล้ว` | The request to correct was not found. | Reload the dashboard. |
 | `VALIDATION_ERROR`: `A JSON request body is required` (422) | The phone number request had no valid body. | Reload and retry. |
+| `CONFLICT`: `Submit a loan request before saving a phone number` (409) | The student has no open loan request. The phone number is stored on the open `loan_request` row. | The student submits a loan request first. |
 | `VALIDATION_ERROR` (422) with a field message | A form value is invalid. The student page shows the title `ข้อมูลไม่ถูกต้อง` and one of the messages below. | The student corrects the form. |
 | `ไม่พบข้อมูลอาจารย์ที่ปรึกษาที่เลือก หรือชื่ออาจารย์ซ้ำซ้อนในระบบ` (`advisorName is ambiguous or not found`) | The chosen advisor does not exist or two advisors have the same name. | Check that the advisor has the `advisor` role and a unique name. |
 | `จำนวนเงินกู้ยืมไม่ถูกต้อง กรุณาระบุจำนวนเงินที่ถูกต้อง` | Invalid amount. | Correct the amount. |
@@ -1371,13 +1415,12 @@ cannot reach.
 | `จำนวนงวดการชำระไม่ถูกต้อง (1-4 งวด)` | Installment count is not 1 to 3. The message says 1-4, but the server and the database accept only 1 to 3. | Choose 1, 2, or 3. |
 | `เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเบอร์โทรศัพท์ 10 หลัก` / `กรุณากรอกเบอร์โทรศัพท์ 10 หลัก` / `กรุณากรอกเบอร์โทรศัพท์ที่ถูกต้อง (เบอร์มือถือ 10 หลัก หรือเบอร์บ้าน 9 หลัก)` | The phone number is not valid. The server accepts a 10-digit mobile number (starting `06`, `08`, or `09`) or a 9-digit landline (starting `02` to `05` or `07`). | Correct it. |
 | `กรุณากรอกจำนวนเงินที่ถูกต้อง` / `จำนวนเงินไม่อยู่ในวงเงินที่ใช้ได้` (`Amount is outside available credit limit`) | The amount is empty, not a number, 0 or less, or above the loan limit shown on the form. | Correct the amount. |
-| `ไม่พบข้อมูลระดับการศึกษา` (`Education level not found`) | Shown on the form in place of the education level when the student record has none. | Contact support with the student's CMU account. |
+| `ไม่พบข้อมูลระดับการศึกษา` (`Education level not found`) | Shown on the form in place of the education level. The fifth digit of the student code is not 0, 1, 3, or 5. The application reads the education level from that digit. | Contact support with the student code. |
 | `ไม่พบข้อมูลคำร้องหมายเลข "<id>" หรือคำร้องนี้อาจถูกลบไปแล้ว` / `ไม่พบข้อมูลคำร้องขอกู้ยืมในระบบ` | The detail page found no request with that ID, or the student has no request. | Check the link or the request ID. |
-| `VALIDATION_ERROR`: `installmentCount is invalid`, `studentYear is invalid` (422) | A value sent by the form is not valid. | Reload and retry. Report to support if it repeats. |
+| `VALIDATION_ERROR`: `installmentCount is invalid`, `studentYear is invalid`, `phoneNumber is invalid` (422) | A value sent by the form is not valid. | Reload and retry. Report to support if it repeats. |
 | `กรุณากรอกจำนวนเงินที่มากกว่า 0 บาท` | Amount is 0 or less. | Correct it. |
 | `โปรดระบุข้อมูลในช่องนี้` | A required field is empty. | Fill it in. |
-| `ไม่พบข้อมูลบัญชี CMU Account ในเซสชัน กรุณาเข้าสู่ระบบใหม่` (`CMU account is missing`) | The session has no CMU account. | Sign in again. |
-| `ข้อมูลบัญชี CMU ไม่ตรงกับข้อมูลนักศึกษาในระบบ` (`CMU identity does not match the existing student`) | The CMU profile does not match the stored student record. | Contact support with the student's CMU account. |
+| `ไม่พบข้อมูลบัญชี CMU Account ในเซสชัน กรุณาเข้าสู่ระบบใหม่` (`CMU account is missing`) | The session has no CMU email and no CMU account name. | Sign in again. |
 | `ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบความถูกต้องของข้อมูล` / `Some details are invalid. Please check them and try again.` | Other validation error. | Check the form. |
 | `CONFLICT`: `You already have an open loan request` (409) / `มีคำร้องที่กำลังดำเนินการอยู่แล้ว`: `ท่านมีคำร้องขอกู้ยืมที่กำลังดำเนินการอยู่แล้ว ระบบอนุญาตให้เปิดได้ครั้งละ 1 คำร้อง` / `You already have a loan request in progress. Only one request can be open at a time.` | One open request per student is allowed. | Expected. |
 | `INSUFFICIENT_FUND_CAPACITY`: `The requested amount is more than the fund can currently lend` (409) | The fund cannot cover the request. | A SuperAdmin tops up the fund, or the student asks for less. |
@@ -1474,10 +1517,10 @@ cannot reach.
 | `CONFLICT`: `แก้ไขได้เฉพาะข้อมูลผู้บริหารเท่านั้น` (409) | Editing a user who is not the executive, for example after another SuperAdmin replaced the executive. | Reload the list. |
 | `VALIDATION_ERROR`: `กรุณาระบุชื่อ-นามสกุล`, `กรุณาระบุอีเมลที่ถูกต้อง`, `กรุณาระบุอีเมล CMU (ลงท้ายด้วย @cmu.ac.th)`, `บทบาทต้องเป็น 'admin' หรือ 'super_admin'`, `Invalid JSON request`, `Request body must be an object` (422) | Add-user or edit-user form values that are not valid. | Correct the form. |
 | `ไม่สามารถโหลดรายชื่อผู้ใช้จากฐานข้อมูลได้`, `ไม่สามารถเพิ่มบทบาทผู้ใช้ได้`, `เกิดข้อผิดพลาดในการเปลี่ยนบทบาท` | Role screen errors. | Retry. Check logs. |
-| `VALIDATION_ERROR`: `request body is invalid`, `action is invalid`, `role is invalid` (422) | Invalid role request. | Report to support. |
+| `VALIDATION_ERROR`: `request body is invalid`, `action is invalid`, `role is invalid` (422) | Invalid role request: the body is not an object, the action is not grant or remove, or the role is not advisor, admin, super_admin, or executive. | Report to support. |
 | `VALIDATION_ERROR`: `amount is invalid` / `kind is invalid` (422) | Fund amount not a positive whole number, or an unknown transaction kind. | Correct it. |
 | `ยอดคงเหลือไม่สามารถติดลบได้`, `ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบจำนวนเงินและเหตุผล`, `เกิดข้อขัดแย้ง กรุณาลองใหม่` | Budget screen: the balance would go negative, the amount or reason is not valid, or a concurrent change happened. | Lower the amount, correct the form, or retry. |
-| `ไม่มีสิทธิ์แก้ไขการตั้งค่าระบบ`, `ข้อมูลมีการเปลี่ยนแปลง กรุณาลองใหม่อีกครั้ง`, `บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่`, `ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง` | Contact settings screen: no SuperAdmin role, a concurrent change, a save error, or a value that is not valid (Section 7.2). The screen also shows `กรุณาระบุ...` under an empty required field. | Check the role, then retry or correct the value. |
+| `ไม่มีสิทธิ์แก้ไขการตั้งค่าระบบ`, `ข้อมูลมีการเปลี่ยนแปลง กรุณาลองใหม่อีกครั้ง`, `บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่`, `ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง`, `กรุณากรอกหมายเลขบัญชีในรูปแบบ xxx-x-xxxxx-x` | Contact settings screen: no SuperAdmin role, a concurrent change, a save error, or a value that is not valid (Section 7.2). The screen also shows `กรุณาระบุ...` under an empty required field. The last message means that the account number is not 10 digits in the form `xxx-x-xxxxx-x`. | Check the role, then retry or correct the value. |
 | `VALIDATION_ERROR`: `A note is required for this transaction kind` (422) | Only `top_up` may have no note. | Add a note. |
 | `INSUFFICIENT_FUNDS`: `The fund balance cannot go negative` (409) | Withdrawal larger than the balance. | Lower the amount. |
 | `INSUFFICIENT_FUND_CAPACITY`: `The fund's cash must cover every loan request not yet paid out; at most <amount> can be taken out` (409) | The withdrawal would leave too little for approved loans. | Withdraw at most the shown amount. |
@@ -1492,7 +1535,7 @@ cannot reach.
 | Code or message | Meaning | Action |
 |---|---|---|
 | `UNAUTHORIZED`: `Unauthorized` (401) on `/metang/api/cron/` | `CRON_SECRET` is not set, or the request header is wrong. | Set `CRON_SECRET`. Restart the server. |
-| `disbursed loan has no approved amount or installment schedule` (`last_error` of a `loan_outcome` row) | The disbursed loan has no installment rows. The email was not sent. | Report to support with the loan ID. |
+| `disbursed loan has no approved amount or installment schedule` (`last_error` of a `loan_outcome` row that was queued before 2026-10-01) | The disbursed loan has no installment rows. The email was not sent. The application no longer writes `loan_outcome` rows, so you see this only for an older row. | Report to support with the loan ID. |
 | `Job scheduler not started: CRON_SECRET is not set` (server log) | The built-in scheduler was chosen (a server that keeps running, or `ENABLE_JOB_SCHEDULER=true`) but `CRON_SECRET` is missing. | Set `CRON_SECRET`. Restart the server. |
 | `Job scheduler: using Vercel Cron from vercel.json` (server log) | Normal on Vercel. Vercel Cron calls the jobs. | None. |
 | `Job scheduler not started (<reason>). Call the /api/cron routes from an outside scheduler.` (server log) | `ENABLE_JOB_SCHEDULER=false`, or a serverless host without a scheduler. | Add an outside scheduler, or remove `ENABLE_JOB_SCHEDULER=false`. |
@@ -1506,8 +1549,8 @@ cannot reach.
 | `INTERNAL_ERROR` (500) with a LINE client message (see below), or `Unable to send reviewer notification` | The manual LINE reminder could not be sent to any reviewer. | Check `NOTIFY_API_URL` and `NOTIFY_API_TOKEN`. |
 | `NOT_FOUND`: `No outstanding installment for this loan` (404) | Nothing to remind. | None. |
 | `CONFLICT`: `The loan is not currently disbursed` / `This installment has no remaining balance` (409) | Reminder not possible. | None. |
-| `studentEmail must be a valid @cmu.ac.th address` | The student has no valid CMU email. | Check the `app_user` email. |
-| `VALIDATION_ERROR`: `Unable to build reminder email`, or the build error text such as `studentEmail must be a valid @cmu.ac.th address` (422) | The reminder email could not be built from the student data. | Check the student's `app_user` email. |
+| `studentEmail must be a valid @cmu.ac.th address` | The student has no valid CMU email. | Check `loan_request.student_email` of the loan. The application copies the email to the loan at submit and at resubmit. |
+| `VALIDATION_ERROR`: `Unable to build reminder email`, or the build error text such as `studentEmail must be a valid @cmu.ac.th address` (422) | The reminder email could not be built from the student data. | Check `loan_request.student_email` of the loan. The application copies the email to the loan at submit and at resubmit. |
 | `INTERNAL_ERROR`: `Unable to send reminder email`, or an Email client message (see below) (500) | The Email API refused or did not answer. | Check the Email API settings. |
 | `NOTIFY_API_URL must be a valid URL`, `Notification API did not respond in time`, `Unable to connect to notification API`, `Notification API returned invalid JSON` (in logs or `last_error`) | LINE client errors: a wrong setting, a timeout, no connection, or a bad answer from the FON API. | Check `NOTIFY_API_URL` and the FON API status. Retry the rows (Section 4.3). |
 | `EMAIL_API_URL must be a valid URL`, `Unable to connect to Email API GetToken endpoint`, `Unable to connect to Email API SendEmail endpoint`, `Email API returned invalid JSON`, `Email API returned an unexpected response` (in logs or `last_error`) | Email client errors: a wrong setting, no connection, or a bad answer from the CMU Email API. | Check `EMAIL_API_URL` and the credentials (Section 4.10). Retry the rows (Section 4.3). |
@@ -1526,6 +1569,7 @@ cannot reach.
 | `Missing .env. Create it from .env.example and set INFISICAL_ENV.` | An `npm run` command needs a local `.env`. | Create `.env` with `INFISICAL_ENV=dev`. |
 | `Missing INFISICAL_ENV in .env. Set it to the Infisical environment to use.` | `.env` exists but has no `INFISICAL_ENV`. The command stops instead of guessing `dev`. | Add `INFISICAL_ENV=dev` to `.env`. |
 | `Usage: node scripts/with-infisical.mjs <command> [...args]` | The wrapper script ran with no command. | Use the `npm run` commands in Section 6. |
+| `Cannot backfill loan_request.student_code: a borrower has no student code` (from `npm run db:deploy`) | A loan has a student without a student code. The migration `20261001120000_student_identity_on_loan_request` runs as one transaction (`BEGIN` to `COMMIT`), so nothing is committed when it stops here. | Find the loan with `SELECT l.id FROM loan_request l JOIN app_user u ON u.id = l.student_id WHERE u.student_code IS NULL;` Then ask the developers before you run `npm run db:deploy` again. |
 | `Supabase Storage upload failed with HTTP <status>: <text>` / `Supabase Storage sign failed with HTTP <status>: <text>` (in logs) | Supabase Storage refused the request. | Check the bucket and the service role key. |
 | `Unsupported slip content type: <type>` / `Slip exceeds the 1048576-byte limit` (in logs) | A slip failed the storage checks. | Students and admins upload an image of 1 MB or less. |
 | `the app exited early with code <code>` / `nothing is listening on 8081` (from `npm run api:test`) | The test app did not start, often because another `npm run dev` runs in the same folder. | Stop the other server and retry. |
@@ -1567,7 +1611,7 @@ Include this information:
 | Advisor | A lecturer who approves the requests of their own students. Role `advisor`. |
 | Admin | Fund office staff who review requests, disburse loans, and review repayment slips. Role `admin`. |
 | Approved amount | The loan amount set by the admin. It can be lower than the requested amount. |
-| Audit log | Table `audit_log`. A record of staff actions with before and after values. |
+| Audit log | Table `audit_log`. A record of staff and student actions with before and after values. |
 | CMU Entra ID | The CMU sign-in service (Microsoft Entra ID) used for all users. |
 | Cron job | A scheduled job at a `/metang/api/cron/` route. On Vercel, Vercel Cron calls it on the schedule in `vercel.json`. On a server that keeps running, the job scheduler inside the server runs it on the schedule in `lib/jobs/start-scheduler.ts`. |
 | Disbursement | The bank transfer of the approved amount to the student. An admin records it with a slip. |
@@ -1602,3 +1646,5 @@ Include this information:
 | 1.4 draft | 2026-09-30 | Me_Tang development team | Sections 5.3 and 5.4: the two untested procedures are now plain "Not tested" notes, not `[TO VERIFY]` markers. |
 | 1.5 draft | 2026-09-30 | Me_Tang development team | Jira NAT-240: user management brought up to the code of commit `c2f0d9b`. Delete never removes the account row and refuses your own account with 409 `SELF_DEMOTION`, the executive is replaced with **แก้ไข** and a new email (`executive.handed_over`), the executive role cannot be revoked, the new error codes, and admins no longer see another admin's returned request. The screen defects of `UserRolesTab.tsx` are recorded in Section 3.2. |
 | 1.6 draft | 2026-09-30 | Me_Tang development team | Jira NAT-233: the client takes the source code and the database and chooses the host, so the `[TO VERIFY]` markers are gone. Section 2.1 says the team runs no production site. The markers for Vercel, Supabase, and Infisical are plain "only if you use it" notes. The production URL and log location markers are removed. The convention for `[TO VERIFY]` is replaced by `Not tested:`. Section 6.4 states the migration count of 2026-09-30 (20). |
+| 1.7 draft | 2026-09-30 | Me_Tang development team | Jira NAT-235: Section 6 checked against the ticket. The CI result is now commit `ff20972`, the unit test count is 522, and the lint warning count is 4. |
+| 1.8 draft | 2026-10-01 | Me_Tang development team | Checked against commit `7ebabc3`. Students have no `app_user` row, and a loan request holds its borrower. Migration count and latest name. First-SuperAdmin and advisor SQL. Phone-number, education-level, and account-number messages. Students now get email only from the due-date and overdue reminders. |
