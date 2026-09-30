@@ -430,18 +430,10 @@ export default function TempLoanApplicationPage({
     setIsSubmitting(true);
     setSubmitError(null);
     try {
+      // The phone travels with the loan. A student has no profile row, and the phone-number route
+      // needs an open loan, so posting it before a first submit only returns 409.
       const cleanedPhone = formData.phoneNumber.trim().replace(/[-\s]/g, "");
-      if (cleanedPhone && /^0(?:[689]\d{8}|[23457]\d{7})$/.test(cleanedPhone)) {
-        try {
-          await fetch(withBasePath("/api/student/phone-number"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ phoneNumber: cleanedPhone }),
-          });
-        } catch (err) {
-          console.warn("Could not sync phone number", err);
-        }
-      }
+      const phoneIsValid = /^0(?:[689]\d{8}|[23457]\d{7})$/.test(cleanedPhone);
 
       const payload = {
         advisorName: formData.advisorName,
@@ -456,6 +448,7 @@ export default function TempLoanApplicationPage({
         bankAccountNo: formData.accountNumber.replace(/\D/g, ""),
         bankAccountName: formData.accountName,
         installmentCount: formData.installmentCount,
+        ...(phoneIsValid ? { phoneNumber: cleanedPhone } : {}),
       };
 
       const endpoint =
