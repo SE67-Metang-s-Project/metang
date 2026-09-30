@@ -40,7 +40,6 @@ const loanInputExample = {
   amount: 5000,
   studentYear: 2,
   purpose: "ค่าใช้จ่ายฉุกเฉิน",
-  additionalNote: "ค่าใช้จ่ายสำหรับอุปกรณ์การเรียน",
   bankName: "ธนาคารกรุงไทย",
   bankAccountNo: "1234567890",
   bankAccountName: "นักศึกษาทดสอบ",
