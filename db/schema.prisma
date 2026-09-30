@@ -83,16 +83,12 @@ model AppUser {
   id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email                String            @unique(map: "app_user_email_key") @db.Text
   cmuAccount           String            @unique(map: "app_user_cmu_account_key") @map("cmu_account") @db.Text
-  studentCode          String?           @unique(map: "app_user_student_code_key") @map("student_code") @db.Text
   fullNameTh           String            @map("full_name_th") @db.Text
   fullNameEn           String?           @map("full_name_en") @db.Text
   phone                String?           @db.Text
-  educationLevel       String?           @map("education_level") @db.Text
   createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  studentLoans         LoanRequest[]     @relation("StudentLoans")
   advisorLoans         LoanRequest[]     @relation("AdvisorLoans")
-  cancelledLoans       LoanRequest[]     @relation("CancelledLoans")
   assignedAdminLoans   LoanRequest[]     @relation("AssignedAdminLoans")
   approvalDecisions    LoanApproval[]
   confirmedPayments    Payment[]
@@ -107,42 +103,46 @@ model AppUser {
 }
 
 model LoanRequest {
-  id               String            @id @default(dbgenerated("next_loan_request_id()")) @db.Text
-  studentId        String            @map("student_id") @db.Uuid
-  advisorId        String            @map("advisor_id") @db.Uuid
-  assignedAdminId  String?           @map("assigned_admin_id") @db.Uuid
-  amount           Int               @db.Integer
-  approvedAmount   Int?              @map("approved_amount") @db.Integer
-  studentYear      Int               @map("student_year") @db.SmallInt
-  purpose          String            @db.Text
-  additionalNote   String?           @map("additional_note") @db.Text
-  bankName         String            @map("bank_name") @db.Text
-  bankAccountNo    String            @map("bank_account_no") @db.Text
-  bankAccountName  String            @map("bank_account_name") @db.Text
-  installmentCount Int               @map("installment_count") @db.SmallInt
-  firstDueDate     DateTime          @map("first_due_date") @db.Date
-  status           LoanStatus        @default(draft)
-  submittedAt      DateTime?         @map("submitted_at") @db.Timestamptz(6)
-  cancelledAt      DateTime?         @map("cancelled_at") @db.Timestamptz(6)
-  cancelledBy      String?           @map("cancelled_by") @db.Uuid
-  disbursedAt      DateTime?         @map("disbursed_at") @db.Timestamptz(6)
+  id                    String            @id @default(dbgenerated("next_loan_request_id()")) @db.Text
+  // The borrower is not an app_user: their identity is copied from the CMU session at submit, and
+  // their loans are found by student code.
+  studentCode           String            @map("student_code") @db.Text
+  studentNameTh         String            @map("student_name_th") @db.Text
+  studentNameEn         String?           @map("student_name_en") @db.Text
+  studentEmail          String            @map("student_email") @db.Text
+  studentPhone          String?           @map("student_phone") @db.Text
+  // The student-code digit "0", "1", "3" or "5" (CHECK loan_request_student_education_level_code).
+  studentEducationLevel String?           @map("student_education_level") @db.Text
+  advisorId             String            @map("advisor_id") @db.Uuid
+  assignedAdminId       String?           @map("assigned_admin_id") @db.Uuid
+  amount                Int               @db.Integer
+  approvedAmount        Int?              @map("approved_amount") @db.Integer
+  studentYear           Int               @map("student_year") @db.SmallInt
+  purpose               String            @db.Text
+  bankName              String            @map("bank_name") @db.Text
+  bankAccountNo         String            @map("bank_account_no") @db.Text
+  bankAccountName       String            @map("bank_account_name") @db.Text
+  installmentCount      Int               @map("installment_count") @db.SmallInt
+  firstDueDate          DateTime          @map("first_due_date") @db.Date
+  status                LoanStatus        @default(draft)
+  submittedAt           DateTime?         @map("submitted_at") @db.Timestamptz(6)
+  cancelledAt           DateTime?         @map("cancelled_at") @db.Timestamptz(6)
+  disbursedAt           DateTime?         @map("disbursed_at") @db.Timestamptz(6)
   // The student's "confirm receipt"; set only after disbursement (see its migration's CHECK).
-  transferConfirmedAt DateTime?      @map("transfer_confirmed_at") @db.Timestamptz(6)
-  closedAt         DateTime?         @map("closed_at") @db.Timestamptz(6)
-  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  student          AppUser           @relation("StudentLoans", fields: [studentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  advisor          AppUser           @relation("AdvisorLoans", fields: [advisorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  assignedAdmin    AppUser?          @relation("AssignedAdminLoans", fields: [assignedAdminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  cancelledByUser  AppUser?          @relation("CancelledLoans", fields: [cancelledBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  approvals        LoanApproval[]
-  installments     Installment[]
-  payments         Payment[]
-  fundTransactions FundTransaction[]
+  transferConfirmedAt   DateTime?         @map("transfer_confirmed_at") @db.Timestamptz(6)
+  closedAt              DateTime?         @map("closed_at") @db.Timestamptz(6)
+  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  advisor               AppUser           @relation("AdvisorLoans", fields: [advisorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  assignedAdmin         AppUser?          @relation("AssignedAdminLoans", fields: [assignedAdminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  approvals             LoanApproval[]
+  installments          Installment[]
+  payments              Payment[]
+  fundTransactions      FundTransaction[]
 
-  @@unique([studentId], map: "one_open_loan_per_student", where: raw("status <> ALL (ARRAY['closed'::loan_status, 'rejected'::loan_status, 'cancelled'::loan_status])"))
+  @@unique([studentCode], map: "one_open_loan_per_student", where: raw("status <> ALL (ARRAY['closed'::loan_status, 'rejected'::loan_status, 'cancelled'::loan_status])"))
   @@index([advisorId, status], map: "loan_request_advisor_idx")
-  @@index([studentId], map: "loan_request_student_idx")
+  @@index([studentCode], map: "loan_request_student_idx")
   @@index([assignedAdminId, status], map: "loan_request_assigned_admin_idx")
   @@index([status, submittedAt(sort: Desc)], map: "loan_request_status_submitted_idx")
   @@map("loan_request")
@@ -246,15 +246,17 @@ model NotificationOutbox {
 }
 
 model AuditLog {
-  id         BigInt   @id @default(autoincrement())
-  actorId    String   @map("actor_id") @db.Uuid
-  action     String   @db.Text
-  entityType String   @map("entity_type") @db.Text
-  entityId   String   @map("entity_id") @db.Text
-  before     Json?    @db.JsonB
-  after      Json?    @db.JsonB
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  actor      AppUser  @relation(fields: [actorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id               BigInt   @id @default(autoincrement())
+  // Exactly one is set (CHECK audit_log_one_actor): staff by app_user id, a student by code.
+  actorId          String?  @map("actor_id") @db.Uuid
+  actorStudentCode String?  @map("actor_student_code") @db.Text
+  action           String   @db.Text
+  entityType       String   @map("entity_type") @db.Text
+  entityId         String   @map("entity_id") @db.Text
+  before           Json?    @db.JsonB
+  after            Json?    @db.JsonB
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  actor            AppUser? @relation(fields: [actorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([entityType, entityId], map: "audit_log_entity_idx")
   @@map("audit_log")

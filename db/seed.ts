@@ -8,6 +8,7 @@ import {
   PrismaClient,
   UserRoleName,
 } from "../lib/generated/prisma/client";
+import { getEducationLevelCode } from "../lib/student-code";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -22,50 +23,40 @@ const day = 86_400_000;
 const dateFromNow = (days: number) => new Date(now.getTime() + days * day);
 const id = (value: number) => `00000000-0000-0000-0000-${String(value).padStart(12, "0")}`;
 const loanId = (value: number) => `REQ20260906${String(value - 200).padStart(4, "0")}`;
-const educationLevels = ["0", "1", "3", "5"] as const;
 
 // Real-looking people, so lists, timelines and emails read like the real thing. Ids stay fixed:
 // lib/loan-auth.ts's dev bypass and the Bruno walks address fixtures by id (and Bruno's submit
 // steps send advisor 4's fullNameTh). Accounts are first.last, a shape real CMU accounts
 // (first_xx) never take, so a real sign-in can't be matched to a fixture.
+const accountOf = (fullNameEn: string) => fullNameEn.toLowerCase().replace(" ", ".");
 const person = (
   number: number,
   fullNameTh: string,
   fullNameEn: string,
   phone: string | null,
-  educationLevel: string,
-  studentCode?: string,
 ): Prisma.AppUserCreateManyInput => {
-  const account = fullNameEn.toLowerCase().replace(" ", ".");
-  return {
-    id: id(number),
-    email: `${account}@cmu.ac.th`,
-    cmuAccount: account,
-    fullNameTh,
-    fullNameEn,
-    phone,
-    educationLevel,
-    ...(studentCode ? { studentCode } : {}),
-  };
+  const account = accountOf(fullNameEn);
+  return { id: id(number), email: `${account}@cmu.ac.th`, cmuAccount: account, fullNameTh, fullNameEn, phone };
 };
 
 // 1-5 are the dev-bypass and Bruno staff; 6-9 give the lists and the history more than one face.
 const staff = [
-  person(1, "วรรณภา ศรีธัญรัตน์", "Wannapa Srithanyarat", "0819520114", "5"), // executive + advisor
-  person(2, "ธนวัฒน์ อินทรประเสริฐ", "Thanawat Intaraprasert", "0852230418", "0"), // super_admin
-  person(3, "กมลชนก แสงทอง", "Kamonchanok Saengthong", "0897410263", "0"), // admin
-  person(4, "สุภาวดี วงศ์คำ", "Supawadee Wongkham", "0816634907", "5"), // advisor
-  person(5, "ประเสริฐ ชัยวงศ์", "Prasert Chaiwong", null, "5"), // advisor
-  person(6, "นภัสสร ธรรมรักษ์", "Napatsorn Thammarak", "0843318852", "5"), // advisor
-  person(7, "อรุณี มณีรัตน์", "Arunee Maneerat", "0861187430", "5"), // advisor
-  person(8, "ศิริพร คำปัน", "Siriporn Khampan", "0935562781", "0"), // admin
-  person(9, "ปิยะพงษ์ ใจมั่น", "Piyapong Jaiman", "0628874015", "0"), // admin
+  person(1, "วรรณภา ศรีธัญรัตน์", "Wannapa Srithanyarat", "0819520114"), // executive + advisor
+  person(2, "ธนวัฒน์ อินทรประเสริฐ", "Thanawat Intaraprasert", "0852230418"), // super_admin
+  person(3, "กมลชนก แสงทอง", "Kamonchanok Saengthong", "0897410263"), // admin
+  person(4, "สุภาวดี วงศ์คำ", "Supawadee Wongkham", "0816634907"), // advisor
+  person(5, "ประเสริฐ ชัยวงศ์", "Prasert Chaiwong", null), // advisor
+  person(6, "นภัสสร ธรรมรักษ์", "Napatsorn Thammarak", "0843318852"), // advisor
+  person(7, "อรุณี มณีรัตน์", "Arunee Maneerat", "0861187430"), // advisor
+  person(8, "ศิริพร คำปัน", "Siriporn Khampan", "0935562781"), // admin
+  person(9, "ปิยะพงษ์ ใจมั่น", "Piyapong Jaiman", "0628874015"), // admin
 ];
 const HISTORY_ADVISORS = [id(4), id(4), id(5), id(6), id(6), id(7)];
 const HISTORY_ADMINS = [id(3), id(3), id(3), id(8), id(8), id(9), id(2)];
 
-// Students 101-111 own fixture loans 201-211. Codes follow the year of study (year 1 = 69 in
-// academic year 2569).
+// Students own fixture loans 201-211, one each; the first is the dev-bypass student
+// (lib/loan-auth.ts). Students are not app_user rows: each loan carries its borrower. Codes follow
+// the year of study (year 1 = 69 in academic year 2569).
 const fixtureStudents = [
   ["พิมพ์ชนก สุขประเสริฐ", "Pimchanok Sukprasert", 3, "670610143"],
   ["ธนกฤต บุญเรือง", "Thanakrit Boonruang", 2, "680610087"],
@@ -81,12 +72,17 @@ const fixtureStudents = [
 ] as const;
 const fixturePhones = ["0812249035", "0954418702", "0886231947", "0617720384", "0829903156", null, "0931185420", "0847762019", null, "0892054471", "0643398120"];
 
-const users: Prisma.AppUserCreateManyInput[] = [
-  ...staff,
-  ...fixtureStudents.map(([th, en, , studentCode], index) =>
-    person(101 + index, th, en, fixturePhones[index], educationLevels[index % educationLevels.length], studentCode),
-  ),
-];
+const users: Prisma.AppUserCreateManyInput[] = staff;
+
+/** The borrower columns of a loan_request. */
+const borrower = (studentCode: string, nameTh: string, nameEn: string, email: string, phone: string | null) => ({
+  studentCode,
+  studentNameTh: nameTh,
+  studentNameEn: nameEn,
+  studentEmail: email,
+  studentPhone: phone,
+  studentEducationLevel: getEducationLevelCode(studentCode),
+});
 
 const roles: Prisma.UserRoleCreateManyInput[] = [
   { userId: id(1), role: UserRoleName.executive, grantedBy: id(2) },
@@ -95,11 +91,6 @@ const roles: Prisma.UserRoleCreateManyInput[] = [
   { userId: id(3), role: UserRoleName.admin, grantedBy: id(2) },
   ...[4, 5, 6, 7].map((number) => ({ userId: id(number), role: UserRoleName.advisor, grantedBy: id(2) })),
   ...[8, 9].map((number) => ({ userId: id(number), role: UserRoleName.admin, grantedBy: id(2) })),
-  ...fixtureStudents.map((_, index) => ({
-    userId: id(index + 101),
-    role: UserRoleName.student,
-    grantedBy: id(2),
-  })),
 ];
 
 const loanScenarios = [
@@ -134,7 +125,10 @@ const fixtureLoanDetails = [
 const loans: Prisma.LoanRequestCreateManyInput[] = loanScenarios.map(
   ([number, status, amount, approvedAmount, installmentCount, dueOffset]) => ({
     id: loanId(number),
-    studentId: id(number - 100),
+    ...(([th, en, , studentCode]) =>
+      borrower(studentCode, th, en, `${accountOf(en)}@cmu.ac.th`, fixturePhones[number - 201]))(
+      fixtureStudents[number - 201],
+    ),
     advisorId: [208, 209].includes(number) ? id(5) : id(4),
     studentYear: fixtureStudents[number - 201][2],
     amount,
@@ -149,7 +143,6 @@ const loans: Prisma.LoanRequestCreateManyInput[] = loanScenarios.map(
     assignedAdminId: status === LoanStatus.pending_executive ? id(3) : null,
     submittedAt: [201, 210].includes(number) ? null : dateFromNow(-7),
     cancelledAt: status === LoanStatus.cancelled ? dateFromNow(-1) : null,
-    cancelledBy: number === 210 ? id(110) : number === 211 ? id(3) : null,
     disbursedAt:
       status === LoanStatus.disbursed || status === LoanStatus.closed ? dateFromNow(-60) : null,
     // Both have payments, so the migration's backfill rule counts them as received.
@@ -229,7 +222,7 @@ const installments: Prisma.InstallmentCreateManyInput[] = [
 // are mostly settled. Repayment is on time, late, or stops part-way.
 // - Rebuilt on every run: main() first deletes all seed-made rows (see wipeMockData), and the draw
 //   is seeded by the month, so a re-run in the same month gives the same rows.
-// - Own students (id 20000+), numbered from the calendar month. Open requests always get a new
+// - Own students (emails @example.com), numbered from the calendar month. Open requests always get a new
 //   student (for one_open_loan_per_student); settled ones sometimes reuse an earlier borrower.
 // - Ledger: a top-up at the start of each month covers that month's payouts, so the running balance
 //   never dips below zero, and a final reconciliation row leaves the history's net at exactly what
@@ -240,7 +233,6 @@ const HISTORY_MONTHS = 24;
 const HISTORY_MIN_PER_MONTH = 10;
 const HISTORY_MAX_PER_MONTH = 20;
 const HISTORY_NOTE_PREFIX = "mock history"; // every history-only ledger note starts with this
-const HISTORY_STUDENT_BASE = 20_000; // id(20000 + ...): clear of the fixture ids
 const hour = 3_600_000;
 const monthKey = (time: number) => new Date(time).toISOString().slice(0, 7);
 
@@ -277,12 +269,6 @@ const PURPOSES = [
   "ค่าสมัครสอบใบประกอบวิชาชีพ",
   "ค่าลงทะเบียนเรียนภาคฤดูร้อน",
   "ค่าเช่าที่พักใกล้แหล่งฝึก",
-];
-const NOTES = [
-  "จะชำระคืนหลังได้รับเงินจากผู้ปกครองต้นเดือน",
-  "ทำงานพิเศษช่วงเสาร์-อาทิตย์ สามารถผ่อนชำระได้ตามกำหนด",
-  "ขออนุญาตแนบใบเสร็จเพิ่มเติมภายหลัง",
-  "ครอบครัวประสบปัญหาน้ำท่วม",
 ];
 const REJECT_COMMENTS = [
   "เอกสารประกอบไม่ครบถ้วน",
@@ -321,7 +307,7 @@ const academicYear = (time: number) => {
   return date.getUTCFullYear() + 543 - (date.getUTCMonth() < 5 ? 1 : 0);
 };
 
-type HistoryStudent = { id: string; name: string; entryYear: number };
+type HistoryStudent = { name: string; entryYear: number; borrower: ReturnType<typeof borrower> };
 type Story = "approved" | "rejected" | "cancelled" | "returned";
 const STORIES = ([["approved", 38], ["rejected", 5], ["cancelled", 5], ["returned", 2]] as const).flatMap(
   ([story, weight]) => Array<Story>(weight).fill(story),
@@ -329,8 +315,6 @@ const STORIES = ([["approved", 38], ["rejected", 5], ["cancelled", 5], ["returne
 
 function buildHistory() {
   const perDay = new Map<string, number>(); // the next 9NNN suffix per Bangkok date
-  const users: Prisma.AppUserCreateManyInput[] = [];
-  const roles: Prisma.UserRoleCreateManyInput[] = [];
   const loans: Prisma.LoanRequestCreateManyInput[] = [];
   const approvals: Prisma.LoanApprovalCreateManyInput[] = [];
   const installments: Prisma.InstallmentCreateManyInput[] = [];
@@ -349,19 +333,20 @@ function buildHistory() {
     const [lastTh, lastEn] = names.pick(LAST_NAMES);
     const handle = `${firstEn}.${lastEn}`.toLowerCase();
     const entryYear = academicYear(createdAt) - rand.pick([0, 0, 1, 1, 2, 3]);
-    const student = { id: id(HISTORY_STUDENT_BASE + number), name: `${firstTh} ${lastTh}`, entryYear };
-    users.push({
-      id: student.id,
-      email: `${handle}.${number}@example.com`,
-      cmuAccount: `${handle}${number}`,
-      studentCode: `${entryYear % 100}06${String(5000 + number).padStart(5, "0")}`,
-      fullNameTh: student.name,
-      fullNameEn: `${firstEn} ${lastEn}`,
-      phone: names.chance(0.1) ? null : `0${names.pick([6, 8, 9])}${String(names.int(0, 99_999_999)).padStart(8, "0")}`,
-      educationLevel: names.pick(["1", "1", "1", "1", "1", "3", "3", "5"]),
-    });
-    roles.push({ userId: student.id, role: UserRoleName.student, grantedBy: id(2) });
-    return student;
+    const name = `${firstTh} ${lastTh}`;
+    const degree = names.pick(["1", "1", "1", "1", "1", "3", "3", "5"]);
+    const phone = names.chance(0.1) ? null : `0${names.pick([6, 8, 9])}${String(names.int(0, 99_999_999)).padStart(8, "0")}`;
+    return {
+      name,
+      entryYear,
+      borrower: borrower(
+        `${entryYear % 100}06${degree}${String(5000 + number).padStart(4, "0").slice(-4)}`,
+        name,
+        `${firstEn} ${lastEn}`,
+        `${handle}.${number}@example.com`,
+        phone,
+      ),
+    };
   };
 
   for (let back = HISTORY_MONTHS - 1; back >= 0; back--) {
@@ -533,14 +518,13 @@ function buildHistory() {
       if (settled) pastBorrowers.push(student);
       loans.push({
         id: loanIdValue,
-        studentId: student.id,
+        ...student.borrower,
         advisorId,
         assignedAdminId: done >= 1 ? adminId : null,
         studentYear: Math.min(4, Math.max(1, academicYear(createdAt) - student.entryYear + 1)),
         amount,
         approvedAmount,
         purpose: rand.pick(PURPOSES),
-        additionalNote: rand.chance(0.2) ? rand.pick(NOTES) : null,
         bankName: rand.pick(BANKS),
         bankAccountNo: `${rand.int(100, 999)}${rand.int(1_000_000, 9_999_999)}`,
         bankAccountName: student.name,
@@ -549,7 +533,6 @@ function buildHistory() {
         status: closedAt !== null ? LoanStatus.closed : status,
         submittedAt: new Date(createdAt),
         cancelledAt: status === LoanStatus.cancelled ? new Date(abandoned ? stepTimes[stopStep] + rand.days(5, 20) : cancelAt) : null,
-        cancelledBy: status === LoanStatus.cancelled ? (rand.chance(0.8) ? student.id : adminId) : null,
         disbursedAt: disbursedAt !== null ? new Date(disbursedAt) : null,
         // The borrower confirms receipt soon after the payout, well before any repayment.
         transferConfirmedAt: disbursedAt !== null ? new Date(Math.min(disbursedAt + 2 * hour, cutoff)) : null,
@@ -586,20 +569,23 @@ function buildHistory() {
     });
   }
 
-  return { users, roles, loans, approvals, installments, payments, ledger };
+  return { loans, approvals, installments, payments, ledger };
 }
 
-// Seed-made rows have incrementing ids (00000000-0000-0000-0000-…); real users signed in through
-// CMU get random uuids. Before each seed, delete every loan a seed-made student owns, with its
-// approvals, installments, payments, ledger rows, audit rows and outbox rows, plus the seed's own
-// non-loan ledger rows (notes starting "mock"), then every seed-made user nothing real points at.
-// Staff 1-9 survive (upserted below): real dev loans reference them, since the dev bypass acts as
-// them. Real users and everything they did are left alone.
+// Seed-made staff have incrementing ids (00000000-0000-0000-0000-…); real staff get random uuids.
+// Seed-made borrowers have emails no real CMU account takes: first.last@cmu.ac.th (fixtures, the
+// dev-bypass student among them) or @example.com (history). Before each seed, delete every loan a
+// seed-made borrower owns, with its approvals, installments, payments, ledger rows, audit rows and
+// outbox rows, plus the seed's own non-loan ledger rows (notes starting "mock"), then every
+// seed-made user nothing real points at. Staff 1-9 survive (upserted below): real dev loans
+// reference them, since the dev bypass acts as them. Real users and everything they did are left
+// alone.
 async function wipeMockData(tx: Prisma.TransactionClient) {
   await tx.$executeRaw`SET LOCAL methang.allow_fund_mutation = 'on'`;
   await tx.$executeRaw`
     CREATE TEMP TABLE mock_loan ON COMMIT DROP AS
-      SELECT id FROM loan_request WHERE student_id::text LIKE '00000000-0000-0000-0000-%'`;
+      SELECT id FROM loan_request
+      WHERE student_email LIKE '%@example.com' OR student_email ~ '^[a-z]+[.][a-z]+@cmu[.]ac[.]th$'`;
   await tx.$executeRaw`
     CREATE TEMP TABLE mock_payment ON COMMIT DROP AS
       SELECT id FROM payment WHERE loan_id IN (SELECT id FROM mock_loan)`;
@@ -625,7 +611,7 @@ async function wipeMockData(tx: Prisma.TransactionClient) {
       WHERE u.id::text LIKE '00000000-0000-0000-0000-%'
         AND u.id::text <> ALL (${staffIds}::text[])
         AND NOT EXISTS (SELECT 1 FROM loan_request l
-          WHERE u.id IN (l.student_id, l.advisor_id, l.assigned_admin_id, l.cancelled_by))
+          WHERE u.id IN (l.advisor_id, l.assigned_admin_id))
         AND NOT EXISTS (SELECT 1 FROM loan_approval a WHERE a.decided_by = u.id)
         AND NOT EXISTS (SELECT 1 FROM payment p WHERE p.confirmed_by = u.id)
         AND NOT EXISTS (SELECT 1 FROM fund_transaction f WHERE f.performed_by = u.id)`;
@@ -791,8 +777,6 @@ async function main() {
 
       const history = buildHistory();
       const newLoanIds = history.loans.map((loan) => loan.id as string);
-      await tx.appUser.createMany({ data: history.users, skipDuplicates: true });
-      await tx.userRole.createMany({ data: history.roles, skipDuplicates: true });
       await tx.loanRequest.createMany({ data: history.loans });
       await tx.loanApproval.createMany({ data: history.approvals });
       await tx.installment.createMany({ data: history.installments });

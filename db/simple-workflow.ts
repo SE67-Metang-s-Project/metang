@@ -21,7 +21,14 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
 
 // Keep these IDs below the regular fixtures so the development bypass selects this pair first.
 const advisorId = "00000000-0000-0000-0000-000000000000";
-const studentId = "00000000-0000-0000-0000-000000000010";
+// Students are not app_user rows: the loan carries its borrower.
+const student = {
+  studentCode: "SIMPLE001",
+  studentNameTh: "นักศึกษาทดสอบ",
+  studentNameEn: "Simple Workflow Student",
+  studentEmail: "simple-student@cmu.ac.th",
+  studentPhone: "0812345678",
+};
 const historyLoanId = "REQ202609060000";
 
 async function main() {
@@ -49,48 +56,21 @@ async function main() {
         },
       });
 
-      await tx.appUser.upsert({
-        where: { id: studentId },
-        update: {
-          email: "simple-student@cmu.ac.th",
-          cmuAccount: "simple-student@cmu.ac.th",
-          studentCode: "SIMPLE001",
-          fullNameTh: "นักศึกษาทดสอบ",
-          fullNameEn: "Simple Workflow Student",
-          phone: "0812345678",
-        },
-        create: {
-          id: studentId,
-          email: "simple-student@cmu.ac.th",
-          cmuAccount: "simple-student@cmu.ac.th",
-          studentCode: "SIMPLE001",
-          fullNameTh: "นักศึกษาทดสอบ",
-          fullNameEn: "Simple Workflow Student",
-          phone: "0812345678",
-        },
-      });
-
       await tx.userRole.upsert({
         where: { userId_role: { userId: advisorId, role: UserRoleName.advisor } },
         update: {},
         create: { userId: advisorId, role: UserRoleName.advisor },
       });
-      await tx.userRole.upsert({
-        where: { userId_role: { userId: studentId, role: UserRoleName.student } },
-        update: {},
-        create: { userId: studentId, role: UserRoleName.student },
-      });
 
       await tx.loanRequest.upsert({
         where: { id: historyLoanId },
         update: {
-          studentId,
+          ...student,
           advisorId,
           amount: 5000,
           approvedAmount: 5000,
           studentYear: 1,
           purpose: "Simple workflow history",
-          additionalNote: null,
           bankName: "ธนาคารกรุงไทย",
           bankAccountNo: "1234567890",
           bankAccountName: "นักศึกษาทดสอบ",
@@ -103,13 +83,12 @@ async function main() {
         },
         create: {
           id: historyLoanId,
-          studentId,
+          ...student,
           advisorId,
           amount: 5000,
           approvedAmount: 5000,
           studentYear: 1,
           purpose: "Simple workflow history",
-          additionalNote: null,
           bankName: "ธนาคารกรุงไทย",
           bankAccountNo: "1234567890",
           bankAccountName: "นักศึกษาทดสอบ",

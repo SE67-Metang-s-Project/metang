@@ -53,17 +53,16 @@ Table app_user {
   id           uuid [pk, default: `gen_random_uuid()`]
   email        text [not null, unique]
   cmu_account  text [not null, unique]
-  student_code text [unique, note: 'null for staff']
   full_name_th text [not null]
   full_name_en text
-  phone        text [note: 'student contact number, typed by the student — not from CMU SSO']
+  phone        text
   created_at   timestamptz [not null, default: `now()`]
   updated_at   timestamptz [not null, default: `now()`]
 
   indexes {
     full_name_th [note: 'advisor_name is matched back to a person by name']
   }
-  Note: 'One row per human, whatever role they hold. NAT-16 (CMU SSO).'
+  Note: 'One row per staff member, whatever roles they hold. Students have no row: each loan_request carries its borrower. NAT-16 (CMU SSO).'
 }
 
 Table user_role {
@@ -80,13 +79,17 @@ Table user_role {
 
 Table loan_request {
   id                uuid [pk, default: `gen_random_uuid()`]
-  student_id        uuid [ref: > app_user.id, not null]
+  student_code      text [not null, note: 'the borrower; students are not app_user rows']
+  student_name_th   text [not null, note: 'copied from the CMU session at submit']
+  student_name_en   text
+  student_email     text [not null]
+  student_phone     text [note: 'typed by the student, not from CMU SSO']
+  student_education_level text [note: 'degree code "0"/"1"/"3"/"5" (the fifth digit of student_code); CHECK loan_request_student_education_level_code']
   advisor_id        uuid [ref: > app_user.id, not null]
   amount            integer [not null, note: 'whole baht; what the student asked for']
   approved_amount   integer [note: 'NAT-46: admin may cut it. Installments build from this. Reason goes in loan_approval.comment.']
   student_year      smallint [not null, note: '1-4']
   purpose           text [not null]
-  additional_note   text
   bank_name         text [not null]
   bank_account_no   text [not null]
   bank_account_name text [not null]
@@ -95,7 +98,6 @@ Table loan_request {
   status            loan_status [not null, default: 'draft']
   submitted_at      timestamptz
   cancelled_at      timestamptz
-  cancelled_by      uuid [ref: > app_user.id, note: 'student before the advisor signs; admin after']
   disbursed_at      timestamptz
   closed_at         timestamptz
   created_at        timestamptz [not null, default: `now()`]
@@ -103,12 +105,12 @@ Table loan_request {
   assigned_admin_id uuid [ref: > app_user.id, note: 'Admin who sent the request to Executive; preserved on Executive return']
 
   indexes {
-    student_id
+    student_code
     (advisor_id, status)
     (assigned_admin_id, status)
     (status, submitted_at) [note: 'submitted_at DESC']
   }
-  Note: 'NAT-24. Partial unique index on student_id WHERE status NOT IN (closed, rejected, cancelled) allows only one open loan per student.'
+  Note: 'NAT-24. Partial unique index on student_code WHERE status NOT IN (closed, rejected, cancelled) allows only one open loan per student.'
 }
 
 Table loan_approval {
@@ -178,7 +180,8 @@ Table fund_transaction {
 
 Table audit_log {
   id          bigserial [pk]
-  actor_id    uuid [ref: > app_user.id, not null]
+  actor_id    uuid [ref: > app_user.id, note: 'staff actor']
+  actor_student_code text [note: 'student actor; CHECK exactly one of actor_id, actor_student_code']
   action      text [not null]
   entity_type text [not null]
   entity_id   text [not null]
