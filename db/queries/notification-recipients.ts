@@ -264,6 +264,9 @@ export async function getLoanOutcomeContextById(
 }
 
 /**
+ * NOT CALLED since 2026-10-01: students are emailed only for due-date and overdue reminders. Kept
+ * with its worker so rows queued before that date still drain.
+ *
  * Enqueues the student's disbursed/rejected notice. Call it INSIDE the transaction that made the
  * transition, so the student is told only about outcomes that committed. Ids only - the delivery
  * worker reads everything else from the loan.

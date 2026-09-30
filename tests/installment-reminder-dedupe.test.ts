@@ -21,6 +21,10 @@ test("buildInstallmentReminderDedupeKey produces correct strings", () => {
     buildInstallmentReminderDedupeKey("789", "2026-09-20", 1),
     "installment-reminder:789:2026-09-20:1",
   );
+  assert.equal(
+    buildInstallmentReminderDedupeKey("12", "2026-09-10", -7),
+    "installment-reminder:12:2026-09-10:-7",
+  );
 });
 
 test("isInstallmentReminderPayload validates payload objects", () => {

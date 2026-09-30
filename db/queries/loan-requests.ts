@@ -7,10 +7,7 @@ import {
 } from "@/lib/generated/prisma/client";
 import { serializeJson } from "@/lib/serialization";
 import { computeInstallmentSchedule, type ExecutiveDecision, type LoanDecision } from "@/lib/loan-validation";
-import {
-  enqueueReviewerNotifications,
-  enqueueStudentLoanOutcome,
-} from "@/db/queries/notification-recipients";
+import { enqueueReviewerNotifications } from "@/db/queries/notification-recipients";
 import type { ActionRequest } from "@/components/shared/pending/RequestsCard";
 import { pendingStatusFor, statusesForFilter, type QueueFilter, type QueueRole } from "@/lib/queue-filter";
 import {
@@ -324,9 +321,6 @@ export async function decideLoanRequest({
       },
     });
     await enqueueReviewerNotifications(tx, { loanId: id, auditLogId: audit.id });
-    if (nextStatus === "rejected") {
-      await enqueueStudentLoanOutcome(tx, { loanId: id, outcome: "rejected" });
-    }
     return final;
   });
 }
@@ -446,9 +440,6 @@ export async function decideAdminLoanRequest({
       },
     });
     await enqueueReviewerNotifications(tx, { loanId: id, auditLogId: audit.id });
-    if (nextStatus === "rejected") {
-      await enqueueStudentLoanOutcome(tx, { loanId: id, outcome: "rejected" });
-    }
     return final;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
 }
@@ -553,7 +544,6 @@ export async function disburseLoanRequest({
     // No-op today: "disbursed" has no reviewer step, so nothing is enqueued. Kept so a future
     // status gains coverage without another audit of every transition site.
     await enqueueReviewerNotifications(tx, { loanId: id, auditLogId: audit.id });
-    await enqueueStudentLoanOutcome(tx, { loanId: id, outcome: "disbursed" });
     return final;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
 }
@@ -650,7 +640,6 @@ export async function cancelAdminLoanRequest({
     });
 
     await enqueueReviewerNotifications(tx, { loanId: id, auditLogId: audit.id });
-    await enqueueStudentLoanOutcome(tx, { loanId: id, outcome: "rejected" });
 
     return final;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
@@ -1318,9 +1307,6 @@ export async function decideExecutiveLoanRequest({
     // New coverage: the executive path never notified anyone before, so pending_disbursement
     // starts being announced to admins from here.
     await enqueueReviewerNotifications(tx, { loanId: id, auditLogId: audit.id });
-    if (nextStatus === "rejected") {
-      await enqueueStudentLoanOutcome(tx, { loanId: id, outcome: "rejected" });
-    }
     return final;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
 }

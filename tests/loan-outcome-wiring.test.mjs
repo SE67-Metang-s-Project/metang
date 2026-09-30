@@ -16,22 +16,18 @@ const recipients = read("db/queries/notification-recipients.ts");
 const worker = read("app/api/cron/deliver-loan-outcomes/route.ts");
 const scheduler = read("lib/jobs/start-scheduler.ts");
 
-test("every rejecting decision enqueues the student's rejection notice after the audit row", () => {
-  for (const name of ["decideLoanRequest", "decideAdminLoanRequest", "decideExecutiveLoanRequest"]) {
-    const body = sliceFunction(name);
-    assert.match(
-      body,
-      /if \(nextStatus === "rejected"\) \{\s*await enqueueStudentLoanOutcome\(tx, \{ loanId: id, outcome: "rejected" \}\);/,
-      name,
-    );
-    assert.ok(body.indexOf("enqueueStudentLoanOutcome(tx") > body.indexOf("tx.auditLog.create"), name);
+test("no decision, disbursement, or cancel enqueues a student loan-outcome email", () => {
+  // Students are emailed only for due-date and overdue reminders (since 2026-10-01).
+  assert.doesNotMatch(service, /enqueueStudentLoanOutcome/);
+  for (const name of [
+    "decideLoanRequest",
+    "decideAdminLoanRequest",
+    "decideExecutiveLoanRequest",
+    "disburseLoanRequest",
+    "cancelAdminLoanRequest",
+  ]) {
+    assert.doesNotMatch(sliceFunction(name), /enqueueStudentLoanOutcome|LOAN_OUTCOME/, name);
   }
-});
-
-test("a disbursement enqueues the student's disbursed notice inside its transaction", () => {
-  const body = sliceFunction("disburseLoanRequest");
-  assert.match(body, /await enqueueStudentLoanOutcome\(tx, \{ loanId: id, outcome: "disbursed" \}\);/);
-  assert.ok(body.indexOf("enqueueStudentLoanOutcome(tx") > body.indexOf("tx.installment.createMany"));
 });
 
 test("the loan-outcome payload holds ids only", () => {

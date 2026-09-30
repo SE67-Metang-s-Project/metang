@@ -14,6 +14,19 @@ export type {
   InstallmentReminderPayload,
 };
 
+// Reminders go out 3, 1 and 0 days before the due date, and 1, 3 and 7 days after it while the
+// installment is still unpaid.
+export const INSTALLMENT_REMINDER_OFFSETS = [
+  3, 1, 0, -1, -3, -7,
+] as const satisfies readonly InstallmentReminderOffsetDays[];
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Whole days from the due date to today; both are Bangkok dates stored at UTC midnight. */
+export function daysOverdue(dueDate: Date, today: Date): number {
+  return Math.round((today.getTime() - dueDate.getTime()) / DAY_MS);
+}
+
 export function buildInstallmentReminderDedupeKey(
   installmentId: string | bigint,
   isoDueDate: string,

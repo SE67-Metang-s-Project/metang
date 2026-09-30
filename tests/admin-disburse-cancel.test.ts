@@ -28,7 +28,8 @@ test("cancelAdminLoanRequest is defined with transaction and proper role checks"
   assert.match(cancelService, /nextAttempt\(current\.approvals \?\? \[\], "admin"\)/);
   assert.doesNotMatch(cancelService, /Math\.max\(\.\.\.current\.approvals/);
   assert.match(cancelService, /action: "loan_request\.cancelled"/);
-  assert.match(cancelService, /await enqueueStudentLoanOutcome\(tx, \{ loanId: id, outcome: "rejected" \}\);/);
+  // Students are emailed only for due-date and overdue reminders, so a cancel sends no email.
+  assert.doesNotMatch(cancelService, /enqueueStudentLoanOutcome/);
 });
 
 test("POST /api/admin/loan-requests/[id]/cancel validates request and requires admin access and comment", () => {

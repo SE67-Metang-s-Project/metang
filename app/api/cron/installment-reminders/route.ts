@@ -5,6 +5,7 @@ import { bangkokDatePlusDays } from "@/lib/date";
 import { enqueueNotification } from "@/db/queries/notifications";
 import {
   INSTALLMENT_REMINDER_EVENT,
+  INSTALLMENT_REMINDER_OFFSETS,
   buildInstallmentReminderDedupeKey,
 } from "@/lib/notifications/installment-reminder";
 import { serializeJson } from "@/lib/serialization";
@@ -13,17 +14,16 @@ async function handle(request: Request) {
   const authError = checkCronAuth(request);
   if (authError) return authError;
 
-  const date0 = bangkokDatePlusDays(0);
-  const date1 = bangkokDatePlusDays(1);
-  const date3 = bangkokDatePlusDays(3);
-  const time0 = date0.getTime();
-  const time1 = date1.getTime();
-  const time3 = date3.getTime();
+  // A due date that is `offset` days from today gets that reminder. Each due date matches one
+  // offset, so an installment never gets two reminders in one run.
+  const offsetByDueTime = new Map(
+    INSTALLMENT_REMINDER_OFFSETS.map((offset) => [bangkokDatePlusDays(offset).getTime(), offset]),
+  );
 
   const installments = await prisma.installment.findMany({
     where: {
       settledAt: null,
-      dueDate: { in: [date0, date1, date3] },
+      dueDate: { in: [...offsetByDueTime.keys()].map((time) => new Date(time)) },
     },
     select: { id: true, loanId: true, dueDate: true },
   });
@@ -33,28 +33,18 @@ async function handle(request: Request) {
   if (installments.length > 0) {
     await prisma.$transaction(async (tx) => {
       for (const installment of installments) {
-        const timeDue = installment.dueDate.getTime();
-        const offsets = [];
-        if (timeDue === time0) offsets.push(0);
-        if (timeDue === time1) offsets.push(1);
-        if (timeDue === time3) offsets.push(3);
+        const offset = offsetByDueTime.get(installment.dueDate.getTime());
+        if (offset === undefined) continue;
 
         const isoDate = installment.dueDate.toISOString().slice(0, 10);
+        const dedupeKey = buildInstallmentReminderDedupeKey(installment.id, isoDate, offset);
 
-        for (const offset of offsets) {
-          const dedupeKey = buildInstallmentReminderDedupeKey(
-            installment.id,
-            isoDate,
-            offset as 0 | 1 | 3,
-          );
-
-          await enqueueNotification(tx, {
-            dedupeKey,
-            eventType: INSTALLMENT_REMINDER_EVENT,
-            payload: { loanId: installment.loanId, installmentId: String(installment.id) },
-          });
-          enqueuedCount++;
-        }
+        await enqueueNotification(tx, {
+          dedupeKey,
+          eventType: INSTALLMENT_REMINDER_EVENT,
+          payload: { loanId: installment.loanId, installmentId: String(installment.id) },
+        });
+        enqueuedCount++;
       }
     });
   }

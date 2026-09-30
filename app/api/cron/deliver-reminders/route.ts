@@ -9,7 +9,12 @@ import {
   markSkipped,
 } from "@/db/queries/notifications";
 import { getInstallmentReminderContextById } from "@/db/queries/notification-recipients";
-import { buildLoanDueReminderEmail } from "@/lib/email-api/loan-reminder-template";
+import {
+  buildLoanDueReminderEmail,
+  buildLoanOverdueReminderEmail,
+} from "@/lib/email-api/loan-reminder-template";
+import { bangkokDatePlusDays } from "@/lib/date";
+import { daysOverdue } from "@/lib/notifications/installment-reminder";
 import { sendEmail } from "@/lib/email-api/client";
 import { classifyDeliveryFailure } from "@/lib/notifications/delivery-outcome";
 import { buildStudentLoanDetailUrl } from "@/lib/student-deeplink";
@@ -64,7 +69,7 @@ async function handle(request: Request) {
         const { installment: due } = decision;
         let emailPayload;
         try {
-          emailPayload = buildLoanDueReminderEmail({
+          const reminder = {
             studentName: due.loan.studentNameTh,
             studentEmail: due.loan.studentEmail,
             installmentSeq: due.seq,
@@ -72,7 +77,13 @@ async function handle(request: Request) {
             dueDate: due.dueDate,
             loanId: due.loanId,
             loanDetailUrl: buildStudentLoanDetailUrl(baseUrl, due.loanId),
-          });
+          };
+          // Worked out at send time, so a delayed run still names the right number of days.
+          const lateDays = daysOverdue(due.dueDate, bangkokDatePlusDays(0));
+          emailPayload =
+            lateDays > 0
+              ? buildLoanOverdueReminderEmail({ ...reminder, daysOverdue: lateDays })
+              : buildLoanDueReminderEmail(reminder);
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           await markFailed(row.id, message, { permanent: true });

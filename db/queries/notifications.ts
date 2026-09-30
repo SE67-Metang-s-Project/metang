@@ -4,7 +4,8 @@ import type { ReviewerRole } from "@/lib/reviewer-deeplink";
 
 export const INSTALLMENT_REMINDER_EVENT = "installment_reminder" as const;
 
-export type InstallmentReminderOffsetDays = 0 | 1 | 3;
+// Days from the send date until the due date: positive before it, 0 on it, negative after it.
+export type InstallmentReminderOffsetDays = 3 | 1 | 0 | -1 | -3 | -7;
 
 export type InstallmentReminderDedupeKey =
   `installment-reminder:${string}:${string}:${InstallmentReminderOffsetDays}`;

@@ -1,10 +1,8 @@
 import { Prisma } from "@/lib/generated/prisma/client";
 import type { PaymentDecision } from "@/lib/loan-validation";
 import { prisma } from "@/lib/prisma";
-import { buildPaymentOutcomeDedupeKey } from "@/lib/notifications/payment-outcome";
 import { serializeJson } from "@/lib/serialization";
 import { withSlipFlag } from "./loan-requests";
-import { PAYMENT_OUTCOME_EVENT, enqueueNotification } from "./notifications";
 import { applyConfirmedPayment } from "./payments";
 
 /**
@@ -150,13 +148,7 @@ export async function decidePayment({
           after: serializeJson(withSlipFlag(final)),
         },
       });
-      // Same transaction as the decision, so the student is told about exactly the outcomes that
-      // committed. Ids only: the delivery worker reads the note and recipient from the payment.
-      await enqueueNotification(tx, {
-        dedupeKey: buildPaymentOutcomeDedupeKey(paymentId),
-        eventType: PAYMENT_OUTCOME_EVENT,
-        payload: { paymentId, loanId: current.loanId },
-      });
+      // No student email here: students are emailed only for due-date and overdue reminders.
       return withSlipFlag(final);
     },
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 },
