@@ -212,12 +212,16 @@ export function toActionRequest(
       actor: student.fullNameTh,
     },
     ...decided.map((a) => ({
-      action: approvalActionLabel[a.step][a.decision as "approved" | "returned" | "rejected"],
+      action:
+        row.status === "cancelled" && a.step === "admin" && a.decision === "rejected"
+          ? "เจ้าหน้าที่ยกเลิกคำร้อง"
+          : approvalActionLabel[a.step][a.decision as "approved" | "returned" | "rejected"],
       date: formatThaiDateTime(a.decidedAt ?? a.createdAt),
       actor: a.decider?.fullNameTh ?? approverFallback[a.step],
+      comment: a.comment ?? undefined,
     })),
   ];
-  if (row.cancelledAt) {
+  if (row.cancelledAt && !row.approvals?.some((a) => a.step === "admin" && a.decision === "rejected")) {
     history.push({
       action: "ยกเลิกคำร้อง",
       date: formatThaiDateTime(row.cancelledAt),
