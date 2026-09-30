@@ -13,6 +13,7 @@ import { validateJsonRequest } from "@/lib/request-security";
  * @response 200:PhoneNumberResponse
  * @add 401:ApiErrorResponse
  * @add 403:ApiErrorResponse
+ * @add 409:ApiErrorResponse
  * @add 422:ApiErrorResponse
  * @add 500:ApiErrorResponse
  */
@@ -43,13 +44,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const student = await prisma.appUser.update({
-    where: { id: context.user.id },
-    data: { phone: phoneNumber },
-    select: { phone: true },
+  // Students have no app_user row: the phone lives on their open loan request (at most one, see
+  // one_open_loan_per_student), so a closed loan's contact number is never rewritten. A new loan
+  // takes phoneNumber from POST /api/student/loan-requests.
+  const updated = await prisma.loanRequest.updateMany({
+    where: { studentCode: context.user.studentCode, status: { notIn: ["closed", "rejected", "cancelled"] } },
+    data: { studentPhone: phoneNumber },
   });
+  if (updated.count !== 1) {
+    return apiError("CONFLICT", "Submit a loan request before saving a phone number", 409);
+  }
 
-  return apiOk(student);
+  return apiOk({ phone: phoneNumber });
 }
 
 /**
@@ -64,10 +70,5 @@ export async function GET() {
   const context = await getStudentContext();
   if (!context) return apiError("UNAUTHORIZED", "Authentication required", 401);
 
-  const student = await prisma.appUser.findUnique({
-    select: { phone: true },
-    where: { id: context.user.id },
-  });
-
-  return apiOk(student);
+  return apiOk({ phone: context.user.phone });
 }

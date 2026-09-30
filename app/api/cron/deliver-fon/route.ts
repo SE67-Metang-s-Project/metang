@@ -97,7 +97,7 @@ async function handle(request: Request) {
           role: step.role,
           recipientEmail: payload.recipientEmail,
           requestId: payload.loanId,
-          studentName: loan.student.fullNameTh,
+          studentName: loan.studentNameTh,
           amount: loan.approvedAmount ?? loan.amount,
           eventLabel: step.eventLabel,
           deepLinkUrl,

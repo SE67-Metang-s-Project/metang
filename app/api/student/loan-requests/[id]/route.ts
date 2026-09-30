@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: Params) {
   const { id } = await params;
   if (!isLoanId(id)) return apiError("NOT_FOUND", "Loan request not found", 404);
 
-  const loan = await getStudentLoanDetail(id, context.user.id);
+  const loan = await getStudentLoanDetail(id, context.user.studentCode);
   if (!loan) return apiError("NOT_FOUND", "Loan request not found", 404);
   return apiOk(loan);
 }

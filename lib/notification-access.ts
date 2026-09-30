@@ -6,12 +6,12 @@ import type { UserRoleName } from "@/lib/generated/prisma/client";
 export function canTriggerReviewerNotification(
   actorRole: UserRoleName,
   actorId: string,
-  loan: { studentId: string; advisorId: string },
+  loan: { studentCode: string; advisorId: string },
 ): boolean {
   if (actorRole === "admin" || actorRole === "super_admin" || actorRole === "executive") {
     return true;
   }
-  if (actorRole === "student") return actorId === loan.studentId;
+  if (actorRole === "student") return actorId === loan.studentCode;
   if (actorRole === "advisor") return actorId === loan.advisorId;
   return false;
 }

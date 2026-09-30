@@ -36,7 +36,7 @@ export async function GET(_request: Request, { params }: Params) {
   // until the caller is signed in, so nothing about it (result, error, timing) reaches a 401.
   const lookup = prisma.fundTransaction.findUnique({
     where: { id: BigInt(id) },
-    select: { slipPath: true, loan: { select: { studentId: true } } },
+    select: { slipPath: true, loan: { select: { studentCode: true } } },
   });
   lookup.catch(() => {});
 

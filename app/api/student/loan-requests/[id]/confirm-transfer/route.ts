@@ -36,7 +36,7 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const loan = await prisma.$transaction(async (tx) => {
       const current = await tx.loanRequest.findFirst({
-        where: { id, studentId: context.user.id },
+        where: { id, studentCode: context.user.studentCode },
         select: studentLoanSelect,
       });
       if (!current) throw new Error("NOT_FOUND");
@@ -47,7 +47,7 @@ export async function POST(request: Request, { params }: Params) {
       const updated = await tx.loanRequest.updateMany({
         where: {
           id,
-          studentId: context.user.id,
+          studentCode: context.user.studentCode,
           status: "disbursed",
           transferConfirmedAt: null,
         },
@@ -66,7 +66,7 @@ export async function POST(request: Request, { params }: Params) {
 
       await tx.auditLog.create({
         data: {
-          actorId: context.user.id,
+          actorStudentCode: context.user.studentCode,
           action: "loan_request.transfer_confirmed",
           entityType: "loan_request",
           entityId: id,

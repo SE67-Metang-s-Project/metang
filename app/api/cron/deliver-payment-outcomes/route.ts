@@ -72,8 +72,8 @@ async function handle(request: Request) {
         try {
           emailPayload = buildPaymentOutcomeEmail({
             outcome: decision.outcome,
-            studentName: payment.loan.student.fullNameTh,
-            studentEmail: payment.loan.student.email,
+            studentName: payment.loan.studentNameTh,
+            studentEmail: payment.loan.studentEmail,
             amount: payment.amount,
             loanId: payment.loanId,
             reviewNote: payment.reviewNote,

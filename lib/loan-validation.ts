@@ -5,11 +5,12 @@ export type LoanInput = {
   amount: number;
   studentYear: number;
   purpose: string;
-  additionalNote: string | null;
   bankName: string;
   bankAccountNo: string;
   bankAccountName: string;
   installmentCount: number;
+  /** Optional: kept on the loan as the student's contact number. */
+  phoneNumber?: string | null;
 };
 
 export type LoanDecision = "approved" | "returned" | "rejected";
@@ -81,11 +82,14 @@ export function parseLoanInput(value: unknown): LoanInput {
     amount: parseAmount(input.amount),
     studentYear: parseStudentYear(input.studentYear),
     purpose: requiredText(input.purpose, "purpose", 2000),
-    additionalNote: optionalText(input.additionalNote, "additionalNote", 2000),
     bankName: requiredText(input.bankName, "bankName", 200),
     bankAccountNo: requiredText(input.bankAccountNo, "bankAccountNo", 50),
     bankAccountName: requiredText(input.bankAccountName, "bankAccountName", 200),
     installmentCount: installmentCount as number,
+    phoneNumber:
+      input.phoneNumber === undefined || input.phoneNumber === null || input.phoneNumber === ""
+        ? null
+        : parsePhoneNumber(input.phoneNumber),
   };
 }
 

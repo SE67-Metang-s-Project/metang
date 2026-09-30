@@ -30,15 +30,10 @@ const adminPaymentSelect = {
     select: {
       id: true,
       status: true,
-      student: {
-        select: {
-          id: true,
-          studentCode: true,
-          fullNameTh: true,
-          fullNameEn: true,
-          phone: true,
-        },
-      },
+      studentCode: true,
+      studentNameTh: true,
+      studentNameEn: true,
+      studentPhone: true,
     },
   },
   // The installment the student aimed at, so the reviewer can judge the amount against what is due.

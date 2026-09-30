@@ -109,10 +109,10 @@ const loanNotificationSelect = {
   status: true,
   amount: true,
   approvedAmount: true,
-  studentId: true,
+  studentCode: true,
   advisorId: true,
   assignedAdminId: true,
-  student: { select: { fullNameTh: true } },
+  studentNameTh: true,
   advisor: { select: { email: true, roles: { select: { role: true } } } },
 } satisfies Prisma.LoanRequestSelect;
 
@@ -164,7 +164,8 @@ const installmentReminderSelect = {
   loan: {
     select: {
       status: true,
-      student: { select: { fullNameTh: true, email: true } },
+      studentNameTh: true,
+      studentEmail: true,
     },
   },
 } satisfies Prisma.InstallmentSelect;
@@ -212,7 +213,7 @@ const paymentOutcomeSelect = {
   loanId: true,
   // The recipient is always the loan's own student, resolved here at delivery time - never taken
   // from the outbox payload. No slip or bank field is selected.
-  loan: { select: { student: { select: { fullNameTh: true, email: true } } } },
+  loan: { select: { studentNameTh: true, studentEmail: true } },
 } satisfies Prisma.PaymentSelect;
 
 export type PaymentOutcomeContext = Prisma.PaymentGetPayload<{
@@ -236,7 +237,8 @@ const loanOutcomeSelect = {
   installmentCount: true,
   // The recipient is always the loan's own student, resolved at delivery time. No bank field or
   // disbursement slip is selected.
-  student: { select: { fullNameTh: true, email: true } },
+  studentNameTh: true,
+  studentEmail: true,
   installments: {
     orderBy: { seq: "asc" },
     take: 1,
@@ -335,7 +337,7 @@ type ReviewerNotificationLoan = {
   status: string;
   amount: number;
   approvedAmount: number | null;
-  student: { fullNameTh: string };
+  studentNameTh: string;
 };
 
 /**
@@ -362,7 +364,7 @@ export async function sendReviewerNotifications(
         role: step.role,
         recipientEmail: email,
         requestId: loan.id,
-        studentName: loan.student.fullNameTh,
+        studentName: loan.studentNameTh,
         amount: loan.approvedAmount ?? loan.amount,
         eventLabel: step.eventLabel,
         deepLinkUrl,

@@ -62,13 +62,10 @@ export type AdminPaymentItem = {
   loan: {
     id: string;
     status: AdvisorQueueItem["status"];
-    student: {
-      id: string;
-      studentCode: string | null;
-      fullNameTh: string;
-      fullNameEn: string | null;
-      phone: string | null;
-    };
+    studentCode: string;
+    studentNameTh: string;
+    studentNameEn: string | null;
+    studentPhone: string | null;
   };
   installment: {
     id: string;
@@ -100,13 +97,12 @@ export type AdminDecisionBody = {
 
 export type LoanRequestDetail = {
   id: string;
-  studentId: string;
+  studentCode: string;
   advisorId: string;
   amount: number;
   approvedAmount: number | null;
   studentYear: number;
   purpose: string;
-  additionalNote: string | null;
   bankName: string;
   bankAccountNo: string;
   bankAccountName: string;
@@ -125,7 +121,6 @@ export type LoanRequestDetail = {
     | "cancelled";
   submittedAt: string | null;
   cancelledAt: string | null;
-  cancelledBy: string | null;
   disbursedAt: string | null;
   transferConfirmedAt: string | null;
   closedAt: string | null;
@@ -163,13 +158,12 @@ export type LoanRequestCurrentResponse = {
 
 export type AdvisorQueueItem = {
   id: string;
-  studentId: string;
+  studentCode: string;
   advisorId: string;
   amount: number;
   approvedAmount: number | null;
   studentYear: number;
   purpose: string;
-  additionalNote: string | null;
   installmentCount: number;
   firstDueDate: string;
   status:
@@ -185,18 +179,13 @@ export type AdvisorQueueItem = {
     | "cancelled";
   submittedAt: string | null;
   cancelledAt: string | null;
-  cancelledBy: string | null;
   disbursedAt: string | null;
   transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  student: {
-    id: string;
-    studentCode: string | null;
-    fullNameTh: string;
-    fullNameEn: string | null;
-  };
+  studentNameTh: string;
+  studentNameEn: string | null;
   approvals: {
     id: string;
     loanId: string;
@@ -216,30 +205,24 @@ export type AdvisorQueueItem = {
 
 export type AdvisorLoanRequestDetail = {
   id: string;
-  studentId: string;
+  studentCode: string;
   advisorId: string;
   amount: number;
   approvedAmount: number | null;
   studentYear: number;
   purpose: string;
-  additionalNote: string | null;
   installmentCount: number;
   firstDueDate: string;
   status: AdvisorQueueItem["status"];
   submittedAt: string | null;
   cancelledAt: string | null;
-  cancelledBy: string | null;
   disbursedAt: string | null;
   transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  student: {
-    id: string;
-    studentCode: string | null;
-    fullNameTh: string;
-    fullNameEn: string | null;
-  };
+  studentNameTh: string;
+  studentNameEn: string | null;
   advisor: {
     id: string;
     fullNameTh: string;
@@ -258,31 +241,25 @@ export type AdvisorQueueResponse = {
 
 export type AdminQueueItem = {
   id: string;
-  studentId: string;
+  studentCode: string;
   advisorId: string;
   amount: number;
   approvedAmount: number | null;
   studentYear: number;
   purpose: string;
-  additionalNote: string | null;
   installmentCount: number;
   firstDueDate: string;
   status: AdvisorQueueItem["status"];
   submittedAt: string | null;
   cancelledAt: string | null;
-  cancelledBy: string | null;
   disbursedAt: string | null;
   transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  student: {
-    id: string;
-    studentCode: string | null;
-    fullNameTh: string;
-    fullNameEn: string | null;
-    phone: string | null;
-  };
+  studentNameTh: string;
+  studentNameEn: string | null;
+  studentPhone: string | null;
   advisor: {
     id: string;
     fullNameTh: string;
@@ -308,13 +285,12 @@ export type AdminQueueItem = {
 
 export type AdminLoanRequestDetail = {
   id: string;
-  studentId: string;
+  studentCode: string;
   advisorId: string;
   amount: number;
   approvedAmount: number | null;
   studentYear: number;
   purpose: string;
-  additionalNote: string | null;
   bankName: string;
   bankAccountNo: string;
   bankAccountName: string;
@@ -323,13 +299,14 @@ export type AdminLoanRequestDetail = {
   status: AdvisorQueueItem["status"];
   submittedAt: string | null;
   cancelledAt: string | null;
-  cancelledBy: string | null;
   disbursedAt: string | null;
   transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  student: AdminQueueItem["student"];
+  studentNameTh: string;
+  studentNameEn: string | null;
+  studentPhone: string | null;
   advisor: AdminQueueItem["advisor"];
   approvals: AdminQueueItem["approvals"];
   fundTransactions: { id: string }[];
@@ -369,13 +346,12 @@ export type ExecutiveDecisionBody =
 
 export type ExecutiveQueueItem = {
   id: string;
-  studentId: string;
+  studentCode: string;
   advisorId: string;
   amount: number;
   approvedAmount: number | null;
   studentYear: number;
   purpose: string;
-  additionalNote: string | null;
   installmentCount: number;
   firstDueDate: string;
   status:
@@ -391,19 +367,14 @@ export type ExecutiveQueueItem = {
     | "cancelled";
   submittedAt: string | null;
   cancelledAt: string | null;
-  cancelledBy: string | null;
   disbursedAt: string | null;
   transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  student: {
-    id: string;
-    studentCode: string | null;
-    fullNameTh: string;
-    fullNameEn: string | null;
-    phone: string | null;
-  };
+  studentNameTh: string;
+  studentNameEn: string | null;
+  studentPhone: string | null;
   advisor: {
     id: string;
     fullNameTh: string;
@@ -429,25 +400,25 @@ export type ExecutiveQueueItem = {
 
 export type ExecutiveLoanRequestDetail = {
   id: string;
-  studentId: string;
+  studentCode: string;
   advisorId: string;
   amount: number;
   approvedAmount: number | null;
   studentYear: number;
   purpose: string;
-  additionalNote: string | null;
   installmentCount: number;
   firstDueDate: string;
   status: ExecutiveQueueItem["status"];
   submittedAt: string | null;
   cancelledAt: string | null;
-  cancelledBy: string | null;
   disbursedAt: string | null;
   transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  student: ExecutiveQueueItem["student"];
+  studentNameTh: string;
+  studentNameEn: string | null;
+  studentPhone: string | null;
   advisor: ExecutiveQueueItem["advisor"];
   approvals: ExecutiveQueueItem["approvals"];
 };
@@ -466,16 +437,20 @@ export type UserIdParams = {
 
 export type PredefinedRoleName = "student" | "advisor" | "admin" | "super_admin" | "executive";
 
+/** Students are not app_user rows, so "student" is never granted. */
+export type GrantableRoleName = "advisor" | "admin" | "super_admin" | "executive";
+
 export type RoleMutationBody = {
   action: "grant" | "remove";
-  role: PredefinedRoleName;
+  role: GrantableRoleName;
 };
 
 export type SuperAdminUser = {
   id: string;
   email: string;
   cmuAccount: string;
-  studentCode: string | null;
+  /** Never sent: staff have no student code. Optional only until the user list UI drops it. */
+  studentCode?: string | null;
   fullNameTh: string;
   fullNameEn: string | null;
   phone: string | null;
@@ -491,7 +466,7 @@ export type SuperAdminUser = {
 export type SuperAdminUserListResponse = {
   data: {
     users: SuperAdminUser[];
-    availableRoles: PredefinedRoleName[];
+    availableRoles: GrantableRoleName[];
   };
 };
 

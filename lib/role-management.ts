@@ -1,7 +1,7 @@
 import type { UserRoleName } from "@/lib/generated/prisma/client";
 
+// No "student": students are not app_user rows, so there is nobody to grant it to.
 export const predefinedRoleNames = [
-  "student",
   "advisor",
   "admin",
   "super_admin",
@@ -30,7 +30,7 @@ export function parseRoleMutationInput(value: unknown): RoleMutationInput {
   }
   if (
     typeof input.role !== "string" ||
-    !predefinedRoleNames.includes(input.role as UserRoleName)
+    !(predefinedRoleNames as readonly string[]).includes(input.role)
   ) {
     throw new Error("role is invalid");
   }

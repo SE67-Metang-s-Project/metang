@@ -10,6 +10,7 @@ import { studentLoanSelect } from "@/db/queries/loan-requests";
 import { enqueueReviewerNotifications } from "@/db/queries/notification-recipients";
 import { FundMutationError, getFundCapacity } from "@/db/queries/fund-transactions";
 import { normalizeBankName } from "@/lib/bank-name";
+import { getEducationLevelCode } from "@/lib/student-code";
 
 
 type Params = { params: Promise<{ id: string }> };
@@ -54,7 +55,7 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const loan = await prisma.$transaction(async (tx) => {
       const current = await tx.loanRequest.findFirst({
-        where: { id, studentId: context.user.id, status: "returned" },
+        where: { id, studentCode: context.user.studentCode, status: "returned" },
         select: studentLoanSelect,
       });
       if (!current) throw new Error("STALE_RESUBMIT");
@@ -85,17 +86,22 @@ export async function POST(request: Request, { params }: Params) {
       const firstDueDate = bangkokDatePlusDays(30);
       const submittedAt = new Date();
       const updated = await tx.loanRequest.updateMany({
-        where: { id, studentId: context.user.id, status: "returned" },
+        where: { id, studentCode: context.user.studentCode, status: "returned" },
         data: {
           advisorId,
           amount: input.amount,
           studentYear: input.studentYear,
           purpose: input.purpose,
-          additionalNote: input.additionalNote,
           bankName: input.bankName,
           bankAccountNo: input.bankAccountNo,
           bankAccountName: input.bankAccountName,
           installmentCount: input.installmentCount,
+          ...(input.phoneNumber ? { studentPhone: input.phoneNumber } : {}),
+          // Refresh the borrower from the session, as staff saw a student's current names before.
+          studentNameTh: context.user.fullNameTh,
+          studentNameEn: context.user.fullNameEn,
+          ...(context.user.email ? { studentEmail: context.user.email } : {}),
+          studentEducationLevel: getEducationLevelCode(context.user.studentCode),
           firstDueDate,
           approvedAmount: null,
           status,
@@ -119,7 +125,7 @@ export async function POST(request: Request, { params }: Params) {
       });
       const audit = await tx.auditLog.create({
         data: {
-          actorId: context.user.id,
+          actorStudentCode: context.user.studentCode,
           action: "loan_request.resubmitted",
           entityType: "loan_request",
           entityId: id,

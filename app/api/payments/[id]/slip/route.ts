@@ -36,7 +36,7 @@ export async function GET(_request: Request, { params }: Params) {
   const lookup = isUuid(id)
     ? prisma.payment.findUnique({
         where: { id },
-        select: { slipPath: true, loan: { select: { studentId: true } } },
+        select: { slipPath: true, loan: { select: { studentCode: true, advisorId: true } } },
       })
     : null;
   lookup?.catch(() => {});

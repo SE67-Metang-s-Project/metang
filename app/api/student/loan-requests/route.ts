@@ -6,24 +6,12 @@ import { isUniqueConstraintOnField } from "@/lib/prisma-errors";
 import { parseLoanInput } from "@/lib/loan-validation";
 import { validateJsonRequest } from "@/lib/request-security";
 import { serializeJson } from "@/lib/serialization";
-import {
-  getStudentSessionContext,
-  resolveStoredStudent,
-} from "@/lib/loan-auth";
+import { getStudentContext, getStudentSessionContext } from "@/lib/loan-auth";
 import { getStudentLoanList, studentLoanDetailSelect } from "@/db/queries/loan-requests";
 import { enqueueReviewerNotifications } from "@/db/queries/notification-recipients";
 import { FundMutationError, getFundCapacity } from "@/db/queries/fund-transactions";
 import { normalizeBankName } from "@/lib/bank-name";
-
-const educationLevelByStudentCodeDigit: Record<string, string> = {
-  "0": "ประกาศนียบัตรผู้ช่วยพยาบาล",
-  "1": "ปริญญาตรี",
-  "3": "ปริญญาโท",
-  "5": "ปริญญาเอก",
-};
-
-const getEducationLevel = (studentCode: string | null | undefined) =>
-  studentCode ? educationLevelByStudentCodeDigit[studentCode.charAt(4)] : undefined;
+import { getEducationLevelCode } from "@/lib/student-code";
 
 /**
  * List the current student's loan requests.
@@ -38,10 +26,7 @@ export async function GET() {
   if (!context) return apiError("UNAUTHORIZED", "Authentication required", 401);
 
   try {
-    const user = await resolveStoredStudent(context.identity);
-    if (!user) return apiOk([]);
-
-    const loans = await getStudentLoanList(user.id);
+    const loans = await getStudentLoanList(context.identity.studentCode);
     return apiOk(loans);
   } catch (error) {
     console.error("Unable to list student loan requests", error);
@@ -67,8 +52,9 @@ export async function POST(request: Request) {
   const requestError = validateJsonRequest(request);
   if (requestError) return requestError;
 
-  const context = await getStudentSessionContext();
+  const context = await getStudentContext();
   if (!context) return apiError("UNAUTHORIZED", "Authentication required", 401);
+  const student = context.user;
 
   let input;
   try {
@@ -80,8 +66,7 @@ export async function POST(request: Request) {
 
   try {
     const loan = await prisma.$transaction(async (tx) => {
-      if (!context.identity.cmuAccount) throw new Error("CMU account is missing");
-      const educationLevel = getEducationLevel(context.identity.studentCode);
+      if (!student.email) throw new Error("CMU account is missing");
 
       const advisors = await tx.appUser.findMany({
         where: {
@@ -93,53 +78,6 @@ export async function POST(request: Request) {
 
       // if no advisor founded
       if (advisors.length !== 1) throw new Error("advisorName is ambiguous or not found");
-      
-      const existing = await tx.appUser.findFirst({
-        where: {
-          OR: [
-            { cmuAccount: context.identity.cmuAccount },
-            ...(context.identity.email ? [{ email: context.identity.email }] : []),
-            ...(context.identity.studentCode ? [{ studentCode: context.identity.studentCode }] : []),
-          ],
-        },
-        select: { id: true, cmuAccount: true, email: true, studentCode: true },
-      });
-
-      if (
-        existing &&
-        ((existing.cmuAccount !== context.identity.cmuAccount) ||
-          (context.identity.email && existing.email !== context.identity.email) ||
-          (context.identity.studentCode && existing.studentCode !== context.identity.studentCode))
-      ) {
-        throw new Error("CMU identity does not match the existing student");
-      }
-
-      const student = existing
-        ? await tx.appUser.update({
-            where: { id: existing.id },
-            data: {
-              cmuAccount: context.identity.cmuAccount,
-              email: context.identity.email ?? existing.email,
-              studentCode: context.identity.studentCode,
-              fullNameTh: context.identity.displayName,
-              ...(educationLevel ? { educationLevel } : {}),
-            },
-          })
-        : await tx.appUser.create({
-            data: {
-              cmuAccount: context.identity.cmuAccount,
-              email: context.identity.email ?? context.identity.cmuAccount,
-              studentCode: context.identity.studentCode,
-              fullNameTh: context.identity.displayName,
-              ...(educationLevel ? { educationLevel } : {}),
-            },
-          });
-
-      await tx.userRole.upsert({
-        where: { userId_role: { userId: student.id, role: UserRoleName.student } },
-        create: { userId: student.id, role: UserRoleName.student },
-        update: {},
-      });
 
       // A request may not reserve more than the fund can still lend (see computeFundCapacity).
       const { available } = await getFundCapacity(tx);
@@ -150,12 +88,16 @@ export async function POST(request: Request) {
           amount: input.amount,
           studentYear: input.studentYear,
           purpose: input.purpose,
-          additionalNote: input.additionalNote,
           bankName: input.bankName,
           bankAccountNo: input.bankAccountNo,
           bankAccountName: input.bankAccountName,
           installmentCount: input.installmentCount,
-          studentId: student.id,
+          studentCode: student.studentCode,
+          studentNameTh: student.fullNameTh,
+          studentNameEn: student.fullNameEn,
+          studentEmail: student.email,
+          studentPhone: input.phoneNumber ?? student.phone,
+          studentEducationLevel: getEducationLevelCode(student.studentCode),
           advisorId: advisors[0].id,
           firstDueDate: bangkokDatePlusDays(30),
           status: "pending_advisor",
@@ -166,7 +108,7 @@ export async function POST(request: Request) {
 
       const audit = await tx.auditLog.create({
         data: {
-          actorId: student.id,
+          actorStudentCode: student.studentCode,
           action: "loan_request.created",
           entityType: "loan_request",
           entityId: created.id,
@@ -186,7 +128,7 @@ export async function POST(request: Request) {
         409,
       );
     }
-    if (isUniqueConstraintOnField(error, "student_id")) {
+    if (isUniqueConstraintOnField(error, "student_code")) {
       return apiError("CONFLICT", "You already have an open loan request", 409);
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
@@ -194,9 +136,7 @@ export async function POST(request: Request) {
     }
     if (
       error instanceof Error &&
-      (error.message.includes("advisorName") ||
-        error.message.includes("CMU account") ||
-        error.message.includes("CMU identity"))
+      (error.message.includes("advisorName") || error.message.includes("CMU account"))
     ) {
       return apiError("VALIDATION_ERROR", error.message, 422);
     }

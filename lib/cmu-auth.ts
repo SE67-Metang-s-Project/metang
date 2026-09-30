@@ -361,3 +361,23 @@ export function getCmuDisplayName(profile: CmuProfile) {
   const account = profile.cmuitaccount_name ?? profile.cmuitaccount;
   return typeof account === "string" ? account : "CMU user";
 }
+
+const joinProfileNames = (profile: CmuProfile, first: string, last: string) =>
+  [profile[first], profile[last]]
+    .filter((value): value is string => typeof value === "string" && Boolean(value.trim()))
+    .map((value) => value.trim())
+    .join(" ");
+
+/** The Thai and English full names a CMU profile gives, as stored on app_user and loan_request. */
+export function getCmuNames(profile: CmuProfile) {
+  const fullNameTh =
+    getProfileText(profile, "full_name_TH") ||
+    joinProfileNames(profile, "firstname_TH", "lastname_TH") ||
+    getCmuDisplayName(profile).trim() ||
+    "CMU User";
+  const fullNameEn =
+    getProfileText(profile, "full_name_EN") ||
+    joinProfileNames(profile, "firstname_EN", "lastname_EN") ||
+    null;
+  return { fullNameTh, fullNameEn };
+}

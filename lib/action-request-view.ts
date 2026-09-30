@@ -1,5 +1,6 @@
 import { withBasePath } from "@/lib/base-path";
 import { bangkokParts } from "@/lib/date";
+import { getEducationLevelCode, getEducationLevelName } from "@/lib/student-code";
 import { deriveInstallmentConduct, type ConductInstallment, type ConductPayment } from "@/lib/repayment-conduct";
 import type {
   ActionHistory,
@@ -37,14 +38,12 @@ export type ActionRequestRow = {
   bankName?: string;
   bankAccountNo?: string;
   bankAccountName?: string;
-  student: {
-    fullNameTh: string;
-    studentCode: string | null;
-    phone: string | null;
-    educationLevel: string | null;
-  };
+  // The borrower, as copied onto the loan at submit.
+  studentCode: string;
+  studentNameTh: string;
+  studentPhone: string | null;
+  studentEducationLevel: string | null;
   advisor?: { fullNameTh: string } | null;
-  cancelledByUser?: { fullNameTh: string } | null;
   approvals?: {
     step: "advisor" | "admin" | "executive";
     decision: "approved" | "rejected" | "returned" | "pending";
@@ -67,16 +66,6 @@ export type ActionRequestRow = {
   }[];
   fundTransactions?: { id: bigint }[];
 };
-
-const educationLevelByStudentCodeDigit: Record<string, string> = {
-  "0": "ประกาศนียบัตรผู้ช่วยพยาบาล",
-  "1": "ปริญญาตรี",
-  "3": "ปริญญาโท",
-  "5": "ปริญญาเอก",
-};
-
-const getEducationLevel = (studentCode: string | null) =>
-  studentCode ? educationLevelByStudentCodeDigit[studentCode.charAt(4)] : undefined;
 
 const THAI_MONTH_ABBRS = [
   "ม.ค.",
@@ -136,25 +125,25 @@ export function summarizeStudentConduct(
  */
 export function conductFromRows(
   rows: {
-    studentId: string;
+    studentCode: string;
     installments?: ConductInstallment[];
     payments?: (ConductPayment & { status: string })[];
   }[],
-  totals: { studentId: string; count: number }[],
+  totals: { studentCode: string; count: number }[],
 ): Map<string, StudentConduct> {
   const loansByStudent = new Map<string, { installments: ConductInstallment[]; payments: ConductPayment[] }[]>();
   for (const row of rows) {
-    const loans = loansByStudent.get(row.studentId) ?? [];
-    loansByStudent.set(row.studentId, loans);
+    const loans = loansByStudent.get(row.studentCode) ?? [];
+    loansByStudent.set(row.studentCode, loans);
     loans.push({
       installments: row.installments ?? [],
       payments: (row.payments ?? []).filter((payment) => payment.status === "confirmed"),
     });
   }
   return new Map(
-    totals.map(({ studentId, count }) => [
-      studentId,
-      summarizeStudentConduct(loansByStudent.get(studentId) ?? [], count),
+    totals.map(({ studentCode, count }) => [
+      studentCode,
+      summarizeStudentConduct(loansByStudent.get(studentCode) ?? [], count),
     ]),
   );
 }
@@ -196,7 +185,12 @@ export function toActionRequest(
   conduct: StudentConduct | undefined,
   now: Date = new Date(),
 ): ActionRequest {
-  const student = row.student;
+  const student = {
+    fullNameTh: row.studentNameTh,
+    studentCode: row.studentCode,
+    phone: row.studentPhone,
+    educationLevel: row.studentEducationLevel,
+  };
   const installmentRows = row.installments ?? [];
   const submitDateObj = row.submittedAt ?? row.createdAt;
   const waitDays = Math.max(
@@ -225,7 +219,8 @@ export function toActionRequest(
     history.push({
       action: "ยกเลิกคำร้อง",
       date: formatThaiDateTime(row.cancelledAt),
-      actor: row.cancelledByUser?.fullNameTh ?? "นักศึกษา",
+      // Only the student cancels their own request.
+      actor: student.fullNameTh,
     });
   }
 
@@ -280,7 +275,7 @@ export function toActionRequest(
     name: student.fullNameTh,
     studentId: student.studentCode ?? "-",
     major: "พยาบาลศาสตร์",
-    degree: student.educationLevel || getEducationLevel(student.studentCode) || "-",
+    degree: getEducationLevelName(student.educationLevel ?? getEducationLevelCode(student.studentCode)) || "-",
     year: String(row.studentYear),
     phone: student.phone ?? "-",
     objective: row.purpose,
@@ -296,7 +291,7 @@ export function toActionRequest(
       ? {}
       : {
           program: "พยาบาลศาสตรบัณฑิต",
-          educationLevel: student.educationLevel ?? undefined,
+          educationLevel: getEducationLevelName(student.educationLevel) ?? undefined,
           advisorName: row.advisor?.fullNameTh ?? undefined,
           approvedAmount: row.approvedAmount,
           submitTime: formatThaiTime(submitDateObj),

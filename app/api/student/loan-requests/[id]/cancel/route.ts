@@ -46,7 +46,7 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const loan = await prisma.$transaction(async (tx) => {
       const current = await tx.loanRequest.findFirst({
-        where: { id, studentId: context.user.id },
+        where: { id, studentCode: context.user.studentCode },
         select: studentLoanSelect,
       });
       if (!current) throw new Error("NOT_FOUND");
@@ -56,21 +56,17 @@ export async function POST(request: Request, { params }: Params) {
       const updated = await tx.loanRequest.updateMany({
         where: {
           id,
-          studentId: context.user.id,
+          studentCode: context.user.studentCode,
           status: { notIn: terminalStatuses },
         },
-        data: {
-          status: "cancelled",
-          cancelledAt,
-          cancelledBy: context.user.id,
-        },
+        data: { status: "cancelled", cancelledAt },
       });
       if (updated.count !== 1) throw new Error("STALE_CANCEL");
 
       const final = await tx.loanRequest.findUniqueOrThrow({ where: { id }, select: studentLoanSelect });
       await tx.auditLog.create({
         data: {
-          actorId: context.user.id,
+          actorStudentCode: context.user.studentCode,
           action: "loan_request.cancelled",
           entityType: "loan_request",
           entityId: id,

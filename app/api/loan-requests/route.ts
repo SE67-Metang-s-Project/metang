@@ -5,7 +5,7 @@ import { isDevelopmentApiAccess } from "@/lib/development-access";
 import {
   getDevelopmentStaffContext,
   normalizeLoanIdentity,
-  resolveStudentIdentity,
+  resolveAppUser,
 } from "@/lib/loan-auth";
 import { getLoanListAccess } from "@/lib/loan-request-list";
 import { serializeJson } from "@/lib/serialization";
@@ -41,7 +41,7 @@ export async function GET() {
   const session = await getCmuSession();
   if (!session) return apiError("UNAUTHORIZED", "Authentication required", 401);
 
-  const user = await resolveStudentIdentity(normalizeLoanIdentity(session.profile));
+  const user = await resolveAppUser(normalizeLoanIdentity(session.profile));
   const access = getLoanListAccess(user?.roles.map(({ role }) => role) ?? []);
   if (!user || access === "denied") {
     return apiError("FORBIDDEN", "Loan request access required", 403);

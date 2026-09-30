@@ -61,8 +61,8 @@ export async function POST(request: Request) {
   let payload;
   try {
     payload = buildLoanDueReminderEmail({
-      studentName: installment.loan.student.fullNameTh,
-      studentEmail: installment.loan.student.email,
+      studentName: installment.loan.studentNameTh,
+      studentEmail: installment.loan.studentEmail,
       installmentSeq: installment.seq,
       amountDue: amountRemaining,
       dueDate: installment.dueDate,
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
       installmentSeq: installment.seq,
       amountDue: amountRemaining,
       dueDate: installment.dueDate,
-      sentTo: installment.loan.student.email,
+      sentTo: installment.loan.studentEmail,
     }),
   );
 }

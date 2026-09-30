@@ -73,7 +73,7 @@ export async function POST(request: Request) {
 
   // Resolved before the upload only because the slip path is keyed by loan; createStudentPayment
   // re-checks ownership and status inside its transaction.
-  const loanId = await findRepayableLoanId(context.user.id);
+  const loanId = await findRepayableLoanId(context.user.studentCode);
   if (!loanId) return apiError("CONFLICT", "You have no loan open for repayment", 409);
 
   // Refuse up front what the transaction would refuse (unconfirmed transfer, a slip already under
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
   try {
     await assertStudentPaymentAllowed({
       loanId,
-      studentId: context.user.id,
+      studentCode: context.user.studentCode,
       amount: input.amount,
     });
   } catch (error) {
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
     const submit = () =>
       createStudentPayment({
         loanId,
-        studentId: context.user.id,
+        studentCode: context.user.studentCode,
         amount: input.amount,
         slipPath,
         paidAt: input.paidAt,

@@ -28,9 +28,9 @@ const studentPaymentSelect = {
  * Read outside the transaction only so the slip path can be built before upload; the write itself
  * re-checks ownership and status.
  */
-export async function findRepayableLoanId(studentId: string) {
+export async function findRepayableLoanId(studentCode: string) {
   const loan = await prisma.loanRequest.findFirst({
-    where: { studentId, status: "disbursed" },
+    where: { studentCode, status: "disbursed" },
     select: { id: true },
   });
   return loan?.id ?? null;
@@ -61,15 +61,15 @@ export class StudentPaymentError extends Error {
  */
 export async function assertStudentPaymentAllowed({
   loanId,
-  studentId,
+  studentCode,
   amount,
 }: {
   loanId: string;
-  studentId: string;
+  studentCode: string;
   amount: number;
 }) {
   const loan = await prisma.loanRequest.findFirst({
-    where: { id: loanId, studentId },
+    where: { id: loanId, studentCode },
     select: {
       status: true,
       transferConfirmedAt: true,
@@ -101,13 +101,13 @@ export async function assertStudentPaymentAllowed({
  */
 export async function createStudentPayment({
   loanId,
-  studentId,
+  studentCode,
   amount,
   slipPath,
   paidAt,
 }: {
   loanId: string;
-  studentId: string;
+  studentCode: string;
   amount: number;
   slipPath: string;
   paidAt: Date | null;
@@ -115,7 +115,7 @@ export async function createStudentPayment({
   return prisma.$transaction(
     async (tx) => {
       const loan = await tx.loanRequest.findFirst({
-        where: { id: loanId, studentId },
+        where: { id: loanId, studentCode },
         select: { id: true, status: true, transferConfirmedAt: true },
       });
       if (!loan) throw new StudentPaymentError("LOAN_NOT_FOUND");
@@ -159,7 +159,7 @@ export async function createStudentPayment({
 
       await tx.auditLog.create({
         data: {
-          actorId: studentId,
+          actorStudentCode: studentCode,
           action: "payment.submitted",
           entityType: "payment",
           entityId: payment.id,

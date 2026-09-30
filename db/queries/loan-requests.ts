@@ -31,26 +31,25 @@ const userSummarySelect = {
   fullNameEn: true,
 } satisfies Prisma.AppUserSelect;
 
-const studentSummarySelect = {
-  ...userSummarySelect,
-  studentCode: true,
-} satisfies Prisma.AppUserSelect;
+// The borrower is not an app_user: their identity is copied onto the loan at submit.
+const loanStudentSelect = {
+  studentNameTh: true,
+  studentNameEn: true,
+} satisfies Prisma.LoanRequestSelect;
 
 const loanSummarySelect = {
   id: true,
-  studentId: true,
+  studentCode: true,
   advisorId: true,
   amount: true,
   approvedAmount: true,
   studentYear: true,
   purpose: true,
-  additionalNote: true,
   installmentCount: true,
   firstDueDate: true,
   status: true,
   submittedAt: true,
   cancelledAt: true,
-  cancelledBy: true,
   disbursedAt: true,
   transferConfirmedAt: true,
   closedAt: true,
@@ -114,14 +113,15 @@ export const studentLoanSelect = {
 
 export const advisorLoanSelect = {
   ...loanSummarySelect,
-  student: { select: studentSummarySelect },
+  ...loanStudentSelect,
   advisor: { select: userSummarySelect },
   approvals: advisorApprovalHistory,
 } satisfies Prisma.LoanRequestSelect;
 
 export const adminQueueSelect = {
   ...loanSummarySelect,
-  student: { select: { ...studentSummarySelect, phone: true } },
+  ...loanStudentSelect,
+  studentPhone: true,
   advisor: { select: userSummarySelect },
   approvals: staffApprovalHistory,
 } satisfies Prisma.LoanRequestSelect;
@@ -150,14 +150,9 @@ const executiveDecisionSelect = {
 
 const globalLoanSelect = {
   ...loanSummarySelect,
-  student: {
-    select: {
-      ...studentSummarySelect,
-      phone: true,
-    },
-  },
+  ...loanStudentSelect,
+  studentPhone: true,
   advisor: { select: userSummarySelect },
-  cancelledByUser: { select: userSummarySelect },
   approvals: {
     ...advisorApprovalHistory,
   },
@@ -608,7 +603,6 @@ export async function cancelAdminLoanRequest({
       data: {
         status: "cancelled",
         cancelledAt,
-        cancelledBy: adminId,
       },
     });
     if (changed.count !== 1) throw new AdminCancelError("STALE_DECISION");
@@ -680,14 +674,16 @@ async function loadActionRequests(
   // Only when `where` covers every loan that can have installments (disbursed or closed), so the
   // rows already hold each student's repayment history and only the loan count is read separately.
   const readConductFromRows = view.conduct && view.schedule && options.conductFromRows === true;
-  const [rows, loanTotals] = await Promise.all([
-    prisma.loanRequest.findMany({
+  const rows = await prisma.loanRequest.findMany({
       where,
-      ...(options.distinctStudent ? { distinct: ["studentId" as const] } : {}),
+      ...(options.distinctStudent ? { distinct: ["studentCode" as const] } : {}),
       ...(options.page ?? {}),
       select: {
         id: true,
-        studentId: true,
+        studentCode: true,
+        studentNameTh: true,
+        studentPhone: true,
+        studentEducationLevel: true,
         studentYear: true,
         purpose: true,
         amount: true,
@@ -698,15 +694,11 @@ async function loadActionRequests(
         createdAt: true,
         cancelledAt: true,
         ...(view.bank ? { bankName: true, bankAccountNo: true, bankAccountName: true } : {}),
-        student: {
-          select: { fullNameTh: true, studentCode: true, phone: true, educationLevel: true },
-        },
-        // Verify-slip shows no advisor, approvals or cancellation.
+        // Verify-slip shows no advisor or approvals.
         ...(view.verifySlip
           ? {}
           : {
               advisor: { select: { fullNameTh: true } },
-              cancelledByUser: { select: { fullNameTh: true } },
               approvals: {
                 select: {
                   step: true,
@@ -759,42 +751,42 @@ async function loadActionRequests(
         { createdAt: "desc" },
         { id: "desc" },
       ],
-    }),
-    readConductFromRows
-      ? prisma.loanRequest.groupBy({
-          by: ["studentId"],
-          where: { student: { studentLoans: { some: where } } },
-          _count: { _all: true },
-        })
-      : null,
-  ]);
+    });
 
   // The conditional selects widen Prisma's inferred type to the whole model, so the row shape is
   // stated by ActionRequestRow and each select above is kept in step with it.
-  const loans = rows as unknown as (ActionRequestRow & { studentId: string })[];
+  const loans = rows as unknown as ActionRequestRow[];
+  const studentCodes = [...new Set(loans.map((loan) => loan.studentCode))];
   const conductByStudent = !view.conduct
     ? new Map<string, StudentConduct>()
-    : loanTotals
-      ? conductFromRowsOf(loans, loanTotals)
-      : await loadStudentConduct([...new Set(loans.map((loan) => loan.studentId))]);
+    : readConductFromRows
+      ? conductFromRowsOf(
+          loans,
+          await prisma.loanRequest.groupBy({
+            by: ["studentCode"],
+            where: { studentCode: { in: studentCodes } },
+            _count: { _all: true },
+          }),
+        )
+      : await loadStudentConduct(studentCodes);
 
-  return loans.map((loan) => toActionRequest(loan, view, conductByStudent.get(loan.studentId)));
+  return loans.map((loan) => toActionRequest(loan, view, conductByStudent.get(loan.studentCode)));
 }
 
 function conductFromRowsOf(
   rows: Parameters<typeof conductFromRows>[0],
-  totals: { studentId: string; _count: { _all: number } }[],
+  totals: { studentCode: string; _count: { _all: number } }[],
 ) {
   return conductFromRows(
     rows,
-    totals.map(({ studentId, _count }) => ({ studentId, count: _count._all })),
+    totals.map(({ studentCode, _count }) => ({ studentCode, count: _count._all })),
   );
 }
 
 /** One query per table for all the students on a page, instead of every loan of each student per row. */
-async function loadStudentConduct(studentIds: string[]): Promise<Map<string, StudentConduct>> {
-  if (studentIds.length === 0) return new Map();
-  const loan = { studentId: { in: studentIds } };
+async function loadStudentConduct(studentCodes: string[]): Promise<Map<string, StudentConduct>> {
+  if (studentCodes.length === 0) return new Map();
+  const loan = { studentCode: { in: studentCodes } };
   const [installments, payments, counts] = await Promise.all([
     prisma.installment.findMany({
       where: { loan },
@@ -806,7 +798,7 @@ async function loadStudentConduct(studentIds: string[]): Promise<Map<string, Stu
         settledAt: true,
         amountDue: true,
         amountPaid: true,
-        loan: { select: { studentId: true } },
+        loan: { select: { studentCode: true } },
       },
     }),
     // Only confirmed payments count toward conduct; see deriveInstallmentConduct.
@@ -819,27 +811,27 @@ async function loadStudentConduct(studentIds: string[]): Promise<Map<string, Stu
         paidAt: true,
         confirmedAt: true,
         createdAt: true,
-        loan: { select: { studentId: true } },
+        loan: { select: { studentCode: true } },
       },
     }),
-    prisma.loanRequest.groupBy({ by: ["studentId"], where: loan, _count: { _all: true } }),
+    prisma.loanRequest.groupBy({ by: ["studentCode"], where: loan, _count: { _all: true } }),
   ]);
 
   const byStudent = new Map<string, Map<string, { installments: typeof installments; payments: typeof payments }>>();
-  const loanOf = (studentId: string, loanId: string) => {
-    const loans = byStudent.get(studentId) ?? new Map();
-    byStudent.set(studentId, loans);
+  const loanOf = (studentCode: string, loanId: string) => {
+    const loans = byStudent.get(studentCode) ?? new Map();
+    byStudent.set(studentCode, loans);
     const entry = loans.get(loanId) ?? { installments: [], payments: [] };
     loans.set(loanId, entry);
     return entry;
   };
-  for (const row of installments) loanOf(row.loan.studentId, row.loanId).installments.push(row);
-  for (const row of payments) loanOf(row.loan.studentId, row.loanId).payments.push(row);
+  for (const row of installments) loanOf(row.loan.studentCode, row.loanId).installments.push(row);
+  for (const row of payments) loanOf(row.loan.studentCode, row.loanId).payments.push(row);
 
   return new Map(
     counts.map((count) => [
-      count.studentId,
-      summarizeStudentConduct([...(byStudent.get(count.studentId)?.values() ?? [])], count._count._all),
+      count.studentCode,
+      summarizeStudentConduct([...(byStudent.get(count.studentCode)?.values() ?? [])], count._count._all),
     ]),
   );
 }
@@ -920,8 +912,8 @@ export async function getVerifySlipPage({
     ? {
         ...verifySlipWhere,
         OR: [
-          { student: { fullNameTh: { contains: term, mode: "insensitive" } } },
-          { student: { studentCode: { contains: term } } },
+          { studentNameTh: { contains: term, mode: "insensitive" } },
+          { studentCode: { contains: term } },
         ],
       }
     : verifySlipWhere;
@@ -962,12 +954,13 @@ export async function getDisbursementPage({
     ...(term
       ? {
           OR: [
-            { student: { fullNameTh: { contains: term, mode: "insensitive" } } },
-            { student: { studentCode: { contains: term } } },
+            { studentNameTh: { contains: term, mode: "insensitive" } },
+            { studentCode: { contains: term } },
           ],
         }
       : {}),
-    ...(degree ? { student: { educationLevel: degree } } : {}),
+    // The UI filters by degree name; the column holds its code. An unknown name matches nothing.
+    ...(degree ? { studentEducationLevel: DEGREE_CODE_DIGIT[degree] ?? degree } : {}),
   };
   const [items, total] = await Promise.all([
     loadActionRequests(where, fullView, { page: { skip: (page - 1) * limit, take: limit } }),
@@ -1012,8 +1005,8 @@ async function getQueuePage(
         ? [
             {
               OR: [
-                { student: { fullNameTh: { contains: term, mode: "insensitive" as const } } },
-                { student: { studentCode: { contains: term } } },
+                { studentNameTh: { contains: term, mode: "insensitive" as const } },
+                { studentCode: { contains: term } },
                 { id: { contains: term, mode: "insensitive" as const } },
                 { purpose: { contains: term, mode: "insensitive" as const } },
               ],
@@ -1215,19 +1208,19 @@ const withStudentSlipFlags = (loan: StudentLoanRow): WithSlipFlag<StudentLoanRow
   payments: loan.payments.map(withSlipFlag),
 });
 
-export async function getStudentLoanList(studentId: string) {
+export async function getStudentLoanList(studentCode: string) {
   const loans = await prisma.loanRequest.findMany({
-    where: { studentId },
+    where: { studentCode },
     select: studentLoanDetailSelect,
     orderBy: { createdAt: "desc" },
   });
   return serializeJson(loans.map(withStudentSlipFlags));
 }
 
-export async function getStudentCurrentLoan(studentId: string) {
+export async function getStudentCurrentLoan(studentCode: string) {
   const loan = await prisma.loanRequest.findFirst({
     where: {
-      studentId,
+      studentCode,
       status: { notIn: ["closed", "rejected", "cancelled"] },
     },
     select: studentLoanDetailSelect,
@@ -1236,11 +1229,11 @@ export async function getStudentCurrentLoan(studentId: string) {
   return loan ? serializeJson(withStudentSlipFlags(loan)) : null;
 }
 
-export async function getStudentLoanDetail(loanId: string, studentId: string) {
+export async function getStudentLoanDetail(loanId: string, studentCode: string) {
   const loan = await prisma.loanRequest.findFirst({
     where: {
       id: loanId,
-      studentId,
+      studentCode,
     },
     select: studentLoanDetailSelect,
   });

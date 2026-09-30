@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   getCmuDisplayName,
+  getCmuNames,
   getCmuSession,
   getProfileText,
   type CmuProfile,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/development-access";
 import { prisma } from "@/lib/prisma";
 import { RETURN_PATH_HEADER, sanitizeReturnPath } from "@/lib/return-path";
+import { getEducationLevelCode, getEducationLevelName } from "@/lib/student-code";
 import type { AppUser, UserRoleName } from "@/lib/generated/prisma/client";
 
 const STUDENT_ID_KEYS = ["student_id", "studentId", "student_code", "studentCode"];
@@ -31,7 +33,16 @@ const DEVELOPMENT_USER_IDS: Record<DevelopmentApiRole, string> = {
   admin: "00000000-0000-0000-0000-000000000003",
   advisor: "00000000-0000-0000-0000-000000000004",
 };
-const DEVELOPMENT_STUDENT_ID = "00000000-0000-0000-0000-000000000101";
+// The dev-bypass student: seed fixture student 101, who owns loan REQ202609060001.
+const DEVELOPMENT_STUDENT_PROFILE: CmuProfile = {
+  cmuitaccount_name: "pimchanok.sukprasert",
+  cmuitaccount: "pimchanok.sukprasert@cmu.ac.th",
+  student_id: "670610143",
+  firstname_TH: "พิมพ์ชนก",
+  lastname_TH: "สุขประเสริฐ",
+  firstname_EN: "Pimchanok",
+  lastname_EN: "Sukprasert",
+};
 const DEVELOPMENT_API_ROLES: DevelopmentApiRole[] = ["advisor", "admin", "super_admin", "executive"];
 
 export type LoanIdentity = {
@@ -53,6 +64,28 @@ export type LoanSessionContext = {
   profile: CmuProfile;
   identity: LoanIdentity;
 };
+
+export type StudentSessionContext = LoanSessionContext & {
+  identity: LoanIdentity & { studentCode: string };
+};
+
+/**
+ * A student has no app_user row: this is built from the CMU session, and `id` is the student
+ * code, the key loan_request.student_code and audit_log.actor_student_code hold.
+ */
+export type StudentUser = {
+  id: string;
+  studentCode: string;
+  email: string | null;
+  fullNameTh: string;
+  fullNameEn: string | null;
+  educationLevel: string | null;
+  // The phone the student gave on their latest loan request.
+  phone: string | null;
+  roles: { role: UserRoleName }[];
+};
+
+export type StudentContext = StudentSessionContext & { user: StudentUser };
 
 function profileText(profile: CmuProfile, keys: string[]) {
   for (const key of keys) {
@@ -77,43 +110,51 @@ export function normalizeLoanIdentity(profile: CmuProfile): LoanIdentity {
   };
 }
 
-export async function resolveStudentIdentity(identity: LoanIdentity) {
-  if (!identity.cmuAccount && !identity.email && !identity.studentCode) return null;
+/** The staff app_user row for a CMU identity. Students have none. */
+export async function resolveAppUser(identity: LoanIdentity) {
+  if (!identity.cmuAccount && !identity.email) return null;
 
   return prisma.appUser.findFirst({
     where: {
       OR: [
         ...(identity.cmuAccount ? [{ cmuAccount: identity.cmuAccount }] : []),
         ...(identity.email ? [{ email: identity.email }] : []),
-        ...(identity.studentCode ? [{ studentCode: identity.studentCode }] : []),
       ],
     },
     include: { roles: { select: { role: true } } },
   });
 }
 
-export async function resolveStoredStudent(identity: LoanIdentity) {
-  const user = await resolveStudentIdentity(identity);
-  if (!user || !user.studentCode || !user.roles.some(({ role }) => role === "student")) {
-    return null;
-  }
+async function buildStudentUser(context: StudentSessionContext): Promise<StudentUser> {
+  const { studentCode } = context.identity;
+  const latest = await prisma.loanRequest.findFirst({
+    where: { studentCode },
+    orderBy: { createdAt: "desc" },
+    select: { studentPhone: true },
+  });
+  const names = getCmuNames(context.profile);
 
-  return user;
+  return {
+    id: studentCode,
+    studentCode,
+    email: context.identity.email,
+    fullNameTh: names.fullNameTh,
+    fullNameEn: names.fullNameEn,
+    educationLevel: getEducationLevelName(getEducationLevelCode(studentCode)),
+    phone: latest?.studentPhone ?? null,
+    roles: [{ role: "student" }],
+  };
 }
 
 export async function resolveAdvisor(identity: LoanIdentity, advisorName?: string) {
-  const user = await resolveStudentIdentity(identity);
+  const user = await resolveAppUser(identity);
   if (!user || !user.roles.some(({ role }) => role === "advisor")) return null;
   if (advisorName && user.fullNameTh !== advisorName.trim()) return null;
   return user;
 }
 
 function createDevelopmentLoanContext(user: LoanUserContext["user"]): LoanUserContext {
-  const profile: CmuProfile = {
-    cmuitaccount: user.cmuAccount,
-    email: user.email,
-    ...(user.studentCode ? { student_id: user.studentCode } : {}),
-  };
+  const profile: CmuProfile = { cmuitaccount: user.cmuAccount, email: user.email };
   const now = Date.now();
 
   return {
@@ -122,23 +163,24 @@ function createDevelopmentLoanContext(user: LoanUserContext["user"]): LoanUserCo
     identity: {
       cmuAccount: user.cmuAccount,
       email: user.email,
-      studentCode: user.studentCode,
+      studentCode: null,
       displayName: user.fullNameTh,
     },
     user,
   };
 }
 
-async function getDevelopmentStudentContext(): Promise<LoanUserContext | null> {
+function getDevelopmentStudentSession(): StudentSessionContext | null {
   if (!isDevelopmentApiBypass()) return null;
 
-  const user = await prisma.appUser.findUnique({
-    where: { id: DEVELOPMENT_STUDENT_ID },
-    include: { roles: { select: { role: true } } },
-  });
-  if (!user || !user.studentCode || !user.roles.some(({ role }) => role === "student")) return null;
-
-  return createDevelopmentLoanContext(user);
+  const profile = DEVELOPMENT_STUDENT_PROFILE;
+  const now = Date.now();
+  const identity = normalizeLoanIdentity(profile);
+  return {
+    session: { profile, loggedInAt: now, expiresAt: now + 60_000 },
+    profile,
+    identity: { ...identity, studentCode: identity.studentCode ?? "" },
+  };
 }
 
 async function getDevelopmentLoanContext(
@@ -172,23 +214,15 @@ async function getDevelopmentLoanContext(
   return createDevelopmentLoanContext(user);
 }
 
-export async function getStudentContext(): Promise<LoanUserContext | null> {
-  if (isDevelopmentApiBypass()) return getDevelopmentStudentContext();
-
+export async function getStudentContext(): Promise<StudentContext | null> {
   const context = await getStudentSessionContext();
   if (!context) return null;
-  const user = await resolveStoredStudent(context.identity);
-  if (!user) return null;
 
-  return { ...context, user };
+  return { ...context, user: await buildStudentUser(context) };
 }
 
-export async function getStudentSessionContext(): Promise<LoanSessionContext | null> {
-  if (isDevelopmentApiBypass()) {
-    const context = await getDevelopmentStudentContext();
-    if (!context) return null;
-    return { session: context.session, profile: context.profile, identity: context.identity };
-  }
+export async function getStudentSessionContext(): Promise<StudentSessionContext | null> {
+  if (isDevelopmentApiBypass()) return getDevelopmentStudentSession();
 
   const session = await getCmuSession();
   if (!session) {
@@ -197,7 +231,8 @@ export async function getStudentSessionContext(): Promise<LoanSessionContext | n
   }
 
   const identity = normalizeLoanIdentity(session.profile);
-  if (!identity.studentCode) {
+  const { studentCode } = identity;
+  if (!studentCode) {
     console.info("Student session rejected", { reason: "missing_student_id" });
     return null;
   }
@@ -210,7 +245,7 @@ export async function getStudentSessionContext(): Promise<LoanSessionContext | n
     }
   }
 
-  return { session, profile: session.profile, identity };
+  return { session, profile: session.profile, identity: { ...identity, studentCode } };
 }
 
 export type RoleAccess =
@@ -269,7 +304,7 @@ export async function getAdminAccess(): Promise<AdminAccess> {
   if (!session) return { status: "unauthenticated" };
 
   const identity = normalizeLoanIdentity(session.profile);
-  const user = await resolveStudentIdentity(identity);
+  const user = await resolveAppUser(identity);
   if (!user || !hasAdminRole(user.roles)) return { status: "forbidden" };
 
   return {
@@ -293,7 +328,7 @@ export async function getSuperAdminAccess(): Promise<SuperAdminAccess> {
   if (!session) return { status: "unauthenticated" };
 
   const identity = normalizeLoanIdentity(session.profile);
-  const user = await resolveStudentIdentity(identity);
+  const user = await resolveAppUser(identity);
   if (!user || !hasSuperAdminRole(user.roles)) return { status: "forbidden" };
 
   return {
@@ -320,7 +355,7 @@ export async function getExecutiveAccess(): Promise<ExecutiveAccess> {
   if (!session) return { status: "unauthenticated" };
 
   const identity = normalizeLoanIdentity(session.profile);
-  const user = await resolveStudentIdentity(identity);
+  const user = await resolveAppUser(identity);
 
   if (!user || !hasExecutiveRole(user.roles)) {
     return { status: "forbidden" };
@@ -352,23 +387,24 @@ const DEVELOPMENT_CONTEXT_PRECEDENCE = ["admin", "super_admin", "executive", "ad
  * decrypt and one user lookup, where chaining the per-role getters costs one of each per role.
  * The caller is responsible for authorizing the roles on the returned context.
  */
-export async function getSignedInContext(): Promise<LoanUserContext | null> {
+export async function getSignedInContext(): Promise<LoanUserContext | StudentContext | null> {
   if (isDevelopmentApiBypass() || DEVELOPMENT_API_ROLES.some((role) => isDevelopmentRoleEnabled(role))) {
     for (const role of DEVELOPMENT_CONTEXT_PRECEDENCE) {
       const context = await getDevelopmentLoanContext(role);
       if (context) return context;
     }
-    return getDevelopmentStudentContext();
+    return getStudentContext();
   }
 
   const session = await getCmuSession();
   if (!session) return null;
 
   const identity = normalizeLoanIdentity(session.profile);
-  const user = await resolveStudentIdentity(identity);
-  if (!user) return null;
+  const user = await resolveAppUser(identity);
+  if (user) return { session, profile: session.profile, identity, user };
 
-  return { session, profile: session.profile, identity, user };
+  // Not staff: a student is signed in by their session alone.
+  return getStudentContext();
 }
 
 export function resolveUserHomePath(
@@ -406,7 +442,7 @@ export async function getUserHomePath(profile: CmuProfile): Promise<string> {
 
   try {
     const identity = normalizeLoanIdentity(profile);
-    const user = await resolveStudentIdentity(identity);
+    const user = await resolveAppUser(identity);
     const roles = user?.roles.map((r) => r.role) ?? [];
     return resolveUserHomePath(roles, profile);
   } catch (error) {
@@ -415,7 +451,12 @@ export async function getUserHomePath(profile: CmuProfile): Promise<string> {
   }
 }
 
-export async function getStudentAccess(): Promise<RoleAccess> {
+export type StudentAccess =
+  | { status: "authorized"; context: StudentContext }
+  | { status: "unauthenticated" }
+  | { status: "forbidden" };
+
+export async function getStudentAccess(): Promise<StudentAccess> {
   const session = await getCmuSession();
   if (!session) return { status: "unauthenticated" };
 
@@ -436,11 +477,13 @@ async function withReturnPath(loginRedirectUrl: string): Promise<string> {
   return `${loginUrl.pathname}${loginUrl.search}`;
 }
 
-async function requireRoleAccess(
-  accessPromise: Promise<RoleAccess>,
+async function requireRoleAccess<Context>(
+  accessPromise: Promise<
+    { status: "authorized"; context: Context } | { status: "unauthenticated" } | { status: "forbidden" }
+  >,
   errorRedirectUrl: string,
   loginRedirectUrl: string,
-): Promise<LoanUserContext> {
+): Promise<Context> {
   const access = await accessPromise;
 
   if (access.status === "unauthenticated") {
@@ -486,6 +529,6 @@ export async function requireAdvisorAccess(
 export async function requireStudentAccess(
   errorRedirectUrl = "/error?type=forbidden",
   loginRedirectUrl = "/login",
-): Promise<LoanUserContext> {
+): Promise<StudentContext> {
   return requireRoleAccess(getStudentAccess(), errorRedirectUrl, loginRedirectUrl);
 }

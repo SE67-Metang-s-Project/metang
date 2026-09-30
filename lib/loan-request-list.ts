@@ -15,14 +15,6 @@ export type LoanRequestListUser = {
   fullNameEn: string | null;
 };
 
-export type LoanRequestListStudent = {
-  id: string;
-  fullNameTh: string;
-  fullNameEn: string | null;
-  studentCode: string | null;
-  phone: string | null;
-};
-
 export type LoanRequestListApproval = {
   id: string;
   loanId: string;
@@ -61,13 +53,12 @@ export type LoanRequestListPayment = {
 
 export type LoanRequestListItem = {
   id: string;
-  studentId: string;
+  studentCode: string;
   advisorId: string;
   amount: number;
   approvedAmount: number | null;
   studentYear: number;
   purpose: string;
-  additionalNote: string | null;
   installmentCount: number;
   firstDueDate: string;
   status:
@@ -83,15 +74,15 @@ export type LoanRequestListItem = {
     | "cancelled";
   submittedAt: string | null;
   cancelledAt: string | null;
-  cancelledBy: string | null;
   disbursedAt: string | null;
   transferConfirmedAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  student: LoanRequestListStudent;
+  studentNameTh: string;
+  studentNameEn: string | null;
+  studentPhone: string | null;
   advisor: LoanRequestListUser;
-  cancelledByUser: LoanRequestListUser | null;
   approvals: LoanRequestListApproval[];
   installments: LoanRequestListInstallment[];
   payments: LoanRequestListPayment[];

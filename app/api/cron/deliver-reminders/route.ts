@@ -65,8 +65,8 @@ async function handle(request: Request) {
         let emailPayload;
         try {
           emailPayload = buildLoanDueReminderEmail({
-            studentName: due.loan.student.fullNameTh,
-            studentEmail: due.loan.student.email,
+            studentName: due.loan.studentNameTh,
+            studentEmail: due.loan.studentEmail,
             installmentSeq: due.seq,
             amountDue: decision.amountRemaining,
             dueDate: due.dueDate,

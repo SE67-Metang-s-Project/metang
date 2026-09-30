@@ -24,14 +24,14 @@ export function canAccessLoanPetition({
   actorRole: LoanPetitionActorRole;
   actorId: string;
   loan: {
-    studentId: string;
+    studentCode: string;
     advisorId?: string | null;
     status?: string | null;
   };
 }): LoanPetitionAccessDecision {
   switch (actorRole) {
     case "student":
-      if (loan.studentId === actorId) {
+      if (loan.studentCode === actorId) {
         return { allowed: true, includeBankData: true };
       }
       return {

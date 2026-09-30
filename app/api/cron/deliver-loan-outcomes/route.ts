@@ -69,8 +69,8 @@ async function handle(request: Request) {
         let emailPayload;
         try {
           const common = {
-            studentName: loan.student.fullNameTh,
-            studentEmail: loan.student.email,
+            studentName: loan.studentNameTh,
+            studentEmail: loan.studentEmail,
             loanId: loan.id,
             loanDetailUrl: buildStudentLoanDetailUrl(baseUrl, loan.id),
           };
