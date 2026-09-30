@@ -398,7 +398,6 @@ if (returnedRequestDetails) {
         amount: 12000,
         studentYear: 3,
         purpose: "ค่าเทอมภาคเรียนที่ 2/2568",
-        additionalNote: "แนบรายละเอียดค่าใช้จ่ายเพิ่มเติม",
         bankName: "ธนาคารกสิกรไทย",
         bankAccountNo: "1234567890",
         bankAccountName: "อนุชนก มีโชค",

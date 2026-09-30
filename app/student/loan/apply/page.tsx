@@ -55,7 +55,6 @@ export default async function StudentLoanApplyPage() {
       amount: currentLoan.amount,
       studentYear: currentLoan.studentYear,
       purpose: currentLoan.purpose,
-      additionalNote: currentLoan.additionalNote,
       bankName: normalizeBankName(currentLoan.bankName),
       bankAccountNo: currentLoan.bankAccountNo,
       bankAccountName: currentLoan.bankAccountName,

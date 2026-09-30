@@ -28,8 +28,7 @@ export type ReturnedRequestCorrection = {
 
 export type ResubmitLoanRequest = (requestId: string, payload: LoanInput) => void | Promise<void>;
 
-type CorrectionFormValues = Omit<LoanInput, "additionalNote" | "amount" | "studentYear"> & {
-  additionalNote: string;
+type CorrectionFormValues = Omit<LoanInput, "amount" | "studentYear"> & {
   amount: string;
   educationLevel: string;
   phoneNumber: string;
@@ -62,7 +61,6 @@ const correctionFields: EditableTextField[] = [
 function getInitialValues(correction: ReturnedRequestCorrection): CorrectionFormValues {
   return {
     ...correction.input,
-    additionalNote: correction.input.additionalNote ?? "",
     amount: String(correction.input.amount),
     educationLevel: correction.educationLevel,
     phoneNumber: correction.phoneNumber,
@@ -72,10 +70,6 @@ function getInitialValues(correction: ReturnedRequestCorrection): CorrectionForm
 
 function validateField(field: EditableTextField, value: string) {
   const text = value.trim();
-
-  if (field === "additionalNote") {
-    return "";
-  }
 
   if (!text) {
     return requiredFieldMessage;
@@ -173,7 +167,6 @@ export default function ReturnedRequestCorrectionForm({
       amount: Number(values.amount),
       studentYear: Number(values.studentYear),
       purpose: values.purpose.trim(),
-      additionalNote: values.additionalNote.trim() || null,
       bankName: values.bankName.trim(),
       bankAccountNo: values.bankAccountNo.trim(),
       bankAccountName: values.bankAccountName.trim(),
