@@ -13,9 +13,9 @@ const disburseRoute = read("app/api/admin/loan-requests/[id]/disburse/route.ts")
 test("the loan is resolved server-side, so submitting takes one request", () => {
   // one_open_loan_per_student allows a single non-terminal loan, so there is never more than one
   // disbursed loan to choose between - the client should not have to fetch its id first.
-  assert.match(query, /export async function findRepayableLoanId\(studentId: string\)/);
-  assert.match(query, /where: \{ studentId, status: "disbursed" \}/);
-  assert.match(route, /const loanId = await findRepayableLoanId\(context\.user\.id\);/);
+  assert.match(query, /export async function findRepayableLoanId\(studentCode: string\)/);
+  assert.match(query, /where: \{ studentCode, status: "disbursed" \}/);
+  assert.match(route, /const loanId = await findRepayableLoanId\(context\.user\.studentCode\);/);
   assert.match(route, /"You have no loan open for repayment", 409/);
   // No loan id in the path, so nothing to validate and nothing for a caller to get wrong.
   assert.doesNotMatch(route, /isLoanId/);
@@ -23,14 +23,14 @@ test("the loan is resolved server-side, so submitting takes one request", () => 
 });
 
 test("the student can only ever submit against their own disbursed loan", () => {
-  assert.match(query, /where: \{ id: loanId, studentId \}/);
+  assert.match(query, /where: \{ id: loanId, studentCode \}/);
   assert.match(query, /if \(!loan\) throw new StudentPaymentError\("LOAN_NOT_FOUND"\);/);
   assert.match(
     query,
     /if \(loan\.status !== "disbursed"\) throw new StudentPaymentError\("LOAN_NOT_DISBURSED"\);/,
   );
   assert.match(route, /const context = await getStudentContext\(\);/);
-  assert.match(route, /studentId: context\.user\.id/);
+  assert.match(route, /studentCode: context\.user\.studentCode/);
 });
 
 test("only one submission may await review per loan", () => {

@@ -15,7 +15,7 @@ http:
       value: https://other-site.example
   params:
     - name: id
-      value: "00000000-0000-0000-0000-000000000102"
+      value: "00000000-0000-0000-0000-000000000009"
       type: path
   auth:
     type: apikey

@@ -1,0 +1,62 @@
+info:
+  name: 16_1 an admin cancels a loan awaiting disbursement, with a reason
+  type: http
+  seq: 16
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/loan-requests/REQ202609060006/cancel"
+  body:
+    type: json
+    data: |-
+      {
+        "comment": "นักศึกษาแจ้งไม่ประสงค์รับเงิน"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.status
+      operator: eq
+      value: "cancelled"
+    - expression: res.body.data.cancelledAt
+      operator: isDefined
+  scripts:
+    - type: tests
+      code: |-
+        const approvals = res.body.data?.approvals ?? [];
+        test("the admin is named by a rejected admin approval carrying the reason", function () {
+          const cancel = approvals.find((a) => a.step === "admin" && a.decision === "rejected");
+          expect(cancel).to.not.equal(undefined);
+          expect(cancel.comment).to.equal("นักศึกษาแจ้งไม่ประสงค์รับเงิน");
+          expect(cancel.decidedBy).to.match(/^00000000-0000-0000-0000-0000000000\d\d$/);
+        });
+
+        const again = await bru
+          .sendRequest({
+            method: "POST",
+            url: bru.interpolate("{{baseUrl}}") + "/admin/loan-requests/REQ202609060006/cancel",
+            headers: { "Content-Type": "application/json" },
+            data: { comment: "ซ้ำ" },
+          })
+          .catch((error) => error);
+        // cancelAdminLoanRequest finds the loan by id and cancellable status, so a cancelled one
+        // reads as NOT_FOUND.
+        test("a second cancel finds nothing to cancel", function () {
+          expect(again?.status ?? again?.response?.status).to.equal(404);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  Seed loan 6 is pending_disbursement and no other request touches it. It already has an approved
+  admin row, so the cancel row takes the next admin attempt (ff20972). Runs before step 17, which
+  changes staff roles.

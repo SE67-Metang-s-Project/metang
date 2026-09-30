@@ -19,7 +19,8 @@ http:
         "bankName": "ไทยพาณิชย์",
         "bankAccountNo": "1234567890",
         "bankAccountName": "พิมพ์ชนก สุขประเสริฐ",
-        "installmentCount": 3
+        "installmentCount": 3,
+        "phoneNumber": "0891234567"
       }
 
 runtime:

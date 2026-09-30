@@ -12,8 +12,8 @@ test("isDevelopmentEnvironment checks both environments", () => {
 });
 
 test("canTriggerReviewerNotification authorizes correctly by role", () => {
-  const myLoan = { studentId: "s1", advisorId: "a1" };
-  const otherLoan = { studentId: "s2", advisorId: "a2" };
+  const myLoan = { studentCode: "s1", advisorId: "a1" };
+  const otherLoan = { studentCode: "s2", advisorId: "a2" };
 
   // admin, super_admin, executive can trigger on any loan
   assert.equal(canTriggerReviewerNotification("admin", "admin1", myLoan), true);

@@ -60,6 +60,6 @@ test("development access bypasses identity selection or selects the configured r
   assert.match(auth, /isDevelopmentApiBypass\(\)/);
   assert.match(auth, /developmentRole/);
   assert.match(auth, /DEVELOPMENT_USER_IDS/);
-  assert.match(auth, /getDevelopmentStudentContext/);
+  assert.match(auth, /getDevelopmentStudentSession/);
   assert.doesNotMatch(auth, /DEV_API_USER_ID/);
 });

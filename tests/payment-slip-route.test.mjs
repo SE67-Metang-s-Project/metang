@@ -38,11 +38,13 @@ test("authorization: signed in, then every role checked, before anything is serv
   assert.ok(route.indexOf("if (!allowed)") < route.indexOf("await serveSlip("));
 });
 
-test("advisors can never read a repayment slip", () => {
-  // Enforced in the shared rule, not the route: canReadRepaymentSlip falls through to false for
-  // every role it does not name, and advisor is deliberately not named.
-  assert.match(access, /export function canReadRepaymentSlip\(/);
-  assert.doesNotMatch(access, /actorRole === "advisor"/);
+test("an advisor reads only the repayment slips of loans they advise, never a disbursement slip", () => {
+  // Enforced in the shared rules, not the route; the route selects the loan's advisorId for it.
+  const repayment = access.slice(access.indexOf("export function canReadRepaymentSlip("), access.indexOf("export function canReadDisbursementSlip("));
+  const disbursement = access.slice(access.indexOf("export function canReadDisbursementSlip("));
+  assert.match(repayment, /if \(actorRole === "advisor"\) return actorId === payment\.loan\.advisorId;/);
+  assert.doesNotMatch(disbursement, /actorRole === "advisor"/);
+  assert.match(route, /loan: \{ select: \{ studentCode: true, advisorId: true \} \}/);
 });
 
 test("a malformed id is 422 and names the id; a missing slip is 404", () => {
@@ -50,7 +52,7 @@ test("a malformed id is 422 and names the id; a missing slip is 404", () => {
   // carries installmentId, so the error says which one is wanted instead of a bare 404.
   assert.match(route, /"id must be a payment uuid, not an installment id", 422/);
   assert.match(route, /if \(!payment\?\.slipPath\) return apiError\("NOT_FOUND", "Slip not found", 404\);/);
-  assert.match(route, /select: \{ slipPath: true, loan: \{ select: \{ studentId: true \} \} \}/);
+  assert.match(route, /select: \{ slipPath: true, loan: \{ select: \{ studentCode: true, advisorId: true \} \} \}/);
 
   // Anyone signed in can reach this route, so authentication precedes validation - an anonymous
   // caller gets 401, not a hint about the id format. The lookup starts before auth so the two

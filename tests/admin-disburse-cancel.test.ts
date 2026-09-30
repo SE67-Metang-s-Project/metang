@@ -19,7 +19,9 @@ test("cancelAdminLoanRequest is defined with transaction and proper role checks"
   assert.match(cancelService, /status: \{ in: \["pending_disbursement", "pending_admin"\] \}/);
   assert.match(cancelService, /status: "cancelled"/);
   assert.match(cancelService, /cancelledAt/);
-  assert.match(cancelService, /cancelledBy: adminId/);
+  // The admin is named by the rejected admin approval and the audit row; loan_request has no
+  // cancelled_by since students stopped being app_user rows.
+  assert.doesNotMatch(cancelService, /cancelledBy/);
   assert.match(cancelService, /decision: "rejected"/);
   // A loan awaiting disbursement already has an approved admin row. The new row needs the next
   // admin attempt, or the unique key (loan_id, step, attempt) rejects it and the cancel returns 409.

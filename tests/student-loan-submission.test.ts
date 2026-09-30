@@ -20,7 +20,8 @@ test("parseLoanInput validates complete and correct submission payloads", () => 
   assert.equal(parsed.amount, 5000);
   assert.equal(parsed.studentYear, 3);
   assert.equal(parsed.purpose, "ค่าอุปกรณ์การศึกษาและค่าครองชีพ");
-  assert.equal(parsed.additionalNote, "มีความจำเป็นเนื่องจากรอเงินโอนจากครอบครัว");
+  // The column is gone; a client that still sends a note has it ignored, not rejected.
+  assert.equal("additionalNote" in parsed, false);
   assert.equal(parsed.bankName, "ธนาคารกสิกรไทย");
   assert.equal(parsed.bankAccountNo, "1234567890");
   assert.equal(parsed.bankAccountName, "สมชาย รักเรียน");

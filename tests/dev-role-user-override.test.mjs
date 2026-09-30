@@ -56,9 +56,9 @@ test("the override does not skip role verification - getDevelopmentLoanContext s
 
 test("the student dev bypass is untouched by the per-role override (student has no role-specific env var)", () => {
   const fn = loanAuth.slice(
-    loanAuth.indexOf("async function getDevelopmentStudentContext"),
+    loanAuth.indexOf("function getDevelopmentStudentSession"),
     loanAuth.indexOf("async function getDevelopmentLoanContext"),
   );
-  assert.match(fn, /id: DEVELOPMENT_STUDENT_ID \},/);
+  assert.match(fn, /const profile = DEVELOPMENT_STUDENT_PROFILE;/);
   assert.doesNotMatch(fn, /getDevelopmentRoleUserId/);
 });

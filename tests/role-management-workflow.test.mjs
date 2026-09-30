@@ -86,7 +86,6 @@ test("OpenAPI publishes the NAT-80 role-management contract", () => {
   assert.deepEqual(body.required?.sort(), ["action", "role"]);
   assert.deepEqual(body.properties.action.enum, ["grant", "remove"]);
   assert.deepEqual(body.properties.role.enum, [
-    "student",
     "advisor",
     "admin",
     "super_admin",

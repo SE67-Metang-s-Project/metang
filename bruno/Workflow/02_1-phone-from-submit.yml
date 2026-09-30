@@ -1,0 +1,28 @@
+info:
+  name: 02_1 the phone sent at submit is the student's phone
+  type: http
+  seq: 2
+  tags:
+    - Workflow
+
+http:
+  method: GET
+  url: "{{baseUrl}}/student/phone-number"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.phone
+      operator: matches
+      value: "^0891234567$"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  Step 02 sent phoneNumber with the new loan, the first time this student has an open loan.

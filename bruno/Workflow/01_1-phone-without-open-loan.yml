@@ -1,0 +1,35 @@
+info:
+  name: 01_1 a phone number cannot be saved without an open loan
+  type: http
+  seq: 1
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/student/phone-number"
+  body:
+    type: json
+    data: |-
+      {
+        "phoneNumber": "0811111111"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+    - expression: res.body.error.code
+      operator: eq
+      value: "CONFLICT"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0
+
+docs: |-
+  Students are not app_user rows: the phone lives on their open loan request. Step 01 cancelled
+  the only open one, so there is nowhere to keep it; a new loan takes phoneNumber at submit.

@@ -48,7 +48,7 @@ test("workflow sources keep transactions and CAS guards together", () => {
   assert.match(resubmit, /prisma\.\$transaction\(async \(tx\) => \{/);
   assert.match(
     resubmit,
-    /const updated = await tx\.loanRequest\.updateMany\([\s\S]*?where:\s*\{ id, studentId: context\.user\.id, status: "returned" \}/,
+    /const updated = await tx\.loanRequest\.updateMany\([\s\S]*?where:\s*\{ id, studentCode: context\.user\.studentCode, status: "returned" \}/,
   );
   assert.match(resubmit, /if \(updated\.count !== 1\) throw new Error\("STALE_RESUBMIT"\)/);
   assert.doesNotMatch(resubmit, /enqueueNotification/);

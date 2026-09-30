@@ -16,7 +16,7 @@ const ADMIN_ID = "66666666-6666-6666-6666-666666666666";
 
 test("Student: can access own loan only with full bank data", () => {
   const ownLoan = {
-    studentId: STUDENT_ID,
+    studentCode: STUDENT_ID,
     advisorId: ADVISOR_ID,
     status: "pending_advisor",
   };
@@ -40,7 +40,7 @@ test("Student: can access own loan only with full bank data", () => {
 
 test("Advisor: can access assigned loans only, without bank data", () => {
   const assignedLoan = {
-    studentId: STUDENT_ID,
+    studentCode: STUDENT_ID,
     advisorId: ADVISOR_ID,
     status: "pending_advisor",
   };
@@ -64,12 +64,12 @@ test("Advisor: can access assigned loans only, without bank data", () => {
 
 test("Executive: can access authorized loans, without bank data", () => {
   const submittedLoan = {
-    studentId: STUDENT_ID,
+    studentCode: STUDENT_ID,
     advisorId: ADVISOR_ID,
     status: "pending_executive",
   };
   const draftLoan = {
-    studentId: STUDENT_ID,
+    studentCode: STUDENT_ID,
     advisorId: ADVISOR_ID,
     status: "draft",
   };
@@ -93,7 +93,7 @@ test("Executive: can access authorized loans, without bank data", () => {
 
 test("Admin/SuperAdmin: can access authorized loans with full financial and bank data", () => {
   const loan = {
-    studentId: STUDENT_ID,
+    studentCode: STUDENT_ID,
     advisorId: ADVISOR_ID,
     status: "pending_admin",
   };
@@ -127,7 +127,7 @@ test("sanitizeLoanPetitionForRole strips bankDetails for advisor and executive",
   const req = {
     id: "REQ-001",
     name: "สมศรี พยาบาล",
-    studentId: "6501234567",
+    studentCode: "6501234567",
     major: "พยาบาลศาสตร์",
     year: "3",
     amount: "5000",

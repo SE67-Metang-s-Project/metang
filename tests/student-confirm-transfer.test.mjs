@@ -21,7 +21,7 @@ test("confirm-transfer refuses a cross-origin request before touching the sessio
 });
 
 test("only the student's own disbursed loan can be confirmed", () => {
-  assert.match(route, /where: \{ id, studentId: context\.user\.id \}/);
+  assert.match(route, /where: \{ id, studentCode: context\.user\.studentCode \}/);
   assert.match(route, /if \(current\.status !== "disbursed"\) throw new Error\("STALE_CONFIRM"\);/);
   assert.match(route, /"The loan transfer cannot be confirmed in its current status",\s*409/);
 });
@@ -33,7 +33,7 @@ test("confirming is idempotent and a compare-and-set", () => {
   assert.match(
     route,
     new RegExp(
-      String.raw`updateMany\(\{\s*where: \{\s*id,\s*studentId: context\.user\.id,\s*` +
+      String.raw`updateMany\(\{\s*where: \{\s*id,\s*studentCode: context\.user\.studentCode,\s*` +
         String.raw`status: "disbursed",\s*transferConfirmedAt: null,\s*\}`,
     ),
   );
@@ -120,7 +120,7 @@ test("the pre-upload check mirrors every refusal of the transaction, in the same
     "AMOUNT_EXCEEDS_REMAINING",
   ]);
   // Same filters as the transaction's reads, and the same allocator for the amount cap.
-  assert.match(precheck, /where: \{ id: loanId, studentId \}/);
+  assert.match(precheck, /where: \{ id: loanId, studentCode \}/);
   assert.match(precheck, /payments: \{ where: \{ status: "pending_review" \}/);
   assert.match(precheck, /where: \{ settledAt: null \},\s*orderBy: \{ seq: "asc" \}/);
   assert.match(precheck, /allocatePayment\(loan\.installments, amount\)/);

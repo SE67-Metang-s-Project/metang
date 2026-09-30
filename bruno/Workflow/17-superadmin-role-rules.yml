@@ -50,11 +50,11 @@ runtime:
 
         const removeExecutive = await role(1, "remove", "executive");
         const deleteExecutive = await call("DELETE", `/${U(1)}`);
-        const editStudent = await call("PATCH", `/${U(103)}`, { fullNameTh: "x", email: "x@cmu.ac.th" });
+        const editAdvisor = await call("PATCH", `/${U(7)}`, { fullNameTh: "x", email: "x@cmu.ac.th" });
         test("the executive is never removed or deleted, and only the executive is editable", function () {
           expect(removeExecutive.status).to.equal(409);
           expect(deleteExecutive.status).to.equal(400);
-          expect(editStudent.status).to.equal(409);
+          expect(editAdvisor.status).to.equal(409);
         });
 
         // Admin 8 has hundreds of seeded approvals and payouts: the row must stay, only the role goes.

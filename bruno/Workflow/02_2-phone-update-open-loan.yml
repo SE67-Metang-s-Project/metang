@@ -1,0 +1,39 @@
+info:
+  name: 02_2 a new phone number is saved on the open loan
+  type: http
+  seq: 2
+  tags:
+    - Workflow
+
+http:
+  method: POST
+  url: "{{baseUrl}}/student/phone-number"
+  body:
+    type: json
+    data: |-
+      {
+        "phoneNumber": "0898765432"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.phone
+      operator: matches
+      value: "^0898765432$"
+  scripts:
+    - type: tests
+      code: |-
+        const url = bru.interpolate("{{baseUrl}}") + "/student/phone-number";
+        const read = await bru.sendRequest({ method: "GET", url });
+        test("the student reads back the new number", function () {
+          expect((read?.data ?? read?.response?.data)?.data?.phone).to.equal("0898765432");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: false
+  maxRedirects: 0

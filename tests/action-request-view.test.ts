@@ -24,9 +24,11 @@ const row: ActionRequestRow = {
   bankName: "KBank",
   bankAccountNo: "123-4-56789-0",
   bankAccountName: "Somchai",
-  student: { fullNameTh: "สมชาย", studentCode: "650510001", phone: "0812345678", educationLevel: null },
+  studentCode: "650510001",
+  studentNameTh: "สมชาย",
+  studentPhone: "0812345678",
+  studentEducationLevel: null,
   advisor: { fullNameTh: "อ.สมหญิง" },
-  cancelledByUser: null,
   approvals: [],
   installments: [
     { id: BigInt(1), seq: 1, dueDate: new Date("2026-09-01"), amountDue: 1500, amountPaid: 1500, settledAt: new Date("2026-08-30") },
@@ -149,13 +151,13 @@ test("conduct from loaded rows matches the per-student aggregation, and counts d
   };
   const pending = { ...payment, status: "pending_review" };
   const rows = [
-    { studentId: "s1", installments: [paid, open], payments: [payment, pending] },
-    { studentId: "s1", installments: [], payments: [] },
-    { studentId: "s2", installments: [], payments: [] },
+    { studentCode: "s1", installments: [paid, open], payments: [payment, pending] },
+    { studentCode: "s1", installments: [], payments: [] },
+    { studentCode: "s2", installments: [], payments: [] },
   ];
   const result = conductFromRows(rows, [
-    { studentId: "s1", count: 3 },
-    { studentId: "s2", count: 1 },
+    { studentCode: "s1", count: 3 },
+    { studentCode: "s2", count: 1 },
   ]);
   assert.deepEqual(result.get("s1"), summarizeStudentConduct([{ installments: [paid, open], payments: [payment] }], 3));
   assert.deepEqual(result.get("s1"), { totalLoanRequests: 3, onTime: 1, late: 1 });
