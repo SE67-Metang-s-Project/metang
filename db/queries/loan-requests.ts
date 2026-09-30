@@ -625,9 +625,7 @@ export async function cancelAdminLoanRequest({
         },
       });
     } else {
-      const lastAttempt = current.approvals?.length
-        ? Math.max(...current.approvals.map((a) => a.attempt))
-        : 1;
+      const lastAttempt = nextAttempt(current.approvals ?? [], "admin");
       await tx.loanApproval.create({
         data: {
           loanId: id,
