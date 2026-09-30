@@ -24,6 +24,7 @@ import {
   Download,
   ZoomIn,
   RefreshCw,
+  FileX2,
 } from "lucide-react";
 import CardHeader from "@/components/shared/CardHeader";
 import AdaptiveKeyValueRow from "@/components/shared/AdaptiveKeyValueRow";
@@ -312,6 +313,11 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // State สำหรับพรีวิวสลิปขนาดเต็ม
   const [previewSlipUrl, setPreviewSlipUrl] = useState<string | null>(null);
+  // State สำหรับยกเลิกคำร้อง
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [completedCancel, setCompletedCancel] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isCompleted =
     selectedRequest?.requestStatus === "disbursed" ||
@@ -323,6 +329,16 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
       ),
     );
 
+  const closeCompletionModal = () => {
+    setCompletedCancel(null);
+    router.refresh();
+  };
+
+  const completionModalDismiss = useModalDismiss({
+    onClose: closeCompletionModal,
+    isOpen: Boolean(completedCancel),
+  });
+
   const closeAllModals = () => {
     setSelectedRequest(null);
     if (uploadedSlip) URL.revokeObjectURL(uploadedSlip);
@@ -331,11 +347,13 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
     setIsCopied(false);
     setErrorMessage(null);
     setPreviewSlipUrl(null);
+    setIsCancelling(false);
+    setCancelReason("");
   };
 
   const backdropDismiss = useModalDismiss({
     onClose: closeAllModals,
-    isOpen: Boolean(selectedRequest) && !previewSlipUrl && !viewDocumentReq,
+    isOpen: Boolean(selectedRequest) && !previewSlipUrl && !viewDocumentReq && !completedCancel,
   });
 
   const documentModalDismiss = useModalDismiss({
@@ -399,6 +417,55 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
 
       closeAllModals();
       router.refresh();
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการส่งข้อมูล");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    if (isSubmitting) return;
+    if (!selectedRequest) return;
+
+    if (!cancelReason.trim()) {
+      setErrorMessage("กรุณาระบุเหตุผลในการยกเลิกคำร้อง");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await fetch(
+        withBasePath(`/api/admin/loan-requests/${selectedRequest.id}/cancel`),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            comment: cancelReason.trim(),
+            reason: cancelReason.trim(),
+          }),
+        },
+      );
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        let msg = data?.error?.message || data?.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล";
+        if (res.status === 401) msg = "กรุณาเข้าสู่ระบบใหม่ (Session หมดอายุ)";
+        else if (res.status === 403) msg = "ไม่มีสิทธิ์ดำเนินการสำหรับบทบาทนี้";
+        else if (res.status === 404) msg = "ไม่พบข้อมูลคำร้องนี้ในระบบ";
+        else if (res.status === 409)
+          msg = data?.error?.message || "คำร้องนี้ได้รับการพิจารณาไปแล้ว หรือเกิดข้อขัดแย้ง";
+        throw new Error(msg);
+      }
+
+      const targetId = selectedRequest.id;
+      closeAllModals();
+      setCompletedCancel(targetId);
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการส่งข้อมูล");
     } finally {
@@ -1060,43 +1127,118 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
 
             {/* Footer Buttons */}
             {!isCompleted && (
-              <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex gap-3 shrink-0">
-                <div className="w-full space-y-3">
-                  {errorMessage && (
-                    <div className="text-[12px] text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200 flex items-center gap-2">
-                      <XCircle size={14} className="shrink-0" />
-                      <span>{errorMessage}</span>
+              <div className="p-4 sm:p-5 bg-white border-t border-gray-100 flex flex-col shrink-0">
+                {!isCancelling ? (
+                  <div className="w-full space-y-3">
+                    {errorMessage && (
+                      <div className="text-[12px] text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200 flex items-center gap-2">
+                        <XCircle size={14} className="shrink-0" />
+                        <span>{errorMessage}</span>
+                      </div>
+                    )}
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          setIsCancelling(true);
+                          setErrorMessage(null);
+                        }}
+                        disabled={isSubmitting}
+                        className="flex-1 py-3 flex items-center justify-center text-[14px] font-bold text-red-600 bg-white border-2 border-red-100 rounded-xl hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        type="button"
+                      >
+                        ยกเลิกคำร้อง
+                      </button>
+                      <button
+                        disabled={!uploadedSlip || isSubmitting}
+                        onClick={handleDisburse}
+                        type="button"
+                        className={`flex-1 py-3 flex items-center justify-center gap-2 rounded-xl text-[14px] font-semibold text-white transition-all shadow-sm disabled:cursor-not-allowed ${
+                          uploadedSlip && !isSubmitting
+                            ? "bg-[#059669] hover:bg-[#047857] shadow-green-600/20 cursor-pointer active:scale-[0.98]"
+                            : "bg-gray-300"
+                        }`}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 size={18} className="animate-spin" /> กำลังบันทึก...
+                          </>
+                        ) : (
+                          <>ยืนยันการโอนเงิน</>
+                        )}
+                      </button>
                     </div>
-                  )}
-                  <div className="flex gap-3">
-                    <button
-                      onClick={closeAllModals}
-                      disabled={isSubmitting}
-                      className="flex-1 py-3 flex items-center justify-center text-[14px] font-bold text-red-600 bg-white border-2 border-red-100 rounded-xl hover:bg-red-50 hover:border-red-200 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                      type="button"
-                    >
-                      ยกเลิกคำร้อง
-                    </button>
-                    <button
-                      disabled={!uploadedSlip || isSubmitting}
-                      onClick={handleDisburse}
-                      type="button"
-                      className={`flex-1 py-3 flex items-center justify-center gap-2 rounded-xl text-[14px] font-semibold text-white transition-all shadow-sm disabled:cursor-not-allowed ${
-                        uploadedSlip && !isSubmitting
-                          ? "bg-[#059669] hover:bg-[#047857] shadow-green-600/20 cursor-pointer active:scale-[0.98]"
-                          : "bg-gray-300"
-                      }`}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 size={18} className="animate-spin" /> กำลังบันทึก...
-                        </>
-                      ) : (
-                        <>ยืนยันการโอนเงิน</>
-                      )}
-                    </button>
                   </div>
-                </div>
+                ) : (
+                  <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2">
+                    <h4 className="mb-2 text-[14px] font-semibold text-red-600">
+                      <span>ระบุเหตุผลในการยกเลิกคำร้อง</span>
+                      <span className="ml-1 text-red-500 font-semibold" title="จำเป็น">
+                        *
+                      </span>
+                    </h4>
+
+                    <div className="relative mb-3">
+                      <textarea
+                        maxLength={500}
+                        placeholder="เช่น เหตุผลไม่เพียงพอต่อการกู้ยืม"
+                        className={`w-full border rounded-lg p-3 text-[14px] focus:outline-none resize-none h-20 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors ${
+                          errorMessage
+                            ? "border-red-400 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                            : "border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        }`}
+                        value={cancelReason}
+                        onChange={(e) => {
+                          setCancelReason(e.target.value);
+                          if (errorMessage) setErrorMessage(null);
+                        }}
+                        disabled={isSubmitting}
+                        autoFocus
+                      />
+                      <div className="flex justify-end mt-1">
+                        <span className="text-[14px] text-gray-500">
+                          {cancelReason.length}/500
+                        </span>
+                      </div>
+                    </div>
+
+                    {errorMessage && (
+                      <div className="text-[14px] text-red-600 mb-3 bg-red-50 p-2.5 rounded-lg border border-red-200 flex items-center gap-2">
+                        <XCircle size={14} className="shrink-0" />
+                        <span>{errorMessage}</span>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => {
+                          setIsCancelling(false);
+                          setErrorMessage(null);
+                          setCancelReason("");
+                        }}
+                        disabled={isSubmitting}
+                        className="px-4 py-2 text-[14px] font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                        type="button"
+                      >
+                        ยกเลิก
+                      </button>
+                      <button
+                        onClick={handleConfirmCancel}
+                        disabled={isSubmitting}
+                        className="px-4 py-2 text-[14px] font-semibold text-white rounded-lg shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed bg-[#dc2626] hover:bg-[#b91c1c]"
+                        type="button"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin" />
+                            <span>กำลังบันทึก...</span>
+                          </>
+                        ) : (
+                          "ยืนยันยกเลิกคำร้อง"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1264,6 +1406,41 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
               )}
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {completedCancel && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm"
+          {...completionModalDismiss}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="completion-modal-title"
+          >
+            <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-red-100 text-red-600">
+              <FileX2 size={30} />
+            </div>
+            <h2 id="completion-modal-title" className="mt-4 text-xl font-semibold text-gray-900">
+              ดำเนินการยกเลิกคำร้องเสร็จสิ้น
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              ยกเลิกคำร้อง คำร้อง {completedCancel} เรียบร้อยแล้ว
+            </p>
+            <p className="mt-1 text-sm text-gray-500">
+              คำร้องนี้เสร็จสิ้นในขั้นตอนของเจ้าหน้าที่
+            </p>
+            <button
+              type="button"
+              onClick={closeCompletionModal}
+              className="mt-6 w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-colors bg-red-600 hover:bg-red-700 cursor-pointer"
+            >
+              เสร็จสิ้น
+            </button>
           </div>
         </div>
       )}

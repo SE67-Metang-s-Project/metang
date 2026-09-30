@@ -563,6 +563,107 @@ export async function disburseLoanRequest({
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
 }
 
+export type AdminCancelErrorCode = "NOT_FOUND" | "STALE_DECISION" | "ACCESS_REVOKED";
+
+export class AdminCancelError extends Error {
+  constructor(readonly code: AdminCancelErrorCode) {
+    super(code);
+  }
+}
+
+/**
+ * Cancel a loan request that is awaiting disbursement or awaiting admin approval.
+ */
+export async function cancelAdminLoanRequest({
+  id,
+  adminId,
+  comment,
+}: {
+  id: string;
+  adminId: string;
+  comment: string;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const effectiveRole = await tx.userRole.findFirst({
+      where: { userId: adminId, role: { in: ["admin", "super_admin"] } },
+      select: { userId: true },
+    });
+    if (!effectiveRole) throw new AdminCancelError("ACCESS_REVOKED");
+
+    const current = await tx.loanRequest.findFirst({
+      where: {
+        id,
+        status: { in: ["pending_disbursement", "pending_admin"] },
+      },
+      select: adminLoanDetailSelect,
+    });
+    if (!current) throw new AdminCancelError("NOT_FOUND");
+
+    const cancelledAt = new Date();
+    const changed = await tx.loanRequest.updateMany({
+      where: {
+        id,
+        status: { in: ["pending_disbursement", "pending_admin"] },
+      },
+      data: {
+        status: "cancelled",
+        cancelledAt,
+        cancelledBy: adminId,
+      },
+    });
+    if (changed.count !== 1) throw new AdminCancelError("STALE_DECISION");
+
+    const pending = latestPendingApproval(current.approvals, "admin");
+    if (pending) {
+      await tx.loanApproval.update({
+        where: { id: pending.id },
+        data: {
+          decision: "rejected",
+          decidedBy: adminId,
+          decidedAt: cancelledAt,
+          comment,
+        },
+      });
+    } else {
+      const lastAttempt = current.approvals?.length
+        ? Math.max(...current.approvals.map((a) => a.attempt))
+        : 1;
+      await tx.loanApproval.create({
+        data: {
+          loanId: id,
+          step: "admin",
+          attempt: lastAttempt,
+          decision: "rejected",
+          decidedBy: adminId,
+          decidedAt: cancelledAt,
+          comment,
+        },
+      });
+    }
+
+    const final = await tx.loanRequest.findUniqueOrThrow({
+      where: { id },
+      select: adminLoanDetailSelect,
+    });
+
+    const audit = await tx.auditLog.create({
+      data: {
+        actorId: adminId,
+        action: "loan_request.cancelled",
+        entityType: "loan_request",
+        entityId: id,
+        before: serializeJson(current),
+        after: serializeJson(final),
+      },
+    });
+
+    await enqueueReviewerNotifications(tx, { loanId: id, auditLogId: audit.id });
+    await enqueueStudentLoanOutcome(tx, { loanId: id, outcome: "rejected" });
+
+    return final;
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15000 });
+}
+
 
 /**
  * Staff pages are Server Components that hand this result to client components, so every field
