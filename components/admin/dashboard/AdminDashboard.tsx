@@ -51,7 +51,7 @@ export default function AdminDashboard({
       {/* =====================================================
           Welcome
       ===================================================== */}
-      <WelcomeCard name={userName} description="เจ้าหน้าที่ / ผู้ดูแลระบบ (Admin)" />
+      <WelcomeCard name={userName} description="เจ้าหน้าที่ / ผู้ดูแลระบบ" />
 
       {/* =====================================================
           1. Pending Review

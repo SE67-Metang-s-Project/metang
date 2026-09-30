@@ -627,7 +627,7 @@ export default function UserRolesTab({
 
         {/* 2. Desktop/Tablet Table View */}
         <div className="hidden md:block overflow-x-auto relative">
-          <table className="w-full text-left border-collapse bg-white">
+          <table className="w-full border-collapse bg-white text-[14px]">
             <colgroup>
               <col className="w-[35%]" />
               <col className="w-[28%]" />
@@ -635,17 +635,17 @@ export default function UserRolesTab({
               <col className="w-[15%]" />
             </colgroup>
             <thead>
-              <tr className="bg-gray-100/70 border-b border-gray-200 text-gray-700 text-[13px]">
-                <th className="py-3.5 px-6 font-semibold border-r border-gray-200">
+              <tr className="border-b border-gray-200 bg-gray-100/70 text-center text-[14px] text-gray-700">
+                <th className="border-r border-gray-200 px-6 py-3.5 font-semibold">
                   ชื่อผู้ใช้งาน
                 </th>
-                <th className="py-3.5 px-6 font-semibold border-r border-gray-200">
+                <th className="border-r border-gray-200 px-6 py-3.5 font-semibold">
                   อีเมล / รหัสประจำตัว
                 </th>
-                <th className="py-3.5 px-6 font-semibold text-center border-r border-gray-200">
+                <th className="border-r border-gray-200 px-6 py-3.5 font-semibold">
                   บทบาท
                 </th>
-                <th className="py-3.5 px-6 font-semibold text-center">จัดการ</th>
+                <th className="px-6 py-3.5 font-semibold">จัดการ</th>
               </tr>
             </thead>
             <tbody>
@@ -693,7 +693,7 @@ export default function UserRolesTab({
                     >
                       <td className="py-3 px-6 border-r border-gray-100">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-[13px] font-semibold shrink-0">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[14px] font-semibold text-orange-600">
                             {initials}
                           </div>
                           <div>
@@ -712,7 +712,7 @@ export default function UserRolesTab({
                                   .map((r) => (
                                     <span
                                       key={r.role}
-                                      className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-orange-100/70 text-orange-800"
+                                      className="rounded bg-orange-100/70 px-1.5 py-0.5 text-[14px] font-medium text-orange-800"
                                     >
                                       {ROLE_TO_THAI[r.role]}
                                     </span>
@@ -723,14 +723,14 @@ export default function UserRolesTab({
                         </div>
                       </td>
                       <td className="py-3 px-6 border-r border-gray-100">
-                        <div className="text-[13px] text-gray-700">{user.email}</div>
-                        <div className="text-[12px] text-gray-400 mt-0.5">{displayId}</div>
+                        <div className="text-[14px] text-gray-700">{user.email}</div>
+                        <div className="mt-0.5 text-[14px] text-gray-400">{displayId}</div>
                       </td>
                       <td className="py-3 px-6 border-r border-gray-100 align-middle">
                         <div className="flex justify-center">
                           <div className="relative inline-block w-40">
                             {isMutating ? (
-                              <div className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg text-[13px] font-medium text-gray-500 bg-gray-100 border border-gray-200">
+                              <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-100 py-1.5 text-[14px] font-medium text-gray-500">
                                 <Loader2 size={14} className="animate-spin text-orange-500" />
                                 กำลังบันทึก...
                               </div>
@@ -740,7 +740,7 @@ export default function UserRolesTab({
                                   value={primaryRole}
                                   onChange={(e) => handleRoleChange(user, e.target.value)}
                                   disabled={isMutating}
-                                  className="w-full appearance-none pl-4 pr-8 py-1.5 rounded-lg text-[13px] font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 outline-none cursor-pointer transition-all focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
+                                  className="w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white py-1.5 pl-4 pr-8 text-[14px] font-medium text-gray-700 outline-none transition-all hover:border-gray-400 focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
                                 >
                                   <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
                                   <option value="ผู้บริหาร" disabled={isAnotherUserExecutive}>
@@ -769,7 +769,7 @@ export default function UserRolesTab({
                                   email: user.email || "",
                                 });
                               }}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg transition-colors cursor-pointer"
+                              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-[14px] font-medium text-orange-700 transition-colors hover:bg-orange-100"
                               title="แก้ไขชื่อและอีเมล"
                             >
                               <Pencil size={13} />
@@ -788,7 +788,7 @@ export default function UserRolesTab({
                                 setUserToDelete(user);
                               }}
                               disabled={isSuperAdmin && superAdminCount <= 1}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] font-medium transition-colors ${
                                 isSuperAdmin && superAdminCount <= 1
                                   ? "text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed"
                                   : "text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 cursor-pointer"

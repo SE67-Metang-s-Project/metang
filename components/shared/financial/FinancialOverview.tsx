@@ -887,7 +887,7 @@ function TransferredRequestsChart({
 
       <div className="mt-6 grid gap-3 border-t border-[#eee8e2] pt-5 text-center sm:grid-cols-2 lg:grid-cols-5">
         <Summary
-          label="รวมคำร้องการกู้ยืมทั้งปี"
+          label="รวมคำร้องกู้ยืมทั้งปี"
           value={`${totals.totalRequestCount} คำร้อง`}
         />
         <Summary

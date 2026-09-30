@@ -33,6 +33,14 @@
 }
 
 @media (max-width: 639px) {
+  .loanApplicationPage {
+    min-height: 0;
+  }
+
+  .loanStepActions {
+    margin-bottom: 0;
+  }
+
   .loanTimelineActions:not(.loanTimelineActionsSingle) button > svg {
     display: none;
   }
@@ -930,7 +938,7 @@
 }
 
 .loanStepActions {
-  margin-bottom: 50px;
+  margin-bottom: 0;
 }
 
 .loanStepActions button {
@@ -3028,7 +3036,7 @@
   grid-column: 1 / -1;
   display: grid;
   gap: 16px;
-  margin-bottom: 50px;
+  margin-bottom: 0;
   padding: 16px;
   border: 2px solid var(--color-contact-footer-border);
   border-radius: 24px;
@@ -3084,6 +3092,10 @@
   flex: 1 1 0;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.contactFooterItem .contactFooterExtension {
+  flex: 0 1 auto;
 }
 
 .contactFooterPrimaryItem {

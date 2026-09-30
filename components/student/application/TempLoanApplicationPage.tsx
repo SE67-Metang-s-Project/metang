@@ -91,6 +91,18 @@ const requiredFormFields: RequiredFormField[] = [
   "loanAmount",
 ];
 
+const formatBankAccountNumber = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  return [
+    digits.slice(0, 3),
+    digits.slice(3, 4),
+    digits.slice(4, 9),
+    digits.slice(9, 10),
+  ]
+    .filter(Boolean)
+    .join("-");
+};
+
 const validateField = (
   field: RequiredFormField,
   value: string,
@@ -106,7 +118,7 @@ const validateField = (
     }
   }
 
-  if (field === "accountNumber" && !/^\d{10}$/.test(value)) {
+  if (field === "accountNumber" && !/^\d{10}$/.test(value.replace(/\D/g, ""))) {
     return language === "en"
       ? "Please enter a 10-digit bank account number."
       : "กรุณากรอกเลขที่บัญชีธนาคาร 10 หลัก";
@@ -232,7 +244,9 @@ export default function TempLoanApplicationPage({
           : String(existingLoan.studentYear ?? tempLoanFormDefaults.academicYear),
         advisorName: existingLoan.advisorName || tempLoanFormDefaults.advisorName,
         bankName: existingLoan.bankName || tempLoanFormDefaults.bankName,
-        accountNumber: existingLoan.bankAccountNo || tempLoanFormDefaults.accountNumber,
+        accountNumber: formatBankAccountNumber(
+          existingLoan.bankAccountNo || tempLoanFormDefaults.accountNumber,
+        ),
         accountName: existingLoan.bankAccountName || tempLoanFormDefaults.accountName,
         purpose: existingLoan.purpose || tempLoanFormDefaults.purpose,
         additionalNote: existingLoan.additionalNote || "",
@@ -439,7 +453,7 @@ export default function TempLoanApplicationPage({
             ? null
             : formData.additionalNote.trim(),
         bankName: formData.bankName,
-        bankAccountNo: formData.accountNumber,
+        bankAccountNo: formData.accountNumber.replace(/\D/g, ""),
         bankAccountName: formData.accountName,
         installmentCount: formData.installmentCount,
       };
@@ -854,15 +868,15 @@ export default function TempLoanApplicationPage({
                       <input
                         aria-invalid={Boolean(formErrors.accountNumber)}
                         inputMode="numeric"
-                        maxLength={10}
+                        maxLength={12}
                         onBlur={() => handleFieldBlur("accountNumber")}
                         onChange={(event) =>
                           updateFormField(
                             "accountNumber",
-                            event.target.value.replace(/\D/g, "").slice(0, 10),
+                            formatBankAccountNumber(event.target.value),
                           )
                         }
-                        placeholder={t("กรอกเลขที่บัญชี", "Enter account number")}
+                        placeholder={t("เช่น 012-3-45678-9", "e.g. 012-3-45678-9")}
                         type="text"
                         value={formData.accountNumber}
                       />

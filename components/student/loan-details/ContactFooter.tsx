@@ -2,18 +2,46 @@
 
 import { useEffect, useState } from "react";
 import { Check, Clock3, Copy, Headphones, Mail, MapPin, Phone } from "lucide-react";
-import { loanContact, type LoanContact } from "@/app/student/studentMockData";
+import { loanContact } from "@/app/student/studentMockData";
 import {
-  getSystemAddress,
   systemAddressUpdatedEvent,
 } from "@/components/shared/mock-data/mockSystemSettings";
 import styles from "@/app/student/student.module.css";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import { withBasePath } from "@/lib/base-path";
 
+type ContactFooterData = {
+  phone: string;
+  extension: string | null;
+  email: string;
+  locationTh: string;
+  locationEn: string;
+};
+
+const OFFICE_HOURS = {
+  th: "วันจันทร์ - วันศุกร์ เวลา 08:30 - 16:30 น.",
+  en: "Monday - Friday, 08:30 AM - 04:30 PM",
+};
+
+const HOLIDAY_NOTE = {
+  th: "เว้นวันหยุดราชการและวันหยุดนักขัตฤกษ์",
+  en: "Closed on public holidays and official holidays.",
+};
+
+function formatOfficePhone(value: string) {
+  const digits = value.replace(/\D/g, "");
+  return digits.length === 9 ? `${digits.slice(0, 3)}-${digits.slice(3)}` : value;
+}
+
 export default function ContactFooter() {
   const { t } = useStudentLanguage();
-  const [contact, setContact] = useState<LoanContact>(loanContact);
+  const [contact, setContact] = useState<ContactFooterData>({
+    phone: loanContact.phone,
+    extension: null,
+    email: loanContact.email,
+    locationTh: loanContact.location,
+    locationEn: loanContact.location,
+  });
   const [isPhoneCopied, setIsPhoneCopied] = useState(false);
   const [isEmailCopied, setIsEmailCopied] = useState(false);
 
@@ -21,22 +49,19 @@ export default function ContactFooter() {
     let isMounted = true;
 
     const loadSystemContact = async () => {
-      // Phone, email and location come from the system settings row; opening hours has no column
-      // yet, so it still comes from the fixture.
-      const [address, stored] = await Promise.all([
-        getSystemAddress(),
-        fetch(withBasePath("/api/system-settings"))
-          .then((res) => (res.ok ? res.json() : null))
-          .then((body) => body?.data ?? null)
-          .catch(() => null),
-      ]);
+      const stored = await fetch(withBasePath("/api/system-settings"))
+        .then((res) => (res.ok ? res.json() : null))
+        .then((body) => body?.data ?? null)
+        .catch(() => null);
       if (!isMounted) return;
+      if (!stored) return;
 
       setContact({
-        phone: stored?.contactPhone ?? address.phone,
-        email: stored?.contactEmail ?? address.email,
-        location: stored?.contactLocationTh ?? address.submissionLocation,
-        openingHours: address.openingHours,
+        phone: formatOfficePhone(stored.contactPhone || loanContact.phone),
+        extension: stored.contactExt || null,
+        email: stored.contactEmail || loanContact.email,
+        locationTh: stored.contactLocationTh || loanContact.location,
+        locationEn: stored.contactLocationEn || stored.contactLocationTh || loanContact.location,
       });
     };
 
@@ -81,6 +106,11 @@ export default function ContactFooter() {
         <div className={`${styles.contactFooterItem} ${styles.contactFooterPrimaryItem}`}>
           <Phone aria-hidden="true" />
           <a href={`tel:${contact.phone}`}>{contact.phone}</a>
+          {contact.extension && (
+            <span className={styles.contactFooterExtension}>
+              {t(`(ต่อ ${contact.extension})`, `(Ext. ${contact.extension})`)}
+            </span>
+          )}
           <button
             aria-label={
               isPhoneCopied
@@ -123,13 +153,15 @@ export default function ContactFooter() {
         <div className={`${styles.contactFooterItem} ${styles.contactFooterTwoLineItem}`}>
           <MapPin aria-hidden="true" />
           <span>
-            {contact.location}
+            {t(contact.locationTh, contact.locationEn)}
           </span>
         </div>
         <div className={`${styles.contactFooterItem} ${styles.contactFooterTwoLineItem}`}>
           <Clock3 aria-hidden="true" />
           <span>
-            {contact.openingHours}
+            {t(OFFICE_HOURS.th, OFFICE_HOURS.en)}
+            <br />
+            {t(HOLIDAY_NOTE.th, HOLIDAY_NOTE.en)}
           </span>
         </div>
       </div>

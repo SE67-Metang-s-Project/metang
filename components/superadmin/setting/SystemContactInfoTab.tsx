@@ -79,6 +79,20 @@ const translateTime = (thTime: string) => {
   return thTime.replace(/เวลา/g, "").replace(/น\./g, "").trim();
 };
 
+const formatAccountNumber = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  return [
+    digits.slice(0, 3),
+    digits.slice(3, 4),
+    digits.slice(4, 9),
+    digits.slice(9, 10),
+  ]
+    .filter(Boolean)
+    .join("-");
+};
+
+const ACCOUNT_NUMBER_PATTERN = /^\d{3}-\d-\d{5}-\d$/;
+
 export interface SystemContactInfoData {
   // ข้อมูลธนาคาร
   bankName: string;
@@ -119,7 +133,7 @@ async function loadCombinedData(): Promise<{
   const bankName = stored.bankName || primaryAcc?.bankName || "ธนาคารกรุงไทย";
   const bankCode = bankCodeForName(bankName);
   const accountName = stored.accountName || primaryAcc?.accountName || FIXED_FACULTY_NAME;
-  const accountNumber = stored.accountNumber || primaryAcc?.accountNumber || "";
+  const accountNumber = formatAccountNumber(stored.accountNumber || primaryAcc?.accountNumber || "");
 
   const openingDaysTh = addressData.openingHours?.split(" เวลา ")[0] || "วันจันทร์ - วันศุกร์";
   const openingTimeTh = addressData.openingHours?.split(" เวลา ")[1] || "08:30 - 16:30 น.";
@@ -277,8 +291,8 @@ export default function SystemContactInfoTab() {
     if (!formData.bankName.trim()) errors.bankName = "กรุณาระบุชื่อธนาคาร";
     if (!formData.accountNumber.trim()) {
       errors.accountNumber = "กรุณาระบุเลขที่บัญชี";
-    } else if (!/^[0-9-]+$/.test(formData.accountNumber.trim())) {
-      errors.accountNumber = "เลขที่บัญชีต้องประกอบด้วยตัวเลขหรือเครื่องหมายขีด (-) เท่านั้น";
+    } else if (!ACCOUNT_NUMBER_PATTERN.test(formData.accountNumber.trim())) {
+      errors.accountNumber = "กรุณากรอกหมายเลขบัญชีในรูปแบบ xxx-x-xxxxx-x";
     }
     if (!formData.accountName.trim()) errors.accountName = "กรุณาระบุชื่อบัญชี";
     if (!formData.submissionLocation.trim()) {
@@ -631,7 +645,11 @@ export default function SystemContactInfoTab() {
                   type="text"
                   placeholder="เช่น 521-0-12345-6"
                   value={formData.accountNumber}
-                  onChange={(e) => handleFieldChange("accountNumber", e.target.value)}
+                  inputMode="numeric"
+                  maxLength={12}
+                  onChange={(e) =>
+                    handleFieldChange("accountNumber", formatAccountNumber(e.target.value))
+                  }
                   className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
                 {formErrors.accountNumber && (
