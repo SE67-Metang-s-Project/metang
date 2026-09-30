@@ -1,7 +1,7 @@
 # Me_Tang Maintenance Guide
 
 Version covered: Me_Tang 0.1.0 (`package.json` version `0.1.0`)
-Document version: 1.5 draft
+Document version: 1.6 draft
 Date: 2026-09-30
 
 ---
@@ -49,8 +49,8 @@ Updates and upgrades (Section 6) need a copy of the source repository and Node.j
   replace, for example `replace-with-email@cmu.ac.th`.
 - SQL statements run in the Supabase Dashboard: **SQL Editor** unless the step says otherwise.
 - Bold text such as **Database** > **Backups** is a menu path in a web dashboard.
-- `[TO VERIFY: ...]` marks a fact that the authors could not confirm from the delivered
-  software. Confirm it before you rely on it.
+- `Not tested:` marks a step that the authors wrote from the code but did not run. Test it before
+  you rely on it.
 
 Warnings use this format and come before the step they apply to:
 
@@ -110,7 +110,9 @@ proxy_set_header X-Forwarded-Proto $scheme;
 The Vercel project needs the Pro plan or higher. The `vercel.json` schedules run every minute and
 every 3 minutes, and the Hobby plan allows only daily cron jobs (Section 2.3).
 
-`[TO VERIFY: the deploy platform is not chosen (Jira NAT-15, NAT-228). If it is Vercel and Supabase, confirm the production Vercel project and plan and the Supabase project and plan. If the client hosts the application itself, use Section 6.4 and ignore the Vercel parts of this guide.]`
+The team runs no production site. The client receives the source code and the database and chooses
+the host. This guide describes two setups: Vercel with Supabase, and a server that keeps running
+(Section 6.4). Use the parts that match your host and ignore the rest.
 
 ### 2.2 How the components connect
 
@@ -227,7 +229,7 @@ works with `curl -i` on one route: `200` and a JSON body with a count means the 
 |---|---|
 | Application data | Supabase PostgreSQL, schema `public`. Main tables: `app_user`, `user_role`, `loan_request`, `loan_approval`, `installment`, `payment`, `fund_transaction`, `notification_outbox`, `audit_log`, `system_setting`, `_prisma_migrations`. |
 | Slip files | Supabase Storage bucket `bank_payment_slips` (or the name in `SUPABASE_SLIP_BUCKET`). Object names are `disbursement/<loan-id>-<timestamp>.<ext>` and `repayment/<loan-id>-<timestamp>.<ext>`. |
-| Secrets and environment settings | Infisical project `721bea71-5be4-426d-9b76-23e2e4333286`, environments `dev` and `prod`. Vercel project **Settings** > **Environment Variables** `[TO VERIFY: only if the platform is Vercel: how production secrets reach Vercel, by Infisical integration or by manual copy]`. |
+| Secrets and environment settings | Infisical project `721bea71-5be4-426d-9b76-23e2e4333286`, environments `dev` and `prod`. On Vercel, the same settings are in the project **Settings** > **Environment Variables**. |
 | In-app settings (bank account and office contact shown to users) | Table `system_setting` (one row). Edited by a SuperAdmin in the application. |
 | Scheduled job definitions | `lib/jobs/start-scheduler.ts` in the repository. |
 | Application logs | Vercel Dashboard: project > **Logs**. The application writes errors to the console only. There is no other log store and no error-tracking service. |
@@ -246,7 +248,7 @@ These gaps exist in the delivered software. They affect maintenance.
 | No backup of slip files | Supabase database backups do not include Storage files. | Section 5 |
 | No monitoring or alerting | Nobody is told when a job fails. You must check by hand. | Section 8 |
 | Two ways to run the scheduled jobs | On Vercel, the `vercel.json` schedules need the Pro plan (Hobby allows only daily jobs and rejects the deployment). On other serverless hosts, an outside scheduler must call the routes. | Section 2.3 |
-| No automatic deployment | GitHub Actions checks every push (Section 6), but nothing deploys the result. Updates are manual: `npm test` runs the unit tests, `npm run api:test` runs the API tests (Section 6.2). (Jira NAT-228 to NAT-230, open.) | Section 6 |
+| No automatic deployment | GitHub Actions checks every push (Section 6), but nothing deploys the result. Updates are manual: `npm test` runs the unit tests, `npm run api:test` runs the API tests (Section 6.2). The client chooses the host. | Section 6 |
 | No screen for the first SuperAdmin or for the `advisor` role | The first SuperAdmin must be added with SQL. Later admins and SuperAdmins are added on the SuperAdmin screen. No screen grants `advisor` (Section 3.2). | Section 3.3 |
 | Some fields on the SuperAdmin contact and bank settings screen are not saved to the database | Opening hours, the closed-days note, and the faculty address details are kept only in the browser (`localStorage` key `metang-system-address`) of the person who saved them. Other users do not see the change. The bank code is not stored: the screen finds it again from the stored bank name. (Jira NAT-200/NAT-203 are marked Done, but this part is not built.) | Section 7.2 |
 | Loan reports are printed from the browser | There is no server-generated PDF file. The report uses the browser print dialog. | None |
@@ -262,14 +264,14 @@ You need these accounts. Never share one account between people.
 
 | Account | Used for | Who issues it |
 |---|---|---|
-| Vercel project member | Deployments, logs, cron job status, environment variables, rollback | Vercel project owner `[TO VERIFY: only if the platform is Vercel]` |
-| Supabase project member | SQL Editor, backups, Storage, usage, database password | Supabase organization owner `[TO VERIFY: only if Supabase is used]` |
-| Infisical project member | Read and change secrets in `dev` and `prod` | Infisical project admin `[TO VERIFY: only if production secrets stay in Infisical]` |
+| Vercel project member | Deployments, logs, cron job status, environment variables, rollback | Vercel project owner (only if you host on Vercel) |
+| Supabase project member | SQL Editor, backups, Storage, usage, database password | Supabase organization owner (only if you use Supabase) |
+| Infisical project member | Read and change secrets in `dev` and `prod` | Infisical project admin (only if you keep secrets in Infisical) |
 | CMU Entra app registration access | Callback URL, client secret renewal | CMU ITSC |
 | CMU Email API client | Student emails | CMU Faculty of Nursing MIS (`docs/Email_API_Manual.md`) |
 | CMU LINE FON API token | Reviewer LINE messages | CMU ITSC / MIS |
 | Me_Tang SuperAdmin role | Grant roles, fund ledger, system settings | Another SuperAdmin, or SQL for the first one (Section 3.3) |
-| Git repository access | Updates (Section 6) | An owner of the GitHub organization `SE67-Metang-s-Project`. The repository `SE67-Metang-s-Project/metang` is public: anyone can clone it, but write access needs an organization owner `[TO VERIFY: confirm who takes ownership after hand-over]` |
+| Git repository access | Updates (Section 6) | An owner of the GitHub organization `SE67-Metang-s-Project`. The repository `SE67-Metang-s-Project/metang` is public: anyone can clone it, but write access needs an organization owner. After hand-over, the owner of the client's copy of the repository gives access to that copy. |
 
 ### 3.2 Application roles
 
@@ -427,11 +429,11 @@ Prerequisites: Vercel and Supabase access.
 
 Steps:
 
-1. Open the production site address `[TO VERIFY: production URL]` followed by `/metang/login`.
+1. Open the site address of your deployment followed by `/metang/login`.
    Expected result: the sign-in page shows the button **เข้าสู่ระบบด้วย CMU Account**.
    If it shows `ผู้ดูแลระบบต้องตั้งค่า CMU Entra environment variables ก่อนเปิดใช้งาน`, the
    sign-in settings are missing (Section 9).
-2. Check that the scheduled jobs run `[TO VERIFY: log location on the production host]`.
+2. Check that the scheduled jobs run.
    - On Vercel: open the project **Settings** > **Cron Jobs** and the **Logs**. Expected result:
      five `/metang/api/cron/` jobs, and recent calls return `200`. A `401` means that `CRON_SECRET` is
      missing or wrong. The log line at startup is
@@ -552,7 +554,7 @@ Steps:
 
 1. Open the Supabase Dashboard: **Organization** > **Usage**.
 2. Note the database size and the storage size.
-3. Compare them with the plan limits `[TO VERIFY: only if Supabase is used: its plan and limits]`.
+3. Compare them with the limits of your Supabase plan.
 4. Run this query to see which tables grow:
 
    ```sql
@@ -693,8 +695,7 @@ Steps:
 2. Open Infisical, select the project, and select the `prod` environment.
 3. Replace the value of the secret.
 4. Copy the value to Vercel **Settings** > **Environment Variables** (Production), if the
-   project does not sync from Infisical
-   `[TO VERIFY: only if the platform is Vercel: whether the project syncs from Infisical]`.
+   project does not sync from Infisical.
 5. In Vercel, open **Deployments**, open the menu of the current production deployment, and
    select **Redeploy**.
    Expected result: the new deployment becomes **Ready**. The Build Command is `npm run build`,
@@ -938,14 +939,13 @@ incident.
 
 Updates need the source repository, Node.js 24, and npm. The GitHub workflow `CI`
 (`.github/workflows/ci.yml`) runs on every push to every branch: lint, type check, build, the unit
-tests, and the API tests. It does not deploy: there is no automatic deployment yet (Jira
-NAT-228, because the client's platform is not chosen). `CI` passed on `main` at commit `1c69183`
-on 2026-09-29: all three jobs (unit tests, lint with type check and build, and API tests) were green.
-``[TO VERIFY: the first run of **Migrate production database** on GitHub. It needs a production
-database and the GitHub environment `production` (Section 6.2, after step 8), which do not exist yet.
-Only if the platform is Vercel: whether Vercel deploys automatically from the Git branch `main`.
-`vercel.json` has no `git` settings, so a Vercel project that is connected to the repository
-deploys each push to its production branch.]``
+tests, and the API tests. It does not deploy: there is no automatic deployment, because the client
+chooses the host. `CI` passed on `main` at commit `1c69183` on 2026-09-29: all three jobs (unit
+tests, lint with type check and build, and API tests) were green.
+The workflow **Migrate production database** has never run, because the team has no production
+database. It needs a production database and the GitHub environment `production` (Section 6.2,
+after step 8). If you use Vercel: `vercel.json` has no `git` settings, so a Vercel project that is
+connected to the repository deploys each push to its production branch.
 
 ### 6.1 Pre-update checklist
 
@@ -1033,8 +1033,7 @@ deploys each push to its production branch.]``
    secret, because the run would skip the approval. For a database inside a private network, use
    the migration image (Section 6.4).
 9. Deploy the application to production
-   ``[TO VERIFY: only if the platform is Vercel: by Git push to the production branch, or by
-   `vercel deploy --prod`]``.
+   On Vercel, push to the production branch, or run `vercel deploy --prod`.
 
    Note: the Build Command is `next build`, which is `npm run build`. CI runs it with placeholder
    database addresses and no `.env` file, so it works on any build server. The build reads no secret. `npm run build:infisical` is the same build with the secrets
@@ -1078,10 +1077,12 @@ Use this when the application does not run on Vercel. The repository has a `Dock
 no Infisical: all settings are environment variables (Section 7.1).
 The application image was built and started in a container, and the sign-in page, static files, and
 an API route answered under the sub path. The migration image was built and run against an empty
-PostgreSQL container: all 19 migrations were applied, a second run reported "No pending
-migrations to apply", and it also worked when only `DATABASE_URL` was given.
-`[TO VERIFY: both images on the client server, including the connection to the client's PostgreSQL
-(for example its TLS setting).]`
+PostgreSQL container: all 19 migrations that the repository had then were applied, a second run
+reported "No pending migrations to apply", and it also worked when only `DATABASE_URL` was given.
+On 2026-09-30 the repository had 20 migrations, and `npx prisma migrate deploy` applied all 20 to an
+empty PostgreSQL 17 container. That run did not use the migration image.
+Not tested: both images on a client server, including the connection to the client's PostgreSQL
+(for example its TLS setting).
 
 1. Choose the sub path. The default is `/metang`. The sub path is fixed when the image is built
    (Section 2.1), so build one image for each sub path.
@@ -1252,8 +1253,8 @@ Change a schedule in both `lib/jobs/start-scheduler.ts` (built-in scheduler) and
 ## 8. Monitoring
 
 The delivered software sends no alerts. Check these items by hand (Section 4.2), or set up
-alerts in Vercel and Supabase
-`[TO VERIFY: only if the platform is Vercel and Supabase: the alert features of the chosen plans]`.
+alerts in the dashboards of your host and database, for example Vercel and Supabase. The alert
+features depend on the plan.
 
 | What to monitor | Where | Normal value | Warning threshold | Action |
 |---|---|---|---|---|
@@ -1600,3 +1601,4 @@ Include this information:
 | 1.3 draft | 2026-09-29 | Me_Tang development team | Jira NAT-243 and NAT-244: delete keeps the account row of a person with history, nobody deletes their own account, and Add user and Edit accept CMU addresses only. |
 | 1.4 draft | 2026-09-30 | Me_Tang development team | Sections 5.3 and 5.4: the two untested procedures are now plain "Not tested" notes, not `[TO VERIFY]` markers. |
 | 1.5 draft | 2026-09-30 | Me_Tang development team | Jira NAT-240: user management brought up to the code of commit `c2f0d9b`. Delete never removes the account row and refuses your own account with 409 `SELF_DEMOTION`, the executive is replaced with **แก้ไข** and a new email (`executive.handed_over`), the executive role cannot be revoked, the new error codes, and admins no longer see another admin's returned request. The screen defects of `UserRolesTab.tsx` are recorded in Section 3.2. |
+| 1.6 draft | 2026-09-30 | Me_Tang development team | Jira NAT-233: the client takes the source code and the database and chooses the host, so the `[TO VERIFY]` markers are gone. Section 2.1 says the team runs no production site. The markers for Vercel, Supabase, and Infisical are plain "only if you use it" notes. The production URL and log location markers are removed. The convention for `[TO VERIFY]` is replaced by `Not tested:`. Section 6.4 states the migration count of 2026-09-30 (20). |
