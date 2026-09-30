@@ -24,18 +24,23 @@ test("UserRolesTab in System Control Center only manages admin, super_admin, and
     "THAI_TO_ROLE must only map managed roles",
   );
 
-  // 3. Role filter dropdown must only have all, admin, executive, super_admin
-  const filterDropdownStart = content.indexOf("value={roleFilter}");
-  assert.ok(filterDropdownStart !== -1, "Must contain roleFilter select");
-  const filterDropdownEnd = content.indexOf("</select>", filterDropdownStart);
-  const roleFilterSection = content.slice(filterDropdownStart, filterDropdownEnd);
+  // 3. Role filter dropdown (now in SettingPage) must only have all, admin, executive, super_admin
+  const settingPage = read("components/superadmin/setting/SettingPage.tsx");
+  const roleOptionsMatch = settingPage.match(/const\s+roleOptions\s*=\s*\[([^\]]*)\]/);
+  assert.ok(roleOptionsMatch, "SettingPage must define roleOptions for the role filter");
+  const roleFilterSection = roleOptionsMatch[1];
 
-  assert.ok(roleFilterSection.includes('<option value="ทุกบทบาท">ทุกบทบาท</option>'));
-  assert.ok(roleFilterSection.includes('<option value="เจ้าหน้าที่">เจ้าหน้าที่</option>'));
-  assert.ok(roleFilterSection.includes('<option value="ผู้บริหาร">ผู้บริหาร</option>'));
-  assert.ok(roleFilterSection.includes('<option value="ผู้ดูแลระบบ">ผู้ดูแลระบบ</option>'));
+  assert.ok(roleFilterSection.includes('"ทุกบทบาท"'));
+  assert.ok(roleFilterSection.includes('"เจ้าหน้าที่"'));
+  assert.ok(roleFilterSection.includes('"ผู้บริหาร"'));
+  assert.ok(roleFilterSection.includes('"ผู้ดูแลระบบ"'));
   assert.ok(!roleFilterSection.includes("นักศึกษา"), "Filter dropdown must not contain นักศึกษา");
   assert.ok(!roleFilterSection.includes("อาจารย์ที่ปรึกษา"), "Filter dropdown must not contain อาจารย์ที่ปรึกษา");
+  assert.match(
+    content,
+    /roleFilter\s*===\s*"ทุกบทบาท"\s*\|\|\s*userThaiRoles\.includes\(roleFilter\)/,
+    "UserRolesTab must apply the roleFilter it receives from SettingPage",
+  );
 
   // 4. filteredUsers must only include users having at least one managed role
   assert.match(

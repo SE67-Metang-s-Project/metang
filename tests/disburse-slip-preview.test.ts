@@ -33,7 +33,7 @@ test("DisburseDebtCard provides preview functionality for transfer slip evidence
   // Check for preview button for newly uploaded slip
   assert.match(
     content,
-    /onClick=\{\(\)\s*=>\s*setPreviewSlipUrl\(uploadedSlip\)\}[\s\S]*?ดูตัวอย่าง/,
+    /onClick=\{\(\)\s*=>\s*setPreviewSlipUrl\(uploadedSlip\)\}[\s\S]*?ดูรูปแบบเต็ม/,
     "DisburseDebtCard must allow previewing uploaded slip",
   );
 

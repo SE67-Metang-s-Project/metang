@@ -12,26 +12,26 @@ test("SettingPage merges bank and address into a single 'ข้อมูลแ�
 
   // SettingPage must have 3 tabs: users, budget, contact
   assert.ok(
-    settingPageContent.includes('setActiveTab("users")'),
+    settingPageContent.includes('{ id: "users", label: "ผู้ใช้และบทบาท" }'),
     "SettingPage must have 'ผู้ใช้และบทบาท' tab",
   );
   assert.ok(
-    settingPageContent.includes('setActiveTab("budget")'),
+    settingPageContent.includes('{ id: "budget", label: "วงเงินระบบ" }'),
     "SettingPage must have 'วงเงินระบบ' tab",
   );
   assert.ok(
-    settingPageContent.includes('setActiveTab("contact")'),
+    settingPageContent.includes('{ id: "contact", label: "ข้อมูลและการติดต่อ" }'),
     "SettingPage must have 'ข้อมูลและการติดต่อ' tab",
   );
 
-  // Must not have separate 'bank' or 'address' tab buttons
+  // Must not have separate 'bank' or 'address' tabs
   assert.ok(
-    !settingPageContent.includes('setActiveTab("bank")'),
-    "SettingPage must not have separate 'bank' tab button",
+    !settingPageContent.includes('id: "bank"'),
+    "SettingPage must not have separate 'bank' tab",
   );
   assert.ok(
-    !settingPageContent.includes('setActiveTab("address")'),
-    "SettingPage must not have separate 'address' tab button",
+    !settingPageContent.includes('id: "address"'),
+    "SettingPage must not have separate 'address' tab",
   );
 
   // Tab text must be "ข้อมูลและการติดต่อ"
