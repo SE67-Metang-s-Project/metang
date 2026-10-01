@@ -85,7 +85,7 @@ export async function DELETE(request: Request, { params }: Params) {
 
 /**
  * Edit the executive's name and email.
- * @description Only the executive can be edited. The same email fixes the names in place. A different email hands the executive role to a new person created from it, and the response is the new executive; the previous executive keeps their other roles and history. An email or CMU account that already belongs to another user is refused with 409.
+ * @description Only the executive can be edited. Names, email and CMU account change in place on the same user, so the id, roles and history carry over (past executive decisions show the new name). An email or CMU account that already belongs to another user is refused with 409.
  * @tag SuperAdmin roles
  * @pathParams UserIdParams
  * @body EditExecutiveBody

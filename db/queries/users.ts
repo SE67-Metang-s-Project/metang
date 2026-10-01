@@ -47,6 +47,7 @@ export type RoleMutationErrorCode =
   | "SELF_DEMOTION"
   | "EXECUTIVE_ALREADY_EXISTS"
   | "EXECUTIVE_ROLE_LOCKED"
+  | "EXECUTIVE_ADVISOR_LOCKED"
   | "EMAIL_ALREADY_IN_USE"
   | "EXECUTIVE_CANNOT_BE_DELETED"
   | "NOT_EXECUTIVE"
@@ -129,6 +130,10 @@ export async function mutateUserRole({
       if (!hasRole) throw new RoleMutationError("ROLE_NOT_GRANTED");
       // The executive is replaced through editExecutive, never removed, so there is always one.
       if (role === "executive") throw new RoleMutationError("EXECUTIVE_ROLE_LOCKED");
+      // The executive also advises students, so they keep advisor while they are the executive.
+      if (role === "advisor" && beforeRoles.includes("executive")) {
+        throw new RoleMutationError("EXECUTIVE_ADVISOR_LOCKED");
+      }
       if (role === "super_admin") {
         // A SuperAdmin who wants out promotes a successor, and the successor removes them.
         if (targetUserId === actorId) throw new RoleMutationError("SELF_DEMOTION");
@@ -315,10 +320,11 @@ export async function deleteManagedUser({
 }
 
 /**
- * Edits the executive. Same email: fixes the names in place. New email: hands the executive role
- * to a new person created from it, and the previous executive keeps their row, other roles and
- * history, so past executive decisions still carry their name. An email (or CMU account) that
- * already belongs to another user is refused: the role is never handed to an existing account.
+ * Edits the executive in place: names, email and CMU account change on the same app_user row.
+ * A new email means a new person takes over the post, but every foreign key (approvals, audit
+ * rows, advisor_id, the executive and advisor roles) points at the row id, so it all carries over
+ * and no second row is made. Past executive decisions then show the new name. An email (or CMU
+ * account) that already belongs to another user is refused.
  */
 export async function editExecutive({
   actorId,
@@ -352,47 +358,32 @@ export async function editExecutive({
     });
     if (taken) throw new RoleMutationError("EMAIL_ALREADY_IN_USE");
 
-    // Same person (same email, or their own account): fix the details in place.
-    if (target.email?.toLowerCase() === cleanEmail || target.cmuAccount === cmuAccount) {
-      const updated = await tx.appUser.update({
-        where: { id: targetUserId },
-        data: { email: cleanEmail, cmuAccount, ...names },
-        select: superAdminUserSelect,
-      });
-      await tx.auditLog.create({
-        data: {
-          actorId,
-          action: "user.updated",
-          entityType: "app_user",
-          entityId: targetUserId,
-          before: { email: target.email, fullNameTh: target.fullNameTh, fullNameEn: target.fullNameEn },
-          after: { email: updated.email, fullNameTh: updated.fullNameTh, fullNameEn: updated.fullNameEn },
-        },
-      });
-      return updated;
-    }
-
-    // Hand over: a new person, created from the new email, becomes the executive.
-    const successorId = (
-      await tx.appUser.create({
-        data: { email: cleanEmail, cmuAccount, ...names },
-        select: { id: true },
-      })
-    ).id;
-    await tx.userRole.delete({ where: { userId_role: { userId: targetUserId, role: "executive" } } });
-    await tx.userRole.create({ data: { userId: successorId, role: "executive", grantedBy: actorId } });
+    const updated = await tx.appUser.update({
+      where: { id: targetUserId },
+      data: { email: cleanEmail, cmuAccount, ...names },
+      select: superAdminUserSelect,
+    });
     await tx.auditLog.create({
       data: {
         actorId,
-        action: "executive.handed_over",
+        action: "user.updated",
         entityType: "app_user",
-        entityId: successorId,
-        before: { executiveId: targetUserId, email: target.email },
-        after: { executiveId: successorId, email: cleanEmail },
+        entityId: targetUserId,
+        before: {
+          email: target.email,
+          cmuAccount: target.cmuAccount,
+          fullNameTh: target.fullNameTh,
+          fullNameEn: target.fullNameEn,
+        },
+        after: {
+          email: updated.email,
+          cmuAccount: updated.cmuAccount,
+          fullNameTh: updated.fullNameTh,
+          fullNameEn: updated.fullNameEn,
+        },
       },
     });
-
-    return tx.appUser.findUniqueOrThrow({ where: { id: successorId }, select: superAdminUserSelect });
+    return updated;
   }, userMutationOptions);
 }
 

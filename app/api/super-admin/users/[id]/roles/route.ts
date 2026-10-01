@@ -80,6 +80,13 @@ export async function POST(request: Request, { params }: Params) {
           409,
         );
       }
+      if (error.code === "EXECUTIVE_ADVISOR_LOCKED") {
+        return apiError(
+          "EXECUTIVE_ADVISOR_LOCKED",
+          "The executive is also an advisor; the advisor role cannot be removed from the executive",
+          409,
+        );
+      }
       if (error.code === "REASSIGNMENT_CONFLICT") {
         return apiError("CONFLICT", "The loan assignment changed; please retry", 409);
       }
