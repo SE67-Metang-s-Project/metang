@@ -624,6 +624,8 @@ async function wipeMockData(tx: Prisma.TransactionClient) {
 async function main() {
   await prisma.$transaction(
     async (tx) => {
+      // audit_log is append-only; the seed deletes its own rows (and every row on --reset).
+      await tx.$executeRaw`SET LOCAL methang.allow_audit_mutation = 'on'`;
       if (reset) {
         // Children before parents: fund_transaction references payment, so it must go first.
         await tx.$executeRaw`SET LOCAL methang.allow_fund_mutation = 'on'`;

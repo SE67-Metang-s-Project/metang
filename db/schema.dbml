@@ -68,7 +68,7 @@ Table app_user {
 Table user_role {
   user_id    uuid [ref: > app_user.id, not null]
   role       user_role_name [not null]
-  granted_by uuid [ref: > app_user.id]
+  granted_by uuid [ref: > app_user.id, note: 'ON DELETE SET NULL']
   granted_at timestamptz [not null, default: `now()`]
 
   indexes {
@@ -180,7 +180,7 @@ Table fund_transaction {
 
 Table audit_log {
   id          bigserial [pk]
-  actor_id    uuid [ref: > app_user.id, note: 'staff actor']
+  actor_id    uuid [note: 'staff actor; no FK, the row outlives a deleted user']
   actor_student_code text [note: 'student actor; CHECK exactly one of actor_id, actor_student_code']
   action      text [not null]
   entity_type text [not null]
@@ -192,7 +192,7 @@ Table audit_log {
   indexes {
     (entity_type, entity_id)
   }
-  Note: 'NAT-49: every admin action, with before/after.'
+  Note: 'NAT-49: every admin action, with before/after. Append-only: UPDATE and DELETE are blocked by trigger.'
 }
 
 Table notification_outbox {

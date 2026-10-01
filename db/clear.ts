@@ -16,18 +16,22 @@ if (!connectionString) {
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
 async function main() {
-  await prisma.$executeRaw`
-    TRUNCATE TABLE
-      "public"."payment",
-      "public"."installment",
-      "public"."loan_approval",
-      "public"."fund_transaction",
-      "public"."audit_log",
-      "public"."user_role",
-      "public"."loan_request",
-      "public"."app_user"
-    RESTART IDENTITY CASCADE
-  `;
+  // audit_log blocks TRUNCATE (trigger audit_log_no_truncate); SET LOCAL needs a transaction.
+  await prisma.$transaction([
+    prisma.$executeRaw`SET LOCAL methang.allow_audit_mutation = 'on'`,
+    prisma.$executeRaw`
+      TRUNCATE TABLE
+        "public"."payment",
+        "public"."installment",
+        "public"."loan_approval",
+        "public"."fund_transaction",
+        "public"."audit_log",
+        "public"."user_role",
+        "public"."loan_request",
+        "public"."app_user"
+      RESTART IDENTITY CASCADE
+    `,
+  ]);
 
   console.log("Development database cleared.");
 }
