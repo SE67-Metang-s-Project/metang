@@ -113,7 +113,8 @@ cannot use the nursing SSO session, even if CMU Entra authentication itself succ
 A production build also checks the policy on every read of the session (`getCmuSession` in
 `lib/cmu-auth.ts`), and the callback applies it whatever mode started the login. So only nursing
 students and nursing staff can use the application in production, and a session of any other
-account (for example one issued before this rule) is treated as signed out.
+account (for example one issued before this rule) is treated as signed out. `DEBUG_MODE=true`
+turns this rule off.
 
 Student IDs are interpreted using the format shown by the CMU student examples:
 
@@ -229,12 +230,10 @@ All authentication variables are server-side. None of them needs the `NEXT_PUBLI
 | `SCOPE` | No | Delegated CMU API scopes requested during login |
 | `BASICINFO_URL` | No | CMU BasicInfo resource endpoint |
 | `LOGOUT_URL` | No | Entra logout endpoint. The application replaces its `post_logout_redirect_uri` with `<origin>/<sub path>/login` |
-| `EXT_PORT` | No | Reference/development port; the Next.js code does not read it |
 
 Example development configuration:
 
 ```dotenv
-EXT_PORT=8080
 AUTH_URL=https://login.microsoftonline.com/cf81f1df-de59-4c29-91da-a2dfd04aa751/oauth2/v2.0/authorize
 TOKEN_URL=https://login.microsoftonline.com/cf81f1df-de59-4c29-91da-a2dfd04aa751/oauth2/v2.0/token
 CALLBACK_URL=http://localhost:8080/metang/api/auth/callback
@@ -330,6 +329,8 @@ sessions to a server-side store and keep only an opaque session identifier in th
   its CMU profile. A production build refuses any other account at sign-in, even with a role.
 - Do not set `NODE_ENV` by hand on the host or in Infisical. The nursing rule trusts it, and
   `NODE_ENV=development` would turn the rule off.
+- Do not set `DEBUG_MODE` on a production site. It also turns the rule off, and it turns on the
+  `DEV_*` shortcuts. The server logs a warning at start when a production build has it on.
 
 ## Errors and troubleshooting
 

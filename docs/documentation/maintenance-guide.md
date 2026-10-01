@@ -1045,7 +1045,7 @@ connected to the repository deploys each push to its production branch.
    npm test
    ```
 
-   Expected result: the summary line `ℹ fail 0`. At the time of writing, 559 tests pass. A
+   Expected result: the summary line `ℹ fail 0`. At the time of writing, 573 tests pass. A
    failure needs a developer. CI runs the same command.
 4. Run the API tests. They use a temporary local PostgreSQL in Docker (port `5433`) and a
    test app on port `8081`. They never touch the real database.
@@ -1246,20 +1246,17 @@ production deployment ("Redeploy") before it takes effect.
 | `SUPABASE_URL` | None | `https://<project-ref>.supabase.co` | Supabase Storage address. | Yes | No |
 | `SUPABASE_SERVICE_ROLE_KEY` | None | Supabase service role key | Full access to Storage. | Yes | Yes |
 | `SUPABASE_SLIP_BUCKET` | `bank_payment_slips` | Name of a private bucket | Bucket for slip files. | Yes | No |
-| `INFISICAL_ENV` | `dev` | `dev` or `prod` | Only in a maintainer's local `.env`. Selects the Infisical environment for `npm run dev`, `npm run build:infisical`, and `npm run db:*`. Has no effect when the Infisical CLI is not installed (Section 3.4). | Not applicable | No |
+| `INFISICAL_ENV` | `dev` | `dev` or `prod` | Only in a maintainer's local `.env`. Selects the Infisical environment for `npm run dev`, `npm run build:infisical`, `npm run start:infisical`, and `npm run db:*`. Has no effect when the Infisical CLI is not installed (Section 3.4). | Not applicable | No |
 | `DEV_API_BYPASS` | Off | `true` or not set | Development and demo only. Must not be set on a production site that holds real data. Works only under `next dev` (`NODE_ENV=development`) or with `DEBUG_MODE=true`. `INFISICAL_ENV` is not checked. | Not applicable | No |
-| `DEBUG_MODE` | Off | `true` or not set | Turns on the development shortcuts on a deployed build: the API bypass (`DEV_API_BYPASS`, `DEV_AS_<ROLE>`), the `/metang/demo` pages, and skipping the student Nursing check. It also opens sign-in to any CMU account (the general mode, as in `next dev`), so `not_eligible` no longer appears. For a debug deployment on fake data only: anyone who opens the site acts as the enabled role, any CMU account can sign in, and the admin role can send real emails and LINE messages. | Yes (redeploy) | No |
-| `DEV_AS_ADVISOR`, `DEV_AS_ADMIN`, `DEV_AS_SUPERADMIN`, `DEV_AS_EXECUTIVE` | Off | `true` or not set | Development only. Must not be set in production. Same condition as `DEV_API_BYPASS`. | Not applicable | No |
-| `DEV_ADVISOR_USER_ID`, `DEV_ADMIN_USER_ID`, `DEV_SUPERADMIN_USER_ID`, `DEV_EXECUTIVE_USER_ID` | Test user IDs | User UUID | Development only. Must not be set in production. | Not applicable | No |
-| `EXT_PORT` | Not used | Port number | Appears in `.env.example` only. The application does not read it. | Not applicable | No |
+| `DEBUG_MODE` | Off | `true` or not set | Turns on the development shortcuts on a deployed build: the API bypass (`DEV_API_BYPASS`, `DEV_AS_<ROLE>`), the `/metang/demo` pages, and skipping the student Nursing check. It also opens sign-in to any CMU account (the general mode, as in `next dev`), so `not_eligible` no longer appears. A sign-in lands on the page of the account's own role; a `DEV_AS_<ROLE>` page is used only for an account with no role that is not a student. For a debug deployment on fake data only: anyone who opens the site acts as the enabled role, any CMU account can sign in, and the admin role can send real emails and LINE messages. | Yes (redeploy) | No |
+| `DEV_AS_ADVISOR`, `DEV_AS_ADMIN`, `DEV_AS_SUPERADMIN`, `DEV_AS_EXECUTIVE` | Off | `true` or not set | Development and debug deployments only. Must not be set on a site that holds real data. Same condition as `DEV_API_BYPASS`. | Not applicable | No |
+| `DEV_ADVISOR_USER_ID`, `DEV_ADMIN_USER_ID`, `DEV_SUPERADMIN_USER_ID`, `DEV_EXECUTIVE_USER_ID` | Test user IDs | User UUID | Development and debug deployments only. Must not be set on a site that holds real data. | Not applicable | No |
 
 `NODE_ENV` is set by Next.js and Vercel. Do not set it by hand: the Nursing-only sign-in rule (Section 3.2) trusts it, so a stray `NODE_ENV=development` on a production host turns the rule off. The hosting platform also sets
 `AWS_LAMBDA_FUNCTION_NAME`, `NETLIFY`, and `NEXT_RUNTIME`. The application reads the first two only
 to keep the timers off when `JOB_RUNNER` is not set (Section 2.3).
 
-`.env.example` differs from this table in two places. It does not list
-the `DEV_*_USER_ID` settings. It sets `SESSION_SECRET` twice, and the second value is shorter
-than 32 characters. Delete the second line when you create a `.env` from it.
+`.env.example` does not list the `DEV_*_USER_ID` settings. It lists `DEBUG_MODE` as a comment.
 
 ### 7.2 In-app system settings
 
@@ -1397,8 +1394,8 @@ The API returns errors as `{ "error": { "code": "...", "message": "..." } }`. St
 show Thai text. Student pages show Thai or English. The tables below list the exact text.
 Text in angle brackets, such as `<amount>`, is filled in by the application.
 
-Not listed: messages of the developer test pages under `/metang/demo/` (they work only in a
-development environment), messages of developer build scripts, and code checks that users
+Not listed: messages of the developer test pages under `/metang/demo/` (they work only under `next dev`
+or with `DEBUG_MODE=true`), messages of developer build scripts, and code checks that users
 cannot reach.
 
 ### 10.1 Sign-in and access
@@ -1420,7 +1417,7 @@ cannot reach.
 | `ไม่มีสิทธิ์เข้าถึงหน้านี้ (403 Forbidden)` / `บัญชี CMU ของคุณยังไม่มีสิทธิ์ในการเข้าถึงหน้านี้ หากคุณมีหน้าที่รับผิดชอบในส่วนนี้ กรุณาติดต่อผู้ดูแลระบบเพื่อกำหนดสิทธิ์การใช้งาน` | The user has no `app_user` row or no role for the page. | A SuperAdmin grants the role. If the user has no row, see the 403 row in Section 9. |
 | `เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์` / `เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์การเข้าใช้งาน กรุณาลองใหม่อีกครั้ง` | Unexpected error while checking access. | Check Vercel logs. |
 | `Error code: <code>` (below the text on the error page) | The error code of the access problem. | Include it in a support request. |
-| `Student session rejected` with reason `student_id_not_eligible`, `employee_not_nursing`, or `profile_not_eligible` (in logs) | A signed-in user failed the Nursing faculty check for the student functions. A production build rejects such an account earlier, so these reasons appear only outside production when `INFISICAL_ENV` is not `dev`. | Expected for users outside the faculty. |
+| `Student session rejected` with reason `student_id_not_eligible`, `employee_not_nursing`, or `profile_not_eligible` (in logs) | A signed-in user failed the Nursing faculty check for the student functions. A production build rejects such an account earlier, and `next dev` or `DEBUG_MODE=true` skips this check, so these reasons appear only when `NODE_ENV` is neither `development` nor `production`. They do not appear in normal operation. | Expected for users outside the faculty. |
 | `Student session rejected` with reason `missing_or_invalid_session` or `missing_student_id` (in logs) | A student page was opened without a session, or by a CMU account that has no student ID. In production it also appears when the account failed the Nursing faculty check. | Expected. Staff use the staff pages. |
 | `UNAUTHORIZED`: `Authentication required` (HTTP 401) | API call without a valid session. | The user signs in again. |
 | `UNAUTHORIZED`: `Advisor access required` (401), `FORBIDDEN`: `Advisor access required` (403) | The user is not signed in (401 on the list), or the signed-in user is not an advisor. | Grant the `advisor` role if correct. |
@@ -1683,4 +1680,4 @@ Include this information:
 | 1.6 draft | 2026-09-30 | Me_Tang development team | Jira NAT-233: the client takes the source code and the database and chooses the host, so the `[TO VERIFY]` markers are gone. Section 2.1 says the team runs no production site. The markers for Vercel, Supabase, and Infisical are plain "only if you use it" notes. The production URL and log location markers are removed. The convention for `[TO VERIFY]` is replaced by `Not tested:`. Section 6.4 states the migration count of 2026-09-30 (20). |
 | 1.7 draft | 2026-09-30 | Me_Tang development team | Jira NAT-235: Section 6 checked against the ticket. The CI result is now commit `ff20972`, the unit test count is 522, and the lint warning count is 4. |
 | 1.8 draft | 2026-10-01 | Me_Tang development team | Checked against commit `7ebabc3`. Students have no `app_user` row, and a loan request holds its borrower. Migration count and latest name. First-SuperAdmin and advisor SQL. Phone-number, education-level, and account-number messages. Students now get email only from the due-date and overdue reminders. |
-| 1.9 draft | 2026-10-01 | Me_Tang development team | Sign-in rule (Section 3.2): a production build lets in only Nursing students and Nursing staff (`organization_code` 12) and checks it on every request, so staff without that code cannot sign in. The sign-in mode follows `NODE_ENV`, not `INFISICAL_ENV`. Scheduled jobs (Sections 2.1, 2.3, 7.1, 7.3, 9, 10): the new setting `JOB_RUNNER` (`timer`, `request`, `off`) replaces `ENABLE_JOB_SCHEDULER` and the `VERCEL` detection. `vercel.json` is removed. On a host that stops idle instances, such as Vercel, set `request`: `proxy.ts` then runs the jobs after page requests. Unit test count is 559. New setting `DEBUG_MODE` (Section 7.1) turns on the development shortcuts on a deployed debug build and opens sign-in to any CMU account (Section 3.2), and the development check no longer reads `INFISICAL_ENV`. |
+| 1.9 draft | 2026-10-01 | Me_Tang development team | Sign-in rule (Section 3.2): a production build lets in only Nursing students and Nursing staff (`organization_code` 12) and checks it on every request, so staff without that code cannot sign in. The sign-in mode follows `NODE_ENV`, not `INFISICAL_ENV`. Scheduled jobs (Sections 2.1, 2.3, 7.1, 7.3, 9, 10): the new setting `JOB_RUNNER` (`timer`, `request`, `off`) replaces `ENABLE_JOB_SCHEDULER` and the `VERCEL` detection. `vercel.json` is removed. On a host that stops idle instances, such as Vercel, set `request`: `proxy.ts` then runs the jobs after page requests. Unit test count is 573. New setting `DEBUG_MODE` (Section 7.1) turns on the development shortcuts on a deployed debug build and opens sign-in to any CMU account (Section 3.2), and the development check no longer reads `INFISICAL_ENV`. A sign-in lands on the page of the account's own role first, and a `DEV_AS_<ROLE>` page is used only for an account with no role. The `/metang/demo` pages read `DEBUG_MODE` on each request, and the server logs a warning at start when a production build has it on. `.env.example` loses the unused `EXT_PORT` and the second, too short `SESSION_SECRET`, and gains `DEBUG_MODE` as a comment. |

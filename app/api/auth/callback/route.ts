@@ -105,7 +105,8 @@ async function handleCallback(request: NextRequest) {
       return redirectCallback(request, "/login", "profile_failed");
     }
 
-    // A production build always applies the nursing policy, whichever mode started the login.
+    // A production build applies the nursing policy whichever mode started the login, unless
+    // DEBUG_MODE=true opens it (isNurseOnly).
     if (transaction.mode === "nurse" || isNurseOnly()) {
       const accessDecision = getNurseAccessDecision(profile);
 

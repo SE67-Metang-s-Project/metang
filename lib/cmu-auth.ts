@@ -304,8 +304,9 @@ export async function getCmuSession(): Promise<CmuSession | null> {
     return null;
   }
 
-  // A production build serves only nursing students and nursing staff. Checking on every read
-  // also stops a session that was issued in the general mode, or before this rule existed.
+  // A production build serves only nursing students and nursing staff, unless DEBUG_MODE=true
+  // opens it (isNurseOnly). Checking on every read also stops a session that was issued in the
+  // general mode, or before this rule existed.
   if (isNurseOnly() && !getNurseAccessDecision(session.profile).allowed) {
     return null;
   }
