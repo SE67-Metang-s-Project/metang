@@ -460,7 +460,7 @@ export default function UserRolesTab({
             ผู้ใช้ ({filteredUsers.length})
           </h2>
           {isLoading && (
-            <div className="flex items-center gap-2 text-xs text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
               <Loader2 size={14} className="animate-spin text-orange-500" />
               กำลังโหลด...
             </div>
@@ -518,7 +518,7 @@ export default function UserRolesTab({
                             <Star size={14} className="fill-orange-500 text-orange-500" />
                           )}
                         </div>
-                        <div className="text-[12px] text-gray-500 mt-0.5">{displayId}</div>
+                        <div className="text-[14px] text-gray-500 mt-0.5">{displayId}</div>
                       </div>
                     </div>
                   </div>
@@ -531,7 +531,7 @@ export default function UserRolesTab({
                         .map((r) => (
                           <span
                             key={r.role}
-                            className="px-2 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-md text-[11px] font-medium"
+                            className="px-2 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-md text-[14px] font-medium"
                           >
                             {ROLE_TO_THAI[r.role]}
                           </span>
@@ -540,13 +540,13 @@ export default function UserRolesTab({
                   )}
 
                   <div className="flex items-center justify-between border-t border-gray-100 pt-3 gap-2">
-                    <div className="text-[12px] text-gray-600 truncate flex-1">{user.email}</div>
+                    <div className="text-[14px] text-gray-600 truncate flex-1">{user.email}</div>
 
                     <div className="flex items-center gap-2 shrink-0">
                       {/* Role Dropdown */}
                       <div className="relative">
                         {isMutating ? (
-                          <div className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-gray-500 bg-gray-100 rounded-lg">
+                          <div className="flex items-center gap-2 px-3 py-1.5 text-[14px] text-gray-500 bg-gray-100 rounded-lg">
                             <Loader2 size={12} className="animate-spin text-orange-500" />
                             กำลังบันทึก...
                           </div>
@@ -556,7 +556,7 @@ export default function UserRolesTab({
                               value={primaryRole}
                               onChange={(e) => handleRoleChange(user, e.target.value)}
                               disabled={isMutating}
-                              className="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-[12px] font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 outline-none cursor-pointer transition-all focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
+                              className="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-[14px] font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 outline-none cursor-pointer transition-all focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
                             >
                               <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
                               <option value="ผู้บริหาร" disabled={isAnotherUserExecutive}>
@@ -583,7 +583,7 @@ export default function UserRolesTab({
                               email: user.email || "",
                             });
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[14px] font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg cursor-pointer"
                           title="แก้ไขชื่อและอีเมล"
                         >
                           <Pencil size={12} />
@@ -602,7 +602,7 @@ export default function UserRolesTab({
                             setUserToDelete(user);
                           }}
                           disabled={isSuperAdmin && superAdminCount <= 1}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg ${
+                          className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-[14px] font-medium rounded-lg ${
                             isSuperAdmin && superAdminCount <= 1
                               ? "text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed"
                               : "text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 cursor-pointer"
@@ -833,7 +833,7 @@ export default function UserRolesTab({
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900 text-base">เพิ่มผู้ใช้งานใหม่</h3>
-                  <p className="text-xs text-gray-500">เพิ่มเจ้าหน้าที่ หรือ ผู้ดูแลระบบในระบบ</p>
+                  <p className="text-sm text-gray-500">เพิ่มเจ้าหน้าที่ หรือ ผู้ดูแลระบบในระบบ</p>
                 </div>
               </div>
               <button
@@ -849,7 +849,7 @@ export default function UserRolesTab({
 
             <form onSubmit={handleAddUser} className="space-y-4 mt-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
                   ชื่อ-นามสกุล <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -863,7 +863,7 @@ export default function UserRolesTab({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
                   อีเมล CMU / อีเมล <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -877,7 +877,7 @@ export default function UserRolesTab({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
                   บทบาท <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -929,7 +929,7 @@ export default function UserRolesTab({
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900 text-base">แก้ไขข้อมูลผู้บริหาร</h3>
-                  <p className="text-xs text-gray-500">แก้ไขชื่อ-นามสกุล และอีเมลของผู้บริหาร</p>
+                  <p className="text-sm text-gray-500">แก้ไขชื่อ-นามสกุล และอีเมลของผู้บริหาร</p>
                 </div>
               </div>
               <button
@@ -942,7 +942,7 @@ export default function UserRolesTab({
 
             <form onSubmit={handleSaveExecutiveEdit} className="space-y-4 mt-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
                   ชื่อ-นามสกุล (ภาษาไทย) <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -956,7 +956,7 @@ export default function UserRolesTab({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
                   ชื่อ-นามสกุล (ภาษาอังกฤษ)
                 </label>
                 <input
@@ -969,7 +969,7 @@ export default function UserRolesTab({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
                   อีเมล <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -1015,7 +1015,7 @@ export default function UserRolesTab({
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900 text-base">ยืนยันการลบผู้ใช้งาน</h3>
-                <p className="text-xs text-gray-500">การดำเนินการนี้จะไม่สามารถย้อนกลับได้</p>
+                <p className="text-sm text-gray-500">การดำเนินการนี้จะไม่สามารถย้อนกลับได้</p>
               </div>
             </div>
 
@@ -1028,7 +1028,7 @@ export default function UserRolesTab({
                 ({getPrimaryRole(userToDelete.roles)}) ออกจากระบบ?
               </p>
               {userToDelete.roles.some((r) => r.role === "admin") && (
-                <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                <p className="text-sm text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
                   หมายเหตุ: หากเจ้าหน้าที่มีคำร้องรอตรวจสอบอยู่ ระบบจะโอนคำร้องไปยังผู้ดูแลระบบโดยอัตโนมัติ
                 </p>
               )}

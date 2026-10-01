@@ -211,12 +211,12 @@ export default function SystemBudgetTab() {
           </div>
 
           {errorMessage && (
-            <div className="text-[13px] text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200">
+            <div className="text-sm text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200">
               {errorMessage}
             </div>
           )}
           {successMessage && (
-            <div className="text-[13px] text-green-700 bg-green-50 p-2.5 rounded-lg border border-green-200">
+            <div className="text-sm text-green-700 bg-green-50 p-2.5 rounded-lg border border-green-200">
               {successMessage}
             </div>
           )}
@@ -250,15 +250,15 @@ export default function SystemBudgetTab() {
 
         <div className="space-y-4">
           <div className="flex justify-between items-center pb-4 border-b border-gray-100">
-            <span className="text-[13px] text-gray-600">วงเงินที่ปรับปรุง</span>
+            <span className="text-sm text-gray-600">วงเงินที่ปรับปรุง</span>
             <span className="text-[15px] font-semibold text-gray-900">{formatCurrency(currentTotal)}</span>
           </div>
           <div className="flex justify-between items-center pb-4 border-b border-gray-100">
-            <span className="text-[13px] text-gray-600">เบิกจ่ายแล้ว</span>
+            <span className="text-sm text-gray-600">เบิกจ่ายแล้ว</span>
             <span className="text-[14px] font-semibold text-green-600">{formatCurrency(spentAmount)}</span>
           </div>
           <div className="flex justify-between items-center pb-4 border-b border-gray-100">
-            <span className="text-[13px] text-gray-600">รออนุมัติ / ตรวจสอบ</span>
+            <span className="text-sm text-gray-600">รออนุมัติ / ตรวจสอบ</span>
             <span className="text-[14px] font-semibold text-amber-500">{formatCurrency(pendingAmount)}</span>
           </div>
           <div className="flex justify-between items-center pb-4">
@@ -273,8 +273,8 @@ export default function SystemBudgetTab() {
           {/* Progress Bar */}
           <div className="pt-2">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-[11px] text-gray-500">อัตราการใช้ระบบ</span>
-              <span className="text-[11px] font-semibold text-gray-700">{usagePercentage.toFixed(1)}%</span>
+              <span className="text-sm text-gray-500">อัตราการใช้ระบบ</span>
+              <span className="text-sm font-semibold text-gray-700">{usagePercentage.toFixed(1)}%</span>
             </div>
             <div className="w-full bg-orange-100/50 rounded-full h-2 overflow-hidden">
               <div

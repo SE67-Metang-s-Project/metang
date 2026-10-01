@@ -4,19 +4,11 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import {
   Building,
   Landmark,
-  Phone,
-  Mail,
-  Clock,
-  Lock,
   Save,
   RefreshCw,
   CheckCircle2,
   AlertCircle,
-  ShieldCheck,
-  Sparkles,
   X,
-  MapPin,
-  CreditCard,
   ChevronDown,
   Check,
 } from "lucide-react";
@@ -81,12 +73,7 @@ const translateTime = (thTime: string) => {
 
 const formatAccountNumber = (value: string) => {
   const digits = value.replace(/\D/g, "").slice(0, 10);
-  return [
-    digits.slice(0, 3),
-    digits.slice(3, 4),
-    digits.slice(4, 9),
-    digits.slice(9, 10),
-  ]
+  return [digits.slice(0, 3), digits.slice(3, 4), digits.slice(4, 9), digits.slice(9, 10)]
     .filter(Boolean)
     .join("-");
 };
@@ -133,7 +120,9 @@ async function loadCombinedData(): Promise<{
   const bankName = stored.bankName || primaryAcc?.bankName || "ธนาคารกรุงไทย";
   const bankCode = bankCodeForName(bankName);
   const accountName = stored.accountName || primaryAcc?.accountName || FIXED_FACULTY_NAME;
-  const accountNumber = formatAccountNumber(stored.accountNumber || primaryAcc?.accountNumber || "");
+  const accountNumber = formatAccountNumber(
+    stored.accountNumber || primaryAcc?.accountNumber || "",
+  );
 
   const openingDaysTh = addressData.openingHours?.split(" เวลา ")[0] || "วันจันทร์ - วันศุกร์";
   const openingTimeTh = addressData.openingHours?.split(" เวลา ")[1] || "08:30 - 16:30 น.";
@@ -416,7 +405,8 @@ export default function SystemContactInfoTab() {
   const selectedBank = studentBankOptions.find(
     (b) => b.label === formData?.bankName || b.value === formData?.bankName,
   );
-  const isCustomBank = formData?.bankCode === "OTHER" || (!selectedBank && Boolean(formData?.bankName));
+  const isCustomBank =
+    formData?.bankCode === "OTHER" || (!selectedBank && Boolean(formData?.bankName));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -499,8 +489,10 @@ export default function SystemContactInfoTab() {
                               containerClassName="size-6 shrink-0 rounded-full"
                             />
                             <div>
-                              <span className="font-medium text-gray-900">{selectedBank.label}</span>
-                              <span className="text-xs text-gray-500 ml-2 hidden sm:inline">
+                              <span className="font-medium text-gray-900">
+                                {selectedBank.label}
+                              </span>
+                              <span className="text-sm text-gray-500 ml-2 hidden sm:inline">
                                 ({selectedBank.labelEn})
                               </span>
                             </div>
@@ -509,7 +501,9 @@ export default function SystemContactInfoTab() {
                           <>
                             <Landmark size={20} className="text-[#ea580c] shrink-0" />
                             <span className="font-medium text-gray-900">
-                              {formData.bankName ? `${formData.bankName} (ธนาคารอื่นๆ)` : "ระบุชื่อธนาคารอื่นๆ"}
+                              {formData.bankName
+                                ? `${formData.bankName} (ธนาคารอื่นๆ)`
+                                : "ระบุชื่อธนาคารอื่นๆ"}
                             </span>
                           </>
                         ) : (
@@ -563,7 +557,7 @@ export default function SystemContactInfoTab() {
                                 />
                                 <div>
                                   <div className="text-gray-900 font-medium">{bank.label}</div>
-                                  <div className="text-xs text-gray-400">{bank.labelEn}</div>
+                                  <div className="text-sm text-gray-400">{bank.labelEn}</div>
                                 </div>
                               </div>
                               {isSelected && <Check size={16} className="text-[#ea580c]" />}
@@ -590,7 +584,7 @@ export default function SystemContactInfoTab() {
                             <Landmark size={22} className="text-gray-500 shrink-0" />
                             <div>
                               <div className="text-gray-900 font-medium">ธนาคารอื่นๆ</div>
-                              <div className="text-xs text-gray-400">ระบุชื่อธนาคารเอง</div>
+                              <div className="text-sm text-gray-400">ระบุชื่อธนาคารเอง</div>
                             </div>
                           </div>
                           {formData.bankCode === "OTHER" && (
@@ -614,7 +608,7 @@ export default function SystemContactInfoTab() {
                     </div>
                   )}
                   {formErrors.bankName && (
-                    <p className="text-xs text-red-500">{formErrors.bankName}</p>
+                    <p className="text-sm text-red-500">{formErrors.bankName}</p>
                   )}
                 </div>
               </div>
@@ -632,7 +626,7 @@ export default function SystemContactInfoTab() {
                   className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
                 {formErrors.accountName && (
-                  <p className="text-xs text-red-500 mt-1.5">{formErrors.accountName}</p>
+                  <p className="text-sm text-red-500 mt-1.5">{formErrors.accountName}</p>
                 )}
               </div>
 
@@ -653,7 +647,7 @@ export default function SystemContactInfoTab() {
                   className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
                 {formErrors.accountNumber && (
-                  <p className="text-xs text-red-500 mt-1.5">{formErrors.accountNumber}</p>
+                  <p className="text-sm text-red-500 mt-1.5">{formErrors.accountNumber}</p>
                 )}
               </div>
             </div>
@@ -670,36 +664,16 @@ export default function SystemContactInfoTab() {
                   ที่อยู่และการติดต่อ
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">
-                  ข้อมูลหน่วยงานสังกัด จุดติดต่อ เวลาทำการ และช่องทางติดต่อเจ้าหน้าที่
+                  ข้อมูล จุดติดต่อ และช่องทางติดต่อเจ้าหน้าที่
                 </p>
               </div>
             </div>
 
             <div className="space-y-6">
-              {/* ข้อมูลคณะและหน่วยงานสังกัด - FIXED ไม่สามารถแก้ไขได้ */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    ข้อมูลคณะและหน่วยงานสังกัด <span className="text-red-500">*</span>
-                  </label>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-                    <Lock size={12} className="text-gray-500" />
-                    ค่าคงที่ของระบบ (ไม่สามารถแก้ไขได้)
-                  </span>
-                </div>
-                <input
-                  type="text"
-                  value={FIXED_FACULTY_NAME}
-                  readOnly
-                  disabled
-                  className="w-full px-4 py-2.5 bg-gray-100/80 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 cursor-not-allowed select-none"
-                />
-              </div>
-
               {/* จุดติดต่อเจ้าหน้าที่ (TH - EN) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                     จุดติดต่อเจ้าหน้าที่ (ภาษาไทย) <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -710,11 +684,11 @@ export default function SystemContactInfoTab() {
                     placeholder="เช่น จุดรับเอกสารคำร้องเงินกู้ยืม ชั้น 1 อาคารเทพรัตน์ คณะพยาบาลศาสตร์ มช."
                   />
                   {formErrors.submissionLocation && (
-                    <p className="text-xs text-red-500 mt-1.5">{formErrors.submissionLocation}</p>
+                    <p className="text-sm text-red-500 mt-1.5">{formErrors.submissionLocation}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                     Contact Location (English)
                   </label>
                   <input
@@ -732,7 +706,7 @@ export default function SystemContactInfoTab() {
               {/* เบอร์โทรศัพท์หลัก, เบอร์ต่อภายใน, อีเมลติดต่อทางการ */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                     เบอร์โทรศัพท์หลัก <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -743,11 +717,11 @@ export default function SystemContactInfoTab() {
                     placeholder="เช่น 053-935025"
                   />
                   {formErrors.phone && (
-                    <p className="text-xs text-red-500 mt-1.5">{formErrors.phone}</p>
+                    <p className="text-sm text-red-500 mt-1.5">{formErrors.phone}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                     เบอร์ต่อภายใน (Ext.)
                   </label>
                   <input
@@ -759,7 +733,7 @@ export default function SystemContactInfoTab() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                     อีเมลติดต่อทางการ <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -770,184 +744,12 @@ export default function SystemContactInfoTab() {
                     placeholder="เช่น loan@nurse.cmu.ac.th"
                   />
                   {formErrors.email && (
-                    <p className="text-xs text-red-500 mt-1.5">{formErrors.email}</p>
+                    <p className="text-sm text-red-500 mt-1.5">{formErrors.email}</p>
                   )}
                 </div>
               </div>
 
               <div className="border-t border-gray-100 my-2"></div>
-
-              {/* วันทำการ และ เวลาทำการ */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    วันทำการ (ภาษาไทย) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.openingDaysTh}
-                    onChange={(e) => handleFieldChange("openingDaysTh", e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                    placeholder="เช่น วันจันทร์ - วันศุกร์"
-                  />
-                  {formErrors.openingDaysTh && (
-                    <p className="text-xs text-red-500 mt-1.5">{formErrors.openingDaysTh}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    Working Days (Auto Map)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.openingDaysEn}
-                    onChange={(e) => handleFieldChange("openingDaysEn", e.target.value)}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                    placeholder="e.g. Monday - Friday"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    เวลาทำการ (ภาษาไทย) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.openingTimeTh}
-                    onChange={(e) => handleFieldChange("openingTimeTh", e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                    placeholder="เช่น 08:30 - 16:30 น."
-                  />
-                  {formErrors.openingTimeTh && (
-                    <p className="text-xs text-red-500 mt-1.5">{formErrors.openingTimeTh}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    Working Hours (Auto Map)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.openingTimeEn}
-                    onChange={(e) => handleFieldChange("openingTimeEn", e.target.value)}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                    placeholder="e.g. 08:30 - 16:30"
-                  />
-                </div>
-              </div>
-
-              {/* หมายเหตุวันหยุด */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                  หมายเหตุวันหยุด
-                </label>
-                <input
-                  type="text"
-                  value={formData.closedDaysNote}
-                  onChange={(e) => handleFieldChange("closedDaysNote", e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                  placeholder="เช่น เว้นวันหยุดราชการและวันหยุดนักขัตฤกษ์"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* ===================================================
-              ส่วนที่ 3: Live Preview ตัวอย่างการแสดงผลบนหน้าจอนักศึกษา
-          =================================================== */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles size={14} className="text-[#ea580c]" />
-                ตัวอย่างการแสดงผลบนหน้านักศึกษา
-              </span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Live Preview
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* บัญชีรับชำระเงิน */}
-              <div className="bg-gradient-to-br from-orange-500/5 via-amber-500/5 to-orange-500/10 rounded-xl p-5 border border-orange-200/80 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-                    <CreditCard size={16} className="text-[#ea580c]" />
-                    บัญชีรับชำระเงินคืนกองทุน
-                  </h4>
-                  <div className="flex items-center gap-1.5 bg-orange-100/70 px-2 py-0.5 rounded-md">
-                    {selectedBank?.logoSrc && (
-                      <ImageWithSkeleton
-                        src={selectedBank.logoSrc}
-                        alt=""
-                        width={16}
-                        height={16}
-                        className="rounded-full shrink-0"
-                        containerClassName="size-4 shrink-0 rounded-full"
-                      />
-                    )}
-                    <span className="text-[11px] font-semibold text-orange-700">
-                      {formData.bankName || "ธนาคาร"}
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-1.5 text-xs text-gray-700">
-                  <div>
-                    <span className="text-gray-500">ชื่อบัญชี: </span>
-                    <span className="font-semibold text-gray-900">{formData.accountName || "-"}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">เลขที่บัญชี: </span>
-                    <span className="font-mono font-semibold text-orange-700 text-sm">
-                      {formData.accountNumber || "-"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* ติดต่อเจ้าหน้าที่กองทุน */}
-              <div className="bg-gradient-to-br from-slate-500/5 via-gray-500/5 to-slate-500/10 rounded-xl p-5 border border-gray-200/80 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-                    <ShieldCheck size={16} className="text-[#ea580c]" />
-                    ติดต่อเจ้าหน้าที่กองทุน
-                  </h4>
-                  <span className="text-[11px] font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-md truncate max-w-[180px]">
-                    {FIXED_FACULTY_NAME}
-                  </span>
-                </div>
-                <div className="space-y-2 text-xs text-gray-700">
-                  <div className="flex items-center gap-2">
-                    <Phone size={14} className="text-gray-400 shrink-0" />
-                    <span className="font-semibold text-gray-900">{formData.phone || "-"}</span>
-                    {formData.internalExt && (
-                      <span className="text-gray-500">(ต่อ {formData.internalExt})</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail size={14} className="text-gray-400 shrink-0" />
-                    <span className="text-gray-800 break-all">{formData.email || "-"}</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <MapPin size={14} className="text-gray-400 mt-0.5 shrink-0" />
-                    <span className="text-gray-800 leading-relaxed">
-                      {formData.submissionLocation || "-"}
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Clock size={14} className="text-gray-400 mt-0.5 shrink-0" />
-                    <div>
-                      <span className="text-gray-800">
-                        {formData.openingDaysTh || "-"} เวลา {formData.openingTimeTh || "-"}
-                      </span>
-                      {formData.closedDaysNote && (
-                        <div className="text-[11px] text-gray-500 mt-0.5">
-                          {formData.closedDaysNote}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -955,7 +757,7 @@ export default function SystemContactInfoTab() {
               Bottom Actions Bar
           =================================================== */}
           <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-white rounded-2xl border border-gray-200 shadow-sm gap-4">
-            <div className="text-xs text-gray-500 w-full sm:w-auto text-center sm:text-left">
+            <div className="text-sm text-gray-500 w-full sm:w-auto text-center sm:text-left">
               <span>ปรับปรุงล่าสุดเมื่อ: </span>
               <span className="font-semibold text-gray-700">{formData.updatedAt}</span>
               <span className="mx-1.5 hidden sm:inline">·</span>
