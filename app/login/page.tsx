@@ -74,7 +74,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               alt="METANG Logo"
               className="w-full h-auto object-contain transition-all duration-300 drop-shadow-md"
               height={180}
-              src={withBasePath("/metang-logo7.png")}
+              src={withBasePath("/metang-logo-transparent.png")}
               width={180}
               priority
             />

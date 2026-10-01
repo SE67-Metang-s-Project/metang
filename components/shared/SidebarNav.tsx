@@ -138,7 +138,7 @@ export default function SideNav({ isOpen, role, onClose }: SideNavProps) {
               aria-label="หน้าหลัก"
             >
               <Image
-                src={withBasePath("/metang-logo7.png")}
+                src={withBasePath("/metang-logo-transparent.png")}
                 alt="METANG"
                 width={50}
                 height={50}

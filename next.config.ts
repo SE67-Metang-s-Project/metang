@@ -7,6 +7,7 @@ const ROOT_PATHS = [
   "/",
   "/metang-logo7.png",
   "/metang-logo.png",
+  "/metang-logo-transparent.png",
   "/bank-logos/:path*",
   "/logo-variations/:path*",
   "/mock-payment-qr.svg",
