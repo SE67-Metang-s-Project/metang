@@ -11,7 +11,7 @@ type Params = { params: Promise<{ id: string }> };
 
 /**
  * Grant or remove a predefined role for an application user.
- * @description Removing `admin` or `super_admin` from someone left with neither hands their open pending_admin/pending_executive loans to the calling SuperAdmin. Refused with 409: removing the final `super_admin`, removing your own `super_admin` (a successor removes you), removing `executive` (edit the executive instead), and granting a second `executive`.
+ * @description Removing `admin` or `super_admin` from someone left with neither hands their open pending_admin/pending_executive loans to the calling SuperAdmin. Removing `advisor` cancels that advisor's pending_advisor loans (the student applies again with another advisor); loans past the advisor step carry on. Refused with 409: granting `admin` or `super_admin` to an advisor, or `advisor` to an admin or SuperAdmin (ADVISOR_ADMIN_CONFLICT), removing the final `super_admin`, removing your own `super_admin` (a successor removes you), removing `executive` (edit the executive instead), and granting a second `executive`.
  * @tag SuperAdmin roles
  * @pathParams UserIdParams
  * @body RoleMutationBody
@@ -61,8 +61,18 @@ export async function POST(request: Request, { params }: Params) {
   } catch (error) {
     if (error instanceof RoleMutationError) {
       if (error.code === "USER_NOT_FOUND") return apiError("NOT_FOUND", "User not found", 404);
+      if (error.code === "ACCESS_REVOKED") {
+        return apiError("CONFLICT", "The request changed; please retry", 409);
+      }
       if (error.code === "ROLE_ALREADY_GRANTED") {
         return apiError("CONFLICT", "Role is already granted", 409);
+      }
+      if (error.code === "ADVISOR_ADMIN_CONFLICT") {
+        return apiError(
+          "ADVISOR_ADMIN_CONFLICT",
+          "An advisor cannot also be an admin or SuperAdmin",
+          409,
+        );
       }
       if (error.code === "ROLE_NOT_GRANTED") {
         return apiError("CONFLICT", "Role is not currently granted", 409);

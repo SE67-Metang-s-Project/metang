@@ -52,12 +52,27 @@ export type RoleMutationErrorCode =
   | "EXECUTIVE_CANNOT_BE_DELETED"
   | "NOT_EXECUTIVE"
   | "NOT_MANAGED_USER"
-  | "REASSIGNMENT_CONFLICT";
+  | "REASSIGNMENT_CONFLICT"
+  | "ACCESS_REVOKED"
+  | "ADVISOR_ADMIN_CONFLICT";
 
 export class RoleMutationError extends Error {
   constructor(readonly code: RoleMutationErrorCode) {
     super(code);
   }
+}
+
+/**
+ * TOCTOU guard for every staff mutation: the caller's super_admin role can be removed (or their
+ * row deleted) between the route's access check and this transaction. audit_log.actor_id has no
+ * FK, so without this an ex-SuperAdmin could still act and log under a deleted id.
+ */
+async function assertActorIsSuperAdmin(tx: TxClient, actorId: string) {
+  const role = await tx.userRole.findFirst({
+    where: { userId: actorId, role: "super_admin" },
+    select: { userId: true },
+  });
+  if (!role) throw new RoleMutationError("ACCESS_REVOKED");
 }
 
 const userMutationOptions = {
@@ -96,6 +111,44 @@ async function reassignOpenAdminLoans(
   }
 }
 
+/** Comment on the advisor approval closed by cancelOpenAdvisorLoans; the timeline shows it. */
+export const ADVISOR_REMOVED_COMMENT = "ยกเลิกคำร้องอัตโนมัติ: อาจารย์ที่ปรึกษาถูกถอดออกจากระบบ";
+
+/**
+ * Removing an advisor cancels the loans only they could move: pending_advisor. Loans past the
+ * advisor step stay - no later step sends a loan back to the advisor. The student applies again
+ * with another advisor. Each pending advisor approval is closed as rejected by the actor, because
+ * loan_approval's CHECK needs decided_by and decided_at on any row that is not pending.
+ */
+async function cancelOpenAdvisorLoans(tx: TxClient, { actorId, targetUserId }: { actorId: string; targetUserId: string }) {
+  const where = { advisorId: targetUserId, status: "pending_advisor" as LoanStatus };
+  const openLoans = await tx.loanRequest.findMany({ where, select: { id: true } });
+  if (openLoans.length === 0) return;
+
+  const cancelledAt = new Date();
+  const cancelled = await tx.loanRequest.updateMany({ where, data: { status: "cancelled", cancelledAt } });
+  if (cancelled.count !== openLoans.length) throw new RoleMutationError("REASSIGNMENT_CONFLICT");
+
+  const loanIds = openLoans.map((loan) => loan.id);
+  await tx.loanApproval.updateMany({
+    where: { loanId: { in: loanIds }, step: "advisor", decision: "pending" },
+    data: { decision: "rejected", decidedBy: actorId, decidedAt: cancelledAt, comment: ADVISOR_REMOVED_COMMENT },
+  });
+  // No enqueueReviewerNotifications: cancelled has no reviewer step, so it would enqueue nothing.
+  for (const loanId of loanIds) {
+    await tx.auditLog.create({
+      data: {
+        actorId,
+        action: "loan_request.cancelled",
+        entityType: "loan_request",
+        entityId: loanId,
+        before: { status: "pending_advisor", advisorId: targetUserId },
+        after: { status: "cancelled", reason: "advisor_removed" },
+      },
+    });
+  }
+}
+
 export async function mutateUserRole({
   actorId,
   targetUserId,
@@ -108,6 +161,7 @@ export async function mutateUserRole({
   role: UserRoleName;
 }) {
   return prisma.$transaction(async (tx) => {
+    await assertActorIsSuperAdmin(tx, actorId);
     const target = await tx.appUser.findUnique({
       where: { id: targetUserId },
       select: superAdminUserSelect,
@@ -119,6 +173,12 @@ export async function mutateUserRole({
 
     if (action === "grant") {
       if (hasRole) throw new RoleMutationError("ROLE_ALREADY_GRANTED");
+      // An advisor is never also admin or super_admin, either way round: no one approves a loan
+      // as advisor and again as admin.
+      const staffRole = (r: UserRoleName) => r === "admin" || r === "super_admin";
+      if ((role === "advisor" && beforeRoles.some(staffRole)) || (staffRole(role) && beforeRoles.includes("advisor"))) {
+        throw new RoleMutationError("ADVISOR_ADMIN_CONFLICT");
+      }
       if (role === "executive") {
         const executiveCount = await tx.userRole.count({
           where: { role: "executive", userId: { not: targetUserId } },
@@ -141,6 +201,7 @@ export async function mutateUserRole({
         if (superAdminCount <= 1) throw new RoleMutationError("FINAL_SUPER_ADMIN");
       }
       await tx.userRole.delete({ where: { userId_role: { userId: targetUserId, role } } });
+      if (role === "advisor") await cancelOpenAdvisorLoans(tx, { actorId, targetUserId });
       await reassignOpenAdminLoans(tx, {
         actorId,
         targetUserId,
@@ -183,85 +244,68 @@ export async function createManagedUser({
   role: "admin" | "super_admin";
 }) {
   return prisma.$transaction(async (tx) => {
+    await assertActorIsSuperAdmin(tx, actorId);
     const cleanEmail = email.trim().toLowerCase();
     const cleanFullNameTh = fullNameTh.trim();
     const cleanFullNameEn = fullNameEn ? fullNameEn.trim() : null;
     const cmuAccount = cleanEmail.split("@")[0];
 
+    // Add never renames anyone or hands a role to someone who holds one (staff, advisor, the
+    // executive): they are refused. A removed staff member whose row stays for history (no roles
+    // left) is rehired on that same row, so their past work and new work share one id; their
+    // names stay as recorded.
     const existing = await tx.appUser.findFirst({
-      where: {
-        OR: [{ email: cleanEmail }, { cmuAccount }],
-      },
-      include: {
-        roles: { select: { role: true } },
-      },
+      where: { OR: [{ email: cleanEmail }, { cmuAccount }] },
+      select: { id: true, roles: { select: { role: true } } },
     });
-
-    let targetUserId: string;
+    if (existing && existing.roles.length > 0) throw new RoleMutationError("EMAIL_ALREADY_IN_USE");
 
     if (existing) {
-      targetUserId = existing.id;
-      if (existing.roles.some((r) => r.role === role)) {
-        throw new RoleMutationError("ROLE_ALREADY_GRANTED");
-      }
-
-      await tx.userRole.create({
-        data: {
-          userId: existing.id,
-          role,
-          grantedBy: actorId,
-        },
-      });
-
-      const names = {
-        fullNameTh: cleanFullNameTh,
-        ...(cleanFullNameEn ? { fullNameEn: cleanFullNameEn } : {}),
-      };
-      await tx.appUser.update({ where: { id: existing.id }, data: names });
-
+      await tx.userRole.create({ data: { userId: existing.id, role, grantedBy: actorId } });
       await tx.auditLog.create({
         data: {
           actorId,
           action: "user_role.granted",
           entityType: "app_user",
           entityId: existing.id,
-          before: { fullNameTh: existing.fullNameTh, fullNameEn: existing.fullNameEn },
-          after: { role, ...names },
+          before: { roles: [] },
+          after: { roles: [role], rehired: true },
         },
       });
-    } else {
-      const newUser = await tx.appUser.create({
-        data: {
-          email: cleanEmail,
-          cmuAccount,
-          fullNameTh: cleanFullNameTh,
-          fullNameEn: cleanFullNameEn,
-        },
-      });
-
-      targetUserId = newUser.id;
-
-      await tx.userRole.create({
-        data: {
-          userId: newUser.id,
-          role,
-          grantedBy: actorId,
-        },
-      });
-
-      await tx.auditLog.create({
-        data: {
-          actorId,
-          action: "user.created",
-          entityType: "app_user",
-          entityId: newUser.id,
-          after: { email: cleanEmail, fullNameTh: cleanFullNameTh, role },
-        },
-      });
+      const rehired = await tx.appUser.findUnique({ where: { id: existing.id }, select: superAdminUserSelect });
+      if (!rehired) throw new RoleMutationError("USER_NOT_FOUND");
+      return rehired;
     }
 
+    const newUser = await tx.appUser.create({
+      data: {
+        email: cleanEmail,
+        cmuAccount,
+        fullNameTh: cleanFullNameTh,
+        fullNameEn: cleanFullNameEn,
+      },
+    });
+
+    await tx.userRole.create({
+      data: {
+        userId: newUser.id,
+        role,
+        grantedBy: actorId,
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        actorId,
+        action: "user.created",
+        entityType: "app_user",
+        entityId: newUser.id,
+        after: { email: cleanEmail, fullNameTh: cleanFullNameTh, role },
+      },
+    });
+
     const created = await tx.appUser.findUnique({
-      where: { id: targetUserId },
+      where: { id: newUser.id },
       select: superAdminUserSelect,
     });
     if (!created) throw new RoleMutationError("USER_NOT_FOUND");
@@ -270,9 +314,11 @@ export async function createManagedUser({
 }
 
 /**
- * Removes a staff member: takes away their admin and super_admin roles and hands their open loans
- * to the actor. The app_user row stays - their approvals, payouts and audit rows point at it, and
- * those must keep naming who did the work. With no managed role left they drop off the staff list.
+ * Removes a staff member: hands their open loans to the actor, then deletes their app_user row.
+ * The row stays (only admin and super_admin are taken away) while it is still needed: they hold
+ * another role (advisor), or a loan, approval, payment or ledger row names them - those must keep
+ * naming who did the work. audit_log has no FK to app_user, so it never blocks the delete; the
+ * user.deleted row records who the uuid was.
  */
 export async function deleteManagedUser({
   actorId,
@@ -282,6 +328,7 @@ export async function deleteManagedUser({
   targetUserId: string;
 }) {
   return prisma.$transaction(async (tx) => {
+    await assertActorIsSuperAdmin(tx, actorId);
     const target = await tx.appUser.findUnique({
       where: { id: targetUserId },
       select: superAdminUserSelect,
@@ -298,11 +345,28 @@ export async function deleteManagedUser({
       if (superAdminCount <= 1) throw new RoleMutationError("FINAL_SUPER_ADMIN");
     }
 
-    await tx.userRole.deleteMany({
-      where: { userId: targetUserId, role: { in: ["admin", "super_admin"] } },
-    });
     const remainingRoles = beforeRoles.filter((role) => role !== "admin" && role !== "super_admin");
     await reassignOpenAdminLoans(tx, { actorId, targetUserId, remainingRoles });
+
+    // ponytail: mirrors the NoAction FKs to app_user. A new one must be added here, or deleting
+    // anyone it names fails with P2003 (500) instead of keeping the row.
+    const named =
+      remainingRoles.length > 0 ||
+      (await tx.loanRequest.count({
+        where: { OR: [{ advisorId: targetUserId }, { assignedAdminId: targetUserId }] },
+      })) > 0 ||
+      (await tx.loanApproval.count({ where: { decidedBy: targetUserId } })) > 0 ||
+      (await tx.payment.count({ where: { confirmedBy: targetUserId } })) > 0 ||
+      (await tx.fundTransaction.count({ where: { performedBy: targetUserId } })) > 0;
+
+    if (named) {
+      await tx.userRole.deleteMany({
+        where: { userId: targetUserId, role: { in: ["admin", "super_admin"] } },
+      });
+    } else {
+      // user_role cascades; user_role.granted_by and system_setting.updated_by_id are SET NULL.
+      await tx.appUser.delete({ where: { id: targetUserId } });
+    }
 
     await tx.auditLog.create({
       data: {
@@ -311,11 +375,11 @@ export async function deleteManagedUser({
         entityType: "app_user",
         entityId: targetUserId,
         before: { email: target.email, fullNameTh: target.fullNameTh, roles: beforeRoles },
-        after: { roles: remainingRoles },
+        after: { roles: remainingRoles, rowDeleted: !named },
       },
     });
 
-    return { success: true };
+    return { success: true, rowDeleted: !named };
   }, userMutationOptions);
 }
 
@@ -340,6 +404,7 @@ export async function editExecutive({
   fullNameEn?: string | null;
 }) {
   return prisma.$transaction(async (tx) => {
+    await assertActorIsSuperAdmin(tx, actorId);
     const target = await tx.appUser.findUnique({
       where: { id: targetUserId },
       select: superAdminUserSelect,

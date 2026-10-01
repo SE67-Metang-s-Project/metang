@@ -488,7 +488,8 @@ export type EditExecutiveBody = {
 };
 
 export type SuperAdminUserDeleteResponse = {
-  data: { success: boolean; message: string };
+  /** rowDeleted: false when the user is kept (another role, or past work names them) and only lost admin/super_admin. */
+  data: { success: boolean; rowDeleted: boolean; message: string };
 };
 
 export type FundLedgerKind =

@@ -2,8 +2,9 @@ import { createManagedUser, listUsersWithRoles, RoleMutationError } from "@/db/q
 import { apiError, apiOk } from "@/lib/api-response";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { getSuperAdminAccess } from "@/lib/loan-auth";
+import { isUniqueConstraintOnField } from "@/lib/prisma-errors";
 import { validateJsonRequest } from "@/lib/request-security";
-import { isCmuEmail, predefinedRoleNames } from "@/lib/role-management";
+import { isCmuEmail, isNameTooLong, MAX_NAME_LENGTH, predefinedRoleNames } from "@/lib/role-management";
 import { serializeJson } from "@/lib/serialization";
 
 /**
@@ -35,7 +36,7 @@ export async function GET() {
 
 /**
  * Add a staff member (admin or super_admin).
- * @description Grants the role to the user with this email or CMU account if one exists (a person who has signed in before), otherwise creates the user. They sign in later with CMU SSO.
+ * @description Creates the user with the role. They sign in later with CMU SSO. A removed staff member (their record kept for history, no roles left) gets the role back on the same record, names unchanged. An email or CMU account that belongs to someone holding any role (staff, advisor, the executive) is refused with 409; nobody is renamed here.
  * @tag SuperAdmin roles
  * @body CreateManagedUserBody
  * @auth cookieAuth
@@ -74,6 +75,10 @@ export async function POST(request: Request) {
     return apiError("VALIDATION_ERROR", "กรุณาระบุชื่อ-นามสกุล", 422);
   }
 
+  if (isNameTooLong(fullNameTh, fullNameEn)) {
+    return apiError("VALIDATION_ERROR", `ชื่อ-นามสกุลต้องไม่เกิน ${MAX_NAME_LENGTH} ตัวอักษร`, 422);
+  }
+
   if (typeof email !== "string" || !email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return apiError("VALIDATION_ERROR", "กรุณาระบุอีเมลที่ถูกต้อง", 422);
   }
@@ -96,10 +101,15 @@ export async function POST(request: Request) {
     });
     return apiOk(serializeJson(newUser));
   } catch (error) {
-    if (error instanceof RoleMutationError) {
-      if (error.code === "ROLE_ALREADY_GRANTED") {
-        return apiError("CONFLICT", "ผู้ใช้งานนี้มีบทบาทนี้อยู่แล้ว", 409);
-      }
+    if (error instanceof RoleMutationError && error.code === "EMAIL_ALREADY_IN_USE") {
+      return apiError("CONFLICT", "อีเมลนี้มีผู้ใช้งานในระบบแล้ว", 409);
+    }
+    if (error instanceof RoleMutationError && error.code === "ACCESS_REVOKED") {
+      return apiError("CONFLICT", "The request changed; please retry", 409);
+    }
+    // Two Adds for the same new email at once: the loser hits the unique index, not the lookup.
+    if (isUniqueConstraintOnField(error, "email") || isUniqueConstraintOnField(error, "cmu_account")) {
+      return apiError("CONFLICT", "อีเมลนี้มีผู้ใช้งานในระบบแล้ว", 409);
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError && (error.code === "P2002" || error.code === "P2034")) {
       return apiError("CONFLICT", "The user changed; please retry", 409);
