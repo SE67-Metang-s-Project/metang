@@ -12,6 +12,7 @@ import {
 } from "@/lib/cmu-auth";
 import { getNurseAccessDecision } from "@/lib/nurse-auth";
 import {
+  getDevelopmentHomePath,
   getDevelopmentRoleUserId,
   isDevelopmentApiBypass,
   isDevelopmentEnvironment,
@@ -407,6 +408,8 @@ export async function getSignedInContext(): Promise<LoanUserContext | StudentCon
   return getStudentContext();
 }
 
+const FORBIDDEN_HOME_PATH = "/error?type=forbidden";
+
 export function resolveUserHomePath(
   roles: (UserRoleName | string)[],
   profile?: CmuProfile,
@@ -428,27 +431,26 @@ export function resolveUserHomePath(
     if (isStudent) return "/student";
   }
 
-  return "/error?type=forbidden";
+  return FORBIDDEN_HOME_PATH;
 }
 
+/**
+ * The signed-in account's own role decides the page. A dev shortcut (DEV_AS_*, DEV_API_BYPASS)
+ * only picks the page for an account that holds no role and is not a student.
+ */
 export async function getUserHomePath(profile: CmuProfile): Promise<string> {
-  if (isDevelopmentApiBypass() || DEVELOPMENT_API_ROLES.some((r) => isDevelopmentRoleEnabled(r))) {
-    if (isDevelopmentRoleEnabled("super_admin")) return "/superadmin";
-    if (isDevelopmentRoleEnabled("executive")) return "/executive";
-    if (isDevelopmentRoleEnabled("admin")) return "/admin";
-    if (isDevelopmentRoleEnabled("advisor")) return "/advisor";
-    return "/student";
-  }
-
+  let homePath: string;
   try {
     const identity = normalizeLoanIdentity(profile);
     const user = await resolveAppUser(identity);
     const roles = user?.roles.map((r) => r.role) ?? [];
-    return resolveUserHomePath(roles, profile);
+    homePath = resolveUserHomePath(roles, profile);
   } catch (error) {
     console.error("Unable to resolve user home path", error);
-    return resolveUserHomePath([], profile);
+    homePath = resolveUserHomePath([], profile);
   }
+
+  return homePath === FORBIDDEN_HOME_PATH ? (getDevelopmentHomePath() ?? homePath) : homePath;
 }
 
 export type StudentAccess =

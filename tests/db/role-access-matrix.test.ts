@@ -13,6 +13,7 @@ if (!env.DATABASE_URL) throw new Error("role-access-matrix needs DATABASE_URL; r
 // Real sign-in path only: these would swap every lookup for a fixed dev fixture.
 for (const name of [
   "INFISICAL_ENV",
+  "DEBUG_MODE",
   "DEV_API_BYPASS",
   "DEV_AS_ADVISOR",
   "DEV_AS_ADMIN",

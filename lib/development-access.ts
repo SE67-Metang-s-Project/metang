@@ -3,7 +3,7 @@
  * NODE_ENV=production). Infisical only shares env values; INFISICAL_ENV plays no part here.
  */
 export function isDevelopmentEnvironment(
-  nodeEnvironment = process.env.NODE_ENV,
+  nodeEnvironment: string | undefined = process.env.NODE_ENV,
   debugMode = process.env.DEBUG_MODE,
 ) {
   return nodeEnvironment === "development" || debugMode === "true";
@@ -11,16 +11,18 @@ export function isDevelopmentEnvironment(
 
 export function isDevelopmentApiAccess(
   bypass = process.env.DEV_API_BYPASS,
-  nodeEnvironment = process.env.NODE_ENV,
+  nodeEnvironment: string | undefined = process.env.NODE_ENV,
+  debugMode = process.env.DEBUG_MODE,
 ) {
-  return isDevelopmentApiBypass(bypass, nodeEnvironment);
+  return isDevelopmentApiBypass(bypass, nodeEnvironment, debugMode);
 }
 
 export function isDevelopmentApiBypass(
   bypass = process.env.DEV_API_BYPASS,
-  nodeEnvironment = process.env.NODE_ENV,
+  nodeEnvironment: string | undefined = process.env.NODE_ENV,
+  debugMode = process.env.DEBUG_MODE,
 ) {
-  return bypass === "true" && isDevelopmentEnvironment(nodeEnvironment);
+  return bypass === "true" && isDevelopmentEnvironment(nodeEnvironment, debugMode);
 }
 
 export type DevelopmentApiRole = "advisor" | "admin" | "super_admin" | "executive";
@@ -35,9 +37,33 @@ const developmentRoleEnvironmentVariables: Record<DevelopmentApiRole, string> = 
 export function isDevelopmentRoleEnabled(
   role: DevelopmentApiRole,
   value = process.env[developmentRoleEnvironmentVariables[role]],
-  nodeEnvironment = process.env.NODE_ENV,
+  nodeEnvironment: string | undefined = process.env.NODE_ENV,
+  debugMode = process.env.DEBUG_MODE,
 ) {
-  return value === "true" && isDevelopmentEnvironment(nodeEnvironment);
+  return value === "true" && isDevelopmentEnvironment(nodeEnvironment, debugMode);
+}
+
+/**
+ * The page a dev shortcut sends a sign-in to: the highest enabled DEV_AS_* role, else the student
+ * page when only DEV_API_BYPASS is on, else null. The caller uses it only for an account that
+ * holds no role of its own.
+ */
+export function getDevelopmentHomePath(
+  env: Record<string, string | undefined> = process.env,
+): string | null {
+  const homePaths: [DevelopmentApiRole, string][] = [
+    ["super_admin", "/superadmin"],
+    ["executive", "/executive"],
+    ["admin", "/admin"],
+    ["advisor", "/advisor"],
+  ];
+  for (const [role, path] of homePaths) {
+    const value = env[developmentRoleEnvironmentVariables[role]];
+    if (isDevelopmentRoleEnabled(role, value, env.NODE_ENV, env.DEBUG_MODE)) return path;
+  }
+  return isDevelopmentApiBypass(env.DEV_API_BYPASS, env.NODE_ENV, env.DEBUG_MODE)
+    ? "/student"
+    : null;
 }
 
 const developmentRoleUserIdEnvironmentVariables: Record<DevelopmentApiRole, string> = {
@@ -57,9 +83,10 @@ const developmentRoleUserIdEnvironmentVariables: Record<DevelopmentApiRole, stri
 export function getDevelopmentRoleUserId(
   role: DevelopmentApiRole,
   value = process.env[developmentRoleUserIdEnvironmentVariables[role]],
-  nodeEnvironment = process.env.NODE_ENV,
+  nodeEnvironment: string | undefined = process.env.NODE_ENV,
+  debugMode = process.env.DEBUG_MODE,
 ): string | undefined {
-  if (!isDevelopmentEnvironment(nodeEnvironment)) return undefined;
+  if (!isDevelopmentEnvironment(nodeEnvironment, debugMode)) return undefined;
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
 }
