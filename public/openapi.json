@@ -2251,7 +2251,7 @@
           },
           "fullNameEn": {
             "type": "string",
-            "nullable": true
+            "nullable": false
           },
           "role": {
             "type": "string",
@@ -2265,6 +2265,7 @@
         "required": [
           "fullNameTh",
           "email",
+          "fullNameEn",
           "role"
         ]
       },
@@ -5569,10 +5570,6 @@
             "type": "string",
             "nullable": true
           },
-          "phone": {
-            "type": "string",
-            "nullable": true
-          },
           "createdAt": {
             "type": "string"
           },
@@ -5616,7 +5613,6 @@
           "cmuAccount",
           "fullNameTh",
           "fullNameEn",
-          "phone",
           "createdAt",
           "updatedAt",
           "roles"
@@ -5683,10 +5679,6 @@
                       "type": "string",
                       "nullable": true
                     },
-                    "phone": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "createdAt": {
                       "type": "string"
                     },
@@ -5730,7 +5722,6 @@
                     "cmuAccount",
                     "fullNameTh",
                     "fullNameEn",
-                    "phone",
                     "createdAt",
                     "updatedAt",
                     "roles"
@@ -5788,10 +5779,6 @@
                 "type": "string",
                 "nullable": true
               },
-              "phone": {
-                "type": "string",
-                "nullable": true
-              },
               "createdAt": {
                 "type": "string"
               },
@@ -5835,7 +5822,6 @@
               "cmuAccount",
               "fullNameTh",
               "fullNameEn",
-              "phone",
               "createdAt",
               "updatedAt",
               "roles"
@@ -9195,7 +9181,7 @@
       "post": {
         "operationId": "post-super-admin-users",
         "summary": "Add a staff member (admin or super_admin).",
-        "description": "Creates the user with the role. They sign in later with CMU SSO. A removed staff member (their record kept for history, no roles left) gets the role back on the same record, names unchanged. An email or CMU account that belongs to someone holding any role (staff, advisor, the executive) is refused with 409; nobody is renamed here.",
+        "description": "Creates the user with the role; both the Thai and the English name are required. They sign in later with CMU SSO. A removed staff member (their record kept for history, no roles left) gets the role back on the same record, names unchanged. An email or CMU account that belongs to someone holding any role (staff, advisor, the executive) is refused with 409; nobody is renamed here.",
         "tags": [
           "SuperAdmin roles"
         ],
