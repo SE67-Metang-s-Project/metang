@@ -80,8 +80,8 @@ runtime:
         // Admin 8, removed above (row kept for their history, no roles left), is rehired on the
         // same row with their recorded name.
         const advisor7 = (list.body.data?.users ?? []).find((u) => u.id === U(7));
-        const addAdvisor = await call("POST", "", { fullNameTh: "ชื่อ ทับ", email: advisor7?.email, role: "admin" });
-        const rehire = await call("POST", "", { fullNameTh: "ชื่อ ทับ", email: admin8?.email, role: "admin" });
+        const addAdvisor = await call("POST", "", { fullNameTh: "ชื่อ ทับ", fullNameEn: "Name Over", email: advisor7?.email, role: "admin" });
+        const rehire = await call("POST", "", { fullNameTh: "ชื่อ ทับ", fullNameEn: "Name Over", email: admin8?.email, role: "admin" });
         const after = await call("GET", "");
         const advisor7After = (after.body.data?.users ?? []).find((u) => u.id === U(7));
         test("adding someone who holds a role is refused with 409 and nobody is renamed", function () {
@@ -93,6 +93,7 @@ runtime:
           expect(rehire.status).to.equal(200);
           expect(rehire.body.data.id).to.equal(U(8));
           expect(rehire.body.data.fullNameTh).to.equal(admin8.fullNameTh);
+          expect(rehire.body.data.fullNameEn).to.equal(admin8.fullNameEn);
           expect(rehire.body.data.roles.map((r) => r.role)).to.include("admin");
         });
 
@@ -105,7 +106,7 @@ runtime:
         });
 
         // An admin nothing names yet is really deleted, so the same email can be added again.
-        const fresh = { fullNameTh: "แอดมิน ชั่วคราว", email: "temp.admin.wf17@cmu.ac.th", role: "admin" };
+        const fresh = { fullNameTh: "แอดมิน ชั่วคราว", fullNameEn: "Temp Admin", email: "temp.admin.wf17@cmu.ac.th", role: "admin" };
         const added = await call("POST", "", fresh);
         const freshId = added.body.data?.id;
         const deleteFresh = await call("DELETE", `/${freshId}`);

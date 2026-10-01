@@ -53,6 +53,21 @@ test("adding and editing a user both cap the name length", () => {
   assert.match(idRoute, /if \(isNameTooLong\(fullNameTh, fullNameEn\)\)/);
 });
 
+test("adding a user requires the English name as well as the Thai one", () => {
+  assert.match(listRoute, /if \(typeof fullNameEn !== "string" \|\| !fullNameEn\.trim\(\)\) \{\s*return apiError\("VALIDATION_ERROR", "กรุณาระบุชื่อ-นามสกุลภาษาอังกฤษ", 422\);/);
+  assert.match(listRoute, /fullNameEn: fullNameEn\.trim\(\),/);
+  assert.match(fn("createManagedUser"), /fullNameEn: string;/);
+});
+
+test("app_user has no phone column: a student's phone lives on the loan", () => {
+  const migration = read("db/migrations/20261002120000_drop_app_user_phone/migration.sql");
+  assert.match(migration, /^-- /);
+  assert.match(migration, /ALTER TABLE "public"\."app_user" DROP COLUMN "phone";/);
+  const appUser = read("db/schema.prisma").match(/model AppUser \{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.doesNotMatch(appUser, /\bphone\b/);
+  assert.doesNotMatch(queries, /phone: true/);
+});
+
 test("the delete route runs the same-origin check before anything else", () => {
   const del = idRoute.slice(
     idRoute.indexOf("export async function DELETE"),

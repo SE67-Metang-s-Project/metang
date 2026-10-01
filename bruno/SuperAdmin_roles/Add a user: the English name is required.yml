@@ -1,7 +1,7 @@
 info:
-  name: "Add a user: an address outside CMU is refused"
+  name: "Add a user: the English name is required"
   type: http
-  seq: 3
+  seq: 6
   tags:
     - SuperAdmin_roles
 
@@ -15,9 +15,9 @@ http:
     type: json
     data: |-
       {
-        "fullNameTh": "Not A CMU Person",
-        "fullNameEn": "Not A CMU Person",
-        "email": "someone@gmail.com",
+        "fullNameTh": "ไม่มี ชื่ออังกฤษ",
+        "fullNameEn": "   ",
+        "email": "no.english.name@cmu.ac.th",
         "role": "admin"
       }
   auth:
@@ -34,6 +34,9 @@ runtime:
     - expression: res.body.error.code
       operator: eq
       value: VALIDATION_ERROR
+    - expression: res.body.error.message
+      operator: eq
+      value: กรุณาระบุชื่อ-นามสกุลภาษาอังกฤษ
 
 settings:
   encodeUrl: true
