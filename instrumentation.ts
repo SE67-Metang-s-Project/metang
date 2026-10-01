@@ -2,6 +2,13 @@ export async function register() {
   // Picks who runs the notification jobs on this host (see lib/jobs/runtime.ts). Several server
   // instances are safe - outbox claims use FOR UPDATE SKIP LOCKED and every enqueue is deduplicated.
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    if (process.env.NODE_ENV === "production" && process.env.DEBUG_MODE === "true") {
+      console.warn(
+        "DEBUG_MODE=true on a production build: any CMU account can sign in and the DEV_* " +
+          "shortcuts are live. Use it only on a deployment with fake data.",
+      );
+    }
+
     const { detectJobRunner } = await import("./lib/jobs/runtime");
     const runner = detectJobRunner(process.env);
 
