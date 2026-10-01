@@ -10,7 +10,6 @@ export const superAdminUserSelect = {
   cmuAccount: true,
   fullNameTh: true,
   fullNameEn: true,
-  phone: true,
   createdAt: true,
   updatedAt: true,
   roles: {

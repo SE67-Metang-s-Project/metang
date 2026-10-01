@@ -44,7 +44,6 @@ async function main() {
           cmuAccount: "simple-advisor@cmu.ac.th",
           fullNameTh: "อาจารย์ทดสอบ",
           fullNameEn: "Simple Workflow Advisor",
-          phone: "0801234567",
         },
         create: {
           id: advisorId,
@@ -52,7 +51,6 @@ async function main() {
           cmuAccount: "simple-advisor@cmu.ac.th",
           fullNameTh: "อาจารย์ทดสอบ",
           fullNameEn: "Simple Workflow Advisor",
-          phone: "0801234567",
         },
       });
 

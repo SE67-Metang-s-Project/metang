@@ -453,7 +453,6 @@ export type SuperAdminUser = {
   studentCode?: string | null;
   fullNameTh: string;
   fullNameEn: string | null;
-  phone: string | null;
   createdAt: string;
   updatedAt: string;
   roles: {

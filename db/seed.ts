@@ -33,23 +33,22 @@ const person = (
   number: number,
   fullNameTh: string,
   fullNameEn: string,
-  phone: string | null,
 ): Prisma.AppUserCreateManyInput => {
   const account = accountOf(fullNameEn);
-  return { id: id(number), email: `${account}@cmu.ac.th`, cmuAccount: account, fullNameTh, fullNameEn, phone };
+  return { id: id(number), email: `${account}@cmu.ac.th`, cmuAccount: account, fullNameTh, fullNameEn };
 };
 
 // 1-5 are the dev-bypass and Bruno staff; 6-9 give the lists and the history more than one face.
 const staff = [
-  person(1, "วรรณภา ศรีธัญรัตน์", "Wannapa Srithanyarat", "0819520114"), // executive + advisor
-  person(2, "ธนวัฒน์ อินทรประเสริฐ", "Thanawat Intaraprasert", "0852230418"), // super_admin
-  person(3, "กมลชนก แสงทอง", "Kamonchanok Saengthong", "0897410263"), // admin
-  person(4, "สุภาวดี วงศ์คำ", "Supawadee Wongkham", "0816634907"), // advisor
-  person(5, "ประเสริฐ ชัยวงศ์", "Prasert Chaiwong", null), // advisor
-  person(6, "นภัสสร ธรรมรักษ์", "Napatsorn Thammarak", "0843318852"), // advisor
-  person(7, "อรุณี มณีรัตน์", "Arunee Maneerat", "0861187430"), // advisor
-  person(8, "ศิริพร คำปัน", "Siriporn Khampan", "0935562781"), // admin
-  person(9, "ปิยะพงษ์ ใจมั่น", "Piyapong Jaiman", "0628874015"), // admin
+  person(1, "วรรณภา ศรีธัญรัตน์", "Wannapa Srithanyarat"), // executive + advisor
+  person(2, "ธนวัฒน์ อินทรประเสริฐ", "Thanawat Intaraprasert"), // super_admin
+  person(3, "กมลชนก แสงทอง", "Kamonchanok Saengthong"), // admin
+  person(4, "สุภาวดี วงศ์คำ", "Supawadee Wongkham"), // advisor
+  person(5, "ประเสริฐ ชัยวงศ์", "Prasert Chaiwong"), // advisor
+  person(6, "นภัสสร ธรรมรักษ์", "Napatsorn Thammarak"), // advisor
+  person(7, "อรุณี มณีรัตน์", "Arunee Maneerat"), // advisor
+  person(8, "ศิริพร คำปัน", "Siriporn Khampan"), // admin
+  person(9, "ปิยะพงษ์ ใจมั่น", "Piyapong Jaiman"), // admin
 ];
 const HISTORY_ADVISORS = [id(4), id(4), id(5), id(6), id(6), id(7)];
 const HISTORY_ADMINS = [id(3), id(3), id(3), id(8), id(8), id(9), id(2)];

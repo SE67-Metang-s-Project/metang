@@ -85,7 +85,6 @@ model AppUser {
   cmuAccount           String            @unique(map: "app_user_cmu_account_key") @map("cmu_account") @db.Text
   fullNameTh           String            @map("full_name_th") @db.Text
   fullNameEn           String?           @map("full_name_en") @db.Text
-  phone                String?           @db.Text
   createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   advisorLoans         LoanRequest[]     @relation("AdvisorLoans")
