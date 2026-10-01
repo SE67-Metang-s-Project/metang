@@ -8,8 +8,8 @@ export async function register() {
     if (runner.kind === "in-process") {
       const { startJobScheduler } = await import("./lib/jobs/start-scheduler");
       startJobScheduler();
-    } else if (runner.kind === "vercel-cron") {
-      console.info("Job scheduler: using Vercel Cron from vercel.json");
+    } else if (runner.kind === "on-request") {
+      console.info("Job scheduler: running due jobs after page requests (proxy.ts)");
     } else {
       console.warn(
         `Job scheduler not started (${runner.reason}). ` +

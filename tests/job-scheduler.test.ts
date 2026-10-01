@@ -3,13 +3,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
+  createTick,
   dailyAtBangkokHour,
   everyMinutes,
   startSchedule,
   type ScheduledJob,
 } from "../lib/jobs/schedule";
 import { detectJobRunner } from "../lib/jobs/runtime";
-import { BASE_PATH, withBasePath } from "../lib/base-path";
 
 // Pure scheduling logic - no DB, network, or real timers beyond one short test.
 
@@ -94,23 +94,55 @@ test("the backend scheduler covers every notification job", () => {
   assert.match(instrumentation, /runner\.kind === "in-process"[\s\S]*startJobScheduler\(\)/);
 });
 
-test("vercel.json schedules the same jobs as the in-process scheduler", () => {
-  const source = readFileSync(resolve(import.meta.dirname, "../lib/jobs/start-scheduler.ts"), "utf8");
-  // The scheduler lists app-root paths; Vercel Cron calls over HTTP, so it needs the base path.
-  const schedulerPaths = [...source.matchAll(/path: "([^"]+)"/g)]
-    .map((match) => withBasePath(match[1]))
-    .sort();
-  const vercel = JSON.parse(readFileSync(resolve(import.meta.dirname, "../vercel.json"), "utf8"));
-  const cronPaths = vercel.crons.map((cron: { path: string }) => cron.path).sort();
-  assert.deepEqual(cronPaths, schedulerPaths);
+test("a tick resolves only after the jobs it started have finished", async () => {
+  let release: () => void = () => {};
+  let runs = 0;
+  const job: ScheduledJob = {
+    name: "slow",
+    shouldRun: everyMinutes(1),
+    run: () => {
+      runs++;
+      return new Promise<void>((resolveRun) => {
+        release = resolveRun;
+      });
+    },
+  };
+  let clock = at("2026-09-28T09:00:00Z");
+  const tick = createTick([job], { now: () => clock });
+
+  let finished = false;
+  const first = tick().then(() => {
+    finished = true;
+  });
+  await new Promise((resolveWait) => setTimeout(resolveWait, 10));
+  assert.equal(finished, false, "after() must stay open while the job runs");
+
+  // A tick while the job still runs starts nothing, so it settles at once.
+  clock = at("2026-09-28T09:05:00Z");
+  await tick();
+  assert.equal(runs, 1);
+
+  release();
+  await first;
+  assert.equal(finished, true);
+
+  // The run began at 09:00:00: not due again at 09:00:30, due at 09:01:00.
+  clock = at("2026-09-28T09:00:30Z");
+  await tick();
+  assert.equal(runs, 1);
+  clock = at("2026-09-28T09:01:00Z");
+  const second = tick();
+  release();
+  await second;
+  assert.equal(runs, 2);
 });
 
-test("vercel.json cron paths include the base path, because Vercel Cron does not follow redirects", () => {
-  const vercel = JSON.parse(readFileSync(resolve(import.meta.dirname, "../vercel.json"), "utf8"));
-  assert.ok(vercel.crons.length > 0);
-  for (const cron of vercel.crons as { path: string }[]) {
-    assert.ok(cron.path.startsWith(`${BASE_PATH}/api/cron/`), cron.path);
-  }
+test("proxy.ts runs the due jobs after the request, only for the on-request runner", () => {
+  const proxy = readFileSync(resolve(import.meta.dirname, "../proxy.ts"), "utf8");
+  assert.match(
+    proxy,
+    /detectJobRunner\(process\.env\)\.kind === "on-request"[\s\S]*after\([\s\S]*runDueJobs\(\)/,
+  );
 });
 
 test("the scheduler calls each handler with the URL Next.js would pass it", () => {
@@ -118,14 +150,28 @@ test("the scheduler calls each handler with the URL Next.js would pass it", () =
   assert.match(source, /new Request\(new URL\(withBasePath\(job\.path\), "http:\/\/localhost"\)/);
 });
 
-test("detectJobRunner picks the trigger for the host", () => {
+test("detectJobRunner picks the trigger from JOB_RUNNER", () => {
+  assert.deepEqual(detectJobRunner({ JOB_RUNNER: "timer" }), { kind: "in-process" });
+  assert.deepEqual(detectJobRunner({ JOB_RUNNER: "request" }), { kind: "on-request" });
+  assert.equal(detectJobRunner({ JOB_RUNNER: "off" }).kind, "none");
+  // Surrounding spaces are ignored; an empty value counts as not set.
+  assert.deepEqual(detectJobRunner({ JOB_RUNNER: " request " }), { kind: "on-request" });
+  assert.deepEqual(detectJobRunner({ JOB_RUNNER: "" }), { kind: "in-process" });
+  // A value that is none of the three runs nothing, and the reason names it.
+  const typo = detectJobRunner({ JOB_RUNNER: "requests" });
+  assert.equal(typo.kind, "none");
+  assert.match(typo.kind === "none" ? typo.reason : "", /JOB_RUNNER=requests/);
+});
+
+test("without JOB_RUNNER a long-running host uses timers, and VERCEL or ENABLE_JOB_SCHEDULER no longer select a runner", () => {
   assert.deepEqual(detectJobRunner({}), { kind: "in-process" });
-  assert.deepEqual(detectJobRunner({ VERCEL: "1" }), { kind: "vercel-cron" });
+  // Serverless hosts whose instances freeze run nothing until JOB_RUNNER is set.
   assert.equal(detectJobRunner({ AWS_LAMBDA_FUNCTION_NAME: "fn" }).kind, "none");
   assert.equal(detectJobRunner({ NETLIFY: "true" }).kind, "none");
-  // The override wins over detection in both directions.
-  assert.deepEqual(detectJobRunner({ VERCEL: "1", ENABLE_JOB_SCHEDULER: "true" }), {
-    kind: "in-process",
+  assert.deepEqual(detectJobRunner({ AWS_LAMBDA_FUNCTION_NAME: "fn", JOB_RUNNER: "request" }), {
+    kind: "on-request",
   });
-  assert.equal(detectJobRunner({ ENABLE_JOB_SCHEDULER: "false" }).kind, "none");
+  // The old host and switch variables no longer choose a runner.
+  assert.deepEqual(detectJobRunner({ VERCEL: "1" }), { kind: "in-process" });
+  assert.deepEqual(detectJobRunner({ ENABLE_JOB_SCHEDULER: "false" }), { kind: "in-process" });
 });

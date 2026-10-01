@@ -42,32 +42,48 @@ export function dailyAtBangkokHour(hour: number): ShouldRun {
 type Logger = Pick<Console, "error">;
 
 /**
- * Checks every job on each tick and starts the due ones. A job still running from an earlier tick
- * is skipped, so one job never overlaps itself; different jobs run side by side. Returns a stop
- * function. The timer is unref'd so it never keeps a process alive on its own.
+ * Returns a tick that checks every job and starts the due ones. A job still running from an earlier
+ * tick is skipped, so one job never overlaps itself; different jobs run side by side. The promise
+ * the tick returns settles when the jobs it started have finished, so a serverless host can keep
+ * the invocation alive until then (`after()`).
  */
-export function startSchedule(
+export function createTick(
   jobs: ScheduledJob[],
-  { tickMs = 60_000, now = () => new Date(), logger = console as Logger } = {},
+  { now = () => new Date(), logger = console as Logger } = {},
 ) {
   const state = new Map(jobs.map((job) => [job.name, { lastRun: null as Date | null, running: false }]));
 
-  const tick = () => {
+  return async () => {
     const current = now();
+    const started: Promise<void>[] = [];
     for (const job of jobs) {
       const jobState = state.get(job.name)!;
       if (jobState.running || !job.shouldRun(current, jobState.lastRun)) continue;
 
       jobState.running = true;
       jobState.lastRun = current;
-      job
-        .run()
-        .catch((error) => logger.error(`Scheduled job ${job.name} failed`, error))
-        .finally(() => {
-          jobState.running = false;
-        });
+      started.push(
+        job
+          .run()
+          .catch((error) => logger.error(`Scheduled job ${job.name} failed`, error))
+          .finally(() => {
+            jobState.running = false;
+          }),
+      );
     }
+    await Promise.all(started);
   };
+}
+
+/**
+ * Ticks every `tickMs` on a long-running server. Returns a stop function. The timer is unref'd so
+ * it never keeps a process alive on its own.
+ */
+export function startSchedule(
+  jobs: ScheduledJob[],
+  { tickMs = 60_000, ...options }: { tickMs?: number } & Parameters<typeof createTick>[1] = {},
+) {
+  const tick = createTick(jobs, options);
 
   const timer = setInterval(tick, tickMs);
   timer.unref?.();

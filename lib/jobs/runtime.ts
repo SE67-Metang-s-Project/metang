@@ -1,27 +1,32 @@
 // Decides who triggers the notification jobs on this host. Pure, so it is unit-testable.
 
 export type JobRunner =
-  /** Vercel calls the /api/cron routes on the schedule in vercel.json. */
-  | { kind: "vercel-cron" }
   /** This long-running server process runs the jobs on its own timers. */
   | { kind: "in-process" }
+  /**
+   * A host that freezes idle instances keeps no timers between requests, so due jobs run after
+   * incoming page requests (proxy.ts).
+   */
+  | { kind: "on-request" }
   /** Nothing in this process runs the jobs; an outside scheduler must call the routes. */
   | { kind: "none"; reason: string };
 
 type Env = Record<string, string | undefined>;
 
 /**
- * `ENABLE_JOB_SCHEDULER` overrides detection: `true` forces the in-process scheduler, `false`
- * turns it off. Without it, Vercel uses Vercel Cron, other serverless hosts need an outside
- * scheduler (their instances freeze between requests, so timers would not fire), and any other
- * host is treated as a long-running server.
+ * `JOB_RUNNER` picks the trigger: `timer` (this process, on timers), `request` (after page
+ * requests), or `off` (an outside scheduler calls the /api/cron routes). A value that is none of
+ * these runs nothing, so a typo is not mistaken for a working setup. Not set: `timer`, except on
+ * AWS Lambda and Netlify, where timers would not fire and nothing runs.
  */
 export function detectJobRunner(env: Env): JobRunner {
-  if (env.ENABLE_JOB_SCHEDULER === "true") return { kind: "in-process" };
-  if (env.ENABLE_JOB_SCHEDULER === "false") {
-    return { kind: "none", reason: "ENABLE_JOB_SCHEDULER is false" };
+  const runner = env.JOB_RUNNER?.trim();
+  if (runner === "timer") return { kind: "in-process" };
+  if (runner === "request") return { kind: "on-request" };
+  if (runner === "off") return { kind: "none", reason: "JOB_RUNNER is off" };
+  if (runner) {
+    return { kind: "none", reason: `JOB_RUNNER=${runner} is not timer, request, or off` };
   }
-  if (env.VERCEL === "1") return { kind: "vercel-cron" };
   if (env.AWS_LAMBDA_FUNCTION_NAME || env.NETLIFY === "true") {
     return { kind: "none", reason: "serverless host without a built-in scheduler" };
   }

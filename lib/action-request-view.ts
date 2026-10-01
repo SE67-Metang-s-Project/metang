@@ -82,7 +82,7 @@ const THAI_MONTH_ABBRS = [
   "ธ.ค.",
 ] as const;
 
-// Bangkok wall clock whatever the server's time zone: Vercel runs UTC, so getHours() and
+// Bangkok wall clock whatever the server's time zone: a host often runs UTC, so getHours() and
 // getDate() would show every time 7 hours early and put 00:00-06:59 submissions on the wrong day.
 function formatThaiDate(date: Date): string {
   const { day, month, year } = bangkokParts(date);
