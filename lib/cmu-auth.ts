@@ -12,6 +12,8 @@ import { NextResponse } from "next/server";
 import { sanitizeReturnPath } from "@/lib/return-path";
 import { COOKIE_PATH, withBasePath } from "@/lib/base-path";
 import { getPublicOrigin } from "@/lib/public-origin";
+import { getNurseAccessDecision } from "@/lib/nurse-auth";
+import { isProd } from "@/lib/env";
 
 export const CMU_SESSION_COOKIE = "cmu_session";
 export const CMU_OAUTH_COOKIE = "cmu_oauth_transaction";
@@ -299,6 +301,12 @@ export async function getCmuSession(): Promise<CmuSession | null> {
   const session = unseal<CmuSession>(sessionCookie);
 
   if (!session || session.expiresAt <= Date.now() || !session.profile) {
+    return null;
+  }
+
+  // A production build serves only nursing students and nursing staff. Checking on every read
+  // also stops a session that was issued in the general mode, or before this rule existed.
+  if (isProd() && !getNurseAccessDecision(session.profile).allowed) {
     return null;
   }
 

@@ -26,8 +26,8 @@ OpenID Connect with ID-token signature, issuer, audience, nonce, and expiry vali
 | Area | File or route | Responsibility |
 | --- | --- | --- |
 | Shared authentication library | `lib/cmu-auth.ts` | Configuration, PKCE, state, encryption, profile sanitization, and session reads |
-| General login | `GET /metang/api/auth/login` | Creates a general OAuth transaction and redirects to CMU Entra |
-| Nursing SSO login | `GET /metang/api/auth/nurse/login` | Creates a nursing-policy OAuth transaction and redirects to CMU Entra |
+| Login (the sign-in button) | `GET /metang/api/auth/login` | Creates a nursing-policy OAuth transaction in a production build (`NODE_ENV=production`), and a general one otherwise (`next dev`). Redirects to CMU Entra |
+| Nursing SSO login | `GET /metang/api/auth/nurse/login` | Always creates a nursing-policy OAuth transaction and redirects to CMU Entra |
 | Complete login | `GET /metang/api/auth/callback` | Validates the callback, exchanges the code, fetches BasicInfo, and applies nursing policy when requested |
 | Nursing access policy | `lib/nurse-auth.ts` | Allows only eligible nursing students and nursing-faculty employees |
 | Logout | `POST /metang/api/auth/logout` | Deletes the local session and redirects through Entra logout |
@@ -103,10 +103,16 @@ or local session.
 ### Nursing faculty access policy
 
 The nursing callback applies the nursing authorization policy after BasicInfo is fetched and
-before the local session cookie is created. Only the **CMU SSO สำหรับคณะพยาบาลศาสตร์** button
-starts this restricted mode. A rejected account receives `not_eligible` and cannot use the
-nursing SSO session, even if CMU Entra authentication itself succeeded. The general CMU Account
-button keeps the existing unrestricted CMU profile behavior.
+before the local session cookie is created. In a production build (`NODE_ENV=production`),
+the sign-in button (`/api/auth/login`) starts this restricted mode. A rejected account receives `not_eligible` and
+cannot use the nursing SSO session, even if CMU Entra authentication itself succeeded. Under
+`next dev` the button starts the general mode, which keeps the unrestricted CMU profile behavior.
+`INFISICAL_ENV` does not change the mode.
+
+A production build also checks the policy on every read of the session (`getCmuSession` in
+`lib/cmu-auth.ts`), and the callback applies it whatever mode started the login. So only nursing
+students and nursing staff can use the application in production, and a session of any other
+account (for example one issued before this rule) is treated as signed out.
 
 Student IDs are interpreted using the format shown by the CMU student examples:
 

@@ -13,6 +13,7 @@ import {
   type OAuthTransaction,
 } from "@/lib/cmu-auth";
 import { getNurseAccessDecision } from "@/lib/nurse-auth";
+import { isProd } from "@/lib/env";
 import { syncUserFromCmuProfile } from "@/db/queries/users";
 import { getUserHomePath } from "@/lib/loan-auth";
 import { sanitizeReturnPath } from "@/lib/return-path";
@@ -104,7 +105,8 @@ async function handleCallback(request: NextRequest) {
       return redirectCallback(request, "/login", "profile_failed");
     }
 
-    if (transaction.mode === "nurse") {
+    // A production build always applies the nursing policy, whichever mode started the login.
+    if (transaction.mode === "nurse" || isProd()) {
       const accessDecision = getNurseAccessDecision(profile);
 
       if (!accessDecision.allowed) {

@@ -302,10 +302,13 @@ record who ran it.
 | `executive` | Final decision: approve, return to the admin, or reject. The database allows only one `executive`, and the application never removes the role: the SuperAdmin replaces the executive with **แก้ไข** (see below). |
 | `super_admin` | Everything an admin can do, plus add and delete `admin` and `super_admin` users, edit the executive, grant and revoke roles, record fund transactions, and edit system settings. The last `super_admin` cannot be removed in the application. |
 
-Any CMU account can sign in. Staff pages depend only on the roles that a SuperAdmin grants.
-The student functions need a student ID that matches the Faculty of Nursing pattern
-`^\d{2}12\d{5}$`. The organization code check (`12`, Nursing staff) runs only in the separate
-nurse sign-in mode (`/metang/api/auth/nurse/login`). The sign-in page does not link to that mode.
+In a production build (`NODE_ENV=production`) the sign-in button starts the nurse sign-in mode. It lets in only a student ID that
+matches the Faculty of Nursing pattern `^\d{2}12\d{5}$` and an employee with organization code
+`12` (Nursing staff). Any other CMU account gets `not_eligible` at sign-in, even if a SuperAdmin
+gave it a role. Add a person who is not Nursing staff only after you check that their CMU profile
+has organization code `12`. The application also checks this rule on every request, so
+a session of any other account stops working at once. Under `next dev` the button starts the
+general mode and any CMU account can sign in. `INFISICAL_ENV` does not change the mode.
 
 Role changes have side effects:
 
@@ -1378,7 +1381,7 @@ cannot reach.
 | `invalid_state` / `คำขอเข้าสู่ระบบหมดอายุหรือไม่ถูกต้อง กรุณาลองใหม่` | The sign-in attempt expired (10 minutes) or did not match. | The user signs in again. |
 | `token_exchange_failed` / `ไม่สามารถยืนยันการเข้าสู่ระบบกับ CMU ได้` | CMU Entra refused the token request. | Check `CLIENT_ID`, `CLIENT_SECRET`, `CALLBACK_URL`. |
 | `profile_failed` / `เข้าสู่ระบบสำเร็จ แต่ไม่สามารถอ่านข้อมูลบัญชี CMU ได้` | The CMU BasicInfo API failed. | Check `BASICINFO_URL` and `SCOPE`. Contact CMU ITSC if the API is down. |
-| `not_eligible` / `ระบบนี้อนุญาตให้นักศึกษาปริญญาตรี ภาคปกติ คณะพยาบาลศาสตร์ หรือบุคลากรคณะพยาบาลศาสตร์เท่านั้น` | Nurse sign-in mode only: the person is not a Nursing student or Nursing staff. The log shows `CMU nursing SSO rejected by access policy`. | Expected. |
+| `not_eligible` / `ระบบนี้อนุญาตให้นักศึกษาปริญญาตรี ภาคปกติ คณะพยาบาลศาสตร์ หรือบุคลากรคณะพยาบาลศาสตร์เท่านั้น` | Nurse sign-in mode (the production default): the person is not a Nursing student or Nursing staff. The log shows `CMU nursing SSO rejected by access policy`. | Expected for outsiders. For a person who must have access, check their `student_id` or `organization_code` in the CMU profile. |
 | `login_failed` / `เกิดข้อผิดพลาดระหว่างเข้าสู่ระบบ กรุณาลองใหม่` | Unexpected error during sign-in, for example a failed request to CMU. The log shows `CMU login callback failed`. | Check Vercel logs. |
 | `Failed to sync user to database during CMU login callback` (in logs) | The application cannot refresh the names of a staff `app_user` row at sign-in. Sign-in still succeeds. | Check the database connection. |
 | `CMU token exchange failed` / `CMU BasicInfo request failed` (in logs) | The logged causes of `token_exchange_failed` and `profile_failed`. | See those rows. |
