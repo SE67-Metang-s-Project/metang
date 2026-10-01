@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { NotificationDemoForm } from "@/app/demo/line-notification/NotificationDemoForm";
 import { getCmuSession } from "@/lib/cmu-auth";
 import { isDevelopmentEnvironment } from "@/lib/development-access";
@@ -21,6 +22,7 @@ function getProfileEmail(profile: Record<string, unknown>) {
 }
 
 export default async function NotificationDemoPage() {
+  await connection();
   if (!isDevelopmentEnvironment()) {
     notFound();
   }

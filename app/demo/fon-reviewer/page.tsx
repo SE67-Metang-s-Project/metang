@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { getCmuSession } from "@/lib/cmu-auth";
 import { FonReviewerDemoForm } from "@/app/demo/fon-reviewer/FonReviewerDemoForm";
 import { isDevelopmentEnvironment } from "@/lib/development-access";
@@ -11,6 +12,7 @@ import { withBasePath } from "@/lib/base-path";
 const REVIEWER_ROLES: ReviewerRole[] = ["advisor", "admin", "super_admin", "executive"];
 
 export default async function FonReviewerDemoPage() {
+  await connection();
   if (!isDevelopmentEnvironment()) {
     notFound();
   }

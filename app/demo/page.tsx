@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { isDevelopmentEnvironment } from "@/lib/development-access";
 
 const DEMOS = [
@@ -9,7 +10,9 @@ const DEMOS = [
   { href: "/demo/line-notification", label: "LINE notification" },
 ];
 
-export default function DemoIndexPage() {
+export default async function DemoIndexPage() {
+  // Read DEBUG_MODE per request, not at build, so a runtime env value (Docker) is honoured.
+  await connection();
   if (!isDevelopmentEnvironment()) {
     notFound();
   }

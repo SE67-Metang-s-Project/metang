@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { getCmuDisplayName, getCmuSession, getProfileEmail } from "@/lib/cmu-auth";
 import { isDevelopmentEnvironment } from "@/lib/development-access";
 import { withBasePath } from "@/lib/base-path";
 
 export default async function CmuSsoDemoPage() {
+  await connection();
   if (!isDevelopmentEnvironment()) {
     notFound();
   }

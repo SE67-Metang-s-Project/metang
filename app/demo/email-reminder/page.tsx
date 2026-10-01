@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { LoanReminderDemoForm } from "@/app/demo/email-reminder/LoanReminderDemoForm";
 import { getCmuSession, getProfileEmail } from "@/lib/cmu-auth";
 import { isDevelopmentEnvironment } from "@/lib/development-access";
@@ -7,6 +8,7 @@ import { requireAdminAccess } from "@/lib/loan-auth";
 import { withBasePath } from "@/lib/base-path";
 
 export default async function EmailReminderDemoPage() {
+  await connection();
   if (!isDevelopmentEnvironment()) {
     notFound();
   }
