@@ -153,10 +153,10 @@ function migrateAndSeed() {
  * Runs before Bruno, which grants and removes roles. The test turns the dev bypass off itself, so
  * it only needs the throwaway database.
  */
-function roleAccessMatrix() {
-  console.log("\n──────── role access matrix ────────");
+function databaseTests() {
+  console.log("\n──────── database tests (role access, advisor removal) ────────");
   return (
-    run("npx", ["tsx", "--conditions=react-server", "--test", "tests/db/role-access-matrix.test.ts"], {
+    run("npx", ["tsx", "--conditions=react-server", "--test", "tests/db/role-access-matrix.test.ts", "tests/db/advisor-removal.test.ts"], {
       env: { ...process.env, DATABASE_URL, DIRECT_URL: DATABASE_URL },
     }).status ?? 1
   );
@@ -239,7 +239,7 @@ async function main() {
   await preflight();
   await startDatabase();
   migrateAndSeed();
-  const matrix = roleAccessMatrix();
+  const matrix = databaseTests();
 
   let app;
   let failed = true;

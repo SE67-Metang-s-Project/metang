@@ -63,6 +63,7 @@ runtime:
         const admin8 = (list.body.data?.users ?? []).find((u) => u.id === U(8));
         test("an admin with history is removed: 200, row kept, no admin role", function () {
           expect(deleteAdmin.status).to.equal(200);
+          expect(deleteAdmin.body.data.rowDeleted).to.equal(false);
           expect(admin8).to.not.equal(undefined);
           expect(admin8.roles.map((r) => r.role)).to.not.include("admin");
         });
@@ -73,6 +74,50 @@ runtime:
         test("an email already in use is refused with 409 and the executive stays", function () {
           expect(taken).to.not.equal(undefined);
           expect(refused.status).to.equal(409);
+        });
+
+        // Add never renames anyone or hands a role to someone holding one: advisor 7 is refused.
+        // Admin 8, removed above (row kept for their history, no roles left), is rehired on the
+        // same row with their recorded name.
+        const advisor7 = (list.body.data?.users ?? []).find((u) => u.id === U(7));
+        const addAdvisor = await call("POST", "", { fullNameTh: "ชื่อ ทับ", email: advisor7?.email, role: "admin" });
+        const rehire = await call("POST", "", { fullNameTh: "ชื่อ ทับ", email: admin8?.email, role: "admin" });
+        const after = await call("GET", "");
+        const advisor7After = (after.body.data?.users ?? []).find((u) => u.id === U(7));
+        test("adding someone who holds a role is refused with 409 and nobody is renamed", function () {
+          expect(addAdvisor.status).to.equal(409);
+          expect(advisor7After.fullNameTh).to.equal(advisor7.fullNameTh);
+          expect(advisor7After.roles.map((r) => r.role)).to.not.include("admin");
+        });
+        test("adding a removed admin rehires them on the same row, name unchanged", function () {
+          expect(rehire.status).to.equal(200);
+          expect(rehire.body.data.id).to.equal(U(8));
+          expect(rehire.body.data.fullNameTh).to.equal(admin8.fullNameTh);
+          expect(rehire.body.data.roles.map((r) => r.role)).to.include("admin");
+        });
+
+        // An advisor is never also admin or SuperAdmin, and the reverse.
+        const advisorToAdmin = await role(7, "grant", "admin");
+        const adminToAdvisor = await role(8, "grant", "advisor");
+        test("advisor and admin roles never combine", function () {
+          expect(advisorToAdmin.status).to.equal(409);
+          expect(adminToAdvisor.status).to.equal(409);
+        });
+
+        // An admin nothing names yet is really deleted, so the same email can be added again.
+        const fresh = { fullNameTh: "แอดมิน ชั่วคราว", email: "temp.admin.wf17@cmu.ac.th", role: "admin" };
+        const added = await call("POST", "", fresh);
+        const freshId = added.body.data?.id;
+        const deleteFresh = await call("DELETE", `/${freshId}`);
+        const gone = await call("GET", "");
+        const readded = await call("POST", "", fresh);
+        test("an admin without history is deleted for real and can be added again", function () {
+          expect(added.status).to.equal(200);
+          expect(deleteFresh.status).to.equal(200);
+          expect(deleteFresh.body.data.rowDeleted).to.equal(true);
+          expect((gone.body.data?.users ?? []).some((u) => u.id === freshId)).to.equal(false);
+          expect(readded.status).to.equal(200);
+          expect(readded.body.data.id).to.not.equal(freshId);
         });
 
         // A new email edits the same row: the id, roles and history stay with it.
@@ -93,4 +138,5 @@ settings:
 docs: |-
   The user-management rules: at least one SuperAdmin, none can remove themself (a successor
   removes them), exactly one executive whose name and email are edited in place, and staff
-  removal that keeps the user row (history) and hands open loans to the remover.
+  removal that hands open loans to the remover, then deletes the user row unless past work
+  names them (then only the roles go).
