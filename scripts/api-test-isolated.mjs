@@ -149,6 +149,19 @@ function migrateAndSeed() {
   if (run("npx", ["tsx", "db/seed.ts"], { env: childEnv }).status !== 0) fail("seed failed");
 }
 
+/**
+ * Runs before Bruno, which grants and removes roles. The test turns the dev bypass off itself, so
+ * it only needs the throwaway database.
+ */
+function roleAccessMatrix() {
+  console.log("\n──────── role access matrix ────────");
+  return (
+    run("npx", ["tsx", "--conditions=react-server", "--test", "tests/db/role-access-matrix.test.ts"], {
+      env: { ...process.env, DATABASE_URL, DIRECT_URL: DATABASE_URL },
+    }).status ?? 1
+  );
+}
+
 /** Last lines of the app's own output, replayed when the suite fails. */
 const appLog = [];
 
@@ -226,6 +239,7 @@ async function main() {
   await preflight();
   await startDatabase();
   migrateAndSeed();
+  const matrix = roleAccessMatrix();
 
   let app;
   let failed = true;
@@ -252,7 +266,7 @@ async function main() {
       "workflow walk",
     );
 
-    failed = suite !== 0 || workflow !== 0;
+    failed = matrix !== 0 || suite !== 0 || workflow !== 0;
   } catch (error) {
     console.error(`\n✗ ${error.message}`);
   } finally {
