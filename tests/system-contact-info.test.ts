@@ -72,15 +72,16 @@ test("SystemContactInfoTab contains required bank and contact fields with fixed 
   );
 
   // 2. Address / Contact section fields:
-  // - ข้อมูลคณะและหน่วยงานสังกัด fixed to "คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่" and read-only/disabled
+  // - ข้อมูลคณะและหน่วยงานสังกัด is fixed to "คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่". This tab no
+  //   longer shows it as a field (4a97265); it is only the saved value and the account-name fallback.
   assert.ok(
     contactTabContent.includes("คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่"),
     "Must contain fixed faculty name 'คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่'",
   );
   assert.match(
     contactTabContent,
-    /value=\{FIXED_FACULTY_NAME\}[\s\S]*?(readOnly|disabled)/,
-    "Faculty name must be fixed and non-editable (readOnly / disabled)",
+    /facultyNameTh: FIXED_FACULTY_NAME/,
+    "Faculty name must always be saved as the fixed value, never taken from the form",
   );
 
   // - จุดติดต่อเจ้าหน้าที่ (TH - EN)
