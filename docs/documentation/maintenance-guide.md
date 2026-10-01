@@ -1,7 +1,7 @@
 # Me_Tang Maintenance Guide
 
 Version covered: Me_Tang 0.1.0 (`package.json` version `0.1.0`)
-Document version: 1.8 draft
+Document version: 1.9 draft
 Date: 2026-10-01
 
 ---
@@ -68,7 +68,7 @@ hosted services.
 | Component | Service | What it does |
 |---|---|---|
 | Web application | Vercel (serverless functions) | Serves all pages and the API under `/metang/api/`. |
-| Scheduled jobs | Chosen at server start by `instrumentation.ts` (`lib/jobs/runtime.ts`) | On Vercel (`VERCEL=1`): Vercel Cron calls the five `/metang/api/cron/` routes from `vercel.json`. On a server that keeps running (`next start`, `npm run dev`): the server runs the same five jobs on its own timers. |
+| Scheduled jobs | Chosen at server start by `instrumentation.ts` (`lib/jobs/runtime.ts`) from `JOB_RUNNER` | `timer` (default): the server runs the five jobs on its own timers (`next start`, `npm run dev`). `request`: `proxy.ts` runs the jobs that are due after each page request, for a host that stops idle instances, such as Vercel. `off`: an outside scheduler calls the routes. |
 | Database | Supabase PostgreSQL | Stores staff users, roles, loan requests with their borrowers, approvals, installments, payments, the fund ledger, the notification outbox, the audit log, and system settings. |
 | Slip storage | Supabase Storage, private bucket `bank_payment_slips` | Stores bank-transfer slip files (images of 1 MB or less) for disbursements and repayments. |
 | Sign-in | CMU Entra ID (OAuth 2.0) and CMU BasicInfo API | Signs users in with their CMU IT Account and reads their profile. |
@@ -81,8 +81,8 @@ All pages and API routes are served under the base path `/metang`, for example
 old path without `/metang` (`/`, `/login`, `/student/...`, `/api/...`,
 `/openapi.json`, and most public files) gets a temporary `307` redirect to the same path under
 `/metang` (`redirects()` in `next.config.ts`). The browser repeats a `POST` with its body after
-this redirect. Vercel Cron does not follow redirects, so every `path` in `vercel.json` must start
-with `/metang/api/cron/`.
+this redirect. A scheduler outside the application (Section 2.3) may not follow redirects, so it
+must call the paths that start with `/metang/api/cron/`.
 
 The base path `/metang` is the default. The build reads a different one from the environment
 variable `PUBLIC_SUBPATH` (Section 7.1), for example a client server that serves the application
@@ -107,8 +107,9 @@ proxy_set_header X-Forwarded-Host $host;
 proxy_set_header X-Forwarded-Proto $scheme;
 ```
 
-The Vercel project needs the Pro plan or higher. The `vercel.json` schedules run every minute and
-every 3 minutes, and the Hobby plan allows only daily cron jobs (Section 2.3).
+On Vercel, set `JOB_RUNNER=request` in the project environment variables. Vercel stops a function
+between requests, so timers cannot run. The jobs run after page requests instead, and they run late
+on a quiet site (Section 2.3). The repository has no `vercel.json`, so the Hobby plan is enough.
 
 The team runs no production site. The client receives the source code and the database and chooses
 the host. This guide describes two setups: Vercel with Supabase, and a server that keeps running
@@ -124,14 +125,14 @@ flowchart LR
   V -->|Profile| B[CMU BasicInfo API]
   V -->|SQL via DATABASE_URL| D[(Supabase PostgreSQL)]
   V -->|REST, service role key| S[(Supabase Storage: bank_payment_slips)]
-  C[Vercel Cron] -->|Calls /metang/api/cron/ routes with CRON_SECRET| V
   V -->|Reviewer messages| L[CMU LINE FON API]
   V -->|Student reminder emails| M[CMU Email API]
   I[Infisical] -.->|Secrets as environment variables| V
 ```
 
-On a server that keeps running (`next start`), Vercel Cron is not used. The job scheduler inside
-the application runs the same jobs by calling the route code directly (Section 2.3).
+The jobs run inside the application. With `JOB_RUNNER=timer` the job scheduler runs them on timers,
+and with `JOB_RUNNER=request` they run after page requests. Both call the route code directly
+(Section 2.3). A scheduler outside the application is needed only with `JOB_RUNNER=off`.
 
 When a signed-out user opens a protected page, such as a link in a notification email, the
 application sends them to `/metang/login?next=<page>`. After CMU sign-in,
@@ -173,7 +174,7 @@ three rows.
 | `/metang/api/cron/deliver-payment-outcomes` | Every 3 minutes | Sends `payment_outcome` rows by email through the CMU Email API. Since 2026-10-01 the application no longer writes these rows, so the job sends only rows that were queued before that date. An admin's confirm or reject of a repayment slip wrote one row. A rejection email includes the reviewer's reason. |
 
 Students get automatic email only from the two installment reminder jobs. `installment-reminders`
-runs once a day (`0 1 * * *` UTC, which is 08:00 Bangkok time) and writes one outbox row for each
+runs once a day, at the first check after 08:00 Bangkok time, and writes one outbox row for each
 unpaid installment whose due date is 3, 1, or 0 days away, or 1, 3, or 7 days past.
 `deliver-reminders` sends the rows. The subject is `แจ้งเตือนกำหนดชำระเงินกู้ยืม งวดที่ N` before or
 on the due date, and `แจ้งเตือนเกินกำหนดชำระเงินกู้ยืม งวดที่ N` when the due date is past. The
@@ -187,14 +188,15 @@ types can still exist in `notification_outbox`. The manual due-date email
 
 At server start, `instrumentation.ts` logs which trigger it chose:
 
-- `Job scheduler started: ...`: this server runs the jobs itself and checks them once a minute.
-  This is the default on any host that is not serverless. It needs `CRON_SECRET`.
-- `Job scheduler: using Vercel Cron from vercel.json`: the host is Vercel. Vercel calls the jobs.
-  The schedules in `vercel.json` need the Vercel Pro plan.
-- `Job scheduler not started (...)`: a serverless host without a scheduler (AWS Lambda, Netlify),
-  or `ENABLE_JOB_SCHEDULER=false`. Something outside must call the `/metang/api/cron/` routes.
+- `Job scheduler started: ...`: this server runs the jobs itself and checks them once a minute
+  (`JOB_RUNNER=timer`, the default). It needs `CRON_SECRET`.
+- `Job scheduler: running due jobs after page requests (proxy.ts)`: `JOB_RUNNER=request`. See "Jobs
+  after page requests" below. It needs `CRON_SECRET`.
+- `Job scheduler not started (...)`: `JOB_RUNNER=off`, a `JOB_RUNNER` value that is not `timer`,
+  `request`, or `off` (the text names it), or AWS Lambda or Netlify with no `JOB_RUNNER`. Something
+  outside must call the `/metang/api/cron/` routes.
 
-`ENABLE_JOB_SCHEDULER=true` forces the built-in scheduler; `false` turns it off. A job that is still
+`JOB_RUNNER` picks the trigger: `timer`, `request`, or `off`. A job that is still
 running is not started again. Several server instances can run the scheduler at the same time:
 each outbox row is claimed by one instance only, and every notification has a unique key. If the
 server restarts after 08:00, the daily reminder job runs again that day. This is safe, because
@@ -213,14 +215,41 @@ Delivery rules:
 - If `installment-reminders` does not run on a day, the reminders for that day are not
   created later. There is no catch-up.
 
+#### Jobs after page requests (`JOB_RUNNER=request`)
+
+A host that stops idle instances, such as Vercel, keeps no timers between requests. Set
+`JOB_RUNNER=request` there. `proxy.ts` then runs after a request to a page under `/admin`,
+`/advisor`, `/demo`, `/executive`, `/student`, or `/superadmin`. After it sends the answer, it runs
+every job that is due, with the same intervals as the built-in scheduler. A redirect to the sign-in
+page counts as a request. A request to `/metang/api/` does not.
+
+What this means:
+
+- With no page request, no job runs, and an outbox row waits for the next request. The daily
+  `installment-reminders` job runs at the first request after 08:00 Bangkok time. Reviewer LINE
+  messages and student emails can be late by the time between page requests. To avoid this, let an
+  uptime monitor open `https://<host>/metang/student` every few minutes. The redirect to the
+  sign-in page is enough.
+- Each running instance remembers its own last run times. A new instance runs every job once on its
+  first request (the daily job only after 08:00 Bangkok time). Two instances can run the same job
+  at the same time. This is safe (see above).
+- A job runs inside the time limit of the host function. On the Vercel Hobby plan it is 300 seconds.
+- `CRON_SECRET` and `APP_BASE_URL` must be set. Without `CRON_SECRET`, the log shows
+  `Due jobs not run: CRON_SECRET is not set`.
+- On Vercel, `JOB_RUNNER=request` is required. Without it the server starts timers that Vercel
+  stops between requests, so jobs run only while an instance happens to be awake.
+- For a schedule that does not depend on page requests, set `JOB_RUNNER=off` and call the routes
+  from outside (next section). On the Vercel Pro plan, a `vercel.json` with the `/metang/api/cron/`
+  paths does this.
+
 #### Jobs on a host that stops idle servers
 
 Container platforms that stop or scale an idle instance (for example Cloud Run or Knative) can
-stop the built-in timers. Set `ENABLE_JOB_SCHEDULER=false` and let a scheduler outside the
+stop the built-in timers. Set `JOB_RUNNER=request`, or set `JOB_RUNNER=off` and let a scheduler outside the
 application call the five routes. Each call is a `GET` with the header
 `Authorization: Bearer <CRON_SECRET>`. A missing or wrong secret returns `401`. Use the public
 address and the sub path of the deployment (`PUBLIC_SUBPATH`, `/metang` by default). System cron
-example, with the schedules of `vercel.json`:
+example, with the intervals of `lib/jobs/start-scheduler.ts`:
 
 ```cron
 # m   h  dom mon dow  command  (server time zone: UTC; the daily job runs at 08:00 Bangkok time)
@@ -260,7 +289,7 @@ These gaps exist in the delivered software. They affect maintenance.
 | Failed slip uploads leave unused files | A disbursement retry, or a repayment that fails after its upload, leaves a slip file that no row uses. The repayment route checks the loan before the upload, so this happens only when the insert fails or two submissions arrive at the same time. | Section 4.8 |
 | No backup of slip files | Supabase database backups do not include Storage files. | Section 5 |
 | No monitoring or alerting | Nobody is told when a job fails. You must check by hand. | Section 8 |
-| Two ways to run the scheduled jobs | On Vercel, the `vercel.json` schedules need the Pro plan (Hobby allows only daily jobs and rejects the deployment). On other serverless hosts, an outside scheduler must call the routes. | Section 2.3 |
+| Ways to run the scheduled jobs | With `JOB_RUNNER=request` (needed on Vercel), the jobs run only after page requests, so they wait while nobody opens a page, the daily reminder job included. AWS Lambda and Netlify run nothing until `JOB_RUNNER` is set, or an outside scheduler calls the routes. | Section 2.3 |
 | No automatic deployment | GitHub Actions checks every push (Section 6), but nothing deploys the result. Updates are manual: `npm test` runs the unit tests, `npm run api:test` runs the API tests (Section 6.2). The client chooses the host. | Section 6 |
 | No screen for the first SuperAdmin or for the `advisor` role | The first SuperAdmin must be added with SQL. You must also add each advisor with SQL, because sign-in does not create an `app_user` row. Later admins and SuperAdmins are added on the SuperAdmin screen. No screen grants `advisor` (Section 3.2). | Section 3.3 |
 | Some fields on the SuperAdmin contact and bank settings screen are not saved to the database | Opening hours, the closed-days note, and the faculty address details are kept only in the browser (`localStorage` key `metang-system-address`) of the person who saved them. Other users do not see the change. The bank code is not stored: the screen finds it again from the stored bank name. (Jira NAT-200/NAT-203 are marked Done, but this part is not built.) | Section 7.2 |
@@ -463,10 +492,11 @@ Steps:
    If it shows `ผู้ดูแลระบบต้องตั้งค่า CMU Entra environment variables ก่อนเปิดใช้งาน`, the
    sign-in settings are missing (Section 9).
 2. Check that the scheduled jobs run.
-   - On Vercel: open the project **Settings** > **Cron Jobs** and the **Logs**. Expected result:
-     five `/metang/api/cron/` jobs, and recent calls return `200`. A `401` means that `CRON_SECRET` is
-     missing or wrong. The log line at startup is
-     `Job scheduler: using Vercel Cron from vercel.json`.
+   - With `JOB_RUNNER=request` (Vercel): open a page such as `/metang/student` and read the host
+     **Logs** for 2 minutes. Expected result: the line
+     `Job scheduler: running due jobs after page requests (proxy.ts)`, and no
+     `Scheduled job ... returned` lines. `Due jobs not run: CRON_SECRET is not set` means that
+     `CRON_SECRET` is missing.
    - On a server that keeps running: search the server log for `Job scheduler started` after the
      last restart. Expected result: the line is present and lists five cron jobs. If it
      shows `Job scheduler not started: CRON_SECRET is not set`, set `CRON_SECRET` and restart.
@@ -973,7 +1003,7 @@ chooses the host. `CI` passed on `main` at commit `ff20972` on 2026-09-30: all t
 tests, lint with type check and build, and API tests) were green.
 The workflow **Migrate production database** has never run, because the team has no production
 database. It needs a production database and the GitHub environment `production` (Section 6.2,
-after step 8). If you use Vercel: `vercel.json` has no `git` settings, so a Vercel project that is
+after step 8). If you use Vercel: the repository has no `vercel.json`, so a Vercel project that is
 connected to the repository deploys each push to its production branch.
 
 ### 6.1 Pre-update checklist
@@ -1015,7 +1045,7 @@ connected to the repository deploys each push to its production branch.
    npm test
    ```
 
-   Expected result: the summary line `ℹ fail 0`. At the time of writing, 539 tests pass. A
+   Expected result: the summary line `ℹ fail 0`. At the time of writing, 557 tests pass. A
    failure needs a developer. CI runs the same command.
 4. Run the API tests. They use a temporary local PostgreSQL in Docker (port `5433`) and a
    test app on port `8081`. They never touch the real database.
@@ -1163,8 +1193,8 @@ Not tested: both images on a client server, including the connection to the clie
    sub path, and the proxy must set `Host`, `X-Forwarded-Host`, and `X-Forwarded-Proto` (Section
    2.1). Set `client_max_body_size 2m`, because slips can be up to 1 MB and the upload adds a little. The nginx default of `1m` refuses a slip that is close to the limit.
 6. Jobs: the container runs the notification jobs itself while it keeps running (Section 2.3).
-   On a platform that stops idle containers, set `ENABLE_JOB_SCHEDULER=false` and call the routes
-   from outside (end of Section 2.3).
+   On a platform that stops idle containers, set `JOB_RUNNER=request`, or set `JOB_RUNNER=off` and
+   call the routes from outside (end of Section 2.3).
 7. Register the sign-in address in CMU Entra for this host, as a redirect URI of the Web
    platform: `https://<host>/<sub path>/api/auth/callback`. It is the value of `CALLBACK_URL`, and
    it must be identical in both places. Register it before the first sign-in on the new host.
@@ -1204,10 +1234,10 @@ production deployment ("Redeploy") before it takes effect.
 | `SCOPE` | None | Space-separated scopes, for example `api://cmu/Mis.Account.Read.Me.Basicinfo offline_access` | Permissions requested at sign-in. | Yes | No |
 | `BASICINFO_URL` | None | URL | CMU profile API. | Yes | No |
 | `SESSION_SECRET` | None | Text of 32 characters or more | Encrypts the sign-in cookies. Changing it signs out all users. | Yes | Yes |
-| `PUBLIC_SUBPATH` | Not set (`/metang`) | A path such as `/loan` or `loan`. A missing leading `/` and a trailing `/` are corrected | Sub path under which all pages and API routes are served (`lib/base-path.ts`). Empty or `/` serves the application from the root and turns off the redirects from old paths. Also change by hand: `CALLBACK_URL` and its Entra registration, the callback and post-logout (`/login`) addresses registered in Entra, the `path` values in `vercel.json`, and `servers` in `next.openapi.json` (then run `npm run openapi:generate`). | Yes, and a new build | No |
+| `PUBLIC_SUBPATH` | Not set (`/metang`) | A path such as `/loan` or `loan`. A missing leading `/` and a trailing `/` are corrected | Sub path under which all pages and API routes are served (`lib/base-path.ts`). Empty or `/` serves the application from the root and turns off the redirects from old paths. Also change by hand: `CALLBACK_URL` and its Entra registration, the callback and post-logout (`/login`) addresses registered in Entra, the URLs of an outside job scheduler (if you use one), and `servers` in `next.openapi.json` (then run `npm run openapi:generate`). | Yes, and a new build | No |
 | `APP_BASE_URL` | Development: `http://localhost:8080`. Production: none. | Absolute `https://` URL of the production site, for example `https://<host>` | Base of links in LINE messages and emails. In production (`NODE_ENV=production`) the value is required: if it is not set, every delivery job run returns `500` with `APP_BASE_URL is not set` before it claims rows, so notifications wait in the outbox. In development, links point to localhost. A path in the value is not used: links start with `/metang` (for example `/metang/student/...`), so `https://<host>` and `https://<host>/metang` give the same links. If the value is not a valid `http` or `https` URL, every delivery job run returns `500` before it claims rows, so notifications wait in the outbox. | Yes | No |
 | `CRON_SECRET` | None. The job scheduler does not start, and `/metang/api/cron/` returns `401`. | Random text | Protects `/metang/api/cron/` routes. The job scheduler uses it too. | Yes | Yes |
-| `ENABLE_JOB_SCHEDULER` | Not set (detect the host) | `true`, `false`, or not set | `true` forces the built-in scheduler, `false` turns it off. Not set: built-in scheduler on servers that keep running, Vercel Cron on Vercel (Section 2.3). | Yes (restart) | No |
+| `JOB_RUNNER` | Not set (`timer`; nothing runs on AWS Lambda or Netlify) | `timer`, `request`, `off`, or not set | `timer`: the server runs the jobs on its own timers. `request`: the jobs run after page requests, for a host that stops idle instances, such as Vercel. `off`: an outside scheduler calls the routes. Any other value runs nothing, and the log names it (Section 2.3). | Yes (restart) | No |
 | `NOTIFY_API_URL` | None | URL | CMU LINE FON API. | Yes | No |
 | `NOTIFY_API_TOKEN` | None | Token | FON API token. | Yes | Yes |
 | `EMAIL_API_URL` | None | URL | CMU Email API base URL. | Yes | No |
@@ -1222,11 +1252,11 @@ production deployment ("Redeploy") before it takes effect.
 | `DEV_ADVISOR_USER_ID`, `DEV_ADMIN_USER_ID`, `DEV_SUPERADMIN_USER_ID`, `DEV_EXECUTIVE_USER_ID` | Test user IDs | User UUID | Development only. Must not be set in production. | Not applicable | No |
 | `EXT_PORT` | Not used | Port number | Appears in `.env.example` only. The application does not read it. | Not applicable | No |
 
-`NODE_ENV` is set by Next.js and Vercel. Do not set it by hand. The hosting platform also sets
-`VERCEL`, `AWS_LAMBDA_FUNCTION_NAME`, `NETLIFY`, and `NEXT_RUNTIME`. The application reads them to
-choose the job scheduler (Section 2.3).
+`NODE_ENV` is set by Next.js and Vercel. Do not set it by hand: the Nursing-only sign-in rule (Section 3.2) trusts it, so a stray `NODE_ENV=development` on a production host turns the rule off. The hosting platform also sets
+`AWS_LAMBDA_FUNCTION_NAME`, `NETLIFY`, and `NEXT_RUNTIME`. The application reads the first two only
+to keep the timers off when `JOB_RUNNER` is not set (Section 2.3).
 
-`.env.example` differs from this table in two places. It does not list `ENABLE_JOB_SCHEDULER` or
+`.env.example` differs from this table in two places. It does not list
 the `DEV_*_USER_ID` settings. It sets `SESSION_SECRET` twice, and the second value is shorter
 than 32 characters. Delete the second line when you create a `.env` from it.
 
@@ -1262,7 +1292,7 @@ After installation, the settings row holds sample values, for example account nu
 
 ### 7.3 Scheduled job settings
 
-Change a schedule in both `lib/jobs/start-scheduler.ts` (built-in scheduler) and `vercel.json` (Vercel Cron), then deploy (Section 6). A test checks that both list the same jobs.
+Change a schedule in `lib/jobs/start-scheduler.ts`. The built-in timers and the runs after page requests both use it. Then deploy (Section 6).
 
 | Job | Setting | Value |
 |---|---|---|
@@ -1305,7 +1335,7 @@ features depend on the plan.
 | What to monitor | Where | Normal value | Warning threshold | Action |
 |---|---|---|---|---|
 | Sign-in page responds | `/metang/login` in a browser | Page loads with the CMU sign-in button | Error page or no response | Section 9, "Site does not load". |
-| Scheduled jobs run | On Vercel: **Settings** > **Cron Jobs** and the **Logs** of each `/metang/api/cron/` call. On a server that keeps running: `Job scheduler started` at startup and `Scheduled job` lines when a job did work or failed | `deliver-fon` every minute, `deliver-reminders`, `deliver-payment-outcomes`, and `deliver-loan-outcomes` every 3 minutes, `installment-reminders` once a day | No run for 10 minutes, or status `401` or `500` | Section 9, "Notifications are not sent". |
+| Scheduled jobs run | The host **Logs**: `Job scheduler started` (timers) or `Job scheduler: running due jobs after page requests` (request) at startup, and `Scheduled job` lines when a job did work or failed | `deliver-fon` every minute, `deliver-reminders`, `deliver-payment-outcomes`, and `deliver-loan-outcomes` every 3 minutes, `installment-reminders` once a day | No run for 10 minutes with `JOB_RUNNER=timer`, or with `request` and page requests in that time, or status `401` or `500` | Section 9, "Notifications are not sent". |
 | Waiting notifications | SQL in Section 4.2 step 5 | 0 rows | Any row older than 30 minutes | Section 9. |
 | Failed notifications | SQL in Section 4.2 step 4 | Count does not increase | Any new `failed` row | Section 4.3. |
 | Application errors | Vercel **Logs**, level Error | Few, not repeated | The same error more than 10 times in one hour | Section 10. |
@@ -1329,8 +1359,8 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 
 | Symptom | Likely cause | Fix | Procedure |
 |---|---|---|---|
-| Notifications stop on Vercel after a deployment, and **Logs** show no `/metang/api/cron/` calls | A `path` in `vercel.json` does not start with `/metang`. Vercel Cron gets the `307` redirect, treats it as the final response, and does not log the call. | Start every `path` in `vercel.json` with `/metang/api/cron/`. Redeploy. | 2.1 |
-| Notifications stop on serverless hosting | On Vercel, Vercel Cron did not call the jobs: `CRON_SECRET` is missing, or the plan does not allow the `vercel.json` schedules. On other serverless hosts (AWS Lambda, Netlify), nothing calls the jobs. | On Vercel, set `CRON_SECRET` and check **Settings** > **Cron Jobs**. On other hosts, add an outside scheduler that calls the `/metang/api/cron/` routes with `CRON_SECRET`, or host Me_Tang on a server that keeps running (`next start`). | 2.3 |
+| Notifications stop, and an outside scheduler gets `307` for its `/api/cron/` calls | The scheduler calls a path without `/metang`. It gets the `307` redirect and may treat it as the final response. | Call the paths that start with `/metang/api/cron/`. | 2.1 |
+| Notifications are late or stop on serverless hosting | The host stops idle instances and `JOB_RUNNER=request` is not set (timers do not survive between requests). Or, with `request`, nobody opened a page for a while, or `CRON_SECRET` or `APP_BASE_URL` is missing. On AWS Lambda or Netlify with no `JOB_RUNNER`, nothing runs. | Set `JOB_RUNNER=request`, `CRON_SECRET`, and `APP_BASE_URL`. For on-time delivery, let an uptime monitor open `/metang/student` every few minutes. Or set `JOB_RUNNER=off` and add an outside scheduler that calls the `/metang/api/cron/` routes with `CRON_SECRET`, or host Me_Tang on a server that keeps running (`next start`). | 2.3 |
 | Build fails with `Missing .env. Create it from .env.example and set INFISICAL_ENV.` | The build runs `npm run build:infisical` (or `npm run db:*`) on a machine without `.env`. | Use `npm run build` (plain `next build`), or create `.env` with `INFISICAL_ENV`. On a server without Infisical, apply migrations with `npm run db:deploy:env`, which reads `DIRECT_URL` from the environment. | 6.2 |
 | Site does not load, every page returns an error | Missing `DATABASE_URL`, database down, or a failed deployment. | Check Vercel **Logs** for `DATABASE_URL is not set`. Check Supabase project status. Roll back if a deployment caused it. | 4.2, 6.3 |
 | Sign-in page shows `ผู้ดูแลระบบต้องตั้งค่า CMU Entra environment variables ก่อนเปิดใช้งาน` | One of the CMU Entra settings is missing. | Set all settings in Section 7.1 from `AUTH_URL` to `SESSION_SECRET`. Redeploy. | 4.10 |
@@ -1340,14 +1370,14 @@ WHERE id LIKE concat('REQ', to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYYMMDD
 | A student sees `ระบบนี้อนุญาตให้นักศึกษาปริญญาตรี ภาคปกติ คณะพยาบาลศาสตร์ หรือบุคลากรคณะพยาบาลศาสตร์เท่านั้น` | The CMU profile is not a Nursing student ID and not Nursing staff. | Expected behavior. Confirm the person's faculty. | 3.2 |
 | A staff member sees `ไม่มีสิทธิ์เข้าถึงหน้านี้ (403 Forbidden)` | The user has no `app_user` row, or no role for that page. | If the user needs `admin` or `super_admin` and has no row, a SuperAdmin adds the user. If the user needs `advisor` and has no row, run the SQL of Section 3.3. If the row exists, a SuperAdmin grants the role. | 3.2, 3.3 |
 | Nobody can manage roles | No `super_admin` exists (new or restored database). | Add the first SuperAdmin with SQL. | 3.3 |
-| Notifications are not sent, outbox rows wait | The jobs do not run: `ENABLE_JOB_SCHEDULER=false`, `CRON_SECRET` is missing (`Job scheduler not started: CRON_SECRET is not set`, or `401` on Vercel Cron calls), the host is serverless without Vercel Cron, or `APP_BASE_URL` is not valid. | Set `CRON_SECRET`. Remove `ENABLE_JOB_SCHEDULER=false`. Fix `APP_BASE_URL`. Restart the server or redeploy. | 2.3, 4.2 |
+| Notifications are not sent, outbox rows wait | The jobs do not run: `JOB_RUNNER=off` or an unknown `JOB_RUNNER` value, `CRON_SECRET` is missing (`Job scheduler not started: CRON_SECRET is not set`), the host stops idle instances and `JOB_RUNNER=request` is not set, or `APP_BASE_URL` is not valid. | Set `CRON_SECRET`. Set `JOB_RUNNER` to `timer` or `request`. Fix `APP_BASE_URL`. Restart the server or redeploy. | 2.3, 4.2 |
 | Outbox rows become `failed` with a LINE error | `NOTIFY_API_TOKEN` or `NOTIFY_API_URL` wrong or expired. | Renew, redeploy, then retry the rows. | 4.10, 4.3 |
 | Outbox rows become `failed` with an email error | Email API credentials wrong or expired, or the student email is not `@cmu.ac.th`. | Renew credentials, redeploy, retry. | 4.10, 4.3 |
 | Every save or upload returns `403 FORBIDDEN` with `A same-origin JSON request is required`, or sign-in and sign-out send the browser to an internal address such as `127.0.0.1:3000` | The reverse proxy does not pass the public host. The application sees its own address as the origin. | Set `Host` (or `X-Forwarded-Host`) and `X-Forwarded-Proto` in the proxy (Section 2.1). Restart the proxy. | 2.1 |
 | Delivery jobs return `500` with `APP_BASE_URL is not set` (or the manual email returns `422` with the same text) | `APP_BASE_URL` is not set in production. | Set it to the production address, for example `https://<host>`, without a path. Redeploy. | 7.1 |
 | Links in LINE messages or emails open `localhost` | The server runs with `NODE_ENV` other than `production` and no `APP_BASE_URL` (for example `next dev`). | Set `APP_BASE_URL`. Run the production build with `next start`. | 7.1 |
 | Delivery jobs return `500` with `APP_BASE_URL must be a valid URL` or `APP_BASE_URL must use HTTP or HTTPS` | `APP_BASE_URL` has a wrong value. | Fix the value. Redeploy. | 7.1 |
-| Students get no reminder emails, and no `installment_reminder` rows exist | The daily `installment-reminders` job did not run. | Check Vercel cron logs. Missed days are not created later. | 2.3, 4.2 |
+| Students get no reminder emails, and no `installment_reminder` rows exist | The daily `installment-reminders` job did not run. With `JOB_RUNNER=request`, it runs at the first page request after 08:00 Bangkok time, so a day with no page request creates none. | Check the host **Logs** for `Scheduled job /api/cron/installment-reminders` and see Section 2.3. Missed days are not created later. | 2.3, 4.2 |
 | Students do not get the email about a rejected request, a disbursement, or a confirmed or rejected repayment slip | Expected since 2026-10-01: the application no longer sends these emails or queues `loan_outcome` and `payment_outcome` rows. Students get email only from the due-date and overdue reminders. A row of these types that was queued before that date still sends; if one waits, the job scheduler is not running or the Email API fails. Look for such rows in `notification_outbox`. | No fix for new requests. For an older row that waits, use the same fixes as for reminder emails, and retry `failed` rows after the fix. | 2.3, 4.2, 4.3 |
 | Slip upload fails with `Unable to upload slip` | Supabase Storage settings wrong, bucket missing, or service role key expired. | Check `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and that the private bucket exists. | 4.10 |
 | Slip does not open, `Unable to read slip` | Same as above, or the file was deleted from Storage. | Check Storage settings. Check that the file exists in **Storage**. | 4.8 |
@@ -1385,12 +1415,12 @@ cannot reach.
 | `login_failed` / `เกิดข้อผิดพลาดระหว่างเข้าสู่ระบบ กรุณาลองใหม่` | Unexpected error during sign-in, for example a failed request to CMU. The log shows `CMU login callback failed`. | Check Vercel logs. |
 | `Failed to sync user to database during CMU login callback` (in logs) | The application cannot refresh the names of a staff `app_user` row at sign-in. Sign-in still succeeds. | Check the database connection. |
 | `CMU token exchange failed` / `CMU BasicInfo request failed` (in logs) | The logged causes of `token_exchange_failed` and `profile_failed`. | See those rows. |
-| `กรุณาเข้าสู่ระบบก่อนใช้งาน` / `ไม่พบข้อมูลการเข้าสู่ระบบ หรือเซสชันหมดอายุ กรุณาเข้าสู่ระบบด้วย CMU IT Account เพื่อเข้าใช้งาน` | Not signed in, or the 8-hour session expired. | The user signs in. |
+| `กรุณาเข้าสู่ระบบก่อนใช้งาน` / `ไม่พบข้อมูลการเข้าสู่ระบบ หรือเซสชันหมดอายุ กรุณาเข้าสู่ระบบด้วย CMU IT Account เพื่อเข้าใช้งาน` | Not signed in, or the 8-hour session expired. In production it also appears for a signed-in account that fails the Nursing faculty check (Section 3.2): the application treats that session as signed out. | The user signs in. A person outside the faculty gets `not_eligible` and cannot use the application. |
 | `ไม่มีสิทธิ์เข้าถึงหน้านี้ (403 Forbidden)` / `บัญชี CMU ของคุณยังไม่มีสิทธิ์ในการเข้าถึงหน้านี้ หากคุณมีหน้าที่รับผิดชอบในส่วนนี้ กรุณาติดต่อผู้ดูแลระบบเพื่อกำหนดสิทธิ์การใช้งาน` | The user has no `app_user` row or no role for the page. | A SuperAdmin grants the role. If the user has no row, see the 403 row in Section 9. |
 | `เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์` / `เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์การเข้าใช้งาน กรุณาลองใหม่อีกครั้ง` | Unexpected error while checking access. | Check Vercel logs. |
 | `Error code: <code>` (below the text on the error page) | The error code of the access problem. | Include it in a support request. |
-| `Student session rejected` with reason `student_id_not_eligible`, `employee_not_nursing`, or `profile_not_eligible` (in logs) | A signed-in user failed the Nursing faculty check for the student functions. | Expected for users outside the faculty. |
-| `Student session rejected` with reason `missing_or_invalid_session` or `missing_student_id` (in logs) | A student page was opened without a session, or by a CMU account that has no student ID. | Expected. Staff use the staff pages. |
+| `Student session rejected` with reason `student_id_not_eligible`, `employee_not_nursing`, or `profile_not_eligible` (in logs) | A signed-in user failed the Nursing faculty check for the student functions. A production build rejects such an account earlier, so these reasons appear only outside production when `INFISICAL_ENV` is not `dev`. | Expected for users outside the faculty. |
+| `Student session rejected` with reason `missing_or_invalid_session` or `missing_student_id` (in logs) | A student page was opened without a session, or by a CMU account that has no student ID. In production it also appears when the account failed the Nursing faculty check. | Expected. Staff use the staff pages. |
 | `UNAUTHORIZED`: `Authentication required` (HTTP 401) | API call without a valid session. | The user signs in again. |
 | `UNAUTHORIZED`: `Advisor access required` (401), `FORBIDDEN`: `Advisor access required` (403) | The user is not signed in (401 on the list), or the signed-in user is not an advisor. | Grant the `advisor` role if correct. |
 | `FORBIDDEN`: `Admin access required` / `Executive access required` / `SuperAdmin access required` / `Super Admin access required` / `Loan request access required` (403) | The user lacks the role. | Grant the role if correct. |
@@ -1539,9 +1569,10 @@ cannot reach.
 |---|---|---|
 | `UNAUTHORIZED`: `Unauthorized` (401) on `/metang/api/cron/` | `CRON_SECRET` is not set, or the request header is wrong. | Set `CRON_SECRET`. Restart the server. |
 | `disbursed loan has no approved amount or installment schedule` (`last_error` of a `loan_outcome` row that was queued before 2026-10-01) | The disbursed loan has no installment rows. The email was not sent. The application no longer writes `loan_outcome` rows, so you see this only for an older row. | Report to support with the loan ID. |
-| `Job scheduler not started: CRON_SECRET is not set` (server log) | The built-in scheduler was chosen (a server that keeps running, or `ENABLE_JOB_SCHEDULER=true`) but `CRON_SECRET` is missing. | Set `CRON_SECRET`. Restart the server. |
-| `Job scheduler: using Vercel Cron from vercel.json` (server log) | Normal on Vercel. Vercel Cron calls the jobs. | None. |
-| `Job scheduler not started (<reason>). Call the /api/cron routes from an outside scheduler.` (server log) | `ENABLE_JOB_SCHEDULER=false`, or a serverless host without a scheduler. | Add an outside scheduler, or remove `ENABLE_JOB_SCHEDULER=false`. |
+| `Job scheduler not started: CRON_SECRET is not set` (server log) | The built-in scheduler was chosen (`JOB_RUNNER=timer`, or not set on a server that keeps running) but `CRON_SECRET` is missing. | Set `CRON_SECRET`. Restart the server. |
+| `Job scheduler: running due jobs after page requests (proxy.ts)` (server log) | Normal with `JOB_RUNNER=request`. A new instance logs it at start. | None. |
+| `Due jobs not run: CRON_SECRET is not set` (server log) | With `JOB_RUNNER=request`, a page request found `CRON_SECRET` missing. | Set `CRON_SECRET`. Redeploy. |
+| `Job scheduler not started (<reason>). Call the /api/cron routes from an outside scheduler.` (server log) | `JOB_RUNNER=off`, an unknown `JOB_RUNNER` value (the text names it), or AWS Lambda or Netlify with no `JOB_RUNNER`. | Add an outside scheduler, or set `JOB_RUNNER=timer` or `request`. |
 | `Scheduled job <path> returned <status>: <body>` / `Scheduled job <path> failed` (server log) | A job run failed. The body is one of the messages in this section. | Fix the cause. The job runs again on its next interval. |
 | `INTERNAL_ERROR` (500) with `APP_BASE_URL is not set`, `APP_BASE_URL must be a valid URL`, or `APP_BASE_URL must use HTTP or HTTPS` | `APP_BASE_URL` is missing (production) or wrong. | Set or fix it. Redeploy. |
 | `RATE_LIMITED`: `A notification for this step was already sent recently` (429) | A manual LINE reminder was sent in the last 60 seconds. | Wait one minute. |
@@ -1616,7 +1647,7 @@ Include this information:
 | Approved amount | The loan amount set by the admin. It can be lower than the requested amount. |
 | Audit log | Table `audit_log`. A record of staff and student actions with before and after values. |
 | CMU Entra ID | The CMU sign-in service (Microsoft Entra ID) used for all users. |
-| Cron job | A scheduled job at a `/metang/api/cron/` route. On Vercel, Vercel Cron calls it on the schedule in `vercel.json`. On a server that keeps running, the job scheduler inside the server runs it on the schedule in `lib/jobs/start-scheduler.ts`. |
+| Cron job | A scheduled job at a `/metang/api/cron/` route. The job scheduler inside the server runs it on the schedule in `lib/jobs/start-scheduler.ts`, on timers (`JOB_RUNNER=timer`) or after page requests (`JOB_RUNNER=request`). With `JOB_RUNNER=off`, an outside scheduler calls it. |
 | Disbursement | The bank transfer of the approved amount to the student. An admin records it with a slip. |
 | Executive | The one person who gives final approval. Role `executive`. |
 | FON | The CMU LINE notification API used to message reviewers. |
@@ -1651,3 +1682,4 @@ Include this information:
 | 1.6 draft | 2026-09-30 | Me_Tang development team | Jira NAT-233: the client takes the source code and the database and chooses the host, so the `[TO VERIFY]` markers are gone. Section 2.1 says the team runs no production site. The markers for Vercel, Supabase, and Infisical are plain "only if you use it" notes. The production URL and log location markers are removed. The convention for `[TO VERIFY]` is replaced by `Not tested:`. Section 6.4 states the migration count of 2026-09-30 (20). |
 | 1.7 draft | 2026-09-30 | Me_Tang development team | Jira NAT-235: Section 6 checked against the ticket. The CI result is now commit `ff20972`, the unit test count is 522, and the lint warning count is 4. |
 | 1.8 draft | 2026-10-01 | Me_Tang development team | Checked against commit `7ebabc3`. Students have no `app_user` row, and a loan request holds its borrower. Migration count and latest name. First-SuperAdmin and advisor SQL. Phone-number, education-level, and account-number messages. Students now get email only from the due-date and overdue reminders. |
+| 1.9 draft | 2026-10-01 | Me_Tang development team | Sign-in rule (Section 3.2): a production build lets in only Nursing students and Nursing staff (`organization_code` 12) and checks it on every request, so staff without that code cannot sign in. The sign-in mode follows `NODE_ENV`, not `INFISICAL_ENV`. Scheduled jobs (Sections 2.1, 2.3, 7.1, 7.3, 9, 10): the new setting `JOB_RUNNER` (`timer`, `request`, `off`) replaces `ENABLE_JOB_SCHEDULER` and the `VERCEL` detection. `vercel.json` is removed. On a host that stops idle instances, such as Vercel, set `request`: `proxy.ts` then runs the jobs after page requests. Unit test count is 557. |

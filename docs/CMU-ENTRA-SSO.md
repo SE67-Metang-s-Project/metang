@@ -25,10 +25,10 @@ OpenID Connect with ID-token signature, issuer, audience, nonce, and expiry vali
 
 | Area | File or route | Responsibility |
 | --- | --- | --- |
-| Shared authentication library | `lib/cmu-auth.ts` | Configuration, PKCE, state, encryption, profile sanitization, and session reads |
+| Shared authentication library | `lib/cmu-auth.ts` | Configuration, PKCE, state, encryption, profile sanitization, and session reads (with the nursing check in a production build) |
 | Login (the sign-in button) | `GET /metang/api/auth/login` | Creates a nursing-policy OAuth transaction in a production build (`NODE_ENV=production`), and a general one otherwise (`next dev`). Redirects to CMU Entra |
 | Nursing SSO login | `GET /metang/api/auth/nurse/login` | Always creates a nursing-policy OAuth transaction and redirects to CMU Entra |
-| Complete login | `GET /metang/api/auth/callback` | Validates the callback, exchanges the code, fetches BasicInfo, and applies nursing policy when requested |
+| Complete login | `GET /metang/api/auth/callback` | Validates the callback, exchanges the code, fetches BasicInfo, and applies nursing policy when requested, and always in a production build |
 | Nursing access policy | `lib/nurse-auth.ts` | Allows only eligible nursing students and nursing-faculty employees |
 | Logout | `POST /metang/api/auth/logout` | Deletes the local session and redirects through Entra logout |
 | Login/profile UI | `app/page.tsx` | Shows login status and the complete BasicInfo JSON response |
@@ -325,6 +325,10 @@ sessions to a server-side store and keep only an opaque session identifier in th
 - Track the Entra client-secret expiry and rotate it before expiration.
 - Request only the delegated permissions required by the application.
 - Confirm production responses set both authentication cookies with `Secure`.
+- Confirm every staff account (admin, advisor, executive, SuperAdmin) has `organization_code` `12` in
+  its CMU profile. A production build refuses any other account at sign-in, even with a role.
+- Do not set `NODE_ENV` by hand on the host or in Infisical. The nursing rule trusts it, and
+  `NODE_ENV=development` would turn the rule off.
 
 ## Errors and troubleshooting
 
