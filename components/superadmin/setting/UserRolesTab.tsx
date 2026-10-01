@@ -88,9 +88,10 @@ export default function UserRolesTab({
 
   const [addForm, setAddForm] = useState<{
     fullNameTh: string;
+    fullNameEn: string;
     email: string;
     role: "admin" | "super_admin";
-  }>({ fullNameTh: "", email: "", role: "admin" });
+  }>({ fullNameTh: "", fullNameEn: "", email: "", role: "admin" });
   const [isAddingUser, setIsAddingUser] = useState(false);
 
   // Edit Executive Modal State
@@ -258,6 +259,10 @@ export default function UserRolesTab({
       showToast("error", "กรุณากรอกชื่อ-นามสกุล");
       return;
     }
+    if (!addForm.fullNameEn.trim()) {
+      showToast("error", "กรุณากรอกชื่อ-นามสกุลภาษาอังกฤษ");
+      return;
+    }
     if (!addForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(addForm.email.trim())) {
       showToast("error", "กรุณากรอกอีเมลให้ถูกต้อง");
       return;
@@ -270,6 +275,7 @@ export default function UserRolesTab({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullNameTh: addForm.fullNameTh.trim(),
+          fullNameEn: addForm.fullNameEn.trim(),
           email: addForm.email.trim().toLowerCase(),
           role: addForm.role,
         }),
@@ -292,7 +298,7 @@ export default function UserRolesTab({
       });
 
       onAddModalOpenChange(false);
-      setAddForm({ fullNameTh: "", email: "", role: "admin" });
+      setAddForm({ fullNameTh: "", fullNameEn: "", email: "", role: "admin" });
       const displayName = createdUser.fullNameTh || createdUser.email;
       showToast(
         "success",
@@ -838,7 +844,7 @@ export default function UserRolesTab({
               </div>
               <button
                 onClick={() => {
-                  setAddForm({ fullNameTh: "", email: "", role: "admin" });
+                  setAddForm({ fullNameTh: "", fullNameEn: "", email: "", role: "admin" });
                   onAddModalOpenChange(false);
                 }}
                 className="text-gray-400 hover:text-gray-600 p-1 rounded-lg cursor-pointer"
@@ -858,6 +864,20 @@ export default function UserRolesTab({
                   placeholder="เช่น นายสมชาย ใจดี"
                   value={addForm.fullNameTh}
                   onChange={(e) => setAddForm({ ...addForm, fullNameTh: e.target.value })}
+                  className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  ชื่อ-นามสกุล (ภาษาอังกฤษ) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="เช่น Mr. Somchai Jaidee"
+                  value={addForm.fullNameEn}
+                  onChange={(e) => setAddForm({ ...addForm, fullNameEn: e.target.value })}
                   className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
               </div>
@@ -896,7 +916,7 @@ export default function UserRolesTab({
                 <button
                   type="button"
                   onClick={() => {
-                    setAddForm({ fullNameTh: "", email: "", role: "admin" });
+                    setAddForm({ fullNameTh: "", fullNameEn: "", email: "", role: "admin" });
                     onAddModalOpenChange(false);
                   }}
                   disabled={isAddingUser}
