@@ -5631,14 +5631,19 @@
               "success": {
                 "type": "boolean"
               },
+              "rowDeleted": {
+                "type": "boolean"
+              },
               "message": {
                 "type": "string"
               }
             },
             "required": [
               "success",
+              "rowDeleted",
               "message"
-            ]
+            ],
+            "description": "rowDeleted: false when the user is kept (another role, or past work names them) and only lost admin/super_admin."
           }
         },
         "required": [
@@ -9190,7 +9195,7 @@
       "post": {
         "operationId": "post-super-admin-users",
         "summary": "Add a staff member (admin or super_admin).",
-        "description": "Grants the role to the user with this email or CMU account if one exists (a person who has signed in before), otherwise creates the user. They sign in later with CMU SSO.",
+        "description": "Creates the user with the role. They sign in later with CMU SSO. A removed staff member (their record kept for history, no roles left) gets the role back on the same record, names unchanged. An email or CMU account that belongs to someone holding any role (staff, advisor, the executive) is refused with 409; nobody is renamed here.",
         "tags": [
           "SuperAdmin roles"
         ],
@@ -9362,7 +9367,7 @@
       "delete": {
         "operationId": "delete-super-admin-users-{id}",
         "summary": "Remove a staff member (admin or super_admin).",
-        "description": "Takes away the user's admin and super_admin roles and hands their open pending_admin/pending_executive loans to the calling SuperAdmin. The user record stays, so their past decisions keep their name. Refused for the caller themself (a leaving SuperAdmin is removed by a successor), for the final SuperAdmin, and for the executive, who is replaced through PATCH instead.",
+        "description": "Hands the user's open pending_admin/pending_executive loans to the calling SuperAdmin, then deletes the user (`rowDeleted: true`); their email can be added again. The user record stays and only the admin and super_admin roles are taken away (`rowDeleted: false`) when they still hold another role (advisor) or a loan, approval, payment or ledger entry names them, so past work keeps their name. Audit log rows are never deleted. Refused for the caller themself (a leaving SuperAdmin is removed by a successor), for the final SuperAdmin, and for the executive, who is replaced through PATCH instead.",
         "tags": [
           "SuperAdmin roles"
         ],
@@ -9450,7 +9455,7 @@
       "post": {
         "operationId": "post-super-admin-users-{id}-roles",
         "summary": "Grant or remove a predefined role for an application user.",
-        "description": "Removing `admin` or `super_admin` from someone left with neither hands their open pending_admin/pending_executive loans to the calling SuperAdmin. Refused with 409: removing the final `super_admin`, removing your own `super_admin` (a successor removes you), removing `executive` (edit the executive instead), and granting a second `executive`.",
+        "description": "Removing `admin` or `super_admin` from someone left with neither hands their open pending_admin/pending_executive loans to the calling SuperAdmin. Removing `advisor` cancels that advisor's pending_advisor loans (the student applies again with another advisor); loans past the advisor step carry on. Refused with 409: granting `admin` or `super_admin` to an advisor, or `advisor` to an admin or SuperAdmin (ADVISOR_ADMIN_CONFLICT), removing the final `super_admin`, removing your own `super_admin` (a successor removes you), removing `executive` (edit the executive instead), and granting a second `executive`.",
         "tags": [
           "SuperAdmin roles"
         ],

@@ -93,7 +93,6 @@ model AppUser {
   approvalDecisions    LoanApproval[]
   confirmedPayments    Payment[]
   fundTransactions     FundTransaction[]
-  auditLogs            AuditLog[]
   roles                UserRole[]        @relation("UserRoles")
   grantedRoles         UserRole[]        @relation("GrantedRoles")
   systemSettingUpdates SystemSetting[]
@@ -248,6 +247,7 @@ model NotificationOutbox {
 model AuditLog {
   id               BigInt   @id @default(autoincrement())
   // Exactly one is set (CHECK audit_log_one_actor): staff by app_user id, a student by code.
+  // No FK: the row outlives a deleted staff member. Append-only (trigger audit_log_append_only).
   actorId          String?  @map("actor_id") @db.Uuid
   actorStudentCode String?  @map("actor_student_code") @db.Text
   action           String   @db.Text
@@ -256,7 +256,6 @@ model AuditLog {
   before           Json?    @db.JsonB
   after            Json?    @db.JsonB
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  actor            AppUser? @relation(fields: [actorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([entityType, entityId], map: "audit_log_entity_idx")
   @@map("audit_log")
@@ -268,7 +267,7 @@ model UserRole {
   grantedBy String?      @map("granted_by") @db.Uuid
   grantedAt DateTime     @default(now()) @map("granted_at") @db.Timestamptz(6)
   user      AppUser      @relation("UserRoles", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  granter   AppUser?     @relation("GrantedRoles", fields: [grantedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  granter   AppUser?     @relation("GrantedRoles", fields: [grantedBy], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@id([userId, role], map: "user_role_pkey")
   @@unique([role], map: "one_executive_only", where: { role: "executive" })

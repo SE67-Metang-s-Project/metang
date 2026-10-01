@@ -94,13 +94,14 @@ test("Backend routes and queries enforce super admin guard, role deletion, and e
   assert.match(editBody, /tx\.appUser\.update\(\{\s*where: \{ id: targetUserId \},\s*data: \{ email: cleanEmail, cmuAccount, \.\.\.names \}/);
   assert.doesNotMatch(editBody, /appUser\.create|userRole\.(create|delete)/, "no new row and no role move");
 
-  // 4. removing a staff member hands their open loans over and keeps the row for history:
-  //    deleting a user with approvals or payouts aborts the whole Postgres transaction
+  // 4. removing a staff member hands their open loans over, then deletes the row unless past work
+  //    or another role still needs it (counted first, so an FK never aborts the transaction)
   assert.match(userQueries, /async function reassignOpenAdminLoans/);
   assert.match(userQueries, /if \(holdsAdminAccess\(remainingRoles\)\) return;/);
   assert.match(userQueries, /loan_request\.admin_reassigned/);
   assert.match(userQueries, /REASSIGNMENT_CONFLICT/);
-  assert.doesNotMatch(deleteFn.slice(0, deleteFn.indexOf("export async function editExecutive")), /appUser\.delete/);
+  const deleteBody = deleteFn.slice(0, deleteFn.indexOf("export async function editExecutive"));
+  assert.ok(deleteBody.indexOf("const named") < deleteBody.indexOf("tx.appUser.delete("));
 
   // 5. API routes exist, enforce getSuperAdminAccess, and map the guards to 409
   assert.match(usersRoute, /export async function POST/);

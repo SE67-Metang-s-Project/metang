@@ -46,3 +46,11 @@ export function parseRoleMutationInput(value: unknown): RoleMutationInput {
 export function isCmuEmail(email: string) {
   return /^[^\s@]+@cmu\.ac\.th$/i.test(email.trim());
 }
+
+/** Longest Thai or English name the staff forms accept; a full academic title fits well inside. */
+export const MAX_NAME_LENGTH = 200;
+
+/** True when either name, after trimming, is longer than MAX_NAME_LENGTH. A missing name is not too long. */
+export function isNameTooLong(fullNameTh: string, fullNameEn: unknown) {
+  return [fullNameTh, fullNameEn].some((name) => typeof name === "string" && name.trim().length > MAX_NAME_LENGTH);
+}

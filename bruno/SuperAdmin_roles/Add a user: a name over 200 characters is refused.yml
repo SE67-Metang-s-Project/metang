@@ -1,0 +1,42 @@
+info:
+  name: "Add a user: a name over 200 characters is refused"
+  type: http
+  seq: 5
+  tags:
+    - SuperAdmin_roles
+
+http:
+  method: POST
+  url: "{{baseUrl}}/super-admin/users"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  body:
+    type: json
+    data: |-
+      {
+        "fullNameTh": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "email": "too.long.name@cmu.ac.th",
+        "role": "admin"
+      }
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "422"
+    - expression: res.body.error.code
+      operator: eq
+      value: VALIDATION_ERROR
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

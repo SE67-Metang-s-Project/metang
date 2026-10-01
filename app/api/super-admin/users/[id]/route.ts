@@ -4,7 +4,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { getSuperAdminAccess } from "@/lib/loan-auth";
 import { isUuid } from "@/lib/loan-validation";
 import { isSameOrigin, validateJsonRequest } from "@/lib/request-security";
-import { isCmuEmail } from "@/lib/role-management";
+import { isCmuEmail, isNameTooLong, MAX_NAME_LENGTH } from "@/lib/role-management";
 import { serializeJson } from "@/lib/serialization";
 
 type Params = { params: Promise<{ id: string }> };
@@ -14,7 +14,7 @@ const isRetryableConflict = (error: unknown) =>
 
 /**
  * Remove a staff member (admin or super_admin).
- * @description Takes away the user's admin and super_admin roles and hands their open pending_admin/pending_executive loans to the calling SuperAdmin. The user record stays, so their past decisions keep their name. Refused for the caller themself (a leaving SuperAdmin is removed by a successor), for the final SuperAdmin, and for the executive, who is replaced through PATCH instead.
+ * @description Hands the user's open pending_admin/pending_executive loans to the calling SuperAdmin, then deletes the user (`rowDeleted: true`); their email can be added again. The user record stays and only the admin and super_admin roles are taken away (`rowDeleted: false`) when they still hold another role (advisor) or a loan, approval, payment or ledger entry names them, so past work keeps their name. Audit log rows are never deleted. Refused for the caller themself (a leaving SuperAdmin is removed by a successor), for the final SuperAdmin, and for the executive, who is replaced through PATCH instead.
  * @tag SuperAdmin roles
  * @pathParams UserIdParams
  * @auth cookieAuth
@@ -43,14 +43,17 @@ export async function DELETE(request: Request, { params }: Params) {
   if (!isUuid(id)) return apiError("NOT_FOUND", "User not found", 404);
 
   try {
-    await deleteManagedUser({
+    const { rowDeleted } = await deleteManagedUser({
       actorId: access.context.user.id,
       targetUserId: id,
     });
-    return apiOk({ success: true, message: "ลบผู้ใช้งานเรียบร้อยแล้ว" });
+    return apiOk({ success: true, rowDeleted, message: "ลบผู้ใช้งานเรียบร้อยแล้ว" });
   } catch (error) {
     if (error instanceof RoleMutationError) {
       if (error.code === "USER_NOT_FOUND") return apiError("NOT_FOUND", "User not found", 404);
+      if (error.code === "ACCESS_REVOKED") {
+        return apiError("CONFLICT", "The request changed; please retry", 409);
+      }
       if (error.code === "SELF_DEMOTION") {
         return apiError(
           "SELF_DEMOTION",
@@ -129,6 +132,10 @@ export async function PATCH(request: Request, { params }: Params) {
     return apiError("VALIDATION_ERROR", "กรุณาระบุชื่อ-นามสกุล", 422);
   }
 
+  if (isNameTooLong(fullNameTh, fullNameEn)) {
+    return apiError("VALIDATION_ERROR", `ชื่อ-นามสกุลต้องไม่เกิน ${MAX_NAME_LENGTH} ตัวอักษร`, 422);
+  }
+
   if (typeof email !== "string" || !email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return apiError("VALIDATION_ERROR", "กรุณาระบุอีเมลที่ถูกต้อง", 422);
   }
@@ -149,6 +156,9 @@ export async function PATCH(request: Request, { params }: Params) {
   } catch (error) {
     if (error instanceof RoleMutationError) {
       if (error.code === "USER_NOT_FOUND") return apiError("NOT_FOUND", "User not found", 404);
+      if (error.code === "ACCESS_REVOKED") {
+        return apiError("CONFLICT", "The request changed; please retry", 409);
+      }
       if (error.code === "EMAIL_ALREADY_IN_USE") {
         return apiError("CONFLICT", "อีเมลนี้มีผู้ใช้งานในระบบแล้ว", 409);
       }
