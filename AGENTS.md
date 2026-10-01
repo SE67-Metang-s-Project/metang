@@ -39,9 +39,15 @@ There is currently no JavaScript test framework or coverage requirement. Before 
 
 Recent history uses concise Conventional Commit subjects such as `feat(db): database design (v1.0)`. Prefer `type(scope): summary`, for example `fix(db): enforce advisor assignment`. Pull requests should explain the change, link the relevant issue, list validation commands, and include screenshots for visible UI changes. Call out schema changes and migration requirements explicitly.
 
-### Commit Skill
+### Commit Messages
 
-Whenever asked to commit, write a commit message, or run `/commit-skill`, read and follow `.claude/skills/commit-skill/SKILL.md` before writing the message. It defines the message parts (subject, body, schema/migration notes, footer) and the rules. Do not commit unless the user asks.
+Do not commit unless the user asks. Write each message as a subject, a body, and a footer:
+
+- **Subject:** `type(scope): summary` in lowercase imperative, with no final period and about 72 characters or fewer. Add `!` after the scope for a breaking change, for example `feat(api)!: ...`. Put the Jira key in parentheses at the end when one applies, for example `(NAT-236)`.
+- **Body:** after a blank line, say what changed and why. Wrap lines at about 76 characters. Use a bullet list when the commit has several parts.
+- **Schema and migration notes:** if the commit changes `db/schema.prisma` or adds a migration, name the migration and say if it is one-way or needs a backup first. If it changes neither, say "No schema change and no migration."
+- **Validation:** list the checks you ran (`npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm test`) and say which you did not run.
+- **Footer:** end an AI-assisted commit with its `Co-Authored-By:` line.
 
 ## Security & Configuration
 
