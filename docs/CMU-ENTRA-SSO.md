@@ -26,7 +26,7 @@ OpenID Connect with ID-token signature, issuer, audience, nonce, and expiry vali
 | Area | File or route | Responsibility |
 | --- | --- | --- |
 | Shared authentication library | `lib/cmu-auth.ts` | Configuration, PKCE, state, encryption, profile sanitization, and session reads (with the nursing check in a production build) |
-| Login (the sign-in button) | `GET /metang/api/auth/login` | Creates a nursing-policy OAuth transaction in a production build (`NODE_ENV=production`), and a general one otherwise (`next dev`). Redirects to CMU Entra |
+| Login (the sign-in button) | `GET /metang/api/auth/login` | Creates a nursing-policy OAuth transaction in a production build (`NODE_ENV=production`), and a general one otherwise (`next dev`, or `DEBUG_MODE=true`). Redirects to CMU Entra |
 | Nursing SSO login | `GET /metang/api/auth/nurse/login` | Always creates a nursing-policy OAuth transaction and redirects to CMU Entra |
 | Complete login | `GET /metang/api/auth/callback` | Validates the callback, exchanges the code, fetches BasicInfo, and applies nursing policy when requested, and always in a production build |
 | Nursing access policy | `lib/nurse-auth.ts` | Allows only eligible nursing students and nursing-faculty employees |
@@ -107,6 +107,7 @@ before the local session cookie is created. In a production build (`NODE_ENV=pro
 the sign-in button (`/api/auth/login`) starts this restricted mode. A rejected account receives `not_eligible` and
 cannot use the nursing SSO session, even if CMU Entra authentication itself succeeded. Under
 `next dev` the button starts the general mode, which keeps the unrestricted CMU profile behavior.
+`DEBUG_MODE=true` gives a production build the general mode too, for a debug deployment on fake data.
 `INFISICAL_ENV` does not change the mode.
 
 A production build also checks the policy on every read of the session (`getCmuSession` in

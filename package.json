@@ -10,6 +10,7 @@
     "build": "next build",
     "build:infisical": "NODE_ENV=production node scripts/with-infisical.mjs next build",
     "start": "next start",
+    "start:infisical": "node scripts/with-infisical.mjs next start -p 8080",
     "lint": "eslint",
     "openapi:generate": "next-openapi-gen generate -t next.openapi.json && node scripts/normalize-openapi.mjs",
     "postinstall": "prisma generate",

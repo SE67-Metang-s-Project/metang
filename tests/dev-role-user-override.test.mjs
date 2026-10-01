@@ -22,7 +22,7 @@ test("each dev role maps to its own override env var, not a shared one", () => {
 
 test("getDevelopmentRoleUserId is only honored in the dev environment", () => {
   const fn = devAccess.slice(devAccess.indexOf("export function getDevelopmentRoleUserId"));
-  assert.match(fn, /if \(!isDevelopmentEnvironment\(infisicalEnvironment, nodeEnvironment\)\) return undefined;/);
+  assert.match(fn, /if \(!isDevelopmentEnvironment\(nodeEnvironment\)\) return undefined;/);
 });
 
 test("getDevelopmentRoleUserId trims the raw env value and treats blank as unset", () => {

@@ -32,10 +32,16 @@ const profiles = {
   noFacultyData: { cmuitaccount_name: "e" },
 };
 
-async function sessionFor(profile: object, nodeEnv: string) {
-  const saved = { NODE_ENV: env.NODE_ENV, SESSION_SECRET: env.SESSION_SECRET };
+async function sessionFor(profile: object, nodeEnv: string, debugMode?: string) {
+  const saved = {
+    NODE_ENV: env.NODE_ENV,
+    SESSION_SECRET: env.SESSION_SECRET,
+    DEBUG_MODE: env.DEBUG_MODE,
+  };
   env.SESSION_SECRET = "a-test-session-secret-of-32-chars-or-more";
   env.NODE_ENV = nodeEnv;
+  if (debugMode === undefined) delete env.DEBUG_MODE;
+  else env.DEBUG_MODE = debugMode;
   try {
     const { getCmuSession, seal } = await import("../lib/cmu-auth");
     sessionCookie = seal({ profile, loggedInAt: Date.now(), expiresAt: Date.now() + 60_000 });
@@ -51,6 +57,12 @@ async function sessionFor(profile: object, nodeEnv: string) {
 test("production accepts a nursing student and nursing staff", async () => {
   assert.ok(await sessionFor(profiles.nursingStudent, "production"));
   assert.ok(await sessionFor(profiles.nursingStaff, "production"));
+});
+
+test("DEBUG_MODE=true lets every CMU account keep a session in a production build", async () => {
+  assert.ok(await sessionFor(profiles.otherFacultyStudent, "production", "true"));
+  assert.ok(await sessionFor(profiles.otherFacultyStaff, "production", "true"));
+  assert.equal(await sessionFor(profiles.otherFacultyStudent, "production", "false"), null);
 });
 
 test("production refuses every other CMU account, even with a valid session", async () => {

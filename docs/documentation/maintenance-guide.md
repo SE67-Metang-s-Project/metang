@@ -337,7 +337,7 @@ matches the Faculty of Nursing pattern `^\d{2}12\d{5}$` and an employee with org
 gave it a role. Add a person who is not Nursing staff only after you check that their CMU profile
 has organization code `12`. The application also checks this rule on every request, so
 a session of any other account stops working at once. Under `next dev` the button starts the
-general mode and any CMU account can sign in. `INFISICAL_ENV` does not change the mode.
+general mode and any CMU account can sign in. `DEBUG_MODE=true` (Section 7.1) gives a production build the general mode too. `INFISICAL_ENV` does not change the mode.
 
 Role changes have side effects:
 
@@ -1045,7 +1045,7 @@ connected to the repository deploys each push to its production branch.
    npm test
    ```
 
-   Expected result: the summary line `ℹ fail 0`. At the time of writing, 557 tests pass. A
+   Expected result: the summary line `ℹ fail 0`. At the time of writing, 559 tests pass. A
    failure needs a developer. CI runs the same command.
 4. Run the API tests. They use a temporary local PostgreSQL in Docker (port `5433`) and a
    test app on port `8081`. They never touch the real database.
@@ -1247,7 +1247,8 @@ production deployment ("Redeploy") before it takes effect.
 | `SUPABASE_SERVICE_ROLE_KEY` | None | Supabase service role key | Full access to Storage. | Yes | Yes |
 | `SUPABASE_SLIP_BUCKET` | `bank_payment_slips` | Name of a private bucket | Bucket for slip files. | Yes | No |
 | `INFISICAL_ENV` | `dev` | `dev` or `prod` | Only in a maintainer's local `.env`. Selects the Infisical environment for `npm run dev`, `npm run build:infisical`, and `npm run db:*`. Has no effect when the Infisical CLI is not installed (Section 3.4). | Not applicable | No |
-| `DEV_API_BYPASS` | Off | `true` or not set | Development only. Must not be set in production. Works only when `INFISICAL_ENV=dev` and `NODE_ENV=development`. | Not applicable | No |
+| `DEV_API_BYPASS` | Off | `true` or not set | Development and demo only. Must not be set on a production site that holds real data. Works only under `next dev` (`NODE_ENV=development`) or with `DEBUG_MODE=true`. `INFISICAL_ENV` is not checked. | Not applicable | No |
+| `DEBUG_MODE` | Off | `true` or not set | Turns on the development shortcuts on a deployed build: the API bypass (`DEV_API_BYPASS`, `DEV_AS_<ROLE>`), the `/metang/demo` pages, and skipping the student Nursing check. It also opens sign-in to any CMU account (the general mode, as in `next dev`), so `not_eligible` no longer appears. For a debug deployment on fake data only: anyone who opens the site acts as the enabled role, any CMU account can sign in, and the admin role can send real emails and LINE messages. | Yes (redeploy) | No |
 | `DEV_AS_ADVISOR`, `DEV_AS_ADMIN`, `DEV_AS_SUPERADMIN`, `DEV_AS_EXECUTIVE` | Off | `true` or not set | Development only. Must not be set in production. Same condition as `DEV_API_BYPASS`. | Not applicable | No |
 | `DEV_ADVISOR_USER_ID`, `DEV_ADMIN_USER_ID`, `DEV_SUPERADMIN_USER_ID`, `DEV_EXECUTIVE_USER_ID` | Test user IDs | User UUID | Development only. Must not be set in production. | Not applicable | No |
 | `EXT_PORT` | Not used | Port number | Appears in `.env.example` only. The application does not read it. | Not applicable | No |
@@ -1682,4 +1683,4 @@ Include this information:
 | 1.6 draft | 2026-09-30 | Me_Tang development team | Jira NAT-233: the client takes the source code and the database and chooses the host, so the `[TO VERIFY]` markers are gone. Section 2.1 says the team runs no production site. The markers for Vercel, Supabase, and Infisical are plain "only if you use it" notes. The production URL and log location markers are removed. The convention for `[TO VERIFY]` is replaced by `Not tested:`. Section 6.4 states the migration count of 2026-09-30 (20). |
 | 1.7 draft | 2026-09-30 | Me_Tang development team | Jira NAT-235: Section 6 checked against the ticket. The CI result is now commit `ff20972`, the unit test count is 522, and the lint warning count is 4. |
 | 1.8 draft | 2026-10-01 | Me_Tang development team | Checked against commit `7ebabc3`. Students have no `app_user` row, and a loan request holds its borrower. Migration count and latest name. First-SuperAdmin and advisor SQL. Phone-number, education-level, and account-number messages. Students now get email only from the due-date and overdue reminders. |
-| 1.9 draft | 2026-10-01 | Me_Tang development team | Sign-in rule (Section 3.2): a production build lets in only Nursing students and Nursing staff (`organization_code` 12) and checks it on every request, so staff without that code cannot sign in. The sign-in mode follows `NODE_ENV`, not `INFISICAL_ENV`. Scheduled jobs (Sections 2.1, 2.3, 7.1, 7.3, 9, 10): the new setting `JOB_RUNNER` (`timer`, `request`, `off`) replaces `ENABLE_JOB_SCHEDULER` and the `VERCEL` detection. `vercel.json` is removed. On a host that stops idle instances, such as Vercel, set `request`: `proxy.ts` then runs the jobs after page requests. Unit test count is 557. |
+| 1.9 draft | 2026-10-01 | Me_Tang development team | Sign-in rule (Section 3.2): a production build lets in only Nursing students and Nursing staff (`organization_code` 12) and checks it on every request, so staff without that code cannot sign in. The sign-in mode follows `NODE_ENV`, not `INFISICAL_ENV`. Scheduled jobs (Sections 2.1, 2.3, 7.1, 7.3, 9, 10): the new setting `JOB_RUNNER` (`timer`, `request`, `off`) replaces `ENABLE_JOB_SCHEDULER` and the `VERCEL` detection. `vercel.json` is removed. On a host that stops idle instances, such as Vercel, set `request`: `proxy.ts` then runs the jobs after page requests. Unit test count is 559. New setting `DEBUG_MODE` (Section 7.1) turns on the development shortcuts on a deployed debug build and opens sign-in to any CMU account (Section 3.2), and the development check no longer reads `INFISICAL_ENV`. |

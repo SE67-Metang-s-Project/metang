@@ -1,14 +1,18 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { isDevelopmentEnvironment } from "@/lib/development-access";
+import { isDevelopmentApiBypass, isDevelopmentEnvironment } from "@/lib/development-access";
 import { canTriggerReviewerNotification } from "@/lib/notification-access";
 
-test("isDevelopmentEnvironment checks both environments", () => {
-  assert.equal(isDevelopmentEnvironment("dev", "development"), true);
-  assert.equal(isDevelopmentEnvironment("prod", "production"), false);
-  assert.equal(isDevelopmentEnvironment("dev", "production"), false);
-  assert.equal(isDevelopmentEnvironment("prod", "development"), false);
+test("isDevelopmentEnvironment is true under next dev or DEBUG_MODE, and never reads INFISICAL_ENV", () => {
+  assert.equal(isDevelopmentEnvironment("development", undefined), true);
+  assert.equal(isDevelopmentEnvironment("production", undefined), false);
+  assert.equal(isDevelopmentEnvironment("production", "true"), true);
+  assert.equal(isDevelopmentEnvironment("production", "false"), false);
   assert.equal(isDevelopmentEnvironment(undefined, undefined), false);
+  // The bypass needs its own flag on top, so DEBUG_MODE alone opens nothing.
+  assert.equal(isDevelopmentApiBypass(undefined, "development"), false);
+  assert.equal(isDevelopmentApiBypass("true", "development"), true);
+  assert.equal(isDevelopmentApiBypass("true", "production"), false);
 });
 
 test("canTriggerReviewerNotification authorizes correctly by role", () => {

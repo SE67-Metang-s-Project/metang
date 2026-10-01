@@ -129,8 +129,7 @@ const childEnv = {
   ...process.env,
   DATABASE_URL,
   DIRECT_URL: DATABASE_URL,
-  // Both are required by isDevelopmentEnvironment() before any dev bypass is honoured.
-  INFISICAL_ENV: "dev",
+  // isDevelopmentEnvironment() needs this before any dev bypass is honoured.
   NODE_ENV: "development",
   DEV_API_BYPASS: "true",
   DEV_AS_ADVISOR: "true",

@@ -1,24 +1,26 @@
+/**
+ * True under `next dev`, or on a deployed build with DEBUG_MODE=true (a deployed build is always
+ * NODE_ENV=production). Infisical only shares env values; INFISICAL_ENV plays no part here.
+ */
 export function isDevelopmentEnvironment(
-  infisicalEnvironment = process.env.INFISICAL_ENV,
   nodeEnvironment = process.env.NODE_ENV,
+  debugMode = process.env.DEBUG_MODE,
 ) {
-  return infisicalEnvironment === "dev" && nodeEnvironment === "development";
+  return nodeEnvironment === "development" || debugMode === "true";
 }
 
 export function isDevelopmentApiAccess(
   bypass = process.env.DEV_API_BYPASS,
-  infisicalEnvironment = process.env.INFISICAL_ENV,
   nodeEnvironment = process.env.NODE_ENV,
 ) {
-  return isDevelopmentApiBypass(bypass, infisicalEnvironment, nodeEnvironment);
+  return isDevelopmentApiBypass(bypass, nodeEnvironment);
 }
 
 export function isDevelopmentApiBypass(
   bypass = process.env.DEV_API_BYPASS,
-  infisicalEnvironment = process.env.INFISICAL_ENV,
   nodeEnvironment = process.env.NODE_ENV,
 ) {
-  return bypass === "true" && isDevelopmentEnvironment(infisicalEnvironment, nodeEnvironment);
+  return bypass === "true" && isDevelopmentEnvironment(nodeEnvironment);
 }
 
 export type DevelopmentApiRole = "advisor" | "admin" | "super_admin" | "executive";
@@ -33,10 +35,9 @@ const developmentRoleEnvironmentVariables: Record<DevelopmentApiRole, string> = 
 export function isDevelopmentRoleEnabled(
   role: DevelopmentApiRole,
   value = process.env[developmentRoleEnvironmentVariables[role]],
-  infisicalEnvironment = process.env.INFISICAL_ENV,
   nodeEnvironment = process.env.NODE_ENV,
 ) {
-  return value === "true" && isDevelopmentEnvironment(infisicalEnvironment, nodeEnvironment);
+  return value === "true" && isDevelopmentEnvironment(nodeEnvironment);
 }
 
 const developmentRoleUserIdEnvironmentVariables: Record<DevelopmentApiRole, string> = {
@@ -56,10 +57,9 @@ const developmentRoleUserIdEnvironmentVariables: Record<DevelopmentApiRole, stri
 export function getDevelopmentRoleUserId(
   role: DevelopmentApiRole,
   value = process.env[developmentRoleUserIdEnvironmentVariables[role]],
-  infisicalEnvironment = process.env.INFISICAL_ENV,
   nodeEnvironment = process.env.NODE_ENV,
 ): string | undefined {
-  if (!isDevelopmentEnvironment(infisicalEnvironment, nodeEnvironment)) return undefined;
+  if (!isDevelopmentEnvironment(nodeEnvironment)) return undefined;
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
 }

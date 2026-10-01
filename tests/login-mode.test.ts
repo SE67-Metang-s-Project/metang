@@ -20,11 +20,21 @@ const changed: Record<string, string | undefined> = {
   SESSION_SECRET: "a-test-session-secret-of-32-chars-or-more",
 };
 
-async function loginMode(infisicalEnv: string | undefined, nodeEnv: string | undefined) {
-  const names = [...Object.keys(changed), "INFISICAL_ENV", "NODE_ENV"];
+async function loginMode(
+  infisicalEnv: string | undefined,
+  nodeEnv: string | undefined,
+  debugMode?: string,
+) {
+  const names = [...Object.keys(changed), "INFISICAL_ENV", "NODE_ENV", "DEBUG_MODE"];
   const saved = Object.fromEntries(names.map((name) => [name, env[name]]));
-  Object.assign(env, changed, { INFISICAL_ENV: infisicalEnv, NODE_ENV: nodeEnv });
-  for (const name of ["INFISICAL_ENV", "NODE_ENV"]) if (env[name] === undefined) delete env[name];
+  Object.assign(env, changed, {
+    INFISICAL_ENV: infisicalEnv,
+    NODE_ENV: nodeEnv,
+    DEBUG_MODE: debugMode,
+  });
+  for (const name of ["INFISICAL_ENV", "NODE_ENV", "DEBUG_MODE"]) {
+    if (env[name] === undefined) delete env[name];
+  }
   try {
     const response = await getLogin(new Request("https://metang.example/metang/api/auth/login"));
     const cookie = response.headers
@@ -48,6 +58,12 @@ test("sign-in starts the nursing policy mode in production", async () => {
 test("INFISICAL_ENV does not change the mode of a production build", async () => {
   assert.equal(await loginMode(undefined, "production"), "nurse");
   assert.equal(await loginMode("dev", "production"), "nurse");
+});
+
+test("DEBUG_MODE=true opens sign-in to any CMU account in a production build, and only true does", async () => {
+  assert.equal(await loginMode(undefined, "production", "true"), "general");
+  assert.equal(await loginMode(undefined, "production", "false"), "nurse");
+  assert.equal(await loginMode(undefined, "production", ""), "nurse");
 });
 
 test("sign-in keeps the general mode in development whatever INFISICAL_ENV is", async () => {
