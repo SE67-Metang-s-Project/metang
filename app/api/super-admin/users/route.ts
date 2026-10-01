@@ -36,7 +36,7 @@ export async function GET() {
 
 /**
  * Add a staff member (admin or super_admin).
- * @description Creates the user with the role. They sign in later with CMU SSO. A removed staff member (their record kept for history, no roles left) gets the role back on the same record, names unchanged. An email or CMU account that belongs to someone holding any role (staff, advisor, the executive) is refused with 409; nobody is renamed here.
+ * @description Creates the user with the role; both the Thai and the English name are required. They sign in later with CMU SSO. A removed staff member (their record kept for history, no roles left) gets the role back on the same record, names unchanged. An email or CMU account that belongs to someone holding any role (staff, advisor, the executive) is refused with 409; nobody is renamed here.
  * @tag SuperAdmin roles
  * @body CreateManagedUserBody
  * @auth cookieAuth
@@ -75,6 +75,10 @@ export async function POST(request: Request) {
     return apiError("VALIDATION_ERROR", "กรุณาระบุชื่อ-นามสกุล", 422);
   }
 
+  if (typeof fullNameEn !== "string" || !fullNameEn.trim()) {
+    return apiError("VALIDATION_ERROR", "กรุณาระบุชื่อ-นามสกุลภาษาอังกฤษ", 422);
+  }
+
   if (isNameTooLong(fullNameTh, fullNameEn)) {
     return apiError("VALIDATION_ERROR", `ชื่อ-นามสกุลต้องไม่เกิน ${MAX_NAME_LENGTH} ตัวอักษร`, 422);
   }
@@ -96,7 +100,7 @@ export async function POST(request: Request) {
       actorId: access.context.user.id,
       email: email.trim(),
       fullNameTh: fullNameTh.trim(),
-      fullNameEn: typeof fullNameEn === "string" ? fullNameEn.trim() : null,
+      fullNameEn: fullNameEn.trim(),
       role,
     });
     return apiOk(serializeJson(newUser));

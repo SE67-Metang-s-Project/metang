@@ -239,14 +239,14 @@ export async function createManagedUser({
   actorId: string;
   email: string;
   fullNameTh: string;
-  fullNameEn?: string | null;
+  fullNameEn: string;
   role: "admin" | "super_admin";
 }) {
   return prisma.$transaction(async (tx) => {
     await assertActorIsSuperAdmin(tx, actorId);
     const cleanEmail = email.trim().toLowerCase();
     const cleanFullNameTh = fullNameTh.trim();
-    const cleanFullNameEn = fullNameEn ? fullNameEn.trim() : null;
+    const cleanFullNameEn = fullNameEn.trim();
     const cmuAccount = cleanEmail.split("@")[0];
 
     // Add never renames anyone or hands a role to someone who holds one (staff, advisor, the
@@ -299,7 +299,7 @@ export async function createManagedUser({
         action: "user.created",
         entityType: "app_user",
         entityId: newUser.id,
-        after: { email: cleanEmail, fullNameTh: cleanFullNameTh, role },
+        after: { email: cleanEmail, fullNameTh: cleanFullNameTh, fullNameEn: cleanFullNameEn, role },
       },
     });
 

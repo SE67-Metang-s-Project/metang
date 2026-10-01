@@ -476,7 +476,7 @@ export type SuperAdminUserResponse = {
 export type CreateManagedUserBody = {
   fullNameTh: string;
   email: string;
-  fullNameEn?: string;
+  fullNameEn: string;
   role: "admin" | "super_admin";
 };
 
