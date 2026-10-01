@@ -109,7 +109,7 @@ export default function InstallmentCard({ installment, isPaymentLocked = false, 
           {isPaymentLocked
             ? t("กรุณายืนยันการรับเงินก่อนชำระ", "Please confirm receipt before paying")
             : installment.isAwaitingReview
-            ? t("รอเจ้าหน้าที่ตรวจสอบหลักฐานการชำระ", "Waiting for admin to review your payment")
+            ? t("รอผู้ดูแลระบบตรวจสอบหลักฐานการชำระ", "Waiting for admin to review your payment")
             : installment.status === "current"
             ?
               t("ชำระงวดนี้ · คงเหลือ", "Pay this installment · Remaining") +

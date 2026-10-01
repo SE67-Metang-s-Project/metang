@@ -32,7 +32,7 @@ export type MainFilterOption = {
 
 export const COMPLETE_REQUEST_STATUS_OPTIONS: DropdownStatusOption[] = [
   { id: "pending_advisor", label: "รออาจารย์พิจารณา" },
-  { id: "pending_admin", label: "รอเจ้าหน้าที่ตรวจสอบ" },
+  { id: "pending_admin", label: "รอผู้ดูแลระบบตรวจสอบ" },
   { id: "pending_executive", label: "รอผู้บริหารอนุมัติ" },
   { id: "pending_disbursement", label: "รอเบิกจ่ายเงิน" },
   { id: "disbursed", label: "โอนเงินแล้ว" },
@@ -159,7 +159,7 @@ export default function PendingFilter({
     { id: "approved", label: "อนุมัติแล้ว" },
     { id: "rejected", label: "ไม่อนุมัติ" },
     ...(!isExecutivePendingEnabled
-      ? [{ id: "pending_admin" as const, label: "รอเจ้าหน้าที่ตรวจสอบ" }]
+      ? [{ id: "pending_admin" as const, label: "รอผู้ดูแลระบบตรวจสอบ" }]
       : []),
     { id: "cancelled", label: "ยกเลิกคำร้อง" },
   ];

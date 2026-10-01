@@ -1432,7 +1432,7 @@ export default function DisburseDebtCard({ requests, serverPaging }: DisburseDeb
               ยกเลิกคำร้อง คำร้อง {completedCancel} เรียบร้อยแล้ว
             </p>
             <p className="mt-1 text-sm text-gray-500">
-              คำร้องนี้เสร็จสิ้นในขั้นตอนของเจ้าหน้าที่
+              คำร้องนี้เสร็จสิ้นในขั้นตอนของผู้ดูแลระบบ
             </p>
             <button
               type="button"

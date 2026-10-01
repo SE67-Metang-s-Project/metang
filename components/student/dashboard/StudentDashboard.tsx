@@ -546,7 +546,7 @@ export default function StudentDashboard({
               {t("ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว", "Your payment evidence has been submitted.")}
             </p>
             <p className="mt-1 text-sm text-gray-500">
-              {t("เจ้าหน้าที่จะตรวจสอบและแจ้งผลให้ทราบภายหลัง", "Admin will review it and notify you later.")}
+              {t("ผู้ดูแลระบบจะตรวจสอบและแจ้งผลให้ทราบภายหลัง", "Admin will review it and notify you later.")}
             </p>
             <button
               className="mt-6 w-full rounded-lg bg-green-600 px-4 py-3 font-bold text-white transition-colors hover:bg-green-700"

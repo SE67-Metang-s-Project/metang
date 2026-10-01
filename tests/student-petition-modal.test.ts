@@ -120,8 +120,8 @@ test("Download petition PDF is available during transfer confirmation and after 
   const loanPetitionDocContent = read("components/shared/disburse-debt/LoanPetitionDocument.tsx");
   assert.match(
     loanPetitionDocContent,
-    /ความคิดเห็นของเจ้าหน้าที่ \/ พยาน/,
-    "LoanPetitionDocument must display 'ความคิดเห็นของเจ้าหน้าที่ / พยาน' for admin comments",
+    /ความคิดเห็นของผู้ดูแลระบบ \/ พยาน/,
+    "LoanPetitionDocument must display 'ความคิดเห็นของผู้ดูแลระบบ / พยาน' for admin comments",
   );
   assert.doesNotMatch(
     loanPetitionDocContent,

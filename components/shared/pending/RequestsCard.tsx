@@ -367,7 +367,7 @@ const getStatusDisplay = (status: LoanStatus) => {
     case "pending_advisor":
       return "รอพิจารณา";
     case "pending_admin":
-      return "รอเจ้าหน้าที่ตรวจสอบ";
+      return "รอผู้ดูแลระบบตรวจสอบ";
     case "pending_executive":
       return "รอผู้บริหารอนุมัติ";
     case "pending_disbursement":
@@ -417,7 +417,7 @@ const checkCanTakeAction = (role: UserRole, status: LoanStatus) => {
   if (role === "advisor" && (s === "pending_advisor" || s.includes("รอพิจารณา"))) return true;
   if (
     (role === "admin" || role === "super_admin") &&
-    (s === "pending_admin" || s.includes("รอเจ้าหน้าที่ตรวจสอบ"))
+    (s === "pending_admin" || s.includes("รอผู้ดูแลระบบตรวจสอบ"))
   )
     return true;
   if (role === "executive" && (s === "pending_executive" || s.includes("รอผู้บริหารอนุมัติ")))
@@ -767,7 +767,7 @@ export default function RequestsCard({
         >
           <RotateCcw size={13} className="shrink-0 text-amber-600" />
           <span className="block whitespace-nowrap">
-            {userRole === "executive" ? "รอเจ้าหน้าที่ตรวจสอบ" : "ผู้บริหารส่งกลับมาแก้ไข"}
+            {userRole === "executive" ? "รอผู้ดูแลระบบตรวจสอบ" : "ผู้บริหารส่งกลับมาแก้ไข"}
           </span>
         </button>
       );
@@ -827,10 +827,10 @@ export default function RequestsCard({
                     {isExecutiveReturned(req) && (
                       <span
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800 border border-amber-300"
-                        title="ผู้บริหารส่งกลับมาแก้ไขให้เจ้าหน้าที่ตรวจสอบใหม่"
+                        title="ผู้บริหารส่งกลับมาแก้ไขให้ผู้ดูแลระบบตรวจสอบใหม่"
                       >
                         <RotateCcw size={11} className="shrink-0 text-amber-700" />
-                        <span>{userRole === "executive" ? "เจ้าหน้าที่ตรวจสอบ" : "ผู้บริหารให้แก้ไข"}</span>
+                        <span>{userRole === "executive" ? "ผู้ดูแลระบบตรวจสอบ" : "ผู้บริหารให้แก้ไข"}</span>
                       </span>
                     )}
                   </div>
@@ -928,10 +928,10 @@ export default function RequestsCard({
                       {isExecutiveReturned(req) && (
                         <span
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800 border border-amber-300"
-                          title="ผู้บริหารส่งกลับมาแก้ไขให้เจ้าหน้าที่ตรวจสอบใหม่"
+                          title="ผู้บริหารส่งกลับมาแก้ไขให้ผู้ดูแลระบบตรวจสอบใหม่"
                         >
                           <RotateCcw size={11} className="shrink-0 text-amber-700" />
-                          <span>{userRole === "executive" ? "เจ้าหน้าที่ตรวจสอบ" : "ผู้บริหารให้แก้ไข"}</span>
+                          <span>{userRole === "executive" ? "ผู้ดูแลระบบตรวจสอบ" : "ผู้บริหารให้แก้ไข"}</span>
                         </span>
                       )}
                     </div>
@@ -1612,7 +1612,7 @@ export default function RequestsCard({
                   ? "อาจารย์ที่ปรึกษา"
                   : userRole === "executive"
                     ? "ผู้บริหาร"
-                    : "เจ้าหน้าที่"}</>}
+                    : "ผู้ดูแลระบบ"}</>}
             </p>
             <button
               type="button"

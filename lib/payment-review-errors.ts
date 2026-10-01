@@ -17,7 +17,7 @@ export function paymentDecisionErrorMessage(status: number, apiMessage?: string 
     // validateJsonRequest: an Origin mismatch (e.g. behind a proxy) or a wrong content type, not a
     // missing role.
     if (apiMessage === "A same-origin JSON request is required") {
-      return "คำขอไม่ถูกต้อง กรุณารีเฟรชหน้าแล้วลองใหม่ หากยังพบปัญหาโปรดแจ้งผู้ดูแลระบบ";
+      return "คำขอไม่ถูกต้อง กรุณารีเฟรชหน้าแล้วลองใหม่ หากยังพบปัญหาโปรดแจ้งผู้ดูแลระบบสูงสุด";
     }
     return "ไม่มีสิทธิ์ดำเนินการสำหรับบทบาทนี้";
   }

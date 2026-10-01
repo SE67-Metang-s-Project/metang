@@ -674,7 +674,7 @@ export default function TempLoanApplicationPage({
                         >
                           <strong>
                             {existingLoan.returnStep === "admin"
-                              ? t("ข้อความจากเจ้าหน้าที่", "Message from the staff")
+                              ? t("ข้อความจากผู้ดูแลระบบ", "Message from the staff")
                               : t("อาจารย์ที่ปรึกษาแจ้งแก้ไข", "Advisor requested revision")}
                             :
                           </strong>

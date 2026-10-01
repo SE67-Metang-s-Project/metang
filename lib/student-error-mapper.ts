@@ -210,7 +210,7 @@ const PAYMENT_CONFLICT_PATTERNS: Array<{ pattern: RegExp; title: string; message
   {
     pattern: /already awaiting review/i,
     title: "มีหลักฐานการชำระรอตรวจสอบอยู่แล้ว",
-    message: "กรุณารอเจ้าหน้าที่ตรวจสอบหลักฐานการชำระครั้งก่อนให้เสร็จสิ้น แล้วจึงส่งหลักฐานใหม่",
+    message: "กรุณารอผู้ดูแลระบบตรวจสอบหลักฐานการชำระครั้งก่อนให้เสร็จสิ้น แล้วจึงส่งหลักฐานใหม่",
   },
   {
     pattern: /nothing left to repay/i,

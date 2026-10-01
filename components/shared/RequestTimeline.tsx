@@ -39,9 +39,9 @@ export { buildFiveStepTimeline, buildFullActionHistory };
 const timelineEnglishText: Record<string, string> = {
   "ยื่นคำร้องขอกู้ยืม": "Loan request submitted",
   "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ": "Advisor review and approval",
-  "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน": "Admin document review",
+  "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน": "Admin document review",
   "ผู้บริหารอนุมัติคำร้อง": "Executive approval",
-  "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว": "Funds transferred by admin",
+  "ผู้ดูแลระบบโอนเงินเรียบร้อยแล้ว": "Funds transferred by admin",
   "ยื่นคำร้องสำเร็จ": "Request submitted",
   "กำลังดำเนินการ": "In progress",
   "ขั้นตอนถัดไป": "Next step",
@@ -51,9 +51,9 @@ const timelineEnglishText: Record<string, string> = {
   "โอนเงินสำเร็จ": "Funds transferred",
   "รอยืนยันการโอนเงิน": "Waiting for transfer confirmation",
   "กรุณายืนยันการรับเงิน": "Please confirm receipt of funds",
-  "เจ้าหน้าที่การเงิน": "Finance officer",
-  "ความคิดเห็นของเจ้าหน้าที่การเงิน": "Finance officer's comment",
-  "ความคิดเห็นของเจ้าหน้าที่ / พยาน": "Admin / Witness comment",
+  "ผู้ดูแลระบบการเงิน": "Finance officer",
+  "ความคิดเห็นของผู้ดูแลระบบการเงิน": "Finance officer's comment",
+  "ความคิดเห็นของผู้ดูแลระบบ / พยาน": "Admin / Witness comment",
 };
 
 function localizeTimelineText(value: string, language: StudentLanguage) {

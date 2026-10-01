@@ -65,7 +65,7 @@ const getHistoryStatusClassName = (statusCode: string | undefined, statusLabel: 
   if (statusLabel.includes("แก้ไข")) return styles.revisionRequired;
   if (statusLabel.includes("อาจารย์")) return styles.waitingAdvisorApproval;
   if (statusLabel.includes("ผู้บริหาร")) return styles.waitingExecutiveApproval;
-  if (statusLabel.includes("เจ้าหน้าที่")) return styles.waitingDocumentReview;
+  if (statusLabel.includes("ผู้ดูแลระบบ")) return styles.waitingDocumentReview;
   if (statusLabel.includes("เสร็จสิ้น")) return styles.completed;
 
   return styles.pending;

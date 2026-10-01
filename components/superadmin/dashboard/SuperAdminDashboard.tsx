@@ -10,11 +10,11 @@ type SuperAdminDashboardProps = {
 
 export default function SuperAdminDashboard({
   financialOverview,
-  userName = "ผู้ดูแลระบบระดับสูง",
+  userName = "ผู้ดูแลระบบสูงสุด",
 }: SuperAdminDashboardProps = {}) {
   return (
     <div className="space-y-10">
-      <WelcomeCard name={userName} description="ผู้ดูแลระบบระดับสูง" />
+      <WelcomeCard name={userName} description="ผู้ดูแลระบบสูงสุด" />
       <section className="w-full font-[family-name:var(--font-kanit)]">
         <FinancialOverview
           initialData={financialOverview}

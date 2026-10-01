@@ -5,7 +5,7 @@ type RejectedBy = "advisor" | "admin" | "executive";
 
 const REJECTED_BY_TH: Record<RejectedBy, string> = {
   advisor: "อาจารย์ที่ปรึกษา",
-  admin: "เจ้าหน้าที่กองทุน",
+  admin: "ผู้ดูแลระบบกองทุน",
   executive: "ผู้บริหาร",
 };
 
@@ -51,7 +51,7 @@ export function buildLoanOutcomeEmail(input: LoanOutcomeEmailInput): SendEmailPa
   if (input.outcome === "disbursed") {
     subject = `โอนเงินกู้ยืมเรียบร้อยแล้ว รหัสสัญญา ${input.loanId}`;
     body = [
-      `เจ้าหน้าที่ได้โอนเงินกู้ยืมจำนวน ${input.amount.toLocaleString("th-TH")} บาท ให้ท่านเรียบร้อยแล้ว`,
+      `ผู้ดูแลระบบได้โอนเงินกู้ยืมจำนวน ${input.amount.toLocaleString("th-TH")} บาท ให้ท่านเรียบร้อยแล้ว`,
       `รหัสสัญญา: ${input.loanId}`,
       "",
       `การชำระคืนมีทั้งหมด ${input.installmentCount} งวด`,

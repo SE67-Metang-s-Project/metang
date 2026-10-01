@@ -26,7 +26,7 @@ export const mockExecutiveRequests: ActionRequest[] = [
         actor: "อ.ดร. ใจดี มีเมตตา",
       },
       {
-        action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+        action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
         date: "14 ต.ค. 2567 14:00",
         actor: "นางสมศรี รักงาน",
       },
@@ -83,7 +83,7 @@ export const mockExecutiveRequests: ActionRequest[] = [
         actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
       },
       {
-        action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+        action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
         date: "15 ต.ค. 2567 15:45",
         actor: "นางสมศรี รักงาน",
       },

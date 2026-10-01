@@ -20,7 +20,7 @@ test("UserRolesTab in System Control Center only manages admin, super_admin, and
   // 2. Check THAI_TO_ROLE definition only contains managed roles
   assert.match(
     content,
-    /const\s+THAI_TO_ROLE:\s*Record<string,\s*PredefinedRoleName>\s*=\s*\{\s*"เจ้าหน้าที่":\s*"admin",\s*"ผู้บริหาร":\s*"executive",\s*"ผู้ดูแลระบบ":\s*"super_admin",?\s*\};/,
+    /const\s+THAI_TO_ROLE:\s*Record<string,\s*PredefinedRoleName>\s*=\s*\{\s*"ผู้ดูแลระบบ":\s*"admin",\s*"ผู้บริหาร":\s*"executive",\s*"ผู้ดูแลระบบสูงสุด":\s*"super_admin",?\s*\};/,
     "THAI_TO_ROLE must only map managed roles",
   );
 
@@ -31,9 +31,9 @@ test("UserRolesTab in System Control Center only manages admin, super_admin, and
   const roleFilterSection = roleOptionsMatch[1];
 
   assert.ok(roleFilterSection.includes('"ทุกบทบาท"'));
-  assert.ok(roleFilterSection.includes('"เจ้าหน้าที่"'));
-  assert.ok(roleFilterSection.includes('"ผู้บริหาร"'));
   assert.ok(roleFilterSection.includes('"ผู้ดูแลระบบ"'));
+  assert.ok(roleFilterSection.includes('"ผู้บริหาร"'));
+  assert.ok(roleFilterSection.includes('"ผู้ดูแลระบบสูงสุด"'));
   assert.ok(!roleFilterSection.includes("นักศึกษา"), "Filter dropdown must not contain นักศึกษา");
   assert.ok(!roleFilterSection.includes("อาจารย์ที่ปรึกษา"), "Filter dropdown must not contain อาจารย์ที่ปรึกษา");
   assert.match(

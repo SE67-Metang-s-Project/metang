@@ -23,15 +23,15 @@ import { withBasePath } from "@/lib/base-path";
 const ROLE_TO_THAI: Record<PredefinedRoleName, string> = {
   student: "นักศึกษา",
   advisor: "อาจารย์ที่ปรึกษา",
-  admin: "เจ้าหน้าที่",
+  admin: "ผู้ดูแลระบบ",
   executive: "ผู้บริหาร",
-  super_admin: "ผู้ดูแลระบบ",
+  super_admin: "ผู้ดูแลระบบสูงสุด",
 };
 
 const THAI_TO_ROLE: Record<string, PredefinedRoleName> = {
-  "เจ้าหน้าที่": "admin",
+  "ผู้ดูแลระบบ": "admin",
   "ผู้บริหาร": "executive",
-  "ผู้ดูแลระบบ": "super_admin",
+  "ผู้ดูแลระบบสูงสุด": "super_admin",
 };
 
 const MANAGED_ROLES = new Set<PredefinedRoleName>(["admin", "executive", "super_admin"]);
@@ -210,7 +210,7 @@ export default function UserRolesTab({
         if (!remRes.ok) {
           const errJson = await remRes.json().catch(() => ({}));
           if (errJson.error?.code === "FINAL_SUPER_ADMIN" || remRes.status === 409) {
-            throw new Error("ไม่สามารถยกเลิกบทบาทผู้ดูแลระบบคนสุดท้ายได้");
+            throw new Error("ไม่สามารถยกเลิกบทบาทผู้ดูแลระบบสูงสุดคนสุดท้ายได้");
           }
           console.warn(`Failed to remove old role ${oldRole}:`, errJson);
         }
@@ -360,7 +360,7 @@ export default function UserRolesTab({
   // Handle Delete User (Admin or Super Admin)
   const handleDeleteUser = async (user: SuperAdminUser) => {
     if (user.roles.some((r) => r.role === "super_admin") && superAdminCount <= 1) {
-      showToast("error", "ไม่สามารถลบได้ เนื่องจากต้องมีผู้ดูแลระบบ (Super Admin) อย่างน้อย 1 คนในระบบ");
+      showToast("error", "ไม่สามารถลบได้ เนื่องจากต้องมีผู้ดูแลระบบสูงสุด (Super Admin) อย่างน้อย 1 คนในระบบ");
       setUserToDelete(null);
       return;
     }
@@ -373,7 +373,7 @@ export default function UserRolesTab({
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         if (err.error?.code === "FINAL_SUPER_ADMIN" || res.status === 409) {
-          throw new Error("ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายได้ (ต้องมีผู้ดูแลระบบอย่างน้อย 1 คนในระบบ)");
+          throw new Error("ไม่สามารถลบผู้ดูแลระบบสูงสุดคนสุดท้ายได้ (ต้องมีผู้ดูแลระบบสูงสุดอย่างน้อย 1 คนในระบบ)");
         }
         throw new Error(err.error?.message || "ไม่สามารถลบผู้ใช้งานได้");
       }
@@ -564,11 +564,11 @@ export default function UserRolesTab({
                               disabled={isMutating}
                               className="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-[14px] font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 outline-none cursor-pointer transition-all focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
                             >
-                              <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
+                              <option value="ผู้ดูแลระบบ">ผู้ดูแลระบบ</option>
                               <option value="ผู้บริหาร" disabled={isAnotherUserExecutive}>
                                 ผู้บริหาร{isAnotherUserExecutive ? " (มีผู้บริหารแล้ว)" : ""}
                               </option>
-                              <option value="ผู้ดูแลระบบ">ผู้ดูแลระบบ</option>
+                              <option value="ผู้ดูแลระบบสูงสุด">ผู้ดูแลระบบสูงสุด</option>
                             </select>
                             <ChevronDown
                               size={14}
@@ -601,7 +601,7 @@ export default function UserRolesTab({
                             if (isSuperAdmin && superAdminCount <= 1) {
                               showToast(
                                 "error",
-                                "ไม่สามารถลบได้ เนื่องจากต้องมีผู้ดูแลระบบ (Super Admin) อย่างน้อย 1 คนในระบบ",
+                                "ไม่สามารถลบได้ เนื่องจากต้องมีผู้ดูแลระบบสูงสุด (Super Admin) อย่างน้อย 1 คนในระบบ",
                               );
                               return;
                             }
@@ -615,7 +615,7 @@ export default function UserRolesTab({
                           }`}
                           title={
                             isSuperAdmin && superAdminCount <= 1
-                              ? "ไม่สามารถลบได้ ต้องมีผู้ดูแลระบบอย่างน้อย 1 คนในระบบ"
+                              ? "ไม่สามารถลบได้ ต้องมีผู้ดูแลระบบสูงสุดอย่างน้อย 1 คนในระบบ"
                               : "ลบผู้ใช้งาน"
                           }
                         >
@@ -748,11 +748,11 @@ export default function UserRolesTab({
                                   disabled={isMutating}
                                   className="w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white py-1.5 pl-4 pr-8 text-[14px] font-medium text-gray-700 outline-none transition-all hover:border-gray-400 focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
                                 >
-                                  <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
+                                  <option value="ผู้ดูแลระบบ">ผู้ดูแลระบบ</option>
                                   <option value="ผู้บริหาร" disabled={isAnotherUserExecutive}>
                                     ผู้บริหาร{isAnotherUserExecutive ? " (มีผู้บริหารแล้ว)" : ""}
                                   </option>
-                                  <option value="ผู้ดูแลระบบ">ผู้ดูแลระบบ</option>
+                                  <option value="ผู้ดูแลระบบสูงสุด">ผู้ดูแลระบบสูงสุด</option>
                                 </select>
                                 <ChevronDown
                                   size={14}
@@ -787,7 +787,7 @@ export default function UserRolesTab({
                                 if (isSuperAdmin && superAdminCount <= 1) {
                                   showToast(
                                     "error",
-                                    "ไม่สามารถลบได้ เนื่องจากต้องมีผู้ดูแลระบบ (Super Admin) อย่างน้อย 1 คนในระบบ",
+                                    "ไม่สามารถลบได้ เนื่องจากต้องมีผู้ดูแลระบบสูงสุด (Super Admin) อย่างน้อย 1 คนในระบบ",
                                   );
                                   return;
                                 }
@@ -801,7 +801,7 @@ export default function UserRolesTab({
                               }`}
                               title={
                                 isSuperAdmin && superAdminCount <= 1
-                                  ? "ไม่สามารถลบได้ ต้องมีผู้ดูแลระบบอย่างน้อย 1 คนในระบบ"
+                                  ? "ไม่สามารถลบได้ ต้องมีผู้ดูแลระบบสูงสุดอย่างน้อย 1 คนในระบบ"
                                   : "ลบผู้ใช้งาน"
                               }
                             >
@@ -839,7 +839,7 @@ export default function UserRolesTab({
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900 text-base">เพิ่มผู้ใช้งานใหม่</h3>
-                  <p className="text-sm text-gray-500">เพิ่มเจ้าหน้าที่ หรือ ผู้ดูแลระบบในระบบ</p>
+                  <p className="text-sm text-gray-500">เพิ่มผู้ดูแลระบบ หรือ ผู้ดูแลระบบสูงสุดในระบบ</p>
                 </div>
               </div>
               <button
@@ -907,8 +907,8 @@ export default function UserRolesTab({
                   }
                   className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 cursor-pointer"
                 >
-                  <option value="admin">เจ้าหน้าที่</option>
-                  <option value="super_admin">ผู้ดูแลระบบ</option>
+                  <option value="admin">ผู้ดูแลระบบ</option>
+                  <option value="super_admin">ผู้ดูแลระบบสูงสุด</option>
                 </select>
               </div>
 
@@ -1049,7 +1049,7 @@ export default function UserRolesTab({
               </p>
               {userToDelete.roles.some((r) => r.role === "admin") && (
                 <p className="text-sm text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-                  หมายเหตุ: หากเจ้าหน้าที่มีคำร้องรอตรวจสอบอยู่ ระบบจะโอนคำร้องไปยังผู้ดูแลระบบโดยอัตโนมัติ
+                  หมายเหตุ: หากผู้ดูแลระบบมีคำร้องรอตรวจสอบอยู่ ระบบจะโอนคำร้องไปยังผู้ดูแลระบบสูงสุดโดยอัตโนมัติ
                 </p>
               )}
             </div>

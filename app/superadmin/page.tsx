@@ -18,7 +18,7 @@ export default async function SuperAdminPage() {
   return (
     <SuperAdminDashboard
       financialOverview={financialOverview}
-      userName={context.user.fullNameTh || context.identity.displayName || "ผู้ดูแลระบบระดับสูง"}
+      userName={context.user.fullNameTh || context.identity.displayName || "ผู้ดูแลระบบสูงสุด"}
     />
   );
 }

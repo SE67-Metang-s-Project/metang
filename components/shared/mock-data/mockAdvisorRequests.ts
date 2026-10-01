@@ -65,7 +65,7 @@ export const mockAdvisorRequests: ActionRequest[] = [
     },
   },
 
-  // 2. รายการที่ผ่านอาจารย์ไปแล้ว รอเจ้าหน้าที่ (จะแสดงในแท็บ "อนุมัติแล้ว" หรือ "รอเจ้าหน้าที่")
+  // 2. รายการที่ผ่านอาจารย์ไปแล้ว รอผู้ดูแลระบบ (จะแสดงในแท็บ "อนุมัติแล้ว" หรือ "รอผู้ดูแลระบบ")
   {
     id: "REQ-67003",
     name: "นางสาววิลาสินี ดีงาม",
@@ -170,9 +170,9 @@ export const mockAdvisorRequests: ActionRequest[] = [
         actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
       },
       {
-        action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+        action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
         date: "10 ต.ค. 2567 14:00",
-        actor: "นางจินตนา เจ้าหน้าที่คณะ",
+        actor: "นางจินตนา ผู้ดูแลระบบคณะ",
       },
     ],
     approvals: [
@@ -185,7 +185,7 @@ export const mockAdvisorRequests: ActionRequest[] = [
       },
       {
         step: "admin",
-        actorName: "นางจินตนา เจ้าหน้าที่คณะ",
+        actorName: "นางจินตนา ผู้ดูแลระบบคณะ",
         comment: "เอกสารครบถ้วน ถูกต้อง",
         decision: "approved",
         date: "10 ต.ค. 2567",
@@ -224,9 +224,9 @@ export const mockAdvisorRequests: ActionRequest[] = [
         actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ",
       },
       {
-        action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+        action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
         date: "07 ต.ค. 2567 14:00",
-        actor: "นางจินตนา เจ้าหน้าที่คณะ",
+        actor: "นางจินตนา ผู้ดูแลระบบคณะ",
       },
       {
         action: "ผู้บริหารส่งกลับแก้ไข",
@@ -244,7 +244,7 @@ export const mockAdvisorRequests: ActionRequest[] = [
       },
       {
         step: "admin",
-        actorName: "นางจินตนา เจ้าหน้าที่คณะ",
+        actorName: "นางจินตนา ผู้ดูแลระบบคณะ",
         comment: "เอกสารครบถ้วน",
         decision: "approved",
         date: "07 ต.ค. 2567",
@@ -252,7 +252,7 @@ export const mockAdvisorRequests: ActionRequest[] = [
       {
         step: "executive",
         actorName: "ศ.ดร. วิจิตร ผู้บริหาร",
-        comment: "ขอให้เจ้าหน้าที่ตรวจสอบเอกสารรายรับเพิ่มเติมและปรับลดวงเงิน",
+        comment: "ขอให้ผู้ดูแลระบบตรวจสอบเอกสารรายรับเพิ่มเติมและปรับลดวงเงิน",
         decision: "returned",
         date: "08 ต.ค. 2567",
       },

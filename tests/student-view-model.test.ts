@@ -18,7 +18,7 @@ test("maps all LoanStatus values to expected Thai labels and UI types", () => {
     statusType: "waitingAdvisorApproval",
   });
   assert.deepEqual(mapLoanStatus("pending_admin"), {
-    label: "รอเจ้าหน้าที่",
+    label: "รอผู้ดูแลระบบ",
     statusType: "waitingDocumentReview",
   });
   assert.deepEqual(mapLoanStatus("pending_executive"), {
@@ -217,7 +217,7 @@ test("keeps an executive-to-admin recheck internal on the student request status
     ),
   );
   assert.ok(
-    !details.timeline.some((item) => item.title.includes("ส่งกลับแก้ไขให้เจ้าหน้าที่ตรวจสอบใหม่")),
+    !details.timeline.some((item) => item.title.includes("ส่งกลับแก้ไขให้ผู้ดูแลระบบตรวจสอบใหม่")),
   );
   assert.ok(!details.approvals?.some((approval) => approval.step === "executive"));
 });
@@ -250,10 +250,10 @@ test("includes the current pending Admin message in the student timeline", () =>
 
   const details = mapToLoanDetails(loan);
   const pendingAdminItem = details.timeline.find(
-    (item) => item.title === "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน" && item.isPending,
+    (item) => item.title === "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน" && item.isPending,
   );
   assert.equal(pendingAdminItem?.comment, "กำลังตรวจสอบเอกสารเพิ่มเติม");
-  assert.equal(pendingAdminItem?.commentTitle, "ข้อความจากเจ้าหน้าที่");
+  assert.equal(pendingAdminItem?.commentTitle, "ข้อความจากผู้ดูแลระบบ");
 });
 
 test("maps installments to InstallmentPayment display objects", () => {

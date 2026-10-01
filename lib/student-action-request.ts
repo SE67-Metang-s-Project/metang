@@ -45,10 +45,10 @@ export function mapStudentLoanToActionRequest(
               : "approved",
           date: item.dateTime ? item.dateTime.split(" ").slice(0, 3).join(" ") : submitDate,
         });
-      } else if (item.title.includes("เจ้าหน้าที่") && !item.title.includes("โอนเงิน")) {
+      } else if (item.title.includes("ผู้ดูแลระบบ") && !item.title.includes("โอนเงิน")) {
         approvals.push({
           step: "admin",
-          actorName: item.actor || "เจ้าหน้าที่",
+          actorName: item.actor || "ผู้ดูแลระบบ",
           comment: item.comment || "",
           decision: item.title.includes("ไม่อนุมัติ")
             ? "rejected"

@@ -238,7 +238,7 @@ export default function LoanPetitionDocument({
   const executiveApproval = request.approvals?.find((a) => a.step === "executive");
   const adminApproval = request.approvals?.find((a) => a.step === "admin");
 
-  // ชื่อและข้อมูลอาจารย์ที่ปรึกษา / ผู้บริหาร / เจ้าหน้าที่ (Admin)
+  // ชื่อและข้อมูลอาจารย์ที่ปรึกษา / ผู้บริหาร / ผู้ดูแลระบบ (Admin)
   const advisorName = request.advisorName || advisorApproval?.actorName || "อาจารย์ที่ปรึกษา";
   const executiveName =
     executiveApproval?.actorName || "ผู้ช่วยศาสตราจารย์ ดร.อนนท์ วิสุทธิ์ธนานนท์";
@@ -664,7 +664,7 @@ export default function LoanPetitionDocument({
 
         {/* ส่วนล่าง: ความคิดเห็นการพิจารณา & หลักฐานการรับเงิน (ไม่ทำเป็นกล่อง) */}
         <div className="grid grid-cols-2 gap-6 items-start">
-          {/* คอลัมน์ซ้าย: ความคิดเห็นอาจารย์ที่ปรึกษา & เจ้าหน้าที่ / พยาน */}
+          {/* คอลัมน์ซ้าย: ความคิดเห็นอาจารย์ที่ปรึกษา & ผู้ดูแลระบบ / พยาน */}
           <div className="space-y-3">
             {/* 1. ความคิดเห็นของอาจารย์ที่ปรึกษา */}
             <div className="space-y-1">
@@ -690,10 +690,10 @@ export default function LoanPetitionDocument({
               </div>
             </div>
 
-            {/* 2. ความคิดเห็นของเจ้าหน้าที่ / พยาน */}
+            {/* 2. ความคิดเห็นของผู้ดูแลระบบ / พยาน */}
             <div className="space-y-1">
               <div className="font-semibold text-gray-900 text-[13px]">
-                ความคิดเห็นของเจ้าหน้าที่ / พยาน
+                ความคิดเห็นของผู้ดูแลระบบ / พยาน
               </div>
               <p className="text-[12px] text-gray-800 italic min-h-[26px] py-0.5 break-words whitespace-pre-wrap leading-tight">
                 &ldquo;{adminApproval?.comment || "ตรวจสอบเอกสารและคุณสมบัติครบถ้วน ถูกต้องตามระเบียบ"}&rdquo;
@@ -709,7 +709,7 @@ export default function LoanPetitionDocument({
                   ({adminName})
                 </div>
                 <div className="text-[10px] text-gray-500">
-                  เจ้าหน้าที่ · วันที่ {adminApproval?.date || request.submitDate}
+                  ผู้ดูแลระบบ · วันที่ {adminApproval?.date || request.submitDate}
                 </div>
               </div>
             </div>

@@ -152,7 +152,7 @@ export default function LoanPaymentHistory({ items }: LoanPaymentHistoryProps) {
                     </dl>
                     {status === "failed" ? (
                       <div className={styles.paymentEvidenceFailedReasonNotice}>
-                        <span>{t("เหตุผลจากเจ้าหน้าที่", "Admin reason")}</span>
+                        <span>{t("เหตุผลจากผู้ดูแลระบบ", "Admin reason")}</span>
                         <p>{item.reviewNote || "-"}</p>
                       </div>
                     ) : null}

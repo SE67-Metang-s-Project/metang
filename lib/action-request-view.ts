@@ -159,7 +159,7 @@ function toPaymentBehavior({ totalLoanRequests, onTime, late }: StudentConduct):
   };
 }
 
-const approverFallback = { advisor: "อาจารย์ที่ปรึกษา", admin: "เจ้าหน้าที่", executive: "ผู้บริหาร" } as const;
+const approverFallback = { advisor: "อาจารย์ที่ปรึกษา", admin: "ผู้ดูแลระบบ", executive: "ผู้บริหาร" } as const;
 
 const approvalActionLabel = {
   advisor: {
@@ -168,9 +168,9 @@ const approvalActionLabel = {
     rejected: "อาจารย์ที่ปรึกษาไม่อนุมัติ",
   },
   admin: {
-    approved: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
-    returned: "เจ้าหน้าที่ส่งกลับแก้ไข",
-    rejected: "เจ้าหน้าที่ไม่อนุมัติ",
+    approved: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
+    returned: "ผู้ดูแลระบบส่งกลับแก้ไข",
+    rejected: "ผู้ดูแลระบบไม่อนุมัติ",
   },
   executive: {
     approved: "ผู้บริหารอนุมัติคำร้อง",
@@ -208,7 +208,7 @@ export function toActionRequest(
     ...decided.map((a) => ({
       action:
         row.status === "cancelled" && a.step === "admin" && a.decision === "rejected"
-          ? "เจ้าหน้าที่ยกเลิกคำร้อง"
+          ? "ผู้ดูแลระบบยกเลิกคำร้อง"
           : approvalActionLabel[a.step][a.decision as "approved" | "returned" | "rejected"],
       date: formatThaiDateTime(a.decidedAt ?? a.createdAt),
       actor: a.decider?.fullNameTh ?? approverFallback[a.step],

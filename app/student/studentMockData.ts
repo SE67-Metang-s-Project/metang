@@ -231,7 +231,7 @@ export const loanRequestHistory: LoanRequestHistoryItem[] = [
   },
   {
     requestNumber: "SL-2568-0007",
-    statusLabel: "รอเจ้าหน้าที่",
+    statusLabel: "รอผู้ดูแลระบบ",
     statusType: "waitingDocumentReview",
     submittedAt: "ยื่นเมื่อ 12 ต.ค. 2569 08:50 น.",
     purpose: "ค่าเทอมภาคเรียนที่ 2/2568",
@@ -276,7 +276,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
         comment: "ตรวจสอบข้อมูลแล้ว เห็นควรอนุมัติคำร้อง",
       },
       {
-        title: "เจ้าหน้าที่ตรวจสอบเอกสาร",
+        title: "ผู้ดูแลระบบตรวจสอบเอกสาร",
         dateTime: "18 ธ.ค. 2569 10:00 น.",
         actor: "วรัญญู มีโชค",
       },
@@ -288,7 +288,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
         comment: "อนุมัติตามความจำเป็นและความเหมาะสมของคำร้อง",
       },
       {
-        title: "เจ้าหน้าที่โอนเงิน จำนวน 3,000",
+        title: "ผู้ดูแลระบบโอนเงิน จำนวน 3,000",
         dateTime: "18 ธ.ค. 2569 10:00 น.",
         actor: "วรัญญู มีโชค",
         isCompleted: true,
@@ -340,7 +340,7 @@ export const loanDetailsByRequestNumber: Record<string, LoanDetails> = {
         amount: "500",
         receiptImage: "/mock-payment-receipt-1.jpg",
         paidAt: "ชำระเมื่อ 29 ก.ค. 2569 14:30 น.",
-        checkedAt: "กำลังรอเจ้าหน้าที่ตรวจสอบ",
+        checkedAt: "กำลังรอผู้ดูแลระบบตรวจสอบ",
         statusLabel: "กำลังตรวจสอบ",
         status: "checking",
       },

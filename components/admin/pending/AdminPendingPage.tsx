@@ -23,7 +23,7 @@ export default function PendingPage({
         <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
           คำร้องรอตรวจสอบ
           <span aria-hidden="true" className="mx-2 inline-block size-2 rounded-full bg-current align-middle" />
-          ในฐานะเจ้าหน้าที่
+          ในฐานะผู้ดูแลระบบ
         </h1>
         <p className="text-gray-500 mt-1 text-sm">
           ตรวจสอบคำร้องขอกู้ยืมของนักศึกษาที่รอการพิจารณาและอนุมัติจากอาจารย์ที่ปรึกษา

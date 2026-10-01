@@ -39,7 +39,7 @@ export default function SettingsPage({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const roleOptions = ["ทุกบทบาท", "เจ้าหน้าที่", "ผู้บริหาร", "ผู้ดูแลระบบ"];
+  const roleOptions = ["ทุกบทบาท", "ผู้ดูแลระบบ", "ผู้บริหาร", "ผู้ดูแลระบบสูงสุด"];
 
   return (
     <div>

@@ -40,7 +40,7 @@ export const mockDisburseRequests: ActionRequest[] = [
       },
       {
         step: "admin",
-        actorName: "เจ้าหน้าที่ สมศรี",
+        actorName: "ผู้ดูแลระบบ สมศรี",
         comment: "ตรวจสอบเอกสารครบถ้วน ประวัติการชำระเงินกองทุนรอบที่แล้วไม่มีหนี้ค้างชำระ",
         decision: "approved",
         date: "3 ก.ย. 2569",
@@ -56,7 +56,7 @@ export const mockDisburseRequests: ActionRequest[] = [
     history: [
       { action: "ยื่นคำร้อง", date: "1 ก.ย. 2569 09:00", actor: "สมหญิง รักเรียน" },
       { action: "อนุมัติโดยอาจารย์ที่ปรึกษา", date: "2 ก.ย. 2569 10:30", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" },
-      { action: "เจ้าหน้าที่ตรวจสอบผ่าน", date: "3 ก.ย. 2569 14:00", actor: "เจ้าหน้าที่ สมศรี" },
+      { action: "ผู้ดูแลระบบตรวจสอบผ่าน", date: "3 ก.ย. 2569 14:00", actor: "ผู้ดูแลระบบ สมศรี" },
       { action: "ผู้บริหารอนุมัติวงเงิน", date: "4 ก.ย. 2569 11:15", actor: "รศ.ดร. ประเสริฐ กิตติคุณ" }
     ],
     paymentHistory: [] // ยังไม่มีการชำระคืนเพราะเพิ่งรอโอนเงิน
@@ -98,7 +98,7 @@ export const mockDisburseRequests: ActionRequest[] = [
       },
       {
         step: "admin",
-        actorName: "เจ้าหน้าที่ สมศรี",
+        actorName: "ผู้ดูแลระบบ สมศรี",
         comment: "เอกสารครบถ้วน เป็นการกู้ยืมครั้งแรก",
         decision: "approved",
         date: "30 ส.ค. 2569",
@@ -114,7 +114,7 @@ export const mockDisburseRequests: ActionRequest[] = [
     history: [
       { action: "ยื่นคำร้อง", date: "28 ส.ค. 2569 13:45", actor: "มานะ อดทน" },
       { action: "อนุมัติโดยอาจารย์ที่ปรึกษา", date: "29 ส.ค. 2569 09:30", actor: "อ.ดร. สมชาย ใจดี" },
-      { action: "เจ้าหน้าที่ตรวจสอบผ่าน", date: "30 ส.ค. 2569 10:00", actor: "เจ้าหน้าที่ สมศรี" },
+      { action: "ผู้ดูแลระบบตรวจสอบผ่าน", date: "30 ส.ค. 2569 10:00", actor: "ผู้ดูแลระบบ สมศรี" },
       { action: "ผู้บริหารอนุมัติวงเงิน", date: "31 ส.ค. 2569 15:20", actor: "รศ.ดร. ประเสริฐ กิตติคุณ" }
     ],
     paymentHistory: []
@@ -158,7 +158,7 @@ export const mockDisburseRequests: ActionRequest[] = [
       },
       {
         step: "admin",
-        actorName: "เจ้าหน้าที่ สมศรี",
+        actorName: "ผู้ดูแลระบบ สมศรี",
         comment: "เอกสารใบแจ้งหนี้ถูกต้อง ประวัติเก่าเคยช้า 1 งวด แต่เคลียร์ยอดครบแล้ว",
         decision: "approved",
         date: "17 ส.ค. 2569",
@@ -174,7 +174,7 @@ export const mockDisburseRequests: ActionRequest[] = [
     history: [
       { action: "ยื่นคำร้อง", date: "15 ส.ค. 2569 08:30", actor: "ใจดี เรียนเก่ง" },
       { action: "อนุมัติโดยอาจารย์ที่ปรึกษา", date: "16 ส.ค. 2569 11:00", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" },
-      { action: "เจ้าหน้าที่ตรวจสอบผ่าน", date: "17 ส.ค. 2569 14:20", actor: "เจ้าหน้าที่ สมศรี" },
+      { action: "ผู้ดูแลระบบตรวจสอบผ่าน", date: "17 ส.ค. 2569 14:20", actor: "ผู้ดูแลระบบ สมศรี" },
       { action: "ผู้บริหารอนุมัติวงเงิน", date: "18 ส.ค. 2569 10:15", actor: "รศ.ดร. ประเสริฐ กิตติคุณ" },
       { action: "โอนเงินสำเร็จ", date: "19 ส.ค. 2569 13:45", actor: "ผู้ดูแลระบบ (Admin)" }
     ],

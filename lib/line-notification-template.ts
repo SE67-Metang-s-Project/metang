@@ -34,7 +34,7 @@ export const REVIEWER_STEP_BY_STATUS: Readonly<Partial<Record<LoanStatus, Review
   pending_admin: {
     role: "admin",
     path: "/admin/pending",
-    eventLabel: "มีคำร้องรอการพิจารณาจากเจ้าหน้าที่",
+    eventLabel: "มีคำร้องรอการพิจารณาจากผู้ดูแลระบบ",
   },
   pending_executive: {
     role: "executive",

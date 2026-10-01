@@ -13,7 +13,7 @@ export const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   advisor: "อาจารย์ที่ปรึกษา",
   admin: "ผู้ดูแลระบบ",
   executive: "ผู้บริหาร",
-  superadmin: "ผู้ดูแลระบบระดับสูง",
+  superadmin: "ผู้ดูแลระบบสูงสุด",
 };
 
 export interface TopNavProps {

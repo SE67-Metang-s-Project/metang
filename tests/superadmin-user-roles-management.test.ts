@@ -32,8 +32,8 @@ test("UserRolesTab provides adding users, deleting admin/super_admin with 1 supe
     "Must check that at least 1 super admin remains",
   );
   assert.ok(
-    content.includes("ไม่สามารถลบได้ เนื่องจากต้องมีผู้ดูแลระบบ (Super Admin) อย่างน้อย 1 คนในระบบ") ||
-      content.includes("ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายได้"),
+    content.includes("ไม่สามารถลบได้ เนื่องจากต้องมีผู้ดูแลระบบสูงสุด (Super Admin) อย่างน้อย 1 คนในระบบ") ||
+      content.includes("ไม่สามารถลบผู้ดูแลระบบสูงสุดคนสุดท้ายได้"),
     "Must display guard message when attempting to delete the final super admin",
   );
   assert.ok(

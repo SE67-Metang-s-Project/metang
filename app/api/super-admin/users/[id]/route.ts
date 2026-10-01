@@ -57,14 +57,14 @@ export async function DELETE(request: Request, { params }: Params) {
       if (error.code === "SELF_DEMOTION") {
         return apiError(
           "SELF_DEMOTION",
-          "ไม่สามารถลบบัญชีของตนเองได้ กรุณาแต่งตั้งผู้ดูแลระบบคนใหม่ แล้วให้ผู้ดูแลระบบคนนั้นลบบัญชีของคุณ",
+          "ไม่สามารถลบบัญชีของตนเองได้ กรุณาแต่งตั้งผู้ดูแลระบบสูงสุดคนใหม่ แล้วให้ผู้ดูแลระบบสูงสุดคนนั้นลบบัญชีของคุณ",
           409,
         );
       }
       if (error.code === "FINAL_SUPER_ADMIN") {
         return apiError(
           "FINAL_SUPER_ADMIN",
-          "ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายได้ (ต้องมีผู้ดูแลระบบอย่างน้อย 1 คนในระบบ)",
+          "ไม่สามารถลบผู้ดูแลระบบสูงสุดคนสุดท้ายได้ (ต้องมีผู้ดูแลระบบสูงสุดอย่างน้อย 1 คนในระบบ)",
           409,
         );
       }
@@ -72,7 +72,7 @@ export async function DELETE(request: Request, { params }: Params) {
         return apiError("BAD_REQUEST", "ไม่สามารถลบผู้บริหารได้ กรุณาแก้ไขข้อมูลผู้บริหารแทน", 400);
       }
       if (error.code === "NOT_MANAGED_USER") {
-        return apiError("CONFLICT", "ผู้ใช้งานนี้ไม่ได้เป็นเจ้าหน้าที่หรือผู้ดูแลระบบ", 409);
+        return apiError("CONFLICT", "ผู้ใช้งานนี้ไม่ได้เป็นผู้ดูแลระบบหรือผู้ดูแลระบบสูงสุด", 409);
       }
       if (error.code === "REASSIGNMENT_CONFLICT") {
         return apiError("CONFLICT", "The loan assignment changed; please retry", 409);

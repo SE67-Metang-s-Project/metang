@@ -114,11 +114,11 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepInitial[0].isCompleted, true);
   assert.equal(stepInitial[1].action, "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ");
   assert.equal(stepInitial[1].isPending, true);
-  assert.equal(stepInitial[2].action, "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน");
+  assert.equal(stepInitial[2].action, "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน");
   assert.equal(stepInitial[2].isUpcoming, true);
   assert.equal(stepInitial[3].action, "ผู้บริหารอนุมัติคำร้อง");
   assert.equal(stepInitial[3].isUpcoming, true);
-  assert.equal(stepInitial[4].action, "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว");
+  assert.equal(stepInitial[4].action, "ผู้ดูแลระบบโอนเงินเรียบร้อยแล้ว");
   assert.equal(stepInitial[4].isUpcoming, true);
 
   const cancelledRequest = buildFiveStepTimeline({
@@ -230,9 +230,9 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
         actor: "อาจารย์ที่ปรึกษา ทดสอบ",
       },
       {
-        action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+        action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
         date: "16 ต.ค. 2567",
-        actor: "เจ้าหน้าที่ ทดสอบ",
+        actor: "ผู้ดูแลระบบ ทดสอบ",
       },
     ],
   });
@@ -271,7 +271,7 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
       },
       {
         step: "admin",
-        actorName: "เจ้าหน้าที่ สมชาย",
+        actorName: "ผู้ดูแลระบบ สมชาย",
         comment: "เอกสารไม่ครบ",
         decision: "returned",
         date: "17 ต.ค. 2567",
@@ -285,7 +285,7 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   assert.equal(stepAdminReturned[2].isRevision, true);
   assert.equal(stepAdminReturned[2].date, "17 ต.ค. 2567");
   assert.equal(stepAdminReturned[2].comment, "เอกสารไม่ครบ");
-  assert.equal(stepAdminReturned[2].commentTitle, "เจ้าหน้าที่แจ้งแก้ไข");
+  assert.equal(stepAdminReturned[2].commentTitle, "ผู้ดูแลระบบแจ้งแก้ไข");
   assert.equal(stepAdminReturned[3].isUpcoming, true);
   assert.equal(stepAdminReturned[4].isUpcoming, true);
 
@@ -320,9 +320,9 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
     history: [
       { action: "ยื่นคำร้องขอกู้ยืม", date: "14 ต.ค. 2567", actor: "นายสมชาย ใจดี" },
       { action: "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ", date: "15 ต.ค. 2567", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" },
-      { action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน", date: "16 ต.ค. 2567", actor: "เจ้าหน้าที่ สมชาย" },
+      { action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน", date: "16 ต.ค. 2567", actor: "ผู้ดูแลระบบ สมชาย" },
       { action: "ผู้บริหารอนุมัติคำร้อง", date: "17 ต.ค. 2567", actor: "ผู้บริหาร สมควร" },
-      { action: "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว", date: "18 ต.ค. 2567", actor: "เจ้าหน้าที่การเงิน" },
+      { action: "ผู้ดูแลระบบโอนเงินเรียบร้อยแล้ว", date: "18 ต.ค. 2567", actor: "ผู้ดูแลระบบการเงิน" },
     ],
   });
   assert.equal(stepDisbursed[0].isCompleted, true);
@@ -348,7 +348,7 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
       },
       {
         step: "admin",
-        actorName: "เจ้าหน้าที่ สมชาย",
+        actorName: "ผู้ดูแลระบบ สมชาย",
         comment: "เอกสารครบถ้วนสมบูรณ์",
         decision: "approved",
         date: "16 ต.ค. 2567",
@@ -364,7 +364,7 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
   });
   assert.equal(stepWithComments[1].commentTitle, "ความคิดเห็นของอาจารย์ที่ปรึกษา");
   assert.equal(stepWithComments[1].comment, "เห็นชอบตามที่ร้องขอ");
-  assert.equal(stepWithComments[2].commentTitle, "ความคิดเห็นของเจ้าหน้าที่ / พยาน");
+  assert.equal(stepWithComments[2].commentTitle, "ความคิดเห็นของผู้ดูแลระบบ / พยาน");
   assert.equal(stepWithComments[2].comment, "เอกสารครบถ้วนสมบูรณ์");
   assert.equal(stepWithComments[3].commentTitle, "ความคิดเห็นของผู้บริหาร");
   assert.equal(stepWithComments[3].comment, "อนุมัติเงินกู้ยืม");
@@ -373,15 +373,15 @@ test("buildFiveStepTimeline always outputs the 5 standard steps and handles retu
     requestStatus: "pending_disbursement",
     history: [
       {
-        action: "เจ้าหน้าที่ตรวจสอบเอกสารผ่านการอนุมัติ",
+        action: "ผู้ดูแลระบบตรวจสอบเอกสารผ่านการอนุมัติ",
         date: "20 Sep 2026 10:00",
-        actor: "เจ้าหน้าที่คนเดิม",
+        actor: "ผู้ดูแลระบบคนเดิม",
         comment: "ความคิดเห็นเดิม",
       },
       {
-        action: "เจ้าหน้าที่ตรวจสอบเอกสารผ่านการอนุมัติ",
+        action: "ผู้ดูแลระบบตรวจสอบเอกสารผ่านการอนุมัติ",
         date: "23 Sep 2026 23:18",
-        actor: "เจ้าหน้าที่คนล่าสุด",
+        actor: "ผู้ดูแลระบบคนล่าสุด",
         comment: "ความคิดเห็นล่าสุด",
       },
     ],
@@ -498,9 +498,9 @@ test("buildFullActionHistory correctly tracks submission, return comments, and r
     history: [
       { action: "ยื่นคำร้องขอกู้ยืม", date: "1 ต.ค. 2567", actor: "นางสาวสมหญิง" },
       { action: "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ", date: "2 ต.ค. 2567", actor: "อาจารย์" },
-      { action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน", date: "3 ต.ค. 2567", actor: "เจ้าหน้าที่" },
+      { action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน", date: "3 ต.ค. 2567", actor: "ผู้ดูแลระบบ" },
       { action: "ผู้บริหารอนุมัติคำร้อง", date: "4 ต.ค. 2567", actor: "ผู้บริหาร" },
-      { action: "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว", date: "5 ต.ค. 2567", actor: "การเงิน" },
+      { action: "ผู้ดูแลระบบโอนเงินเรียบร้อยแล้ว", date: "5 ต.ค. 2567", actor: "การเงิน" },
     ],
     bankDetails: {
       bankName: "กรุงไทย",
@@ -517,16 +517,16 @@ test("buildFullActionHistory keeps an in-progress Admin review pending", async (
   const history = buildFullActionHistory({
     history: [
       {
-        action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+        action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
         date: "กำลังดำเนินการ",
-        actor: "เจ้าหน้าที่",
+        actor: "ผู้ดูแลระบบ",
         isPending: true,
       },
     ],
     requestStatus: "pending_admin",
   });
 
-  const pendingAdminItem = history.find((item) => item.action.includes("เจ้าหน้าที่ตรวจสอบเอกสาร"));
+  const pendingAdminItem = history.find((item) => item.action.includes("ผู้ดูแลระบบตรวจสอบเอกสาร"));
   assert.equal(pendingAdminItem?.statusType, "pending");
 });
 
@@ -535,16 +535,16 @@ test("buildFullActionHistory does not attach an old Admin comment to the current
   const history = buildFullActionHistory({
     history: [
       {
-        action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+        action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
         date: "กำลังดำเนินการ",
-        actor: "เจ้าหน้าที่",
+        actor: "ผู้ดูแลระบบ",
         isPending: true,
       },
     ],
     approvals: [
       {
         step: "admin",
-        actorName: "เจ้าหน้าที่",
+        actorName: "ผู้ดูแลระบบ",
         decision: "approved",
         comment: "ความคิดเห็นจากการตรวจสอบครั้งก่อน",
       },
@@ -552,7 +552,7 @@ test("buildFullActionHistory does not attach an old Admin comment to the current
     requestStatus: "pending_admin",
   });
 
-  const pendingAdminItem = history.find((item) => item.action.includes("เจ้าหน้าที่ตรวจสอบเอกสาร"));
+  const pendingAdminItem = history.find((item) => item.action.includes("ผู้ดูแลระบบตรวจสอบเอกสาร"));
   assert.equal(pendingAdminItem?.comment, undefined);
 });
 
@@ -562,17 +562,17 @@ test("buildFiveStepTimeline hides prior Admin return messages after the student 
     requestStatus: "pending_admin",
     history: [
       {
-        action: "เจ้าหน้าที่ส่งกลับแก้ไข",
+        action: "ผู้ดูแลระบบส่งกลับแก้ไข",
         date: "20 ก.ย. 2569",
         actor: "แอดมิน ทดสอบ",
-        commentTitle: "ข้อความจากเจ้าหน้าที่",
+        commentTitle: "ข้อความจากผู้ดูแลระบบ",
         comment: "แอดมินให้แก้ครั้งที่ 1",
       },
       {
-        action: "เจ้าหน้าที่ส่งกลับแก้ไข",
+        action: "ผู้ดูแลระบบส่งกลับแก้ไข",
         date: "23 ก.ย. 2569",
         actor: "แอดมิน ทดสอบ",
-        commentTitle: "ข้อความจากเจ้าหน้าที่",
+        commentTitle: "ข้อความจากผู้ดูแลระบบ",
         comment: "แอดมินให้แก้ครั้งที่ 2",
       },
     ],
@@ -602,7 +602,7 @@ test("buildFiveStepTimeline does not show return dates or return comments for Ex
       },
       {
         step: "admin",
-        actorName: "เจ้าหน้าที่ สมชาย",
+        actorName: "ผู้ดูแลระบบ สมชาย",
         comment: "เอกสารครบ",
         decision: "approved",
         date: "16 ต.ค. 2567",
@@ -610,7 +610,7 @@ test("buildFiveStepTimeline does not show return dates or return comments for Ex
       {
         step: "executive",
         actorName: "ผู้บริหาร สมควร",
-        comment: "เอกสารขาดสำเนาบัญชีธนาคาร ให้เจ้าหน้าที่ตรวจสอบอีกครั้ง",
+        comment: "เอกสารขาดสำเนาบัญชีธนาคาร ให้ผู้ดูแลระบบตรวจสอบอีกครั้ง",
         decision: "returned",
         date: "17 ต.ค. 2567",
       },
@@ -637,21 +637,21 @@ test("buildFiveStepTimeline does not show return dates or return comments for Ex
     history: [
       { action: "ยื่นคำร้องขอกู้ยืม", date: "14 ต.ค. 2567", actor: "นายสมชาย ใจดี" },
       { action: "อาจารย์ที่ปรึกษาพิจารณาเห็นชอบ", date: "15 ต.ค. 2567", actor: "ผศ.ดร. สุนีย์ วงค์ประเสริฐ" },
-      { action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน", date: "16 ต.ค. 2567", actor: "เจ้าหน้าที่ สมชาย" },
+      { action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน", date: "16 ต.ค. 2567", actor: "ผู้ดูแลระบบ สมชาย" },
       {
         action: "ผู้บริหารส่งกลับแก้ไข",
         date: "17 ต.ค. 2567",
         actor: "ผู้บริหาร สมควร",
-        comment: "เอกสารขาดสำเนาบัญชีธนาคาร ให้เจ้าหน้าที่ตรวจสอบอีกครั้ง",
+        comment: "เอกสารขาดสำเนาบัญชีธนาคาร ให้ผู้ดูแลระบบตรวจสอบอีกครั้ง",
       },
-      { action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน", date: "กำลังดำเนินการ", actor: "เจ้าหน้าที่ สมชาย", isPending: true },
+      { action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน", date: "กำลังดำเนินการ", actor: "ผู้ดูแลระบบ สมชาย", isPending: true },
     ],
   });
 
   const execReturnItem = fullHistory.find((item) => item.action.includes("ผู้บริหารส่งกลับแก้ไข"));
   assert.ok(execReturnItem);
   assert.equal(execReturnItem.statusType, "returned");
-  assert.equal(execReturnItem.comment, "เอกสารขาดสำเนาบัญชีธนาคาร ให้เจ้าหน้าที่ตรวจสอบอีกครั้ง");
+  assert.equal(execReturnItem.comment, "เอกสารขาดสำเนาบัญชีธนาคาร ให้ผู้ดูแลระบบตรวจสอบอีกครั้ง");
 });
 
 test("Student role is not modified and does not use RequestTimeline", () => {

@@ -33,7 +33,7 @@ export default function TransferSlipModal({
   const title = t("หลักฐานการโอนเงิน", "Transfer Proof");
   const summary = transferDetail
     ? localizeStudentContent(transferDetail, language)
-    : t("เจ้าหน้าที่โอนเงิน", "Admin transferred money");
+    : t("ผู้ดูแลระบบโอนเงิน", "Admin transferred money");
   const paymentStatusLabel =
     paymentEvidence?.status === "verified"
       ? t("ผ่าน", "Verified")
@@ -107,7 +107,7 @@ export default function TransferSlipModal({
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4 sm:p-6">
           <div className="inline-flex max-w-full overflow-hidden rounded-xl">
             <ImageWithSkeleton
-              alt={t("รูปสลิปการโอนเงินจากเจ้าหน้าที่", "Transfer proof image")}
+              alt={t("รูปสลิปการโอนเงินจากผู้ดูแลระบบ", "Transfer proof image")}
               className="block h-auto max-h-[calc(100vh-10rem)] w-auto max-w-full rounded-xl object-contain"
               containerClassName="w-auto max-w-full overflow-hidden rounded-xl"
               loadingAspectRatio={342 / 400}

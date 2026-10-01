@@ -40,7 +40,7 @@ type ReviewRole = "advisor" | "admin" | "executive";
 
 const getRevisionCommentTitle = (role: ReviewRole, revisionCount = 1) => {
   const roleLabel =
-    role === "advisor" ? "อาจารย์ที่ปรึกษา" : role === "admin" ? "เจ้าหน้าที่" : "ผู้บริหาร";
+    role === "advisor" ? "อาจารย์ที่ปรึกษา" : role === "admin" ? "ผู้ดูแลระบบ" : "ผู้บริหาร";
   const revisionSuffix = revisionCount > 1 ? ` (ครั้งที่ ${revisionCount})` : "";
 
   return `${roleLabel}แจ้งแก้ไข${revisionSuffix}`;
@@ -49,7 +49,7 @@ const getRevisionCommentTitle = (role: ReviewRole, revisionCount = 1) => {
 const getReviewRole = (action: string, actor?: string): ReviewRole | undefined => {
   const text = `${action} ${actor || ""}`;
   if (text.includes("ผู้บริหาร")) return "executive";
-  if (text.includes("เจ้าหน้าที่")) return "admin";
+  if (text.includes("ผู้ดูแลระบบ")) return "admin";
   if (
     text.includes("อาจารย์") ||
     text.includes("ผศ.") ||
@@ -132,9 +132,9 @@ export function buildFiveStepTimeline({
 
   const admHistApproved = [...history].reverse().find(
     (h) =>
-      (h.action.includes("เจ้าหน้าที่ตรวจสอบ") ||
+      (h.action.includes("ผู้ดูแลระบบตรวจสอบ") ||
         (h.action.includes("อนุมัติ") &&
-          (h.action.includes("เจ้าหน้าที่") || h.actor.includes("เจ้าหน้าที่")))) &&
+          (h.action.includes("ผู้ดูแลระบบ") || h.actor.includes("ผู้ดูแลระบบ")))) &&
       !h.action.includes("ไม่อนุมัติ") &&
       !h.action.includes("ส่งกลับ") &&
       !h.action.includes("แก้ไข"),
@@ -142,13 +142,13 @@ export function buildFiveStepTimeline({
   const adminReturnedHistory = history.filter(
     (h) =>
       (h.action.includes("ส่งกลับ") || h.action.includes("แก้ไข")) &&
-      (h.action.includes("เจ้าหน้าที่") || h.actor.includes("เจ้าหน้าที่")),
+      (h.action.includes("ผู้ดูแลระบบ") || h.actor.includes("ผู้ดูแลระบบ")),
   );
   const admHistReturned = adminReturnedHistory[adminReturnedHistory.length - 1];
   const admHistRejected = history.find(
     (h) =>
       h.action.includes("ไม่อนุมัติ") &&
-      (h.action.includes("เจ้าหน้าที่") || h.actor.includes("เจ้าหน้าที่")),
+      (h.action.includes("ผู้ดูแลระบบ") || h.actor.includes("ผู้ดูแลระบบ")),
   );
 
   const execHistApproved = history.find(
@@ -278,7 +278,7 @@ export function buildFiveStepTimeline({
     };
   }
 
-  // Step 3: เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน
+  // Step 3: ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน
   const isStep3Pending = requestStatus === "pending_admin";
   const isStep3Approved =
     !isStep3Pending &&
@@ -295,44 +295,44 @@ export function buildFiveStepTimeline({
   let step3Item: ActionHistory;
   if (isStep3Approved) {
     step3Item = {
-      action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+      action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
       date: admHistApproved?.date || adminApproval?.date || "ตรวจสอบเรียบร้อย",
-      actor: admHistApproved?.actor || adminApproval?.actorName || "เจ้าหน้าที่",
+      actor: admHistApproved?.actor || adminApproval?.actorName || "ผู้ดูแลระบบ",
       isCompleted: true,
       comment: hideComments ? undefined : adminApproval?.comment || admHistApproved?.comment,
-      commentTitle: hideComments ? undefined : "ความคิดเห็นของเจ้าหน้าที่ / พยาน",
+      commentTitle: hideComments ? undefined : "ความคิดเห็นของผู้ดูแลระบบ / พยาน",
     };
   } else if (isStep3Pending) {
     step3Item = {
-      action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+      action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
       date: "กำลังดำเนินการ",
-      actor: adminApproval?.actorName || "เจ้าหน้าที่",
+      actor: adminApproval?.actorName || "ผู้ดูแลระบบ",
       isPending: true,
     };
   } else if (isStep3Rejected) {
     const rejDate = admHistRejected?.date || adminApproval?.date;
     step3Item = {
-      action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+      action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
       date: rejDate ? `ไม่อนุมัติ (${rejDate})` : "ไม่อนุมัติ",
-      actor: adminApproval?.actorName || admHistRejected?.actor || "เจ้าหน้าที่",
+      actor: adminApproval?.actorName || admHistRejected?.actor || "ผู้ดูแลระบบ",
       isFailed: true,
       comment: hideComments ? undefined : adminApproval?.comment || admHistRejected?.comment,
       commentTitle: hideComments ? undefined : "เหตุผลที่ไม่อนุมัติ",
     };
   } else if (returnedRole === "admin") {
     step3Item = {
-      action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+      action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
       date: admHistReturned?.date || adminApproval?.date || "ส่งกลับมาแก้ไข",
-      actor: adminApproval?.actorName || admHistReturned?.actor || "เจ้าหน้าที่",
+      actor: adminApproval?.actorName || admHistReturned?.actor || "ผู้ดูแลระบบ",
       isRevision: true,
       comment: hideComments ? undefined : adminApproval?.comment || admHistReturned?.comment,
-      commentTitle: hideComments ? undefined : "เจ้าหน้าที่แจ้งแก้ไข",
+      commentTitle: hideComments ? undefined : "ผู้ดูแลระบบแจ้งแก้ไข",
     };
   } else {
     step3Item = {
-      action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+      action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
       date: "ขั้นตอนถัดไป",
-      actor: "เจ้าหน้าที่",
+      actor: "ผู้ดูแลระบบ",
       isUpcoming: true,
     };
   }
@@ -383,7 +383,7 @@ export function buildFiveStepTimeline({
     };
   }
 
-  // Step 5: เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว
+  // Step 5: ผู้ดูแลระบบโอนเงินเรียบร้อยแล้ว
   const isStep5Pending =
     requestStatus === "pending_disbursement" || requestStatus === "disbursed";
   const isStep5Disbursed =
@@ -409,30 +409,30 @@ export function buildFiveStepTimeline({
   let step5Item: ActionHistory;
   if (isStep5Disbursed) {
     step5Item = {
-      action: disburseHist?.action || "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว",
+      action: disburseHist?.action || "ผู้ดูแลระบบโอนเงินเรียบร้อยแล้ว",
       date: disburseHist?.date || "โอนเงินสำเร็จ",
-      actor: disburseHist?.actor || "เจ้าหน้าที่การเงิน",
+      actor: disburseHist?.actor || "ผู้ดูแลระบบการเงิน",
       isCompleted: true,
       comment: hideComments ? undefined : disburseHist?.comment,
       commentTitle:
-        hideComments ? undefined : disburseHist?.commentTitle || "ความคิดเห็นของเจ้าหน้าที่การเงิน",
+        hideComments ? undefined : disburseHist?.commentTitle || "ความคิดเห็นของผู้ดูแลระบบการเงิน",
       transferDetails:
         transferDetails && transferDetails.length > 0 ? transferDetails : undefined,
     };
   } else if (isStep5Pending) {
     step5Item = {
-      action: disburseHist?.action || "เจ้าหน้าที่การเงินดำเนินการโอนเงิน",
+      action: disburseHist?.action || "ผู้ดูแลระบบการเงินดำเนินการโอนเงิน",
       date: disburseHist?.date || "กำลังดำเนินการ",
-      actor: disburseHist?.actor || "เจ้าหน้าที่การเงิน",
+      actor: disburseHist?.actor || "ผู้ดูแลระบบการเงิน",
       isPending: true,
       transferDetails:
         transferDetails && transferDetails.length > 0 ? transferDetails : undefined,
     };
   } else {
     step5Item = {
-      action: "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว",
+      action: "ผู้ดูแลระบบโอนเงินเรียบร้อยแล้ว",
       date: "ขั้นตอนถัดไป",
-      actor: "เจ้าหน้าที่การเงิน",
+      actor: "ผู้ดูแลระบบการเงิน",
       isUpcoming: true,
     };
   }
@@ -550,7 +550,7 @@ export function buildFullActionHistory({
     ) {
       return approvals.filter((a) => a.step === "advisor").pop();
     }
-    if (act.includes("เจ้าหน้าที่ตรวจสอบ") || act.includes("เจ้าหน้าที่")) {
+    if (act.includes("ผู้ดูแลระบบตรวจสอบ") || act.includes("ผู้ดูแลระบบ")) {
       return approvals.filter((a) => a.step === "admin").pop();
     }
     if (act.includes("ผู้บริหาร")) {
@@ -608,8 +608,8 @@ export function buildFullActionHistory({
       if (statusType === "returned") {
         commentTitle = item.action.includes("อาจารย์")
           ? "อาจารย์ที่ปรึกษาแจ้งแก้ไข"
-          : item.action.includes("เจ้าหน้าที่")
-            ? "ข้อความจากเจ้าหน้าที่"
+          : item.action.includes("ผู้ดูแลระบบ")
+            ? "ข้อความจากผู้ดูแลระบบ"
             : item.action.includes("ผู้บริหาร")
               ? "ข้อความจากผู้บริหาร"
               : "เหตุผลที่ส่งกลับแก้ไข";
@@ -618,8 +618,8 @@ export function buildFullActionHistory({
       } else {
         commentTitle = item.action.includes("อาจารย์")
           ? "ความคิดเห็นของอาจารย์ที่ปรึกษา"
-          : item.action.includes("เจ้าหน้าที่")
-            ? "ความคิดเห็นของเจ้าหน้าที่ / พยาน"
+          : item.action.includes("ผู้ดูแลระบบ")
+            ? "ความคิดเห็นของผู้ดูแลระบบ / พยาน"
             : item.action.includes("ผู้บริหาร")
               ? "ความคิดเห็นของผู้บริหาร"
               : "ความคิดเห็น";
@@ -737,19 +737,19 @@ export function buildFullActionHistory({
 
   const hasAdminInResult = result.some(
     (r) =>
-      r.action.includes("เจ้าหน้าที่ตรวจสอบ") ||
+      r.action.includes("ผู้ดูแลระบบตรวจสอบ") ||
       (r.action.includes("ตรวจสอบ") && r.statusType === "approved"),
   );
   if (adminApproval && !hasAdminInResult) {
     result.push({
       action:
         adminApproval.decision === "approved"
-          ? "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน"
+          ? "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน"
           : adminApproval.decision === "returned"
-            ? "เจ้าหน้าที่ส่งกลับแก้ไข"
-            : "เจ้าหน้าที่ไม่อนุมัติ",
+            ? "ผู้ดูแลระบบส่งกลับแก้ไข"
+            : "ผู้ดูแลระบบไม่อนุมัติ",
       date: adminApproval.date || "ตรวจสอบเรียบร้อย",
-      actor: adminApproval.actorName || "เจ้าหน้าที่",
+      actor: adminApproval.actorName || "ผู้ดูแลระบบ",
       comment: adminApproval.comment,
       commentTitle:
         adminApproval.decision === "returned"
@@ -760,7 +760,7 @@ export function buildFullActionHistory({
             )
           : adminApproval.decision === "rejected"
             ? "เหตุผลที่ไม่อนุมัติ"
-            : "ความคิดเห็นของเจ้าหน้าที่ / พยาน",
+            : "ความคิดเห็นของผู้ดูแลระบบ / พยาน",
       statusType:
         adminApproval.decision === "approved"
           ? "approved"
@@ -823,9 +823,9 @@ export function buildFullActionHistory({
         : undefined;
 
     result.push({
-      action: "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว",
+      action: "ผู้ดูแลระบบโอนเงินเรียบร้อยแล้ว",
       date: "โอนเงินสำเร็จ",
-      actor: "เจ้าหน้าที่การเงิน",
+      actor: "ผู้ดูแลระบบการเงิน",
       statusType: "disbursed",
       isCompleted: true,
       transferDetails: rawTransferDetails,
@@ -844,9 +844,9 @@ export function buildFullActionHistory({
     });
   } else if (requestStatus === "pending_admin" && lastItem?.statusType !== "pending") {
     result.push({
-      action: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
+      action: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
       date: "กำลังดำเนินการ",
-      actor: "เจ้าหน้าที่",
+      actor: "ผู้ดูแลระบบ",
       statusType: "pending",
       isPending: true,
     });
@@ -860,9 +860,9 @@ export function buildFullActionHistory({
     });
   } else if (requestStatus === "pending_disbursement" && lastItem?.statusType !== "pending") {
     result.push({
-      action: "เจ้าหน้าที่โอนเงินเรียบร้อยแล้ว",
+      action: "ผู้ดูแลระบบโอนเงินเรียบร้อยแล้ว",
       date: "กำลังดำเนินการ",
-      actor: "เจ้าหน้าที่การเงิน",
+      actor: "ผู้ดูแลระบบการเงิน",
       statusType: "pending",
       isPending: true,
     });

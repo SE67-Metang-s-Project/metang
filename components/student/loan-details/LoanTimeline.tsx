@@ -40,7 +40,7 @@ function getRequestStatus(items: LoanTimelineItem[], isTransferAccepted: boolean
   if (items.some((item) => item.isFailed)) return "rejected";
   if (
     !isTransferAccepted &&
-    (pendingTitle.includes("เจ้าหน้าที่การเงิน") ||
+    (pendingTitle.includes("ผู้ดูแลระบบการเงิน") ||
       pendingTitle.includes("โอนเงิน") ||
       (Boolean(pendingItem) && items.some((item) => item.title.includes("โอนเงิน") && !item.isPending)))
   ) {
@@ -50,7 +50,7 @@ function getRequestStatus(items: LoanTimelineItem[], isTransferAccepted: boolean
     return "disbursed";
   }
   if (pendingTitle.includes("ผู้บริหาร")) return "pending_executive";
-  if (pendingTitle.includes("เจ้าหน้าที่")) return "pending_admin";
+  if (pendingTitle.includes("ผู้ดูแลระบบ")) return "pending_admin";
 
   return "pending_advisor";
 }

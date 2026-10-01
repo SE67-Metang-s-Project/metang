@@ -29,7 +29,7 @@ export function buildPaymentOutcomeEmail(input: PaymentOutcomeEmailInput): SendE
 
   const body = confirmed
     ? [
-        `เจ้าหน้าที่ได้ตรวจสอบและยืนยันการชำระเงินจำนวน ${formattedAmount} บาท แล้ว`,
+        `ผู้ดูแลระบบได้ตรวจสอบและยืนยันการชำระเงินจำนวน ${formattedAmount} บาท แล้ว`,
         `รหัสสัญญา: ${input.loanId}`,
       ]
     : [

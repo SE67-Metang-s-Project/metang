@@ -51,7 +51,7 @@ export default function AdminDashboard({
       {/* =====================================================
           Welcome
       ===================================================== */}
-      <WelcomeCard name={userName} description="เจ้าหน้าที่ / ผู้ดูแลระบบ" />
+      <WelcomeCard name={userName} description="ผู้ดูแลระบบ / ผู้ดูแลระบบสูงสุด" />
 
       {/* =====================================================
           1. Pending Review
@@ -62,7 +62,7 @@ export default function AdminDashboard({
             <>
               คำร้องรอตรวจสอบ
               <span aria-hidden="true" className="mx-2 inline-block size-2 rounded-full bg-current align-middle" />
-              ในฐานะเจ้าหน้าที่
+              ในฐานะผู้ดูแลระบบ
             </>
           }
           description="รายการคำร้องที่ต้องตรวจสอบและดำเนินการ"

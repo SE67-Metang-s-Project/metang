@@ -35,7 +35,7 @@ const statusDisplayMap: Record<LoanStatus, StatusDisplay> = {
     statusType: "waitingAdvisorApproval",
   },
   pending_admin: {
-    label: "รอเจ้าหน้าที่",
+    label: "รอผู้ดูแลระบบ",
     statusType: "waitingDocumentReview",
   },
   pending_executive: {
@@ -188,7 +188,7 @@ export type RawStudentLoan = {
 
 const rejectionRoleByStep: Record<RawLoanApproval["step"], string> = {
   advisor: "อาจารย์",
-  admin: "เจ้าหน้าที่",
+  admin: "ผู้ดูแลระบบ",
   executive: "ผู้บริหาร",
 };
 
@@ -420,7 +420,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
     revisionCount: number,
   ) => {
     const roleLabel =
-      step === "advisor" ? "อาจารย์ที่ปรึกษา" : step === "admin" ? "เจ้าหน้าที่" : "ผู้บริหาร";
+      step === "advisor" ? "อาจารย์ที่ปรึกษา" : step === "admin" ? "ผู้ดูแลระบบ" : "ผู้บริหาร";
     const revisionSuffix = revisionCount > 1 ? ` (ครั้งที่ ${revisionCount})` : "";
 
     return `${roleLabel}แจ้งแก้ไข${revisionSuffix}`;
@@ -440,9 +440,9 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
             }
           : app.step === "admin"
             ? {
-                title: "เจ้าหน้าที่ตรวจสอบเอกสารครบถ้วน",
-                actor: app.decider?.fullNameTh ?? "เจ้าหน้าที่",
-                commentTitle: "ข้อความจากเจ้าหน้าที่",
+                title: "ผู้ดูแลระบบตรวจสอบเอกสารครบถ้วน",
+                actor: app.decider?.fullNameTh ?? "ผู้ดูแลระบบ",
+                commentTitle: "ข้อความจากผู้ดูแลระบบ",
               }
             : {
                 title: "ผู้บริหารอนุมัติคำร้องกู้ยืม",
@@ -486,12 +486,12 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
         commentTitle = "เหตุผลที่ไม่อนุมัติ";
       }
     } else if (app.step === "admin") {
-      actorName = app.decider?.fullNameTh ?? "เจ้าหน้าที่";
+      actorName = app.decider?.fullNameTh ?? "ผู้ดูแลระบบ";
       if (app.decision === "approved") {
-        stepTitle = "เจ้าหน้าที่ตรวจสอบเอกสารผ่านการอนุมัติ";
-        commentTitle = "ความคิดเห็นของเจ้าหน้าที่ / พยาน";
+        stepTitle = "ผู้ดูแลระบบตรวจสอบเอกสารผ่านการอนุมัติ";
+        commentTitle = "ความคิดเห็นของผู้ดูแลระบบ / พยาน";
       } else if (app.decision === "returned") {
-        stepTitle = "เจ้าหน้าที่ส่งกลับแก้ไข";
+        stepTitle = "ผู้ดูแลระบบส่งกลับแก้ไข";
         commentTitle = getRevisionCommentTitle(
           app.step,
           studentTimelineApprovals.slice(0, approvalIndex + 1).filter(
@@ -499,7 +499,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
           ).length,
         );
       } else if (app.decision === "rejected") {
-        stepTitle = "เจ้าหน้าที่ไม่อนุมัติคำร้อง";
+        stepTitle = "ผู้ดูแลระบบไม่อนุมัติคำร้อง";
         commentTitle = "เหตุผลที่ไม่อนุมัติ";
       }
     } else if (app.step === "executive") {
@@ -508,7 +508,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
         stepTitle = "ผู้บริหารอนุมัติคำร้องกู้ยืม";
         commentTitle = "ความคิดเห็นของผู้บริหาร";
       } else if (app.decision === "returned") {
-        stepTitle = "ผู้บริหารส่งกลับแก้ไขให้เจ้าหน้าที่ตรวจสอบใหม่";
+        stepTitle = "ผู้บริหารส่งกลับแก้ไขให้ผู้ดูแลระบบตรวจสอบใหม่";
         commentTitle = getRevisionCommentTitle(
           app.step,
           studentTimelineApprovals.slice(0, approvalIndex + 1).filter(
@@ -554,21 +554,21 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
       title: "อาจารย์ที่ปรึกษาพิจารณาคำร้อง",
       actor: loan.advisor?.fullNameTh ?? "อาจารย์ที่ปรึกษา",
       actorEn: loan.advisor?.fullNameEn ?? undefined,
-      next: { title: "เจ้าหน้าที่ตรวจสอบเอกสาร", actor: "เจ้าหน้าที่" },
+      next: { title: "ผู้ดูแลระบบตรวจสอบเอกสาร", actor: "ผู้ดูแลระบบ" },
     },
     pending_admin: {
-      title: "เจ้าหน้าที่ตรวจสอบเอกสาร",
-      actor: "เจ้าหน้าที่",
+      title: "ผู้ดูแลระบบตรวจสอบเอกสาร",
+      actor: "ผู้ดูแลระบบ",
       next: { title: "ผู้บริหารพิจารณาอนุมัติคำร้อง", actor: "ผู้บริหาร" },
     },
     pending_executive: {
       title: "ผู้บริหารพิจารณาอนุมัติคำร้อง",
       actor: "ผู้บริหาร",
-      next: { title: "เจ้าหน้าที่การเงินดำเนินการโอนเงิน", actor: "เจ้าหน้าที่การเงิน" },
+      next: { title: "ผู้ดูแลระบบการเงินดำเนินการโอนเงิน", actor: "ผู้ดูแลระบบการเงิน" },
     },
     pending_disbursement: {
-      title: "เจ้าหน้าที่การเงินยืนยันการโอนเงิน",
-      actor: "เจ้าหน้าที่การเงิน",
+      title: "ผู้ดูแลระบบการเงินยืนยันการโอนเงิน",
+      actor: "ผู้ดูแลระบบการเงิน",
       next: { title: "ได้รับเงินกู้และเริ่มชำระคืน", actor: "นักศึกษา" },
     },
   };
@@ -593,9 +593,9 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
   // Disbursed
   if (loan.disbursedAt) {
     timeline.push({
-      title: `เจ้าหน้าที่โอนเงิน จำนวน ${requestedAmount.toLocaleString("th-TH")}`,
+      title: `ผู้ดูแลระบบโอนเงิน จำนวน ${requestedAmount.toLocaleString("th-TH")}`,
       dateTime: formatThaiDateTime(loan.disbursedAt),
-      actor: "เจ้าหน้าที่",
+      actor: "ผู้ดูแลระบบ",
       isCompleted: true,
       transferDetails: [
         `ธนาคาร: ${loan.bankName ? normalizeBankName(loan.bankName) : "-"}`,
@@ -662,7 +662,7 @@ export function mapToLoanDetails(loan: RawStudentLoan): LoanDetails {
         (a.step === "advisor"
           ? (loan.advisor?.fullNameTh ?? "อาจารย์ที่ปรึกษา")
           : a.step === "admin"
-            ? "เจ้าหน้าที่"
+            ? "ผู้ดูแลระบบ"
             : "ผู้ช่วยศาสตราจารย์ ดร.อนนท์ วิสุทธิ์ธนานนท์"),
       comment: a.comment ?? "",
       decision: a.decision,
