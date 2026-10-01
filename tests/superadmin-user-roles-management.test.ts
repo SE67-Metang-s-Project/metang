@@ -77,16 +77,22 @@ test("Backend routes and queries enforce super admin guard, role deletion, and e
   // 3. the executive is never deleted or removed, only replaced by editing
   assert.match(userQueries, /beforeRoles\.includes\("executive"\)\) throw new RoleMutationError\("EXECUTIVE_CANNOT_BE_DELETED"\)/);
   assert.match(userQueries, /if \(role === "executive"\) throw new RoleMutationError\("EXECUTIVE_ROLE_LOCKED"\);/);
+  assert.match(userQueries, /if \(role === "advisor" && beforeRoles\.includes\("executive"\)\) \{\s*throw new RoleMutationError\("EXECUTIVE_ADVISOR_LOCKED"\);/, "the executive keeps advisor");
+  assert.match(
+    read("db/migrations/20261001140000_executive_holds_advisor/migration.sql"),
+    /SELECT "user_id", 'advisor', "granted_by"\s+FROM "public"\."user_role"\s+WHERE "role" = 'executive'\s+ON CONFLICT \("user_id", "role"\) DO NOTHING;/,
+    "the current executive is backfilled with advisor",
+  );
   assert.match(userQueries, /throw new RoleMutationError\("NOT_EXECUTIVE"\)/);
-  assert.match(userQueries, /executive\.handed_over/);
 
-  // 3b. an email (or CMU account) that belongs to another user is refused, never handed the role
+  // 3b. the executive is edited in place (same row, so every FK carries over); an email (or CMU
+  //     account) that belongs to another user is refused
   const editFn = userQueries.slice(userQueries.indexOf("export async function editExecutive"));
   const editBody = editFn.slice(0, editFn.indexOf("\nexport "));
   assert.match(editBody, /OR: \[\{ email: cleanEmail \}, \{ cmuAccount \}\], id: \{ not: targetUserId \}/);
   assert.match(editBody, /if \(taken\) throw new RoleMutationError\("EMAIL_ALREADY_IN_USE"\);/);
-  assert.ok(editBody.indexOf("EMAIL_ALREADY_IN_USE") < editBody.indexOf("executive.handed_over"), "refuse before handing over");
-  assert.doesNotMatch(editBody, /successor\?\.id/, "no handover to an existing account");
+  assert.match(editBody, /tx\.appUser\.update\(\{\s*where: \{ id: targetUserId \},\s*data: \{ email: cleanEmail, cmuAccount, \.\.\.names \}/);
+  assert.doesNotMatch(editBody, /appUser\.create|userRole\.(create|delete)/, "no new row and no role move");
 
   // 4. removing a staff member hands their open loans over and keeps the row for history:
   //    deleting a user with approvals or payouts aborts the whole Postgres transaction
@@ -106,7 +112,7 @@ test("Backend routes and queries enforce super admin guard, role deletion, and e
     assert.match(userIdRoute, new RegExp(code));
   }
   const rolesRoute = read("app/api/super-admin/users/[id]/roles/route.ts");
-  for (const code of ["SELF_DEMOTION", "EXECUTIVE_ROLE_LOCKED", "REASSIGNMENT_CONFLICT"]) {
+  for (const code of ["SELF_DEMOTION", "EXECUTIVE_ROLE_LOCKED", "EXECUTIVE_ADVISOR_LOCKED", "REASSIGNMENT_CONFLICT"]) {
     assert.match(rolesRoute, new RegExp(code));
   }
 });

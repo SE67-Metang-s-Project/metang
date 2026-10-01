@@ -17,7 +17,7 @@ runtime:
   scripts:
     - type: tests
       code: |-
-        // Runs last: it removes staff and hands the executive role over, which no earlier step may
+        // Runs last: it removes staff and renames the executive, which no earlier step may
         // see. The dev bypass acts as SuperAdmin ...0002, the only SuperAdmin in the seed.
         const base = bru.interpolate("{{baseUrl}}") + "/super-admin/users";
         const U = (n) => "00000000-0000-0000-0000-" + String(n).padStart(12, "0");
@@ -75,11 +75,13 @@ runtime:
           expect(refused.status).to.equal(409);
         });
 
-        const handOver = await call("PATCH", `/${U(1)}`, { fullNameTh: "ผู้บริหาร คนใหม่", email: "new.executive@cmu.ac.th" });
-        test("a new email hands the executive role to a new user; the old one keeps their row", function () {
-          expect(handOver.status).to.equal(200);
-          expect(handOver.body.data.id).to.not.equal(U(1));
-          expect(handOver.body.data.roles.map((r) => r.role)).to.include("executive");
+        // A new email edits the same row: the id, roles and history stay with it.
+        const replaced = await call("PATCH", `/${U(1)}`, { fullNameTh: "ผู้บริหาร คนใหม่", email: "new.executive@cmu.ac.th" });
+        test("a new email edits the executive in place: same id, roles kept", function () {
+          expect(replaced.status).to.equal(200);
+          expect(replaced.body.data.id).to.equal(U(1));
+          expect(replaced.body.data.email).to.equal("new.executive@cmu.ac.th");
+          expect(replaced.body.data.roles.map((r) => r.role)).to.include.members(["executive", "advisor"]);
         });
 
 settings:
@@ -90,5 +92,5 @@ settings:
 
 docs: |-
   The user-management rules: at least one SuperAdmin, none can remove themself (a successor
-  removes them), exactly one executive who is replaced by editing name and email, and staff
+  removes them), exactly one executive whose name and email are edited in place, and staff
   removal that keeps the user row (history) and hands open loans to the remover.
