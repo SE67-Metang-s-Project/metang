@@ -660,6 +660,12 @@
   font-size: 14px;
 }
 
+.loanFormRequired {
+  margin-left: 3px;
+  color: #dc2626;
+  font-size: 1em;
+}
+
 .loanFormField input,
 .loanFormField select,
 .loanFormField textarea {
@@ -1053,6 +1059,31 @@
 
 .studentRequestTimeline .sectionCardHeading h3 {
   font-size: 20px;
+}
+
+/* Match the title start position of the 23px repayment-schedule icon. */
+.studentRequestTimeline .sectionCardHeading {
+  gap: 15px;
+}
+
+.studentRequestTimeline .loanTimeline {
+  margin-top: 14px;
+}
+
+/* Keep the no-request status card aligned with the repayment-schedule empty state. */
+.studentRequestTimeline:has(.emptyDashboardState) {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 2px solid var(--color-border);
+  border-radius: 24px;
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 7%);
+}
+
+.studentRequestTimeline:has(.emptyDashboardState) .sectionCardHeading {
+  margin-bottom: 0;
+  padding-bottom: 15px;
 }
 
 .loanApprovalInfoCard dl {
@@ -4432,6 +4463,7 @@
   display: grid;
   width: 48px;
   height: 48px;
+  margin-top: 14px;
   place-items: center;
   border-radius: 50%;
   background: #f1f5f9;
@@ -5327,4 +5359,61 @@
     display: none;
   }
 
+  .loanScheduleRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    align-items: start;
+  }
+
+  .loanScheduleRow > span {
+    overflow-wrap: anywhere;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .loanScheduleRow > strong:last-child {
+    text-align: left;
+  }
+
+}
+
+/* At 350px and below, render the whole student view at 85%. */
+@media (max-width: 349px) {
+  .studentPage {
+    zoom: 0.85;
+  }
+
+  /* Keep every repayment schedule on one row: installment, due date, amount. */
+  .loanScheduleRow {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .loanScheduleRow > span {
+    flex: 1;
+    overflow-wrap: normal;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .loanScheduleRow > strong:last-child {
+    text-align: right;
+  }
+
+  /* Keep request history compact: request details left, amount right. */
+  .historyCard {
+    flex-wrap: nowrap;
+  }
+
+  .historyCard > div:first-child {
+    flex: 1 1 0;
+  }
+
+  .historyCardTitle {
+    align-items: center;
+    flex-direction: row;
+  }
 }

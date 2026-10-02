@@ -762,7 +762,12 @@ export default function TempLoanApplicationPage({
                         fieldRefs.current.advisorName = element ?? undefined;
                       }}
                     >
-                      <span>{t("อาจารย์ที่ปรึกษา", "Advisor")}</span>
+                      <span>
+                        {t("อาจารย์ที่ปรึกษา", "Advisor")}
+                        <sup aria-hidden="true" className={styles.loanFormRequired}>
+                          *
+                        </sup>
+                      </span>
                       <LoanFormSelect
                         error={formErrors.advisorName}
                         onBlur={() => handleFieldBlur("advisorName")}
