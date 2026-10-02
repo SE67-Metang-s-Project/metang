@@ -676,7 +676,7 @@ No account needed to use Bruno; email is only collected to issue a license key o
 
 ---
 
-## 19. How Me_Tang uses it
+## 19. How metang uses it
 
 Set up. `bruno/` holds the collection, `npm run api:test` runs it. Full detail in
 `bruno/README.md`; the shape and the reasons:
@@ -686,16 +686,18 @@ bruno/
   opencollection.yml
   environments/isolated.yml    # http://localhost:8081/metang/api - the harness
   environments/local.yml       # http://localhost:8080/metang/api - your dev server
-  <13 tag folders>/            # imported from public/openapi.json
+  <16 folders>/                # imported from public/openapi.json; Paged_lists is hand-written
   Workflow/                    # hand-written ordered walk over the state machine
 ```
 
 - **Generated from the spec.** `bru import openapi --source public/openapi.json
-  --collection-format opencollection` produced all 33 requests. Re-importing overwrites every
-  assertion, so it is a scratch-directory-and-diff operation, not a refresh.
+  --collection-format opencollection` produced the imported folders. The spec now has 66
+  operations; the collection has 57 requests in 16 folders (`Paged_lists` is hand-written) plus 28 in
+  `Workflow/`. Re-importing overwrites every assertion, so it is a scratch-directory-and-diff
+  operation, not a refresh.
 - **Isolation, not care.** `scripts/api-test-isolated.mjs` runs the suite against a throwaway
   `postgres:17` container, so mutations write freely and every run starts from the same seed.
-  All 13 migrations apply to the plain image — no Supabase-specific SQL anywhere.
+  All 26 migrations apply to the plain image — no Supabase-specific SQL anywhere.
 - **Auth is free locally.** `DEV_API_BYPASS` + `DEV_AS_*` (`lib/development-access.ts`) skip the
   Entra round trip. The harness sets them for its own child process only.
 - **Envelope and role-scope assertions** catch what source-text tests cannot: `data` present /

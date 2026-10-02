@@ -13,17 +13,22 @@ One command. `scripts/api-test-isolated.mjs` does the rest:
 
 1. starts a throwaway `postgres:17` container (`metang-test`, port 5433) and waits for it
 2. `prisma migrate deploy` + `db/seed.ts` against it
-3. starts the app on **port 8081** — deliberately not the dev server's 8080
-4. runs the collection, then the ordered `Workflow/` walk
-5. removes the container on success; **leaves it running on failure** so you can inspect it
+3. runs the database tests `tests/db/role-access-matrix.test.ts`, `advisor-removal.test.ts` and
+   `home-path.test.ts` against it, before Bruno changes any role
+4. starts the app on **port 8081** — deliberately not the dev server's 8080
+5. runs the collection, then the ordered `Workflow/` walk
+6. removes the container on success; **leaves it running on failure** so you can inspect it
 
-**Requires Docker.** Nothing else — no `.env`, no secrets. The harness never reads one and never
-touches the team database; it refuses outright if the connection host is not localhost.
+**Requires Docker.** Nothing else — no `.env`, no secrets. The harness script never reads one and
+never touches the team database; it refuses outright if the connection host is not localhost. It
+sets `DATABASE_URL`, `DIRECT_URL`, `NODE_ENV` and the `DEV_*` flags itself, and these win over a
+`.env` in the repo; Next and Prisma still load any other variable from a `.env` if one exists.
 
 **Stop `npm run dev` first.** Next refuses a second dev server for the same directory: the one
 this harness starts on 8081 prints its banner and then exits, and every request fails with
-`ECONNREFUSED`. The harness detects that and says so, but it cannot start until port 8080 is
-released.
+`ECONNREFUSED`. The harness detects that through `.next/dev/lock` (whatever port the other server
+uses) and says so, but it cannot start until the other `next dev` is stopped. It also refuses to
+start while port 8081 is in use.
 
 ### After a red run
 
@@ -50,10 +55,10 @@ requests then write to the **real dev database** — the isolation only exists u
 
 | | |
 |---|---|
-| Route handlers in `app/api/**` | 40 |
-| Operations in `public/openapi.json` | 33 |
-| Requests in this collection | 33 + 22 workflow steps |
-| **Executed by `npm run api:test`** | **31 requests, 85 assertions, 1 test** |
+| Route files in `app/api/**` | 54 (66 handlers) |
+| Operations in `public/openapi.json` | 66 |
+| Requests in this collection | 57 + 28 workflow steps |
+| **Executed by `npm run api:test`** | **database step: 3 files, 47 tests · endpoints run: 41 requests, 148 assertions, 2 tests · `Workflow/` run: 28 requests, 62 assertions, 14 tests** |
 
 ### What runs
 
@@ -74,14 +79,21 @@ requests then write to the **real dev database** — the isolation only exists u
 | | |
 |---|---|
 | 01 | cancel the seeded draft — the dev-bypass student is pinned to `…0101`, who owns one |
+| 01_1 | saving a phone number without an open loan → 409 `CONFLICT` |
 | 02-03 | submit a loan → 201; submit again → 409 `one_open_loan_per_student` |
+| 02_1-02_2 | the phone sent at submit is the student's phone → 200 · a new phone is saved on the open loan → 200 and reads back |
 | 04-05 | advisor returns it → resubmit re-enters at the returning step, `attempt + 1` |
+| 06_1 | advisor approves with `comment: null` → 422 `VALIDATION_ERROR` |
 | 06-09 | advisor → admin (reduced amount + mandatory comment) → executive → `pending_disbursement` |
 | 07 | `approvedAmount` above the requested amount → 422 |
 | 08_1-08_3 | executive returns → admin return to the student → 409 → admin re-approves a lower amount |
-| 09_1-09_2 | cancel from another origin → 403 · cancel while `pending_disbursement` → 409 |
+| 09_1-09_3 | cancel from another origin → 403 · cancel while `pending_disbursement` → 409 · confirm receipt before disbursement → 409 |
 | 10-12 | replayed decision → 409 · unknown id → 404 · non-JSON content type → 403 |
 | 13 | **two simultaneous admin decisions → exactly one 200 and one 409** |
+| 14-15 | admin confirms repayment slip `…0304` → 200 and the money is applied · replaying the confirmation → 409 |
+| 16 | submit an amount above what the fund can lend → 409 `INSUFFICIENT_FUND_CAPACITY` |
+| 16_1 | admin cancels `REQ202609060006` (`pending_disbursement`) with a reason → 200 `cancelled` · a second cancel → 404 |
+| 17 | SuperAdmin role rules (Chai tests): no self-delete or self-demotion, the executive is edited in place and never removed, a removed admin with history keeps the row, advisor and admin never combine |
 
 Step 13 is the only check in the repo that reaches the `updateMany` CAS guard and `Serializable`
 isolation in `decideAdminLoanRequest` at runtime; `tests/` covers those with source-text
@@ -100,9 +112,11 @@ assertions only.
 Excluded by tag: `--exclude-tags Fund_slips,Payment_slips,Notifications,Workflow`. The requests stay
 in the collection, documented and runnable by hand.
 
-**Seven handlers are missing from `public/openapi.json`** and therefore from this collection:
-`GET /auth/logout` (the route exports both verbs, only POST is documented) and the three
-`/cron/*` routes × GET+POST. Fixing that is a spec change, not a Bruno change.
+**`public/openapi.json` lists all 66 handlers**, including `GET /auth/logout` and the five
+`/cron/*` routes × GET+POST. Seventeen operations still have no request file in this collection:
+`GET /auth/logout`, the ten `/cron/*` operations, `GET` and `POST /super-admin/settings`,
+`GET /system-settings`, `GET /superadmin/financial-overview`, `POST /student/payments` (see above)
+and `PATCH /super-admin/users/{id}` (Workflow step 17 calls it from a script).
 
 ## Adding a check
 
@@ -146,7 +160,7 @@ runtime:
 ```bash
 npm run openapi:generate
 npx bru import openapi --source public/openapi.json --output bruno \
-  --collection-name "Me_Tang API" --collection-format opencollection --group-by tags
+  --collection-name "metang API" --collection-format opencollection --group-by tags
 ```
 
 **This overwrites the directory** — every assertion, script, the `Workflow/` folder and both
@@ -155,7 +169,7 @@ environment files are lost. Import into a scratch directory and diff instead.
 ## Fixture coupling
 
 The suite reads `db/seed.ts` fixtures directly and asserts on their exact values: loan ids
-`REQ20260906000{1..11}` one per status, the dev-bypass student `…0101` holding the draft,
+`REQ202609060001` to `REQ202609060011` (11 loans, 10 statuses; two are `cancelled`), the dev-bypass student `…0101` holding the draft,
 advisor `สุภาวดี วงศ์คำ` (matched by exact `fullNameTh`), and the `95750` starting balance.
 Changing those fixtures breaks this suite — that is intended, but it means seed edits and
 collection edits travel together.
