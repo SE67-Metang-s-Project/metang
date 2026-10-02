@@ -26,8 +26,8 @@ export const MARGIN_MM = { top: 18, bottom: 18, left: 15, right: 15 };
 export const CONTENT_WIDTH_PX = Math.round(((210 - MARGIN_MM.left - MARGIN_MM.right) / 25.4) * 96);
 
 export const DEFAULT_FILES = [
-  "docs/documentation/developer-guide.md",
-  "docs/documentation/maintenance-guide.md",
+  "docs/documentation/developer-guide.en.md",
+  "docs/documentation/maintenance-guide.en.md",
   "docs/documentation/user-manual-staff.md",
   "docs/documentation/user-manual-student.md",
 ];

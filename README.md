@@ -36,4 +36,4 @@ it in Entra, and use HTTPS. The app overwrites `post_logout_redirect_uri` in `LO
 
 ## Documents
 
-Developers: [docs/documentation/developer-guide.md](docs/documentation/developer-guide.md). Client IT staff: [docs/documentation/maintenance-guide.md](docs/documentation/maintenance-guide.md).
+Developers: [docs/documentation/developer-guide.en.md](docs/documentation/developer-guide.en.md). Client IT staff: [docs/documentation/maintenance-guide.en.md](docs/documentation/maintenance-guide.en.md).

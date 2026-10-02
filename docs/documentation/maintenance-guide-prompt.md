@@ -107,9 +107,9 @@ Start the file with a title and a version and date line.
 - Every change procedure must have a way to undo it or a rollback reference.
 
 # Output
-- Format: Markdown, one file named `maintenance-guide.md`. A rewrite of it
+- Format: Markdown, one file named `maintenance-guide.en.md`. A rewrite of it
   (for example `maintenance-guide.ste-draft.md`) is a derived copy; the
-  delivered file is `maintenance-guide.md`.
+  delivered file is `maintenance-guide.en.md`.
 - Use headings (#, ##, ###) matching the structure above.
 - Use tables for schedules, reference data, troubleshooting, and error messages.
 - The document must also convert cleanly to PDF (no HTML-only features).

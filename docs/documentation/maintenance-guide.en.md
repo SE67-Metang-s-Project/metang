@@ -94,7 +94,7 @@ You need these skills:
 You do not need to read the source code for routine tasks (Sections 3, 4, 5, 8, 9, 10).
 Updates and upgrades (Section 6) need a copy of the source repository and Node.js.
 
-A developer who changes the code uses the developer guide (`docs/documentation/developer-guide.md`)
+A developer who changes the code uses the developer guide (`docs/documentation/developer-guide.en.md`)
 instead. It covers the set-up of a development computer, the repository, the tests, the database
 changes, and the diagrams.
 

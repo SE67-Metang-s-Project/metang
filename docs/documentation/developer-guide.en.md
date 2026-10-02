@@ -12,7 +12,7 @@ document the code. It does not replace the other documents:
 |---|---|---|
 | This guide | Development team | Working on the code |
 | `AGENTS.md` | Development team and coding agents | Short rules: style, commands, commit messages |
-| `docs/documentation/maintenance-guide.md` | Client IT staff | Running the system after delivery (backup, update, monitoring). Its Section 7 lists every environment variable and every fixed value (limits, intervals, formats), and Section 10 lists every error message |
+| `docs/documentation/maintenance-guide.en.md` | Client IT staff | Running the system after delivery (backup, update, monitoring). Its Section 7 lists every environment variable and every fixed value (limits, intervals, formats), and Section 10 lists every error message |
 | `docs/documentation/user-manual-staff.md`, `user-manual-student.md` | End users | Using the screens |
 | `db/README.md`, `bruno/README.md` | Development team | Database commands and the API test collection |
 | `docs/CMU-ENTRA-SSO.md`, `docs/Email_API_Manual.md` | Development team | The CMU sign-in flow and the CMU Email API |
