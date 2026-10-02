@@ -21,6 +21,27 @@ body {
   font-family: var(--font-kanit), "Kanit", Arial, Helvetica, sans-serif;
 }
 
+@keyframes metang-logo-pulse {
+  0%,
+  100% {
+    transform: scale(0.88);
+  }
+
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.animate-metang-logo-pulse {
+  animation: metang-logo-pulse 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-metang-logo-pulse {
+    animation: none;
+  }
+}
+
 /* The advisor student list uses 14px as the smallest readable text size. */
 .advisor-students-min-text .text-xs,
 .advisor-students-min-text [class*=":text-xs"],
