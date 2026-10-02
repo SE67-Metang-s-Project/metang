@@ -2,65 +2,28 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, Mail, Menu } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import type { UserRole } from "@/components/shared/SidebarNav";
-import type { StudentLanguage } from "@/app/student/StudentLanguageProvider";
-import { withBasePath } from "@/lib/base-path";
 
-export const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
-  student: "นักศึกษา",
-  advisor: "อาจารย์ที่ปรึกษา",
-  admin: "ผู้ดูแลระบบ",
-  executive: "ผู้บริหาร",
-  superadmin: "ผู้ดูแลระบบสูงสุด",
-};
-
-export interface TopNavProps {
+interface TopNavProps {
   onOpenSidebar?: () => void;
   userName: string;
-  userId?: string;
-  role?: UserRole;
+  userId: string;
   userRole?: string;
   userEmail?: string;
   showSidebarButton?: boolean;
-  showLogo?: boolean;
-  language?: StudentLanguage;
-  onLanguageChange?: (language: StudentLanguage) => void;
-  logoutLabel?: string;
-  dashboardHref?: string;
-  hasPersistentSidebar?: boolean;
 }
 
 export default function TopNav({
   onOpenSidebar,
   userName,
   userId,
-  role,
   userRole,
   userEmail,
   showSidebarButton = true,
-  showLogo,
-  language,
-  onLanguageChange,
-  logoutLabel = "ออกจากระบบ",
-  dashboardHref,
-  hasPersistentSidebar = false,
 }: TopNavProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const isStudentRole = role === "student" || userRole === "นักศึกษา" || userRole === "Student";
-  const hasSidebar = !isStudentRole && Boolean(hasPersistentSidebar || onOpenSidebar);
-  const shouldShowLogo = showLogo ?? !hasSidebar;
-  const canShowSidebarButton = !isStudentRole && showSidebarButton && Boolean(onOpenSidebar);
-  const displayRole = userRole ?? (role ? ROLE_DISPLAY_NAMES[role] : undefined) ?? "ผู้ใช้งาน";
-  const displayCode = userId ?? displayRole;
-  const displayEmail = userEmail ?? (userId ? `${userId.toLowerCase()}@cmu.ac.th` : "user@cmu.ac.th");
-  const logoHref = dashboardHref ?? (role ? `/${role}` : isStudentRole ? "/student" : "/");
-  const handleLanguageChange = (nextLanguage: StudentLanguage) => {
-    onLanguageChange?.(nextLanguage);
-    setIsProfileOpen(false);
-  };
+  const displayRole = userRole ?? userId;
+  const displayEmail = userEmail ?? `${userId.toLowerCase()}@cmu.ac.th`;
 
   useEffect(() => {
     const closeProfileOnOutsideClick = (event: MouseEvent) => {
@@ -84,14 +47,12 @@ export default function TopNav({
 
   return (
     <>
-      <header
-        className={`fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white sm:h-20 ${hasSidebar && hasPersistentSidebar ? "min-[1576px]:left-64" : ""}`}
-      >
-        {canShowSidebarButton ? (
-          <div className="flex items-center pl-4 sm:pl-6 min-[1576px]:hidden">
+      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white sm:h-20">
+        {showSidebarButton && onOpenSidebar ? (
+          <div className="flex items-center min-[1576px]:hidden">
             <button
               onClick={onOpenSidebar}
-              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+              className="-ml-2 mr-2 rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
               aria-label="Open sidebar navigation"
             >
               <Menu size={24} />
@@ -99,27 +60,9 @@ export default function TopNav({
           </div>
         ) : null}
 
-        {shouldShowLogo ? (
-          <Link
-            aria-label="กลับไปยังหน้าแดชบอร์ด"
-            className="ml-6 flex shrink-0 items-center rounded-lg transition-all duration-200 hover:scale-105 hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
-            href={logoHref}
-          >
-            <Image
-              alt="METANG"
-              className="h-[50px] w-[50px] object-contain"
-              height={50}
-              priority
-              src={withBasePath("/metang-logo-transparent.png")}
-              width={50}
-            />
-          </Link>
-        ) : null}
-
         <div className="flex-1" />
 
-        <div className="flex items-center pr-4 sm:gap-3">
-          <div className="relative" ref={profileRef}>
+        <div className="relative" ref={profileRef}>
           <button
             type="button"
             onClick={() => setIsProfileOpen((isOpen) => !isOpen)}
@@ -127,16 +70,12 @@ export default function TopNav({
             aria-expanded={isProfileOpen}
             aria-haspopup="menu"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-sm font-medium text-orange-600">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-medium text-blue-600">
               {userName.substring(0, 2)}
             </span>
             <span className="flex flex-col">
-              <span
-                className={`${language === "en" ? "text-[14px]" : "text-[15px]"} font-semibold leading-tight text-gray-900`}
-              >
-                {userName}
-              </span>
-              <span className="text-sm font-normal text-gray-500">{displayCode}</span>
+              <span className="text-[15px] font-bold leading-tight text-gray-900">{userName}</span>
+              <span className="text-sm text-gray-500">{displayRole}</span>
             </span>
             <ChevronDown
               className={`h-4 w-4 text-gray-400 transition-transform ${isProfileOpen ? "rotate-180" : ""}`}
@@ -160,48 +99,21 @@ export default function TopNav({
                   </a>
                 </div>
               </div>
-              {language && onLanguageChange ? (
-                <div className="flex items-center justify-between gap-4 border-t border-gray-100 px-4 py-3">
-                  <span className="text-[14px] font-normal text-gray-600">Language</span>
-                  <div
-                    aria-label="Language selector"
-                    className="flex gap-1 text-sm font-normal"
-                  >
-                    <button
-                      aria-pressed={language === "th"}
-                      className={`rounded-md border px-2.5 py-1.5 font-light transition-colors ${language === "th" ? "border-[#ffb58c] bg-[#fff4ed] text-[#ed7740]" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}
-                      onClick={() => handleLanguageChange("th")}
-                      type="button"
-                    >
-                      ไทย
-                    </button>
-                    <button
-                      aria-pressed={language === "en"}
-                      className={`rounded-md border px-2.5 py-1.5 font-light transition-colors ${language === "en" ? "border-[#ffb58c] bg-[#fff4ed] text-[#ed7740]" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}
-                      onClick={() => handleLanguageChange("en")}
-                      type="button"
-                    >
-                      EN
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-              <form action={withBasePath("/api/auth/logout")} method="post" className="border-t border-gray-100">
+              <form action="/api/auth/logout" method="post" className="border-t border-gray-100">
                 <button
                   type="submit"
                   role="menuitem"
-                  className="flex w-full items-center gap-3 px-4 py-3 text-[14px] font-normal text-gray-600 transition-colors hover:bg-red-50 hover:text-red-700"
+                  className="flex w-full items-center gap-3 px-4 py-3 text-[14px] font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-700"
                 >
                   <LogOut className="h-4 w-4" aria-hidden="true" />
-                  {logoutLabel}
+                  ออกจากระบบ
                 </button>
               </form>
             </div>
           ) : null}
-          </div>
         </div>
       </header>
-      <div aria-hidden="true" className="h-20 shrink-0" />
+      <div aria-hidden="true" className="h-16 shrink-0 sm:h-20" />
     </>
   );
 }

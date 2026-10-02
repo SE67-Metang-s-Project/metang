@@ -5378,10 +5378,10 @@
 
 }
 
-/* At 350px and below, render the whole student view at 85%. */
-@media (max-width: 349px) {
+/* At 440px and below, render the whole student view at 90%. */
+@media (max-width: 439px) {
   .studentPage {
-    zoom: 0.85;
+    zoom: 0.9;
   }
 
   /* Keep every repayment schedule on one row: installment, due date, amount. */
