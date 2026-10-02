@@ -44,9 +44,20 @@ export function useServerPagedList<T, C = undefined>({
   const key = new URLSearchParams(Object.entries(params).map(([name, value]) => [name, String(value)])).toString();
   const debounce = Boolean(params.q);
   const [remote, setRemote] = useState<Remote<T, C> | null>(null);
+  // Views already fetched for the current server data, by query string, so going back to one
+  // shows it without a fetch. router.refresh() hands in a new `initialItems`, which empties it.
+  // ponytail: no expiry; another staff member's change shows after a refresh or a remount.
+  const [visited, setVisited] = useState<{ base: T[]; views: Record<string, Remote<T, C>> }>({
+    base: initialItems,
+    views: {},
+  });
+  const hit = atInitialView || visited.base !== initialItems ? undefined : visited.views[key];
+  // Shown now, and kept as the last result while the next uncached view loads.
+  if (hit && remote !== hit) setRemote(hit);
+  const cached = hit !== undefined;
 
   useEffect(() => {
-    if (atInitialView) return;
+    if (atInitialView || cached) return;
     const controller = new AbortController();
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -55,11 +66,17 @@ export function useServerPagedList<T, C = undefined>({
         const res = await fetch(withBasePath(`${endpoint}?${key}`), { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const { data } = await res.json();
-        setRemote({ key, items: data.items, total: data.total, counts: data.counts, failed: false });
+        const view = { key, items: data.items, total: data.total, counts: data.counts, failed: false };
+        setRemote(view);
         const query = new URLSearchParams(key);
         if (data.items.length === 0 && data.total > 0 && Number(query.get("page")) > 1) {
           onPageOverflow?.(Math.ceil(data.total / Number(query.get("limit"))));
+          return; // a page past the end is not worth keeping
         }
+        setVisited((last) => ({
+          base: initialItems,
+          views: { ...(last.base === initialItems ? last.views : {}), [key]: view },
+        }));
       } catch {
         if (controller.signal.aborted) return; // a newer view replaced this one
         if (attempt === 0) {
@@ -82,7 +99,7 @@ export function useServerPagedList<T, C = undefined>({
       clearTimeout(retryTimer);
       controller.abort();
     };
-  }, [endpoint, atInitialView, key, debounce, initialItems, initialTotal, initialCounts, onPageOverflow]);
+  }, [endpoint, atInitialView, cached, key, debounce, initialItems, initialTotal, initialCounts, onPageOverflow]);
 
   if (atInitialView) {
     return { items: initialItems, total: initialTotal, counts: initialCounts, loading: false, failed: false };

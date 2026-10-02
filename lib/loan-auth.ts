@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
@@ -215,14 +216,17 @@ async function getDevelopmentLoanContext(
   return createDevelopmentLoanContext(user);
 }
 
-export async function getStudentContext(): Promise<StudentContext | null> {
+// The role access helpers are wrapped in React cache(): a layout and its page that both check
+// access in one server render share one session decrypt and one user lookup. The memo lasts for
+// that render only; route handlers have no render, so every call there reads afresh.
+export const getStudentContext = cache(async function getStudentContext(): Promise<StudentContext | null> {
   const context = await getStudentSessionContext();
   if (!context) return null;
 
   return { ...context, user: await buildStudentUser(context) };
-}
+});
 
-export async function getStudentSessionContext(): Promise<StudentSessionContext | null> {
+export const getStudentSessionContext = cache(async function getStudentSessionContext(): Promise<StudentSessionContext | null> {
   if (isDevelopmentApiBypass()) return getDevelopmentStudentSession();
 
   const session = await getCmuSession();
@@ -247,7 +251,7 @@ export async function getStudentSessionContext(): Promise<StudentSessionContext 
   }
 
   return { session, profile: session.profile, identity: { ...identity, studentCode } };
-}
+});
 
 export type RoleAccess =
   | { status: "authorized"; context: LoanUserContext }
@@ -259,7 +263,7 @@ export type AdminAccess = RoleAccess;
 export type ExecutiveAccess = RoleAccess;
 export type SuperAdminAccess = RoleAccess;
 
-export async function getAdvisorAccess(advisorName?: string): Promise<AdvisorAccess> {
+export const getAdvisorAccess = cache(async function getAdvisorAccess(advisorName?: string): Promise<AdvisorAccess> {
   if (isDevelopmentApiBypass() || isDevelopmentRoleEnabled("advisor")) {
     const context = await getDevelopmentLoanContext("advisor");
     return context ? { status: "authorized", context } : { status: "forbidden" };
@@ -276,7 +280,7 @@ export async function getAdvisorAccess(advisorName?: string): Promise<AdvisorAcc
     status: "authorized",
     context: { session, profile: session.profile, identity, user },
   };
-}
+});
 
 export async function getAdvisorContext(advisorName?: string): Promise<LoanUserContext | null> {
   const access = await getAdvisorAccess(advisorName);
@@ -295,7 +299,7 @@ function hasSuperAdminRole(roles: { role: UserRoleName }[]) {
   return roles.some(({ role }) => role === "super_admin");
 }
 
-export async function getAdminAccess(): Promise<AdminAccess> {
+export const getAdminAccess = cache(async function getAdminAccess(): Promise<AdminAccess> {
   if (isDevelopmentApiBypass() || isDevelopmentRoleEnabled("admin")) {
     const context = await getDevelopmentLoanContext("admin");
     return context ? { status: "authorized", context } : { status: "forbidden" };
@@ -312,14 +316,14 @@ export async function getAdminAccess(): Promise<AdminAccess> {
     status: "authorized",
     context: { session, profile: session.profile, identity, user },
   };
-}
+});
 
 export async function getAdminContext(): Promise<LoanUserContext | null> {
   const access = await getAdminAccess();
   return access.status === "authorized" ? access.context : null;
 }
 
-export async function getSuperAdminAccess(): Promise<SuperAdminAccess> {
+export const getSuperAdminAccess = cache(async function getSuperAdminAccess(): Promise<SuperAdminAccess> {
   if (isDevelopmentApiBypass() || isDevelopmentRoleEnabled("super_admin")) {
     const context = await getDevelopmentLoanContext("super_admin");
     return context ? { status: "authorized", context } : { status: "forbidden" };
@@ -336,7 +340,7 @@ export async function getSuperAdminAccess(): Promise<SuperAdminAccess> {
     status: "authorized",
     context: { session, profile: session.profile, identity, user },
   };
-}
+});
 
 export async function getDevelopmentStaffContext() {
   if (
@@ -346,7 +350,7 @@ export async function getDevelopmentStaffContext() {
   return getDevelopmentLoanContext("staff");
 }
 
-export async function getExecutiveAccess(): Promise<ExecutiveAccess> {
+export const getExecutiveAccess = cache(async function getExecutiveAccess(): Promise<ExecutiveAccess> {
   if (isDevelopmentApiBypass() || isDevelopmentRoleEnabled("executive")) {
     const context = await getDevelopmentLoanContext("executive");
     return context ? { status: "authorized", context } : { status: "forbidden" };
@@ -371,7 +375,7 @@ export async function getExecutiveAccess(): Promise<ExecutiveAccess> {
       user,
     },
   };
-}
+});
 
 export async function getExecutiveContext(): Promise<LoanUserContext | null> {
   const access = await getExecutiveAccess();
@@ -388,7 +392,7 @@ const DEVELOPMENT_CONTEXT_PRECEDENCE = ["admin", "super_admin", "executive", "ad
  * decrypt and one user lookup, where chaining the per-role getters costs one of each per role.
  * The caller is responsible for authorizing the roles on the returned context.
  */
-export async function getSignedInContext(): Promise<LoanUserContext | StudentContext | null> {
+export const getSignedInContext = cache(async function getSignedInContext(): Promise<LoanUserContext | StudentContext | null> {
   if (isDevelopmentApiBypass() || DEVELOPMENT_API_ROLES.some((role) => isDevelopmentRoleEnabled(role))) {
     for (const role of DEVELOPMENT_CONTEXT_PRECEDENCE) {
       const context = await getDevelopmentLoanContext(role);
@@ -406,7 +410,7 @@ export async function getSignedInContext(): Promise<LoanUserContext | StudentCon
 
   // Not staff: a student is signed in by their session alone.
   return getStudentContext();
-}
+});
 
 const FORBIDDEN_HOME_PATH = "/error?type=forbidden";
 
@@ -458,7 +462,7 @@ export type StudentAccess =
   | { status: "unauthenticated" }
   | { status: "forbidden" };
 
-export async function getStudentAccess(): Promise<StudentAccess> {
+export const getStudentAccess = cache(async function getStudentAccess(): Promise<StudentAccess> {
   const session = await getCmuSession();
   if (!session) return { status: "unauthenticated" };
 
@@ -466,7 +470,7 @@ export async function getStudentAccess(): Promise<StudentAccess> {
   if (!context) return { status: "forbidden" };
 
   return { status: "authorized", context };
-}
+});
 
 // Adds ?next=<current page> to the login URL. proxy.ts forwards the current pathname + search in
 // RETURN_PATH_HEADER; without a safe value the login URL is returned unchanged.
