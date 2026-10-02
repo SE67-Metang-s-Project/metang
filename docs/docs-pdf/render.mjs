@@ -64,7 +64,9 @@ const css = `
   html { font-size: 10.5pt; overflow-wrap: break-word; }
   body { font-family: "Liberation Sans", "Noto Sans Thai", "DejaVu Sans", sans-serif; line-height: 1.5;
          color: #111827; margin: 0; }
-  h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; break-after: avoid; color: #0f172a; }
+  /* Thai tone marks rise above the line box when the line height is small: the marks of a heading at
+     the top of a page were then printed in the bottom margin of the page before. 1.5 keeps them inside. */
+  h1, h2, h3, h4 { font-weight: 700; line-height: 1.5; break-after: avoid; color: #0f172a; }
   h1 { font-size: 1.9em; margin: 0 0 .4em; padding-bottom: .2em; border-bottom: 2px solid #1d4ed8; }
   h2 { font-size: 1.4em; margin: 1.6em 0 .5em; padding-bottom: .15em; border-bottom: 1px solid #cbd5e1; }
   h3 { font-size: 1.15em; margin: 1.3em 0 .4em; }
@@ -114,6 +116,28 @@ export function addBreakPoints(html) {
     .replace(/(<a [^>]*>)([^<]*)(<\/a>)/g, (m, open, text, close) => `${open}${soft(text)}${close}`);
 }
 
+// A PDF names every link target. A heading id in Thai letters becomes a name of 9 bytes for each
+// letter, and the PDF format allows 127 bytes, so a long Thai heading makes a name that some viewers
+// refuse (poppler warns about it). Headings and links with a non-ASCII id get a short ASCII id.
+export function asciiAnchors(html) {
+  const ids = new Map();
+  html = html.replace(/(<h[1-6][^>]* id=")([^"]*[^\x00-\x7F][^"]*)(")/g, (m, open, id, close) => {
+    const short = `h${ids.size + 1}`;
+    ids.set(id, short);
+    return open + short + close;
+  });
+  return html.replace(/href="#([^"]+)"/g, (m, fragment) => {
+    let decoded = fragment;
+    try {
+      decoded = decodeURIComponent(fragment);
+    } catch {
+      /* keep the fragment as it is */
+    }
+    const short = ids.get(decoded) ?? ids.get(fragment);
+    return short ? `href="#${short}"` : m;
+  });
+}
+
 /** Markdown file -> { html, title, lang }. `extraCss` is for tests only. */
 export function buildHtml(mdPath, { extraCss = "" } = {}) {
   const source = readFileSync(mdPath, "utf8");
@@ -128,7 +152,7 @@ export function buildHtml(mdPath, { extraCss = "" } = {}) {
       ? a + text.replace(/\n/g, "<br>\n") + c
       : m,
   );
-  body = addBreakPoints(body);
+  body = asciiAnchors(addBreakPoints(body));
   body = body.replace(/<li>\[ \] /g, "<li>☐ ").replace(/<li>\[x\] /gi, "<li>☑ ");
   const thai = (source.match(/[฀-๿]/g) ?? []).length;
   const lang = thai > source.length * 0.1 ? "th" : "en";
@@ -219,6 +243,7 @@ export function fitTables() {
 //   broken-word         a word that would fit on a line was split in the middle (a squeezed column)
 //   squeezed-column     a table column that needs little room got less than it needs
 //   broken-image        an image did not load
+//   broken-link         a link to a place in the same document that does not exist
 export function auditLayout(W) {
   const issues = [];
   const bodyLeft = document.body.getBoundingClientRect().left;
@@ -256,6 +281,16 @@ export function auditLayout(W) {
       add("clipped", el, `content ${el.scrollWidth}px in ${el.clientWidth}px`);
     }
     if (el.tagName === "IMG" && !(el.complete && el.naturalWidth > 0)) add("broken-image", el, el.getAttribute("src"));
+  }
+
+  for (const link of document.querySelectorAll('a[href^="#"]')) {
+    let id = link.getAttribute("href").slice(1);
+    try {
+      id = decodeURIComponent(id);
+    } catch {
+      /* use the id as written */
+    }
+    if (id && !document.getElementById(id)) add("broken-link", link, link.getAttribute("href"));
   }
 
   // a word split in the middle although it is short enough to fit on a line

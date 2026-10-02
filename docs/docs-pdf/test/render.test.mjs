@@ -69,6 +69,16 @@ function checkPdf(pdf, { sentinels = [] } = {}) {
     const bottom = page.height - MARGIN_MM.bottom * PT_PER_MM;
     // header and footer lie wholly inside the top and bottom margins; tall Thai marks may reach above the first line
     const body = page.words.filter((w) => w.y1 > top + 2 && w.y0 < bottom - 2);
+    // Header and footer sit in the margins, 45 pt from the edge of the page at most. Anything else in
+    // a margin is ink that overflowed from the next page (tall Thai tone marks do this).
+    const stray = page.words.filter(
+      (w) => !body.includes(w) && w.y1 > 45 && w.y0 < page.height - 45,
+    );
+    assert.deepEqual(
+      stray.map((w) => `${w.text} at y=${w.y0.toFixed(0)}`),
+      [],
+      `page ${index + 1}: text in the margin that is neither header nor footer`,
+    );
     assert.ok(body.length > 0 || imagePages.has(index + 1), `page ${index + 1} has no text and no image (an empty page)`);
     for (const w of body) {
       assert.ok(
@@ -78,6 +88,9 @@ function checkPdf(pdf, { sentinels = [] } = {}) {
     }
     bodyWords.push(...body.map((w) => w.text));
   });
+  // poppler warns when the PDF breaks its format (for example a link name longer than 127 bytes)
+  const info = spawnSync("pdfinfo", [pdf], { encoding: "utf8" });
+  assert.equal(info.stderr.trim(), "", `pdfinfo warns about ${path.basename(pdf)}: ${info.stderr.split("\n")[0]}`);
   const fonts = run("pdffonts", [pdf])
     .split("\n")
     .slice(2)
@@ -174,6 +187,15 @@ describe("the audit catches the squeezed layout", () => {
       extraCss: "th, td { overflow-wrap: normal !important; } table { table-layout: auto !important; }",
     });
     assert.ok(issues.some((i) => i.kind === "overflow" || i.kind === "clipped"), "overflow not reported");
+  });
+
+  test("a link to a missing heading is reported, and a Thai heading link works", async () => {
+    const md = out("links.md");
+    writeFileSync(md, "# Links\n\n[to nowhere](#no-such-heading)\n\n[to a Thai heading](#หัวข้อภาษาไทยที่ยาวมาก)\n\n## หัวข้อภาษาไทยที่ยาวมาก\n\nข้อความ\n");
+    const { issues } = await renderFile(browser, md, null);
+    const links = issues.filter((i) => i.kind === "broken-link");
+    assert.equal(links.length, 1, describeIssues(issues));
+    assert.match(links[0].detail, /no-such-heading/);
   });
 
   test("a missing image is reported", async () => {
