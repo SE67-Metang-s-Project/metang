@@ -26,7 +26,7 @@ https://mis.nurse.cmu.ac.th/thesis
 
 ## 2. การยืนยันตัวตน (Bearer Token)
 
-Token มีอายุ 24 ชั่วโมง นับจากเวลาที่ขอ เมื่อ token หมดอายุ ให้ขอใหม่ผ่านปลายทาง `/GetToken`
+Token มีอายุ 24 ชั่วโมง นับจากเวลาที่ขอ เมื่อ token หมดอายุ ให้ขอใหม่ผ่านปลายทาง `/EmailApi/GetToken`
 
 **รูปแบบ Header**
 
@@ -36,7 +36,7 @@ Authorization: Bearer <access_token>
 
 ## 3. Endpoints
 
-### 3.1 POST /GetToken
+### 3.1 POST /EmailApi/GetToken
 
 ขอ Bearer Token สำหรับใช้เรียก API
 
@@ -90,7 +90,7 @@ POST https://mis.nurse.cmu.ac.th/thesis/EmailApi/GetToken
 }
 ```
 
-### 3.2 POST /SendEmail
+### 3.2 POST /EmailApi/SendEmail
 
 ส่งอีเมลพร้อม HTML template ของคณะพยาบาลศาสตร์ มช.
 

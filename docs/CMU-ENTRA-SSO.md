@@ -26,14 +26,18 @@ OpenID Connect with ID-token signature, issuer, audience, nonce, and expiry vali
 | Area | File or route | Responsibility |
 | --- | --- | --- |
 | Shared authentication library | `lib/cmu-auth.ts` | Configuration, PKCE, state, encryption, profile sanitization, and session reads (with the nursing check in a production build) |
-| Login (the sign-in button) | `GET /metang/api/auth/login` | Creates a nursing-policy OAuth transaction in a production build (`NODE_ENV=production`), and a general one otherwise (`next dev`, or `DEBUG_MODE=true`). Redirects to CMU Entra |
+| Login (the sign-in button) | `GET /metang/api/auth/login` | Creates a nursing-policy OAuth transaction in a production build (`NODE_ENV=production`) unless `DEBUG_MODE=true`, and a general one otherwise (`next dev`, or a production build with `DEBUG_MODE=true`). Redirects to CMU Entra |
 | Nursing SSO login | `GET /metang/api/auth/nurse/login` | Always creates a nursing-policy OAuth transaction and redirects to CMU Entra |
-| Complete login | `GET /metang/api/auth/callback` | Validates the callback, exchanges the code, fetches BasicInfo, and applies nursing policy when requested, and always in a production build |
+| Complete login | `GET /metang/api/auth/callback` | Validates the callback, exchanges the code, fetches BasicInfo, and applies nursing policy when requested, and in a production build unless `DEBUG_MODE=true` |
 | Nursing access policy | `lib/nurse-auth.ts` | Allows only eligible nursing students and nursing-faculty employees |
-| Logout | `POST /metang/api/auth/logout` | Deletes the local session and redirects through Entra logout |
-| Login/profile UI | `app/page.tsx` | Shows login status and the complete BasicInfo JSON response |
+| Logout | `POST /metang/api/auth/logout` (`GET` also works) | Deletes the local session and the OAuth cookie, then sends a `303` to the login page under the base path. With `?federated=true` the `303` goes to `LOGOUT_URL` (Entra) instead |
+| Sign-in page | `app/login/page.tsx` | Shows the sign-in button and the error messages. `app/page.tsx` only redirects, to this page or to the home page of the signed-in account |
+| Debug profile view | `app/demo/cmu-sso/page.tsx` | Shows the complete BasicInfo JSON response. Returns 404 unless `NODE_ENV=development` or `DEBUG_MODE=true` |
 
-The application does not currently persist CMU identity information to Postgres.
+The application does not store the CMU BasicInfo profile in Postgres. At sign-in the callback calls
+`syncUserFromCmuProfile` (`db/queries/users.ts`). When an `app_user` row already matches the CMU
+account or email, it updates the Thai and English names on that row and fills `cmuAccount` and `email`
+when they are empty. It never creates a user.
 
 ## Request sequence
 
@@ -57,7 +61,7 @@ sequenceDiagram
   App->>API: GET BasicInfo with bearer token
   API-->>App: CMU profile JSON
   App->>App: Discard OAuth tokens
-  App-->>User: Encrypted cmu_session cookie and redirect to /
+  App-->>User: Encrypted cmu_session cookie and redirect to the return path or the role home page
 ```
 
 ### 1. Login request
@@ -93,9 +97,9 @@ Authorization: Bearer <access-token>
 ```
 
 The complete JSON-compatible BasicInfo response is sanitized and encrypted into the local
-`cmu_session` cookie. The signed-in page currently renders both individual fields and the
-formatted JSON response. Because BasicInfo can contain personal data, the raw response view
-should be removed or restricted before using the page outside development or administration.
+`cmu_session` cookie. The raw BasicInfo response is shown only on `/metang/demo/cmu-sso`, which
+returns 404 unless `NODE_ENV=development` or `DEBUG_MODE=true`. Because BasicInfo can contain
+personal data, do not set `DEBUG_MODE` on a site with real data.
 
 The OAuth access token and any returned refresh token are not stored in the browser, database,
 or local session.
@@ -116,29 +120,29 @@ students and nursing staff can use the application in production, and a session 
 account (for example one issued before this rule) is treated as signed out. `DEBUG_MODE=true`
 turns this rule off.
 
-Student IDs are interpreted using the format shown by the CMU student examples:
+Student IDs are interpreted using the format shown by the CMU student examples. Only the faculty
+code is checked; the plan and level digits are not:
 
 ```text
 YY 12 1 0 XXX
-│  │  │ │ └── student sequence
-│  │  │ └──── normal plan (0)
-│  │  └────── undergraduate (1)
+│  │  │ │ └── student sequence (not checked)
+│  │  │ └──── plan (not checked)
+│  │  └────── level (not checked)
 │  └───────── nursing faculty (12)
-└──────────── enrollment year, Buddhist Era short year
+└──────────── enrollment year, Buddhist Era short year (any two digits)
 ```
 
-The allowed student pattern is:
+The allowed student pattern (`NURSING_STUDENT_ID_PATTERN` in `lib/nurse-auth.ts`) is:
 
 ```text
-^\d{2}1210\d{3}$
+^\d{2}12\d{5}$
 ```
 
 Examples:
 
 - `661210XXX`: allowed nursing undergraduate, normal-plan student.
-- `661215XXX`: rejected because plan `5` is international, not normal plan `0`.
+- `661215XXX`: allowed. The plan digit is not checked, so an international-plan ID passes.
 - IDs with a faculty code other than `12`: rejected.
-- IDs with an undergraduate/plan segment other than `10`: rejected.
 
 Employees do not use the student-ID rule. An employee is allowed only when the CMU BasicInfo
 field `organization_code` is exactly `12`. All other employee organization codes, and profiles
@@ -203,15 +207,17 @@ maintenance guide).
 The path registered before the base path was added, `/api/auth/callback`, still reaches the
 callback while it stays registered. The `/api/:path*` redirect in `next.config.ts` sends the browser
 on to `/metang/api/auth/callback` with the `code` and `state` query unchanged. Do not rely on it: it
-costs one extra redirect, and it stops working if that redirect is removed.
+costs one extra redirect, and it stops working if that redirect is removed. It also works only if
+the reverse proxy forwards root paths to the application. The sample `deploy/nginx.conf.example`
+forwards only `/metang/`, so behind it the old path does not reach the application.
 
 To move an environment from the old addresses to the new ones:
 
 1. In Entra, add `<origin>/<sub path>/api/auth/callback` and `<origin>/<sub path>/login`. Keep the
    old `/api/auth/callback` and `/login` registered.
 2. Set `CALLBACK_URL` to the new callback address in the secret store, and deploy this release.
-   `CALLBACK_URL` and the Entra registration must match; if they do not, sign-in fails with
-   `token_exchange_failed`.
+   `CALLBACK_URL` and the Entra registration must match; if they do not, sign-in stops on a
+   Microsoft redirect-URI error page.
 3. Sign in, then sign out with the federated logout, and confirm both return to the application.
 4. Remove the old `/api/auth/callback` and `/login` registrations from Entra.
 
@@ -277,8 +283,12 @@ after confirming the desired behavior with the CMU application owner.
 
 | Cookie | Lifetime | Contents | Attributes |
 | --- | --- | --- | --- |
-| `cmu_oauth_transaction` | 10 minutes | OAuth state, PKCE verifier, and expiry | `HttpOnly`, `SameSite=Lax`, `Path=/`, `Secure` in production |
-| `cmu_session` | 8 hours | Sanitized BasicInfo profile, login time, and expiry | `HttpOnly`, `SameSite=Lax`, `Path=/`, `Secure` in production |
+| `cmu_oauth_transaction` | 10 minutes | OAuth state, PKCE verifier, expiry, login mode, and the optional return path | `HttpOnly`, `SameSite=Lax`, `Path=/metang`, `Secure` in production |
+| `cmu_session` | 8 hours | Sanitized BasicInfo profile, login time, and expiry | `HttpOnly`, `SameSite=Lax`, `Path=/metang`, `Secure` in production |
+
+`Path` is the base path (`PUBLIC_SUBPATH`, `/metang` by default, `/` when the application is
+served from the root), so other applications on the same domain do not receive the cookies. The
+callback and logout also expire cookies of the same names at `Path=/`, which earlier builds set.
 
 Both cookies are encrypted and authenticated with AES-256-GCM. The encryption key is a SHA-256
 digest derived from `SESSION_SECRET`. Cookie decryption or authentication failure results in no
@@ -297,16 +307,18 @@ sessions to a server-side store and keep only an opaque session identifier in th
    ```
 
 2. Replace all placeholders and ensure each variable appears only once.
-3. Start Next.js on the callback port:
+3. Start Next.js on the callback port. `npm run dev` already passes `-p 8080`. It stops unless
+   `.env` sets `INFISICAL_ENV`; `npm run dev-normal` skips that check:
 
    ```bash
-   npm run dev -- -p 8080
+   npm run dev
    ```
 
 4. Open <http://localhost:8080/metang>.
 5. Select **เข้าสู่ระบบด้วย CMU Account**.
 6. Complete CMU sign-in and consent.
-7. Confirm the page displays the expected BasicInfo profile.
+7. Confirm you land on the home page of your role. To see the BasicInfo profile, open
+   `/metang/demo/cmu-sso` (works only under `next dev` or with `DEBUG_MODE=true`).
 8. Test **ออกจากระบบ** and confirm the local session is cleared and the login page opens. To test
    the Entra sign-out too, open `/metang/api/auth/logout?federated=true` and confirm that the
    browser returns to `/metang/login`.
@@ -321,13 +333,14 @@ sessions to a server-side store and keep only an opaque session identifier in th
 - Store `CLIENT_SECRET` and `SESSION_SECRET` in the deployment secret manager.
 - Use one stable `SESSION_SECRET` across all instances.
 - Do not log authorization codes, access tokens, refresh tokens, or cookie values.
-- Remove or restrict the raw BasicInfo display if end users do not need it.
+- Do not set `DEBUG_MODE` on a site with real data. It shows the raw BasicInfo profile at
+  `/metang/demo/cmu-sso`.
 - Track the Entra client-secret expiry and rotate it before expiration.
 - Request only the delegated permissions required by the application.
 - Confirm production responses set both authentication cookies with `Secure`.
 - Confirm every staff account (admin, advisor, executive, SuperAdmin) has `organization_code` `12` in
   its CMU profile. A production build refuses any other account at sign-in, even with a role.
-- Do not set `NODE_ENV` by hand on the host or in Infisical. The nursing rule trusts it, and
+- Do not set `NODE_ENV` by hand on the host or in any secret store. The nursing rule trusts it, and
   `NODE_ENV=development` would turn the rule off.
 - Do not set `DEBUG_MODE` on a production site. It also turns the rule off, and it turns on the
   `DEV_*` shortcuts. The server logs a warning at start when a production build has it on.
@@ -368,7 +381,8 @@ decrypt a transaction or session cookie created by another instance.
 - PKCE binds the authorization code to the browser-initiated transaction.
 - Tokens are used only long enough to retrieve BasicInfo and are then discarded.
 - The local session is encrypted, authenticated, HTTP-only, and time-limited.
-- Local logout is initiated with POST to avoid a logout action embedded as a normal link.
+- The sign-out button submits a POST form. The logout route also accepts GET (federated sign-out
+  is a GET), so a link on another site can sign a user out of the application.
 - This is not currently a full OpenID Connect relying-party implementation because it does not
   validate an ID token.
 - Revoking CMU access does not immediately revoke an already-issued eight-hour local cookie.
