@@ -132,6 +132,11 @@ test("verify-slip rows keep only what VerifySlipCard reads", () => {
   assert.equal("reviewedAt" in (slim.paymentHistory?.[0] ?? {}), false);
   // What the verify-slip modal does read stays.
   assert.equal(slim.phone, "0812345678");
+  // Verify-slip bills the approved amount; other views keep the requested one.
+  const lowered = { ...withApproval, amount: 5000, approvedAmount: 3000 };
+  assert.equal(toActionRequest(lowered, view({ verifySlip: true }), undefined, NOW).amount, "3000");
+  assert.equal(toActionRequest({ ...lowered, approvedAmount: null }, view({ verifySlip: true }), undefined, NOW).amount, "5000");
+  assert.equal(toActionRequest(lowered, view(), undefined, NOW).amount, "5000");
   assert.match(slim.paymentHistory?.[0].slipImageUrl ?? "", /\/api\/payments\/p-1\/slip$/);
   // paidTime is read by VerifySlipCard (its own PaymentEvidence type), not declared on PaymentRecord.
   const paidTime = (r: typeof full) => (r.paymentHistory?.[0] as Record<string, unknown>).paidTime;
