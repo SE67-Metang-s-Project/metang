@@ -1,0 +1,44 @@
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Liberation Sans, Arial, sans-serif", "fontSize": "20px", "primaryColor": "#ffffff", "primaryBorderColor": "#334155", "lineColor": "#334155"}, "flowchart": {"useMaxWidth": false, "htmlLabels": true, "wrappingWidth": 420, "curve": "basis", "nodeSpacing": 50, "rankSpacing": 70}}}%%
+flowchart TB
+  START(["Student submits<br/>(the app creates the request<br/>directly in pending_advisor)"]) --> PA["pending_advisor"]
+  PA -->|"advisor approves"| PAD["pending_admin"]
+  PAD -->|"admin approves<br/>and sets the amount"| PE["pending_executive"]
+  PE -->|"executive approves"| PD["pending_disbursement"]
+  PD -->|"admin records<br/>the transfer and slip"| DIS["disbursed<br/>the student confirms receipt<br/>(transfer_confirmed_at);<br/>the status does not change"]
+  DIS -->|"last installment<br/>confirmed"| CL(["closed"])
+
+  PE -->|"executive returns:<br/>the admin lowers the amount"| PAD
+
+  RET["<b>returned</b><br/>to the student for a correction"]
+  REJ(["<b>rejected</b><br/>final"])
+  CAN(["<b>cancelled</b><br/>final"])
+  DR["<b>draft</b><br/>only in seed data;<br/>the app never creates it"]
+
+  PA -.->|"advisor returns"| RET
+  PAD -.->|"admin returns"| RET
+  RET -.->|"student resubmits<br/>at the step that returned it"| PA
+  RET -.->|"student resubmits"| PAD
+
+  PA -.->|"advisor rejects"| REJ
+  PAD -.->|"admin rejects"| REJ
+  PE -.->|"executive rejects"| REJ
+
+  DR -.->|"student cancels"| CAN
+  RET -.->|"student cancels"| CAN
+  PA -.->|"student cancels, or the advisor<br/>is removed (users.ts)"| CAN
+  PAD -.->|"student cancels,<br/>or admin cancels"| CAN
+  PE -.->|"student cancels"| CAN
+  PD -.->|"admin cancels (the student cannot)"| CAN
+
+  classDef open fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#0f172a;
+  classDef done fill:#dcfce7,stroke:#15803d,stroke-width:2px,color:#0f172a;
+  classDef back fill:#fef3c7,stroke:#b45309,stroke-width:2px,color:#0f172a;
+  classDef stop fill:#fee2e2,stroke:#b91c1c,stroke-width:2px,color:#0f172a;
+  classDef start fill:#fef9c3,stroke:#a16207,stroke-width:2px,color:#0f172a;
+  classDef muted fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a;
+  class PA,PAD,PE,PD open;
+  class DIS,CL done;
+  class RET back;
+  class REJ,CAN stop;
+  class START start;
+  class DR muted;

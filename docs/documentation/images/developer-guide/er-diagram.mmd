@@ -1,0 +1,94 @@
+erDiagram
+  app_user ||--o{ user_role : "holds"
+  app_user |o--o{ user_role : "grants"
+  app_user ||--o{ loan_request : "advises"
+  app_user |o--o{ loan_request : "is assigned"
+  app_user |o--o{ loan_approval : "decides"
+  app_user |o--o{ payment : "reviews"
+  app_user ||--o{ fund_transaction : "performs"
+  app_user |o--o{ system_setting : "last edits"
+  loan_request ||--o{ loan_approval : "has steps"
+  loan_request ||--o{ installment : "has"
+  loan_request ||--o{ payment : "receives"
+  loan_request |o--o{ fund_transaction : "has ledger rows"
+  installment |o--o{ payment : "is aimed at by"
+  payment |o--o{ fund_transaction : "is credited by"
+
+  app_user {
+    uuid id PK
+    text email
+    text cmu_account
+    text full_name_th
+    text full_name_en
+  }
+  user_role {
+    uuid user_id PK, FK
+    user_role_name role PK
+    uuid granted_by FK
+    timestamptz granted_at
+  }
+  loan_request {
+    text id PK
+    uuid advisor_id FK
+    uuid assigned_admin_id FK
+    text student_code
+    integer amount
+    integer approved_amount
+    loan_status status
+  }
+  loan_approval {
+    bigint id PK
+    text loan_id FK
+    uuid decided_by FK
+    approval_step step
+    decision decision
+    smallint attempt
+  }
+  installment {
+    bigint id PK
+    text loan_id FK
+    smallint seq
+    date due_date
+    integer amount_due
+    integer amount_paid
+  }
+  payment {
+    uuid id PK
+    text loan_id FK
+    bigint installment_id FK
+    uuid confirmed_by FK
+    integer amount
+    payment_status status
+    timestamptz paid_at
+  }
+  fund_transaction {
+    bigint id PK
+    text loan_id FK
+    uuid payment_id FK
+    uuid performed_by FK
+    fund_transaction_kind kind
+    integer amount
+    smallint direction
+  }
+  notification_outbox {
+    uuid id PK
+    text dedupe_key
+    text event_type
+    notification_status status
+    integer attempt_count
+  }
+  audit_log {
+    bigint id PK
+    uuid actor_id
+    text actor_student_code
+    text action
+    text entity_type
+    text entity_id
+  }
+  system_setting {
+    smallint id PK
+    uuid updated_by_id FK
+    text bank_name
+    text account_number
+    text contact_email
+  }

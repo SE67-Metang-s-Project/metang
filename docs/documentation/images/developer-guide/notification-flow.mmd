@@ -1,0 +1,38 @@
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Liberation Sans, Arial, sans-serif", "fontSize": "20px", "primaryColor": "#ffffff", "primaryBorderColor": "#334155", "lineColor": "#334155"}, "flowchart": {"useMaxWidth": false, "htmlLabels": true, "wrappingWidth": 420, "curve": "basis", "nodeSpacing": 50, "rankSpacing": 70}}}%%
+flowchart TB
+  subgraph tx["One database transaction"]
+    T1["<b>Status change</b><br/>loan_request.status<br/>+ audit_log row"]
+    T2["<b>reviewer_notification row</b><br/>enqueueReviewerNotifications<br/>dedupe_key = audit_log id + recipient"]
+  end
+  DAILY["<b>installment-reminders job</b><br/>daily, after 08:00 Bangkok<br/>writes installment_reminder rows<br/>dedupe_key = installment + due date + offset"]
+  OB[("<b>notification_outbox</b><br/>pending, retry, processing,<br/>delivered, failed")]
+
+  TICK["<b>Scheduler tick</b><br/>timer, after page requests,<br/>or an outside scheduler"]
+  W["<b>app/api/cron/deliver-*</b><br/>claimDueNotifications:<br/>FOR UPDATE SKIP LOCKED,<br/>15-minute lease"]
+  SEND{"<b>Send</b><br/>FON (LINE) for reviewers<br/>Email API for reminders"}
+
+  DEL["<b>deleteFinished</b><br/>reviewer, loan_outcome,<br/>payment_outcome rows"]
+  KEEP["<b>markDelivered / markSkipped</b><br/>installment_reminder rows stay:<br/>the dedupe_key stops a second email"]
+  RETRY["<b>markFailed (retry)</b><br/>waits 1, 5, 15, 60 minutes"]
+  FAIL["<b>failed</b><br/>after 5 attempts,<br/>or a permanent error"]
+
+  T1 --> T2 --> OB
+  DAILY --> OB
+  TICK --> W
+  OB --> W
+  W --> SEND
+  SEND -->|"sent or skipped"| DEL
+  SEND -->|"sent or skipped"| KEEP
+  SEND -->|"temporary error"| RETRY
+  SEND -->|"permanent error"| FAIL
+  RETRY -.->|"available_at later"| OB
+
+  classDef step fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#0f172a;
+  classDef data fill:#dcfce7,stroke:#15803d,stroke-width:2px,color:#0f172a;
+  classDef gate fill:#fef3c7,stroke:#b45309,stroke-width:2px,color:#0f172a;
+  classDef stop fill:#fee2e2,stroke:#b91c1c,stroke-width:2px,color:#0f172a;
+  class T1,T2,DAILY,TICK,W,DEL,KEEP,RETRY step;
+  class OB data;
+  class SEND gate;
+  class FAIL stop;
+  style tx fill:#f8fafc,stroke:#1d4ed8,stroke-width:2px,stroke-dasharray: 6 4;

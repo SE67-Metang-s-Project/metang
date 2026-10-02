@@ -1,0 +1,56 @@
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Liberation Sans, Arial, sans-serif", "fontSize": "20px", "primaryColor": "#ffffff", "primaryBorderColor": "#334155", "lineColor": "#334155"}, "flowchart": {"useMaxWidth": false, "htmlLabels": true, "wrappingWidth": 420, "curve": "basis", "nodeSpacing": 50, "rankSpacing": 70}}}%%
+flowchart TB
+  U["<b>Browser</b>"]
+  PX["<b>proxy.ts</b><br/>sets the return path;<br/>with JOB_RUNNER=request it also<br/>runs due jobs after a request"]
+
+  subgraph req["Request path"]
+    direction TB
+    PG["<b>app/ROLE/page.tsx</b><br/>Server Components<br/>guard: require*Access"]
+    CO["<b>components/</b><br/>React screens"]
+    API["<b>app/api/**/route.ts</b><br/>get*Context, validateJsonRequest,<br/>apiOk and apiError"]
+  end
+
+  subgraph srv["Shared server code"]
+    direction LR
+    LIB["<b>lib/</b><br/>validation, view models,<br/>sign-in, slip storage"]
+    Q["<b>db/queries/</b><br/>explicit select, transactions<br/>(through lib/prisma.ts)"]
+  end
+
+  subgraph bg["Background path"]
+    direction TB
+    INS["<b>instrumentation.ts</b><br/>starts the scheduler"]
+    SCH["<b>lib/jobs/start-scheduler.ts</b><br/>5 jobs on timers"]
+    CR["<b>app/api/cron/*/route.ts</b><br/>checkCronAuth"]
+  end
+
+  D[("<b>PostgreSQL</b>")]
+  S[("<b>Supabase Storage</b><br/>slip files")]
+  E["<b>CMU Entra ID</b><br/>and BasicInfo API"]
+  F["<b>CMU LINE FON</b>"]
+  M["<b>CMU Email API</b>"]
+
+  U --> PX --> PG
+  PG --> CO
+  CO -->|"fetch(withBasePath(...))"| API
+  PG & API --> LIB
+  PG & API --> Q
+  Q --> D
+  LIB -->|"lib/slip-storage.ts"| S
+  LIB -->|"lib/cmu-auth.ts"| E
+
+  INS --> SCH --> CR
+  CR --> Q
+  CR -->|"reviewer messages"| F
+  CR -->|"installment reminders"| M
+
+  classDef app fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#0f172a;
+  classDef data fill:#dcfce7,stroke:#15803d,stroke-width:2px,color:#0f172a;
+  classDef external fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a;
+  classDef person fill:#fef9c3,stroke:#a16207,stroke-width:2px,color:#0f172a;
+  class PX,PG,CO,API,LIB,Q,INS,SCH,CR app;
+  class D,S data;
+  class E,F,M external;
+  class U person;
+  style req fill:#f8fafc,stroke:#1d4ed8,stroke-width:2px,stroke-dasharray: 6 4;
+  style srv fill:#f8fafc,stroke:#1d4ed8,stroke-width:2px,stroke-dasharray: 6 4;
+  style bg fill:#f8fafc,stroke:#1d4ed8,stroke-width:2px,stroke-dasharray: 6 4;

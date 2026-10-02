@@ -1,0 +1,35 @@
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Liberation Sans, Arial, sans-serif", "fontSize": "20px", "primaryColor": "#ffffff", "primaryBorderColor": "#334155", "lineColor": "#334155"}, "flowchart": {"useMaxWidth": false, "htmlLabels": true, "wrappingWidth": 420, "curve": "basis", "nodeSpacing": 50, "rankSpacing": 70}}}%%
+flowchart TB
+  EDIT["<b>Edit code</b><br/>and its tests"]
+  LOCAL["<b>npm run ci:local</b><br/>optional, before a risky push:<br/>lint, tsc, build, tests, api:test"]
+  PUSH["<b>git push</b><br/>straight to main"]
+  HOOK{"<b>pre-push hook</b><br/>npm run lint<br/>npx tsc --noEmit"}
+  MAIN["<b>main</b>"]
+
+  subgraph ci["GitHub Actions CI (every push, every branch)"]
+    direction LR
+    J1["<b>Lint, type check, build</b>"]
+    J2["<b>Unit tests</b><br/>npm test"]
+    J3["<b>API tests (Bruno)</b><br/>npm run api:test"]
+  end
+
+  MIG["<b>Migrate production</b><br/>manual workflow, on main only:<br/>backup confirmed, reviewer approval,<br/>prisma migrate deploy"]
+  DEP["<b>Client deploys</b><br/>nothing deploys automatically"]
+
+  EDIT --> PUSH
+  EDIT -.-> LOCAL -.-> PUSH
+  PUSH --> HOOK
+  HOOK -->|"fails: the push stops"| EDIT
+  HOOK -->|"passes"| MAIN
+  MAIN --> ci
+  MAIN -.->|"when it holds a new migration"| MIG
+  MIG -.-> DEP
+  ci -.-> DEP
+
+  classDef step fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#0f172a;
+  classDef gate fill:#fef3c7,stroke:#b45309,stroke-width:2px,color:#0f172a;
+  classDef done fill:#dcfce7,stroke:#15803d,stroke-width:2px,color:#0f172a;
+  class EDIT,LOCAL,PUSH,J1,J2,J3 step;
+  class HOOK gate;
+  class MAIN,MIG,DEP done;
+  style ci fill:#f8fafc,stroke:#1d4ed8,stroke-width:2px,stroke-dasharray: 6 4;
