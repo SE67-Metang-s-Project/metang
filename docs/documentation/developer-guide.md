@@ -214,8 +214,8 @@ is the only way back. The maintenance guide, Section 5.2, describes the backup.
 ## 5. Tests
 
 `npm test` runs `tests/*.test.ts` and `tests/*.test.mjs` with `node:test` through `tsx`, using
-`--conditions=react-server` so that files that import `server-only` load. On 2026-10-02 it ran 579
-tests in 103 files. Run one file like this:
+`--conditions=react-server` so that files that import `server-only` load. On 2026-10-02 it ran 584
+tests in 104 files. Run one file like this:
 
 ```bash
 npx tsx --conditions=react-server --test tests/fund-budget.test.ts
