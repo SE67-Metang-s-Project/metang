@@ -1,6 +1,6 @@
 // Renders the Markdown guides to PDF: markdown-it -> HTML -> Chromium (puppeteer-core).
 //
-//   node render.mjs                       the four guides in docs/documentation -> docs/documentation/pdf
+//   node render.mjs                       the six guides in docs/documentation -> docs/documentation/pdf
 //   node render.mjs --out <dir> a.md b.md  other files, other folder
 //   node render.mjs --audit-only          check the layout, write no PDF
 //
@@ -27,7 +27,9 @@ export const CONTENT_WIDTH_PX = Math.round(((210 - MARGIN_MM.left - MARGIN_MM.ri
 
 export const DEFAULT_FILES = [
   "docs/documentation/developer-guide.en.md",
+  "docs/documentation/developer-guide.th.md",
   "docs/documentation/maintenance-guide.en.md",
+  "docs/documentation/maintenance-guide.th.md",
   "docs/documentation/user-manual-staff.md",
   "docs/documentation/user-manual-student.md",
 ];

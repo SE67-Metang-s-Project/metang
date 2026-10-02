@@ -10,7 +10,7 @@ This is a Next.js 16 App Router project written in TypeScript.
 - `db/migrations/` contains generated Prisma migrations. Review generated SQL before applying it.
 - `db/seed.ts` provides mock development data.
 - `public/` stores static assets served from the site root.
-- `docs/documentation/developer-guide.en.md` explains setup, tests, CI, database changes, and which documents to update after a change.
+- `docs/documentation/developer-guide.en.md` explains setup, tests, CI, database changes, and which documents to update after a change. It and the maintenance guide have a Thai copy (`*.th.md`): change both.
 
 Use the `@/` alias for root-relative imports, for example `@/lib/prisma`.
 
