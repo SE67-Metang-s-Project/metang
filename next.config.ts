@@ -40,6 +40,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  experimental: {
+    staleTimes: { dynamic: 60 },
+  },
   async redirects() {
     // Served from the root, the old paths are the real paths.
     if (!BASE_PATH) return [];
