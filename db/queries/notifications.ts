@@ -191,3 +191,15 @@ export function markSkipped(id: string, reason: string) {
     data: { status: "delivered", deliveredAt: null, lastError: reason },
   });
 }
+
+/**
+ * Finishes a row without keeping it: no delivery history is logged. Only for events nothing
+ * enqueues a second time. Reviewer notices are keyed on the audit-log row of one transition, and
+ * the outcome events are no longer written. Do NOT use it for installment reminders: their
+ * dedupe_key row is what stops a restarted scheduler from emailing the same reminder again, so
+ * they keep markDelivered. `deleteMany` instead of `delete`, so a row that is already gone (a
+ * reclaimed lease) is not an error.
+ */
+export function deleteFinished(id: string) {
+  return prisma.notificationOutbox.deleteMany({ where: { id } });
+}

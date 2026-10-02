@@ -4,9 +4,8 @@ import { getAppBaseUrl } from "@/lib/app-base-url";
 import {
   REVIEWER_NOTIFICATION_EVENT,
   claimDueNotifications,
-  markDelivered,
   markFailed,
-  markSkipped,
+  deleteFinished,
 } from "@/db/queries/notifications";
 import {
   getLoanNotificationContext,
@@ -67,14 +66,14 @@ async function handle(request: Request) {
 
         const step = REVIEWER_STEP_BY_STATUS[payload.status as LoanStatus];
         if (!step) {
-          await markSkipped(row.id, "no reviewer step for enqueued status");
+          await deleteFinished(row.id);
           skipped++;
           return;
         }
 
         const loan = await getLoanNotificationContext(payload.loanId);
         if (!loan) {
-          await markSkipped(row.id, "loan no longer exists");
+          await deleteFinished(row.id);
           skipped++;
           return;
         }
@@ -87,7 +86,7 @@ async function handle(request: Request) {
         });
 
         if (decision.kind === "skip") {
-          await markSkipped(row.id, decision.reason);
+          await deleteFinished(row.id);
           skipped++;
           return;
         }
@@ -105,7 +104,7 @@ async function handle(request: Request) {
 
         try {
           await sendLineNotification(messagePayload, { idempotencyKey: row.dedupeKey });
-          await markDelivered(row.id);
+          await deleteFinished(row.id);
           delivered++;
         } catch (error) {
           const outcome =

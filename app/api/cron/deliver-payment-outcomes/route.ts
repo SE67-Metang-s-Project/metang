@@ -4,9 +4,8 @@ import { getAppBaseUrl } from "@/lib/app-base-url";
 import {
   PAYMENT_OUTCOME_EVENT,
   claimDueNotifications,
-  markDelivered,
   markFailed,
-  markSkipped,
+  deleteFinished,
 } from "@/db/queries/notifications";
 import { getPaymentOutcomeContextById } from "@/db/queries/notification-recipients";
 import { buildPaymentOutcomeEmail } from "@/lib/email-api/payment-outcome-template";
@@ -62,7 +61,7 @@ async function handle(request: Request) {
           await getPaymentOutcomeContextById(parsed.paymentId),
         );
         if (decision.kind === "skip") {
-          await markSkipped(row.id, decision.reason);
+          await deleteFinished(row.id);
           skipped++;
           return;
         }
@@ -88,7 +87,7 @@ async function handle(request: Request) {
 
         try {
           await sendEmail(emailPayload);
-          await markDelivered(row.id);
+          await deleteFinished(row.id);
           delivered++;
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
