@@ -45,7 +45,6 @@ export default function TempLoanSummaryCard({ profile }: TempLoanSummaryCardProp
     .filter(Boolean)
     .join(" | ");
   const usesLongThaiDegree = educationLevel?.includes("ประกาศนียบัตรบัณฑิต") ?? false;
-  const thaiMobileSummaryLine = [programLabel, thaiMobileProfileMeta].filter(Boolean).join(" | ");
 
   return (
     <section className={styles.tempLoanSummary} aria-labelledby="temp-loan-summary-title">
@@ -58,16 +57,19 @@ export default function TempLoanSummaryCard({ profile }: TempLoanSummaryCardProp
         <div className={styles.summaryProfileDetails}>
           {language === "th" ? (
             <>
-              {thaiMobileSummaryLine ? (
-                <p
+              {programLabel || thaiMobileProfileMeta ? (
+                <div
                   className={
                     usesLongThaiDegree
                       ? styles.summaryThaiMobileHidden
                       : styles.summaryThaiMobileOnly
                   }
                 >
-                  {thaiMobileSummaryLine}
-                </p>
+                  {programLabel ? <p className={styles.summaryThaiProgram}>{programLabel}</p> : null}
+                  {thaiMobileProfileMeta ? (
+                    <p className={styles.summaryThaiProfileMeta}>{thaiMobileProfileMeta}</p>
+                  ) : null}
+                </div>
               ) : null}
               <div
                 className={
@@ -76,18 +78,26 @@ export default function TempLoanSummaryCard({ profile }: TempLoanSummaryCardProp
                     : styles.summaryThaiMobileHidden
                 }
               >
-                {programLabel ? <p>{programLabel}</p> : null}
-                {thaiMobileProfileMeta ? <p>{thaiMobileProfileMeta}</p> : null}
+                {programLabel ? <p className={styles.summaryThaiProgram}>{programLabel}</p> : null}
+                {thaiMobileProfileMeta ? (
+                  <p className={styles.summaryThaiProfileMeta}>{thaiMobileProfileMeta}</p>
+                ) : null}
               </div>
               <div className={styles.summaryThaiDesktopOnly}>
-                {programLabel ? <p>{programLabel}</p> : null}
-                {profileMeta ? <p>{profileMeta}</p> : null}
+                {programLabel ? <p className={styles.summaryThaiProgram}>{programLabel}</p> : null}
+                {profileMeta ? <p className={styles.summaryThaiProfileMeta}>{profileMeta}</p> : null}
               </div>
             </>
           ) : (
             <>
-              {programLabel ? <p>{programLabel}</p> : null}
-              {profileMeta ? <p>{profileMeta}</p> : null}
+              <div className={styles.summaryNarrowOnly}>
+                {programLabel ? <p>{programLabel}</p> : null}
+                {thaiMobileProfileMeta ? <p>{thaiMobileProfileMeta}</p> : null}
+              </div>
+              <div className={styles.summaryNarrowHidden}>
+                {programLabel ? <p>{programLabel}</p> : null}
+                {profileMeta ? <p>{profileMeta}</p> : null}
+              </div>
             </>
           )}
         </div>

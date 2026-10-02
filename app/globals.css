@@ -8,6 +8,12 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Keep the authored type scale on mobile browsers instead of allowing Android text autosizing. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   background: var(--color-background);

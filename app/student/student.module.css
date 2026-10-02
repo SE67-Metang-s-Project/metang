@@ -1644,9 +1644,27 @@
   display: grid;
 }
 
+.summaryNarrowOnly {
+  display: none;
+}
+
+.summaryNarrowHidden {
+  display: contents;
+}
+
 @media (max-width: 639px) {
   .summaryThaiMobileOnly {
     white-space: nowrap;
+  }
+
+  .summaryThaiMobileOnly .summaryThaiProgram,
+  .summaryThaiMobileOnly .summaryThaiProfileMeta {
+    display: inline;
+  }
+
+  .summaryThaiMobileOnly .summaryThaiProgram + .summaryThaiProfileMeta::before {
+    margin: 0 8px;
+    content: "|";
   }
 
   .summaryThaiMobileHidden,
@@ -5229,4 +5247,84 @@
   .studentDetailPageContent {
     padding: 24px 24px 48px;
   }
+}
+
+/* Small Android handsets need a little more content width and must never force card text outside. */
+@media (max-width: 439px) {
+  .studentPageContent,
+  .studentDetailPageContent {
+    padding: 16px 12px 32px;
+  }
+
+  .studentPage * {
+    min-width: 0;
+  }
+
+  .studentPage :is(p, h1, h2, h3, h4, h5, h6, span, strong, small, a, button, label, dt, dd, li) {
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  .studentPage :is(button, a, label) {
+    white-space: normal;
+  }
+
+  .summaryThaiMobileOnly .summaryThaiProgram {
+    overflow-wrap: normal;
+    word-break: normal;
+    white-space: normal;
+  }
+
+  .summaryThaiMobileOnly .summaryThaiProfileMeta {
+    overflow-wrap: normal;
+    word-break: keep-all;
+    white-space: nowrap;
+  }
+
+  .summaryThaiMobileLongOnly .summaryThaiProfileMeta,
+  .summaryNarrowOnly p + p {
+    white-space: nowrap;
+  }
+
+  .summaryNarrowOnly {
+    display: block;
+  }
+
+  .summaryNarrowHidden {
+    display: none;
+  }
+
+  .studentPage :is(
+    .studentHeader,
+    .summaryIntro,
+    .summaryFooter,
+    .paymentBehavior,
+    .installmentHeading,
+    .installmentDetails,
+    .historyCard,
+    .historyCardTitle,
+    .behaviorHeading,
+    .loanFormFieldMeta,
+    .tempDetailOverviewTopline,
+    .tempCurrentOverviewTopline,
+    .loanDetailTopline,
+    .loanScheduleRow,
+    .returnedRequestAlert > div
+  ) {
+    flex-wrap: wrap;
+  }
+
+  .summaryThaiMobileOnly {
+    white-space: normal;
+  }
+
+  .summaryThaiMobileOnly .summaryThaiProgram,
+  .summaryThaiMobileOnly .summaryThaiProfileMeta {
+    display: block;
+  }
+
+  .summaryThaiMobileOnly .summaryThaiProgram + .summaryThaiProfileMeta::before {
+    display: none;
+  }
+
 }
