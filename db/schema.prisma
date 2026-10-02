@@ -249,7 +249,12 @@ model AuditLog {
   // No FK: the row outlives a deleted staff member. Append-only (trigger audit_log_append_only).
   actorId          String?  @map("actor_id") @db.Uuid
   actorStudentCode String?  @map("actor_student_code") @db.Text
-  action           String   @db.Text
+  // Snapshot at write time, filled by trigger audit_log_snapshot_actor: the actor's name and the
+  // roles they held, comma-joined ("student" for a student). NULL only on a pre-existing row
+  // whose staff actor was already deleted.
+  actorName        String?  @map("actor_name") @db.Text
+  actorRole        String?  @map("actor_role") @db.Text
+  action          String   @db.Text
   entityType       String   @map("entity_type") @db.Text
   entityId         String   @map("entity_id") @db.Text
   before           Json?    @db.JsonB

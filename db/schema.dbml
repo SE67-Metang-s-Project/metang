@@ -181,6 +181,8 @@ Table audit_log {
   id          bigserial [pk]
   actor_id    uuid [note: 'staff actor; no FK, the row outlives a deleted user']
   actor_student_code text [note: 'student actor; CHECK exactly one of actor_id, actor_student_code']
+  actor_name  text [note: 'snapshot at insert (trigger): staff full_name_th or the student name']
+  actor_role  text [note: 'snapshot at insert (trigger): held roles comma-joined, or student']
   action      text [not null]
   entity_type text [not null]
   entity_id   text [not null]
