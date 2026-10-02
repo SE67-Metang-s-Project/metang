@@ -8,6 +8,7 @@ import RequestTimeline, {
   type ActionHistory,
   type BankDetails,
 } from "@/components/shared/RequestTimeline";
+import { getTransferActions } from "@/lib/transfer-actions";
 import { useModalDismiss } from "@/hooks/useBodyScrollLock";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 import styles from "@/app/student/student.module.css";
@@ -89,10 +90,13 @@ export default function LoanTimeline({
   const effectiveRequestStatus = hasAcceptedTransfer && requestStatus !== "closed"
     ? "repaying"
     : requestStatus ?? getRequestStatus(items, false);
-  const shouldShowConfirmation =
-    !hasAcceptedTransfer &&
-    effectiveRequestStatus === "pending_disbursement" &&
-    Boolean(confirmTransferLabel || onConfirmTransfer);
+  const transferActions = getTransferActions({
+    hasProofButton: Boolean(onShowTransferSlip),
+    isTransferAccepted: hasAcceptedTransfer,
+    isPendingDisbursement: effectiveRequestStatus === "pending_disbursement",
+    canConfirmReceipt: Boolean(confirmTransferLabel || onConfirmTransfer),
+    canDownloadRequest: Boolean(onDownloadRequest),
+  });
   const advisorName = advisorNameProp ?? items.find((item) => item.title.includes("อาจารย์"))?.actor;
   const hasExecutiveReturnForRevision = items.some(
     (item) => item.title.includes("ผู้บริหาร") && item.title.includes("ส่งกลับแก้ไข"),
@@ -165,9 +169,9 @@ export default function LoanTimeline({
         history={history}
         hideBankDetails={hideBankDetails}
         language={language}
-        onConfirmReceipt={shouldShowConfirmation ? handleConfirmTransfer : undefined}
+        onConfirmReceipt={transferActions.showConfirmReceipt ? handleConfirmTransfer : undefined}
         onShowTransferSlip={onShowTransferSlip}
-        onDownloadRequest={hasAcceptedTransfer ? onDownloadRequest : undefined}
+        onDownloadRequest={transferActions.showDownloadRequest ? onDownloadRequest : undefined}
         requestStatus={items.length ? effectiveRequestStatus : undefined}
         emptyTitle={t("ยังไม่มีคำร้องขอกู้ยืม", "No loan request yet")}
         emptyDescription={t(

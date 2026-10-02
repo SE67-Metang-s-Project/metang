@@ -33,7 +33,7 @@ test("transfer pending actions appear at the bottom and switch to request downlo
       timeline.indexOf('{t("ยืนยันการรับเงิน", "Confirm receipt")}'),
     "View proof should appear before receipt confirmation",
   );
-  assert.match(loanTimeline, /onDownloadRequest=\{hasAcceptedTransfer \? onDownloadRequest : undefined\}/);
+  assert.match(loanTimeline, /getTransferActions\(/);
   assert.match(loanTimeline, /transferActionsAtBottom/);
 });
 

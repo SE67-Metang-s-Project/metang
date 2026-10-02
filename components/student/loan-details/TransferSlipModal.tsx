@@ -99,7 +99,11 @@ export default function TransferSlipModal({
             ) : (
               <>
                 <p className="mt-0.5 text-sm text-gray-600">{summary}</p>
-                {transferredAt ? <p className="mt-0.5 text-sm text-gray-500">{transferredAt}</p> : null}
+                {transferredAt ? (
+                  <p className="mt-0.5 text-sm text-gray-500">
+                    {localizeStudentContent(transferredAt, language)}
+                  </p>
+                ) : null}
               </>
             )}
           </div>
