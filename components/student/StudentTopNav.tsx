@@ -1,28 +1,23 @@
 "use client";
 
-import TopNav, { type TopNavProps } from "@/components/shared/TopNav";
+import type { ComponentProps } from "react";
+import TopNav from "@/components/shared/TopNav";
 import { useStudentLanguage } from "@/app/student/StudentLanguageProvider";
 
-type StudentTopNavProps = Omit<TopNavProps, "language" | "onLanguageChange"> & {
+type StudentTopNavProps = ComponentProps<typeof TopNav> & {
   userNameEn?: string;
 };
 
 export default function StudentTopNav({ userNameEn, ...props }: StudentTopNavProps) {
-  const { language, setLanguage, t } = useStudentLanguage();
+  const { language, t } = useStudentLanguage();
 
   return (
     <TopNav
       {...props}
-      dashboardHref="/student"
-      language={language}
-      logoutLabel={t("ออกจากระบบ", "Log out")}
-      onLanguageChange={setLanguage}
       userName={language === "en" && userNameEn ? userNameEn : props.userName}
       userRole={props.userRole === "นักศึกษา" ? t("นักศึกษา", "Student") : props.userRole}
       showSidebarButton={false}
-      hasPersistentSidebar={false}
       onOpenSidebar={undefined}
-      showLogo={true}
     />
   );
 }
