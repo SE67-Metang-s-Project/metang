@@ -144,13 +144,11 @@ export function resolveFundAdjustment(
 // Always returns curated Thai copy - the backend's raw error.message (English, e.g. "A note
 // is required for this transaction kind") must never be shown as-is in this all-Thai UI, so it
 // is intentionally not used here.
-export function mapFundTransactionError(status: number, errorCode: string) {
+export function mapFundTransactionError(status: number, errorCode: string | undefined, _fallback: string | undefined) {
   if (status === 401) return "กรุณาเข้าสู่ระบบใหม่ (Session หมดอายุ)";
   if (status === 403) return "ไม่มีสิทธิ์ดำเนินการสำหรับบทบาทนี้";
   if (status === 409) {
-    return errorCode === "INSUFFICIENT_FUNDS"
-      ? "ยอดคงเหลือไม่สามารถติดลบได้"
-      : "เกิดข้อขัดแย้ง กรุณาลองใหม่";
+    return errorCode === "INSUFFICIENT_FUNDS" ? "ยอดคงเหลือไม่สามารถติดลบได้" : _fallback;
   }
   if (status === 422) return "ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบจำนวนเงินและเหตุผล";
   return "เกิดข้อผิดพลาดในการบันทึกข้อมูล";
