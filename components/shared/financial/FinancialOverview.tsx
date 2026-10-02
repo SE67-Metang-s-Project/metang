@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, CircleDollarSign, FileCheck2, WalletCards } from "lucide-react";
+import { ChevronDown, CircleDollarSign, FileCheck2, Hourglass, WalletCards } from "lucide-react";
 import type { ExecutiveFinancialOverviewData } from "@/lib/financial-overview-types";
 import { withBasePath } from "@/lib/base-path";
 
@@ -174,6 +174,8 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
 
   const balancePercent = data.totalSystem > 0 ? (data.fundBalance / data.totalSystem) * 100 : 0;
   const approvedPercent = data.totalSystem > 0 ? (data.approvedAmount / data.totalSystem) * 100 : 0;
+  const inProgressPercent =
+    data.totalSystem > 0 ? ((data.inProgressAmount ?? 0) / data.totalSystem) * 100 : 0;
 
   const pieDetails = [
     {
@@ -205,7 +207,7 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
       className="financial-overview space-y-6 font-[family-name:var(--font-kanit)]"
     >
       <style>{`.financial-overview .text-xs, .financial-overview [class~="text-[10px]"] { font-size: 0.875rem; line-height: 1.25rem; }`}</style>
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 min-[1300px]:grid-cols-4 xl:gap-5">
         <Metric
           title="เงินทั้งหมดในระบบ"
           amount={data.totalSystem}
@@ -226,6 +228,13 @@ export default function FinancialOverview({ initialData, apiUrl }: FinancialOver
           percent={`${approvedPercent.toFixed(2)}%`}
           color="#dc2626"
           icon={FileCheck2}
+        />
+        <Metric
+          title="เงินที่อยู่ระหว่างดำเนินการ"
+          amount={data.inProgressAmount ?? 0}
+          percent={`${inProgressPercent.toFixed(2)}%`}
+          color="#4b5563"
+          icon={Hourglass}
         />
       </div>
       <div className="grid gap-5 min-[1405px]:grid-cols-[minmax(350px,.6fr)_minmax(0,1.9fr)]">
