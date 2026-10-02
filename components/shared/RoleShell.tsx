@@ -7,7 +7,7 @@ import TopNav from "@/components/shared/TopNav";
 export interface RoleShellProps {
   role: UserRole;
   userName: string;
-  userId: string;
+  userId?: string;
   userRole?: string;
   userEmail?: string;
   children: React.ReactNode;
@@ -43,9 +43,12 @@ export default function RoleShell({
           onOpenSidebar={!isStudent ? () => setIsSidebarOpen(true) : undefined}
           userName={userName}
           userId={userId}
+          role={role}
           userRole={userRole}
           userEmail={userEmail}
+          hasPersistentSidebar={!isStudent}
           showSidebarButton={!isStudent}
+          showLogo={isStudent}
         />
 
         <main className="p-4 pb-0 sm:p-6 sm:pb-0 lg:p-8 lg:pb-0 max-w-[1600px] w-full mx-auto">
