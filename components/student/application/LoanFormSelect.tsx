@@ -40,6 +40,10 @@ export default function LoanFormSelect({
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const selectRef = useRef<HTMLDivElement>(null);
+  const closeMenu = () => {
+    setIsOpen(false);
+    setQuery("");
+  };
   const searchRef = useRef<HTMLInputElement>(null);
   const selectedOption = options.find((option) => option.value === value);
   const getOptionLabel = (option: LoanFormSelectOption) =>
@@ -56,19 +60,15 @@ export default function LoanFormSelect({
       : options;
 
   useEffect(() => {
-    if (!isOpen) setQuery("");
-  }, [isOpen]);
-
-  useEffect(() => {
     const closeOnOutsideClick = (event: MouseEvent) => {
       if (!selectRef.current?.contains(event.target as Node)) {
-        setIsOpen(false);
+        closeMenu();
       }
     };
 
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsOpen(false);
+        closeMenu();
       }
     };
 
@@ -83,7 +83,7 @@ export default function LoanFormSelect({
 
   const handleSelect = (nextValue: string) => {
     onChange(nextValue);
-    setIsOpen(false);
+    closeMenu();
     // Drop focus from the search box so the mobile keyboard closes with the menu.
     searchRef.current?.blur();
   };
@@ -102,7 +102,7 @@ export default function LoanFormSelect({
           .join(" ")}
         disabled={disabled}
         onBlur={onBlur}
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={() => (isOpen ? closeMenu() : setIsOpen(true))}
         type="button"
       >
         <span className={styles.loanFormSelectValue}>
@@ -130,7 +130,7 @@ export default function LoanFormSelect({
           className={styles.loanFormSelectMenu}
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
-              setIsOpen(false);
+              closeMenu();
             }
           }}
           role="listbox"
