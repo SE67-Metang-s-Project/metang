@@ -1,0 +1,17 @@
+{
+  "name": "docs-pdf",
+  "private": true,
+  "type": "module",
+  "description": "Renders the Markdown guides in docs/documentation to PDF. Separate from the app: nothing here is installed by the root npm ci and nothing here runs in CI.",
+  "scripts": {
+    "render": "node render.mjs",
+    "audit": "node render.mjs --audit-only",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "highlight.js": "^11.11.1",
+    "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^9.2.0",
+    "puppeteer-core": "^24.0.0"
+  }
+}
