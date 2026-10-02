@@ -279,7 +279,8 @@ export function toActionRequest(
     year: String(row.studentYear),
     phone: student.phone ?? "-",
     objective: row.purpose,
-    amount: String(row.amount),
+    // Verify-slip bills against what was lent, and sends no approvedAmount of its own.
+    amount: String(compact ? (row.approvedAmount ?? row.amount) : row.amount),
     term: String(row.installmentCount),
     submitDate: formatThaiDate(submitDateObj),
     requestStatus: row.status,

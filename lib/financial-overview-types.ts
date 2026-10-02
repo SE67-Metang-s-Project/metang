@@ -24,6 +24,8 @@ export type ExecutiveFinancialOverviewData = {
   approvedAmount: number;
   /** Loans still being repaid (status disbursed). */
   approvedCount: number;
+  /** เงินที่อยู่ระหว่างดำเนินการ: money of open requests not yet paid out (the fund's `reserved`). */
+  inProgressAmount: number;
   monthly: FinancialOverviewPoint[];
   quarterly: FinancialOverviewPoint[];
   totalLoans: number;

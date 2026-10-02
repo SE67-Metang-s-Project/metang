@@ -22,7 +22,6 @@ export async function sendDemoReviewerNotification(
   if (!gate.ok) {
     return { status: "error", message: gate.message };
   }
-  const context = gate.context;
 
   const role = readField(formData, "role") as ReviewerRole;
   if (!REVIEWER_ROLES.includes(role)) {

@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, Mail, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import type { UserRole } from "@/components/shared/SidebarNav";
 import type { StudentLanguage } from "@/app/student/StudentLanguageProvider";
 import { withBasePath } from "@/lib/base-path";
@@ -47,6 +48,8 @@ export default function TopNav({
   dashboardHref,
   hasPersistentSidebar = false,
 }: TopNavProps) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const isStudentRole = role === "student" || userRole === "นักศึกษา" || userRole === "Student";
@@ -57,6 +60,13 @@ export default function TopNav({
   const displayCode = userId ?? displayRole;
   const displayEmail = userEmail ?? (userId ? `${userId.toLowerCase()}@cmu.ac.th` : "user@cmu.ac.th");
   const logoHref = dashboardHref ?? (role ? `/${role}` : isStudentRole ? "/student" : "/");
+  // A Link to the page you are already on does nothing, so reload that page's data instead.
+  const handleLogoClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (pathname !== logoHref || event.metaKey || event.ctrlKey || event.shiftKey) return;
+    event.preventDefault();
+    router.refresh();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const handleLanguageChange = (nextLanguage: StudentLanguage) => {
     onLanguageChange?.(nextLanguage);
     setIsProfileOpen(false);
@@ -104,6 +114,7 @@ export default function TopNav({
             aria-label="กลับไปยังหน้าแดชบอร์ด"
             className="ml-6 flex shrink-0 items-center rounded-lg transition-all duration-200 hover:scale-105 hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
             href={logoHref}
+            onClick={handleLogoClick}
           >
             <Image
               alt="METANG"

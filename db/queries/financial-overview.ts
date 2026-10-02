@@ -76,6 +76,7 @@ export function getZeroFinancialOverview(
     fundBalance: 0,
     approvedAmount: 0,
     approvedCount: 0,
+    inProgressAmount: 0,
     monthly,
     quarterly,
     totalLoans: 0,
@@ -130,6 +131,8 @@ export async function getExecutiveFinancialOverviewData(
   const fundBalance = capacity.balance;
   const approvedAmount = capacity.outstanding;
   const approvedCount = capacity.disbursedLoanCount;
+  // Requests still in the approval flow (or awaiting payout); that money is still in the balance.
+  const inProgressAmount = capacity.reserved;
 
   // Initialize 12 monthly slots
   const monthly: FinancialOverviewPoint[] = THAI_MONTH_NAMES.map((label) => ({
@@ -231,6 +234,7 @@ export async function getExecutiveFinancialOverviewData(
     fundBalance,
     approvedAmount,
     approvedCount,
+    inProgressAmount,
     monthly,
     quarterly,
     totalLoans,

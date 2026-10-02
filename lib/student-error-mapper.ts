@@ -199,8 +199,21 @@ export function mapNetworkError(error?: unknown): StudentUiError {
   };
 }
 
-// Only the 409s: PaymentModal validates amount, paidAt and slip type before sending, so a 422 there
-// falls through to the generic validation message.
+// PaymentModal checks amount, paidAt and the declared slip type before sending, so the 422s here are
+// only what the browser cannot see: a missing slip, or a renamed non-image file the server rejects.
+const PAYMENT_VALIDATION_PATTERNS: Array<{ pattern: RegExp; title: string; message: string }> = [
+  {
+    pattern: /a slip file is required/i,
+    title: "ยังไม่ได้แนบสลิป",
+    message: "กรุณาแนบไฟล์สลิปการชำระเงิน",
+  },
+  {
+    pattern: /unsupported slip file type/i,
+    title: "ประเภทไฟล์ไม่รองรับ",
+    message: "กรุณาแนบสลิปเป็นไฟล์รูปภาพ (JPG, PNG หรือ WebP) เท่านั้น",
+  },
+];
+
 const PAYMENT_CONFLICT_PATTERNS: Array<{ pattern: RegExp; title: string; message: string }> = [
   {
     pattern: /confirm receipt of the loan transfer/i,
@@ -235,6 +248,13 @@ export function mapStudentPaymentError(
     const match = PAYMENT_CONFLICT_PATTERNS.find((item) => item.pattern.test(rawMessage));
     if (match) {
       return { status, code: "CONFLICT", title: match.title, message: match.message, action: "refresh" };
+    }
+  }
+
+  if (status === 422) {
+    const match = PAYMENT_VALIDATION_PATTERNS.find((item) => item.pattern.test(rawMessage));
+    if (match) {
+      return { status, code: "VALIDATION_ERROR", title: match.title, message: match.message, action: "retry" };
     }
   }
 

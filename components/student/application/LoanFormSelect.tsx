@@ -20,6 +20,8 @@ type LoanFormSelectProps = {
   onChange: (value: string) => void;
   options: LoanFormSelectOption[];
   placeholder: string;
+  searchPlaceholder?: string;
+  searchable?: boolean;
   value: string;
 };
 
@@ -30,25 +32,43 @@ export default function LoanFormSelect({
   onChange,
   options,
   placeholder,
+  searchPlaceholder,
+  searchable = false,
   value,
 }: LoanFormSelectProps) {
   const { language } = useStudentLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const selectRef = useRef<HTMLDivElement>(null);
+  const closeMenu = () => {
+    setIsOpen(false);
+    setQuery("");
+  };
+  const searchRef = useRef<HTMLInputElement>(null);
   const selectedOption = options.find((option) => option.value === value);
   const getOptionLabel = (option: LoanFormSelectOption) =>
     language === "en" ? option.labelEn ?? option.label : option.label;
 
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleOptions =
+    searchable && normalizedQuery
+      ? options.filter((option) =>
+          [option.label, option.labelEn].some((text) =>
+            text?.toLowerCase().includes(normalizedQuery),
+          ),
+        )
+      : options;
+
   useEffect(() => {
     const closeOnOutsideClick = (event: MouseEvent) => {
       if (!selectRef.current?.contains(event.target as Node)) {
-        setIsOpen(false);
+        closeMenu();
       }
     };
 
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsOpen(false);
+        closeMenu();
       }
     };
 
@@ -63,7 +83,9 @@ export default function LoanFormSelect({
 
   const handleSelect = (nextValue: string) => {
     onChange(nextValue);
-    setIsOpen(false);
+    closeMenu();
+    // Drop focus from the search box so the mobile keyboard closes with the menu.
+    searchRef.current?.blur();
   };
 
   return (
@@ -80,7 +102,7 @@ export default function LoanFormSelect({
           .join(" ")}
         disabled={disabled}
         onBlur={onBlur}
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={() => (isOpen ? closeMenu() : setIsOpen(true))}
         type="button"
       >
         <span className={styles.loanFormSelectValue}>
@@ -108,12 +130,29 @@ export default function LoanFormSelect({
           className={styles.loanFormSelectMenu}
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
-              setIsOpen(false);
+              closeMenu();
             }
           }}
           role="listbox"
         >
-          {options.map((option) => (
+          {searchable ? (
+            <input
+              aria-label={searchPlaceholder ?? placeholder}
+              autoComplete="off"
+              className={styles.loanFormSelectSearch}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={searchPlaceholder ?? placeholder}
+              ref={searchRef}
+              type="text"
+              value={query}
+            />
+          ) : null}
+          {searchable && visibleOptions.length === 0 ? (
+            <p className={styles.loanFormSelectEmpty}>
+              {language === "en" ? "No results found" : "ไม่พบรายการ"}
+            </p>
+          ) : null}
+          {visibleOptions.map((option) => (
             <button
               aria-selected={option.value === value}
               className={option.value === value ? styles.loanFormSelectOptionSelected : undefined}

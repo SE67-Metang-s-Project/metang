@@ -103,6 +103,15 @@ const formatBankAccountNumber = (value: string) => {
     .join("-");
 };
 
+const ACCOUNT_NAME_MAX_LENGTH = 60;
+
+const formatPhoneNumber = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  return [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6, 10)]
+    .filter(Boolean)
+    .join("-");
+};
+
 const validateField = (
   field: RequiredFormField,
   value: string,
@@ -237,7 +246,9 @@ export default function TempLoanApplicationPage({
     if (isResubmit && existingLoan) {
       return {
         ...tempLoanFormDefaults,
-        phoneNumber: initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
+        phoneNumber: formatPhoneNumber(
+          initialProfile?.phoneNumber || tempLoanFormDefaults.phoneNumber,
+        ),
         educationLevel: educationLevel || tempLoanFormDefaults.educationLevel,
         academicYear: isGraduateDiploma
           ? "1"
@@ -259,7 +270,9 @@ export default function TempLoanApplicationPage({
 
     return {
       ...tempLoanFormDefaults,
-      phoneNumber: savedProfile.phoneNumber || tempLoanFormDefaults.phoneNumber,
+      phoneNumber: formatPhoneNumber(
+        savedProfile.phoneNumber || tempLoanFormDefaults.phoneNumber,
+      ),
       educationLevel: educationLevel || tempLoanFormDefaults.educationLevel,
       academicYear: isGraduateDiploma
         ? "1"
@@ -774,6 +787,8 @@ export default function TempLoanApplicationPage({
                         onChange={(value) => updateFormField("advisorName", value)}
                         options={advisorSelectOptions}
                         placeholder={t("เลือกอาจารย์ที่ปรึกษา", "Select advisor")}
+                        searchPlaceholder={t("พิมพ์ค้นหาชื่ออาจารย์", "Search advisor name")}
+                        searchable
                         value={formData.advisorName}
                       />
                       {formErrors.advisorName ? (
@@ -798,13 +813,10 @@ export default function TempLoanApplicationPage({
                       <input
                         aria-invalid={Boolean(formErrors.phoneNumber)}
                         inputMode="numeric"
-                        maxLength={10}
+                        maxLength={12}
                         onBlur={() => handleFieldBlur("phoneNumber")}
                         onChange={(event) =>
-                          updateFormField(
-                            "phoneNumber",
-                            event.target.value.replace(/\D/g, "").slice(0, 10),
-                          )
+                          updateFormField("phoneNumber", formatPhoneNumber(event.target.value))
                         }
                         placeholder={t("กรอกเบอร์โทรศัพท์", "Enter phone number")}
                         type="text"
@@ -874,7 +886,7 @@ export default function TempLoanApplicationPage({
                             formatBankAccountNumber(event.target.value),
                           )
                         }
-                        placeholder={t("เช่น 012-3-45678-9", "e.g. 012-3-45678-9")}
+                        placeholder={t("กรอกเลขที่บัญชี", "Enter account number")}
                         type="text"
                         value={formData.accountNumber}
                       />
@@ -899,17 +911,25 @@ export default function TempLoanApplicationPage({
                       <span>{t("ชื่อบัญชีธนาคาร", "Bank account name")}</span>
                       <input
                         aria-invalid={Boolean(formErrors.accountName)}
+                        maxLength={ACCOUNT_NAME_MAX_LENGTH}
                         onBlur={() => handleFieldBlur("accountName")}
                         onChange={(event) => updateFormField("accountName", event.target.value)}
                         placeholder={t("กรอกชื่อบัญชี", "Enter account name")}
                         type="text"
                         value={formData.accountName}
                       />
-                      {formErrors.accountName ? (
-                        <small className={styles.loanFormFieldError}>
-                          {formErrors.accountName}
+                      <div className={styles.loanFormFieldMeta}>
+                        {formErrors.accountName ? (
+                          <small className={styles.loanFormFieldError}>
+                            {formErrors.accountName}
+                          </small>
+                        ) : null}
+                        <small className={styles.loanFormCharacterCount}>
+                          {t("เหลืออีก", "Remaining")}{" "}
+                          {ACCOUNT_NAME_MAX_LENGTH - formData.accountName.length}{" "}
+                          {t("ตัวอักษร", "characters")}
                         </small>
-                      ) : null}
+                      </div>
                     </label>
                   </div>
                 </section>

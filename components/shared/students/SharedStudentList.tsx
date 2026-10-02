@@ -1,7 +1,7 @@
 // components/shared/students/SharedStudentList.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import StudentFilters from "@/components/shared/filter/StudentFilters";
 import { useServerPagedList } from "@/hooks/useServerPagedList";
 import PagedListError from "@/components/shared/PagedListError";
@@ -82,7 +82,11 @@ export default function SharedStudentList({
   const rawRequests = serverStudents ? paged.items : initialRequests;
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
-  const mappedStudents: Student[] = rawRequests.map((req) => {
+  const isServerPaged = Boolean(serverStudents);
+
+  // Memoised so the table keeps its page: it resets to page 1 whenever `students` is a new array,
+  // and opening or closing the student modal re-renders this component.
+  const mappedStudents: Student[] = useMemo(() => rawRequests.map((req) => {
     const isLate = (req.paymentBehavior?.lateInstallments ?? 0) > 0;
     const paymentStatus = isLate ? "ชำระล่าช้า" : "ชำระตรงเวลา";
     const paymentStatusType = isLate ? "bad" : "good";
@@ -125,10 +129,10 @@ export default function SharedStudentList({
       delayDays: req.isOverdue ? String(req.waitDays) : "0",
       paymentHistory: req.paymentHistory,
     };
-  });
+  }), [rawRequests]);
 
-  const filteredStudents = mappedStudents.filter((student) => {
-    if (serverStudents) return true; // the server already filtered
+  const filteredStudents = useMemo(() => mappedStudents.filter((student) => {
+    if (isServerPaged) return true; // the server already filtered
     const matchesSearch =
       student.name.includes(searchQuery) || student.studentId.includes(searchQuery);
 
@@ -157,7 +161,7 @@ export default function SharedStudentList({
     }
 
     return matchesSearch && matchesDegree && matchesTab;
-  });
+  }), [mappedStudents, isServerPaged, searchQuery, degreeFilter, activeTab]);
 
   return (
     <>

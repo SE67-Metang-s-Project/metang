@@ -57,7 +57,6 @@ function getProgramLabel(programName: string | undefined, language: "th" | "en")
 
 export default function LoanSummaryCard({
   onOpenDetails,
-  medicalBag,
   activeLoan: activeLoanProp,
   profile: profileProp,
 }: LoanSummaryCardProps) {
