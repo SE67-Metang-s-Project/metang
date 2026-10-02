@@ -4,6 +4,7 @@ maintenance guide for the software described below. The guide will be handed to
 end users who maintain the software after delivery.
 
 # Product context
+This prompt is a reusable template. Fill every bracketed field before you use it.
 - Product name: [PRODUCT NAME]
 - Version covered: [VERSION]
 - What it does: [ONE OR TWO SENTENCES]
@@ -39,16 +40,20 @@ In practice this means:
 4. Verify every command, path, and setting against the actual code or config.
    If you can run commands in a safe environment, run them and confirm the output.
 5. Never invent a command, path, setting, value, or error message. If you cannot
-   confirm something, insert a marker: `[TO VERIFY: what is unknown and why]`.
+   confirm a step, write `Not tested:` before it and say what is unknown.
+   Do not use `[TO VERIFY]` in the delivered guide.
 
 # Required structure
-Produce the guide with these sections, in this order:
+Produce the guide with these sections, in this order. Subsections are allowed.
+Start the file with a title and a version and date line.
 
 1. About this guide
    - Purpose, audience, required skills, software version covered
    - Conventions used (code formatting, warning labels)
 2. System overview
-   - Components and how they connect (include a Mermaid diagram)
+   - Components and how they connect (include a Mermaid diagram and a list
+     of its nodes and links, so the PDF stays readable when the diagram does
+     not render)
    - Locations of data, logs, config, and backups
 3. Access and permissions
    - Accounts, roles, and credentials needed for maintenance
@@ -65,8 +70,11 @@ Produce the guide with these sections, in this order:
    - Update procedure
    - Rollback procedure
 7. Configuration reference
-   - Table: setting, file/location, default, valid values, effect,
-     restart required (yes/no)
+   - Tables: setting, default, valid values, effect, redeploy required
+     (yes/no), secret (yes/no)
+   - State once where to change the settings
+   - Subsections: environment variables, in-app settings, scheduled-job
+     settings, fixed values
 8. Monitoring
    - What to monitor, normal values, warning thresholds, action to take
 9. Troubleshooting
@@ -99,22 +107,26 @@ Produce the guide with these sections, in this order:
 - Every change procedure must have a way to undo it or a rollback reference.
 
 # Output
-- Format: Markdown, one file named `maintenance-guide.md`.
+- Format: Markdown, one file named `maintenance-guide.md`. A rewrite of it
+  (for example `maintenance-guide.ste-draft.md`) is a derived copy; the
+  delivered file is `maintenance-guide.md`.
 - Use headings (#, ##, ###) matching the structure above.
 - Use tables for schedules, reference data, troubleshooting, and error messages.
 - The document must also convert cleanly to PDF (no HTML-only features).
 
 # When you finish
 Provide, separately from the guide:
-1. A list of every `[TO VERIFY]` marker with what you need to resolve it.
+1. A list of every `Not tested:` marker with what you need to resolve it.
 2. A list of assumptions you made.
 3. A list of maintenance risks you found in the code that the guide cannot
    fully cover (for example, no automated backup, unbounded log growth).
+   Put the risks that affect the reader in a "Known limitations" subsection
+   of section 2 of the guide, and list only the rest here.
 
 # Quality check before delivering
 Confirm each item:
 - [ ] Every procedure has purpose, prerequisites, steps, and expected result
-- [ ] Every command, path, and setting was verified or marked [TO VERIFY]
+- [ ] Every command, path, and setting was verified or marked `Not tested:`
 - [ ] Every destructive step has a warning placed before it
 - [ ] Every user-facing error message in the code appears in section 10
 - [ ] Every user-changeable setting appears in section 7

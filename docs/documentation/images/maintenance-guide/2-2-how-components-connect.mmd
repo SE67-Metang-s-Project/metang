@@ -1,0 +1,10 @@
+flowchart LR
+  U[User browser] -->|HTTPS| V[Host: metang web app and API]
+  U -->|Sign in| E[CMU Entra ID]
+  E -->|Callback /metang/api/auth/callback| V
+  V -->|Profile| B[CMU BasicInfo API]
+  V -->|SQL via DATABASE_URL| D[(PostgreSQL database)]
+  V -->|REST, service role key| S[(Slip storage: bank_payment_slips)]
+  V -->|Reviewer messages| L[CMU LINE FON API]
+  V -->|Student reminder emails| M[CMU Email API]
+  H[Environment variables set on the host] -.->|Secrets and settings| V
