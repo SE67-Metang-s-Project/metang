@@ -1,4 +1,4 @@
-// metang ER diagram (NAT-8)
+// metang ER diagram
 // Paste into https://dbdiagram.io/d — mirrors db/schema.prisma.
 // db/schema.prisma is the source of truth; update this file when it changes.
 
@@ -18,10 +18,10 @@ Enum user_role_name {
 Enum loan_status {
   draft                [note: 'student still filling the form']
   returned             [note: 'sent back for edit — distinct from a final rejection']
-  pending_advisor      [note: 'NAT-19 step 1']
-  pending_admin        [note: 'NAT-19 step 2']
-  pending_executive    [note: 'NAT-19 step 3']
-  pending_disbursement [note: 'NAT-19 step 4: back to admin to move the money']
+  pending_advisor      [note: 'approval step 1']
+  pending_admin        [note: 'approval step 2']
+  pending_executive    [note: 'approval step 3']
+  pending_disbursement [note: 'approval step 4: back to admin to move the money']
   disbursed
   closed
   rejected
@@ -76,7 +76,7 @@ Table app_user {
   indexes {
     full_name_th [note: 'advisor_name is matched back to a person by name']
   }
-  Note: 'One row per staff member, whatever roles they hold. Students have no row: each loan_request carries its borrower. NAT-16 (CMU SSO).'
+  Note: 'One row per staff member, whatever roles they hold. Students have no row: each loan_request carries its borrower. Staff sign in with CMU SSO.'
 }
 
 Table user_role {
@@ -88,7 +88,7 @@ Table user_role {
   indexes {
     (user_id, role) [pk]
   }
-  Note: 'NAT-52: multi-role per person. Partial unique index on role WHERE role = executive keeps exactly one executive.'
+  Note: 'Multi-role per person. Partial unique index on role WHERE role = executive keeps exactly one executive.'
 }
 
 Table loan_request {
@@ -100,8 +100,8 @@ Table loan_request {
   student_phone     text [note: 'typed by the student, not from CMU SSO']
   student_education_level text [note: 'degree code "0"/"1"/"3"/"5" (the fifth digit of student_code); CHECK loan_request_student_education_level_code']
   advisor_id        uuid [ref: > app_user.id, not null]
-  amount            integer [not null, note: 'whole baht; what the student asked for']
-  approved_amount   integer [note: 'NAT-46: admin may cut it. Installments build from this. Reason goes in loan_approval.comment.']
+  amount            integer [not null, note: 'whole baht; what the student asked for; CHECK loan_request_amount_positive']
+  approved_amount   integer [note: 'Admin may cut it. Installments build from this. Reason goes in loan_approval.comment. CHECK loan_request_approved_amount_bounds (0 < approved_amount <= amount)']
   student_year      smallint [not null, note: '1-4']
   purpose           text [not null]
   bank_name         text [not null]
@@ -125,7 +125,7 @@ Table loan_request {
     (assigned_admin_id, status)
     (status, submitted_at) [note: 'submitted_at DESC']
   }
-  Note: 'NAT-24. Partial unique index on student_code WHERE status NOT IN (closed, rejected, cancelled) allows only one open loan per student.'
+  Note: 'Partial unique index on student_code WHERE status NOT IN (closed, rejected, cancelled) allows only one open loan per student.'
 }
 
 Table loan_approval {
@@ -143,7 +143,7 @@ Table loan_approval {
     (loan_id, step, attempt) [unique]
     (loan_id, step) [note: 'partial unique index for pending rows only']
   }
-  Note: 'NAT-19: one row per approval step, so decision history survives.'
+  Note: 'One row per approval step, so decision history survives.'
 }
 
 Table installment {
@@ -160,7 +160,7 @@ Table installment {
     due_date [note: 'partial: WHERE settled_at IS NULL']
     loan_id
   }
-  Note: 'NAT-29: amount_due is rewritten on remaining rows when a student overpays.'
+  Note: 'amount_due is rewritten on remaining rows when a student overpays.'
 }
 
 Table payment {
@@ -180,7 +180,7 @@ Table payment {
   indexes {
     loan_id
   }
-  Note: 'NAT-31 slip evidence and NAT-33 confirmation status.'
+  Note: 'Slip evidence and confirmation status.'
 }
 
 Table fund_transaction {
@@ -200,7 +200,7 @@ Table fund_transaction {
     loan_id [unique, note: 'partial: WHERE kind = disbursement, one disbursement per loan']
     payment_id [unique, note: 'partial: WHERE kind = repayment, one repayment per payment']
   }
-  Note: 'NAT-40/46/47. Fund balance = sum(amount * direction). Never a stored column. Append-only: trigger fund_transaction_append_only blocks UPDATE and DELETE; trigger fund_transaction_check_balance stops the balance from going below 0.'
+  Note: 'Fund balance = sum(amount * direction). Never a stored column. Append-only: trigger fund_transaction_append_only blocks UPDATE and DELETE; trigger fund_transaction_check_balance stops the balance from going below 0.'
 }
 
 Table audit_log {
@@ -219,7 +219,7 @@ Table audit_log {
   indexes {
     (entity_type, entity_id)
   }
-  Note: 'NAT-49: every admin action, with before/after. Append-only: UPDATE and DELETE are blocked by trigger.'
+  Note: 'Every admin action, with before/after. Append-only: UPDATE and DELETE are blocked by trigger.'
 }
 
 Table notification_outbox {
@@ -238,7 +238,7 @@ Table notification_outbox {
   indexes {
     (status, available_at)
   }
-  Note: 'NAT-28/NAT-171: durable claim/retry queue for outgoing messages (LINE to reviewers, email for installment reminders). Unique dedupe_key; at most 5 attempts.'
+  Note: 'Durable claim/retry queue for outgoing messages (LINE to reviewers, email for installment reminders). Unique dedupe_key; at most 5 attempts.'
 }
 
 Table system_setting {
@@ -255,7 +255,7 @@ Table system_setting {
   created_at          timestamptz [not null, default: `now()`]
   updated_at          timestamptz [not null, default: `now()`]
 
-  Note: 'NAT-200: system-wide bank + contact display, read by everyone, written by SuperAdmin only. Singleton row, id always 1 (CHECK constraint).'
+  Note: 'System-wide bank + contact display, read by everyone, written by SuperAdmin only. Singleton row, id always 1 (CHECK constraint).'
 }
 
 // The database has no views. The repayment conduct of a student (on time or late) is derived in
