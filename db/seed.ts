@@ -16,6 +16,13 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is not set");
 }
 
+// The seed deletes data (every row on --reset) and writes fake money into the fund ledger. Allow
+// only a local database (api:test, CI) or the dev project (INFISICAL_ENV=dev), never anything else.
+const host = new URL(connectionString).hostname;
+if (!["localhost", "127.0.0.1", "[::1]"].includes(host) && process.env.INFISICAL_ENV?.trim() !== "dev") {
+  throw new Error(`Refusing to seed ${host}: only a local database or INFISICAL_ENV=dev`);
+}
+
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 const reset = process.argv.includes("--reset");
 const now = new Date();
@@ -648,10 +655,10 @@ async function main() {
         await tx.appUser.upsert({ where: { id: userId }, create: user, update: fields });
       }
 
-      // The system_setting migration seeds this row too, but db:reset's TRUNCATE ... CASCADE
-      // (db/clear.ts) wipes it along with app_user, since it holds a FK to app_user. Restore it
-      // here so a reset doesn't leave every settings endpoint 500ing. Same values as the
-      // migration's seed INSERT - keep both in sync if the fixture values ever change.
+      // The system_setting migration seeds this row too. --reset keeps it (updated_by_id is ON
+      // DELETE SET NULL), but db/clear.ts's TRUNCATE ... CASCADE wipes it along with app_user.
+      // Restore it here so a wiped database doesn't leave every settings endpoint 500ing. Same
+      // values as the migration's seed INSERT - keep both in sync if the fixture values change.
       await tx.systemSetting.upsert({
         where: { id: 1 },
         update: {},
