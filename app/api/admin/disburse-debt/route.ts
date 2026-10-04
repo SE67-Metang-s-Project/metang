@@ -1,8 +1,8 @@
 // EXPERIMENT server-paging (revert: EXPERIMENT-server-paging.local.md)
-import { getDisbursementPage, isDisbursementTab } from "@/db/queries/loan-requests";
+import { getDisbursementPage, isDisbursementTab, isStudentDegree } from "@/db/queries/loan-requests";
 import { accessError } from "@/lib/api-list";
 import { apiError, apiOk } from "@/lib/api-response";
-import { LIST_PARAMS_MESSAGE, MAX_TEXT_LENGTH, parseListParams } from "@/lib/list-params";
+import { LIST_PARAMS_MESSAGE, parseListParams } from "@/lib/list-params";
 import { getAdminAccess } from "@/lib/loan-auth";
 import { serializeJson } from "@/lib/serialization";
 
@@ -15,8 +15,8 @@ export async function GET(request: Request) {
   const list = parseListParams(searchParams);
   const tab = searchParams.get("tab") ?? "all";
   const degree = searchParams.get("degree") ?? "";
-  if (!list || !isDisbursementTab(tab) || degree.length > MAX_TEXT_LENGTH) {
-    return apiError("VALIDATION_ERROR", `${LIST_PARAMS_MESSAGE}; tab is one of all, pending, done`, 422);
+  if (!list || !isDisbursementTab(tab) || (degree && !isStudentDegree(degree))) {
+    return apiError("VALIDATION_ERROR", `${LIST_PARAMS_MESSAGE}; tab is one of all, pending, done; degree a known education level`, 422);
   }
 
   try {
