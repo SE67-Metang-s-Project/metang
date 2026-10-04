@@ -26,8 +26,10 @@
     "db:seed": "node scripts/with-infisical.mjs prisma db seed",
     "db:reset": "node scripts/with-infisical.mjs tsx db/seed.ts --reset",
     "test": "tsx --conditions=react-server --test tests/*.test.ts tests/*.test.mjs",
+    "test:coverage": "tsx --conditions=react-server --test --experimental-test-coverage --test-coverage-branches=80 --test-coverage-exclude='lib/generated/**' --test-coverage-exclude='tests/**' tests/*.test.ts tests/*.test.mjs",
     "api:test": "node scripts/api-test-isolated.mjs",
-    "ci:local": "node scripts/ci-local.mjs"
+    "ci:local": "node scripts/ci-local.mjs",
+    "ci:local-summarize": "node scripts/ci-local.mjs --summary"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",

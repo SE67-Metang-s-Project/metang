@@ -5,9 +5,12 @@
 // Needs Docker for the last step. Stop any `next dev` or `next start` of this folder first: it
 // refuses to run while one is listening (ports 8080, 3000 and $PORT) or while `.next/dev/lock`
 // names a live dev server.
+// `--summary` (`npm run ci:local-summarize`) hides the step output and prints one table of the
+// numbers at the end; the full output goes to $TMPDIR/metang-ci-local.log.
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { appendFileSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createConnection } from "node:net";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -19,13 +22,38 @@ const buildEnv = {
   DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci",
 };
 
+// Summary parsers: each reads one step's output (ANSI codes stripped) and returns its numbers.
+const count = (text, pattern) => text.match(pattern)?.[1];
+const parseLint = (text) => {
+  const problems = text.match(/(\d+) errors?, (\d+) warnings?/);
+  return problems ? `${problems[1]} errors, ${problems[2]} warnings` : "0 errors, 0 warnings";
+};
+const parseTsc = (text) => `${(text.match(/error TS\d+/g) ?? []).length} errors`;
+const parseUnit = (text) => {
+  const [, line, branch, funcs] = text.match(/all files\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)/) ?? [];
+  const tests = `${count(text, /ℹ pass (\d+)/) ?? "?"}/${count(text, /ℹ tests (\d+)/) ?? "?"} pass`;
+  return branch ? `${tests}, branch ${branch}% (line ${line}%, funcs ${funcs}%)` : tests;
+};
+const parseApi = (text) => {
+  const db = `db ${count(text, /ℹ pass (\d+)/) ?? "?"}/${count(text, /ℹ tests (\d+)/) ?? "?"}`;
+  const requests = [...text.matchAll(/│ Requests\s*│\s*(\d+) \(([^)]*)\)/g)];
+  const assertions = [...text.matchAll(/│ Assertions\s*│\s*(\d+\/\d+)/g)];
+  const bruno = ["endpoints", "workflow"].map((label, index) =>
+    requests[index]
+      ? `${label} ${requests[index][1]} req (${requests[index][2]}), ${assertions[index]?.[1] ?? "?"} assertions`
+      : `${label} not run`,
+  );
+  return [db, ...bruno].join(" · ");
+};
+
 const steps = [
-  ...(process.argv.includes("--install") ? [{ command: "npm ci" }] : []),
-  { command: "npm run lint" },
-  { command: "npx tsc --noEmit" },
-  { command: "npm run build", env: buildEnv },
-  { command: "npm test" },
-  { command: "npm run api:test" },
+  ...(process.argv.includes("--install") ? [{ name: "install", command: "npm ci" }] : []),
+  { name: "lint", command: "npm run lint", parse: parseLint },
+  { name: "typecheck", command: "npx tsc --noEmit", parse: parseTsc },
+  { name: "build", command: "npm run build", env: buildEnv },
+  // The unit tests, plus a branch-coverage floor of 80% (lib/generated and tests/ left out).
+  { name: "unit + coverage", command: "npm run test:coverage", parse: parseUnit },
+  { name: "api:test", command: "npm run api:test", parse: parseApi },
 ];
 
 // `.next/dev` is the dev server's own folder, so a `npm run dev` that is running keeps working.
@@ -37,7 +65,7 @@ function cleanup() {
     }
   }
   spawnSync("docker", ["rm", "-f", "metang-test"], { stdio: "ignore" });
-  console.log("\ncleanup: deleted the build output in .next and the metang-test container");
+  if (!summary) console.log("\ncleanup: deleted the build output in .next and the metang-test container");
 }
 
 // The build rewrites `.next` and the cleanup deletes it, which breaks a `next dev` or `next start`
@@ -83,21 +111,45 @@ if (busyPorts.length > 0 || devServer) {
 }
 
 let exitCode = 0;
-for (const { command, env } of steps) {
-  console.log(`\n▶ ${command}`);
-  const result = spawnSync(command, {
+const summary = process.argv.includes("--summary");
+const logPath = path.join(tmpdir(), "metang-ci-local.log");
+const rows = [];
+if (summary) writeFileSync(logPath, "");
+
+for (const { name, command, env, parse } of steps) {
+  const started = Date.now();
+  if (summary) process.stdout.write(`▶ ${name}…\n`);
+  else console.log(`\n▶ ${command}`);
+  const result = spawnSync(summary ? `${command} 2>&1` : command, {
     cwd: root,
-    stdio: "inherit",
+    stdio: summary ? ["ignore", "pipe", "inherit"] : "inherit",
     shell: true,
     env: { ...process.env, ...env },
+    maxBuffer: 256 * 1024 * 1024,
   });
-  if (result.status !== 0) {
-    console.error(`\n✗ ${command} failed`);
+  const seconds = `${Math.round((Date.now() - started) / 1000)}s`;
+  const ok = result.status === 0;
+  if (summary) {
+    const output = (result.stdout?.toString() ?? "").replace(/\x1b\[[0-9;]*m/g, "");
+    appendFileSync(logPath, `\n▶ ${command}\n${output}`);
+    rows.push([ok ? "✓" : "✗", name, parse ? parse(output) : ok ? "ok" : "failed", seconds]);
+  }
+  if (!ok) {
+    if (!summary) console.error(`\n✗ ${command} failed`);
     exitCode = result.status ?? 1;
     break;
   }
 }
 
 cleanup();
+if (summary) {
+  for (const { name } of steps.slice(rows.length)) rows.push(["–", name, "skipped", ""]);
+  const width = Math.max(...rows.map((row) => row[1].length));
+  console.log("");
+  for (const [mark, name, numbers, seconds] of rows) {
+    console.log(`${mark} ${name.padEnd(width)}  ${seconds.padStart(5)}  ${numbers}`);
+  }
+  console.log(`\nfull log: ${logPath}`);
+}
 if (exitCode === 0) console.log("✓ all CI checks passed");
 process.exit(exitCode);
