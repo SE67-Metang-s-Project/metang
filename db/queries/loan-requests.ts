@@ -457,6 +457,12 @@ export class DisbursementError extends Error {
   }
 }
 
+/** The status alone, so the disburse route can refuse a loan before it uploads a slip. */
+export async function findLoanStatus(id: string) {
+  const loan = await prisma.loanRequest.findUnique({ where: { id }, select: { status: true } });
+  return loan?.status ?? null;
+}
+
 /**
  * Manual disbursement of a loan already approved and awaiting disbursement. slipPath must already
  * point at an uploaded object (see app/api/admin/loan-requests/[id]/disburse/route.ts) - the ledger

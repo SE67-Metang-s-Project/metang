@@ -1,4 +1,4 @@
-import { DisbursementError, disburseLoanRequest } from "@/db/queries/loan-requests";
+import { DisbursementError, disburseLoanRequest, findLoanStatus } from "@/db/queries/loan-requests";
 import { apiError, apiOk } from "@/lib/api-response";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { getAdminAccess } from "@/lib/loan-auth";
@@ -6,7 +6,13 @@ import { isLoanId } from "@/lib/loan-validation";
 import { isSameOrigin } from "@/lib/request-security";
 import { serializeJson } from "@/lib/serialization";
 import { detectSlipContentType } from "@/lib/slip-file-type";
-import { buildSlipPath, extensionForSlipContentType, MAX_SLIP_BYTES, uploadSlip } from "@/lib/slip-storage";
+import {
+  buildSlipPath,
+  extensionForSlipContentType,
+  MAX_SLIP_BYTES,
+  slipRequestTooLarge,
+  uploadSlip,
+} from "@/lib/slip-storage";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -42,8 +48,22 @@ export async function POST(request: Request, { params }: Params) {
 
   const { id } = await params;
   if (!isLoanId(id)) return apiError("NOT_FOUND", "Loan request not found", 404);
+  if (slipRequestTooLarge(request)) {
+    return apiError("VALIDATION_ERROR", "Slip file exceeds the 1MB limit", 422);
+  }
 
-  const formData = await request.formData();
+  // Refuse before the upload, so a replay or a wrong id leaves no orphan slip in storage. The
+  // transaction re-checks the status with its own compare-and-set.
+  const status = await findLoanStatus(id);
+  if (!status) return apiError("NOT_FOUND", "Loan request not found", 404);
+  if (status !== "pending_disbursement") {
+    return apiError("CONFLICT", "The loan is no longer awaiting disbursement", 409);
+  }
+
+  const formData = await request.formData().catch(() => null);
+  if (!formData) {
+    return apiError("VALIDATION_ERROR", "A multipart/form-data body is required", 422);
+  }
   const slip = formData.get("slip");
   if (!(slip instanceof File) || slip.size === 0) {
     return apiError("VALIDATION_ERROR", "A slip file is required", 422);
@@ -69,8 +89,8 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   try {
-    // ponytail: orphaned slip object on failed disbursement, add a cleanup sweep if this becomes
-    // a real cost problem - the slip above is already durably stored and cannot be rolled back.
+    // ponytail: orphaned slip object when the transaction still fails (a race past the status
+    // check above, or a fund error); add a cleanup sweep if this becomes a real cost problem.
     const loan = await disburseLoanRequest({ id, adminId: access.context.user.id, slipPath });
     return apiOk(serializeJson(loan));
   } catch (error) {

@@ -1,0 +1,44 @@
+info:
+  name: Disburse refuses a loan not awaiting disbursement
+  type: http
+  seq: 5
+  tags:
+    - Admin_loans
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/loan-requests/REQ202609060004/disburse"
+  headers:
+    - name: cmu_session
+      value: "{{apiKey}}"
+  body:
+    type: multipart-form
+    data:
+      - name: slip
+        type: file
+        value: []
+  auth:
+    type: apikey
+    key: cmu_session
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+    - expression: res.body.error.code
+      operator: eq
+      value: "CONFLICT"
+
+docs: |-
+  Seeded REQ202609060004 is pending_admin. The route checks the status before it reads the body
+  or uploads the slip, so a loan not awaiting disbursement leaves no orphan file in storage.
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

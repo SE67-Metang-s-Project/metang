@@ -15,6 +15,7 @@ import {
   buildSlipPath,
   extensionForSlipContentType,
   MAX_SLIP_BYTES,
+  slipRequestTooLarge,
   uploadSlip,
 } from "@/lib/slip-storage";
 
@@ -41,7 +42,13 @@ export async function POST(request: Request) {
   const context = await getStudentContext();
   if (!context) return apiError("UNAUTHORIZED", "Authentication required", 401);
 
-  const formData = await request.formData();
+  if (slipRequestTooLarge(request)) {
+    return apiError("VALIDATION_ERROR", "Slip file exceeds the 1MB limit", 422);
+  }
+  const formData = await request.formData().catch(() => null);
+  if (!formData) {
+    return apiError("VALIDATION_ERROR", "A multipart/form-data body is required", 422);
+  }
 
   let input;
   try {

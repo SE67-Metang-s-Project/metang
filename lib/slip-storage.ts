@@ -11,6 +11,16 @@ const ALLOWED_SLIP_CONTENT_TYPES = [
   "image/avif",
 ] as const;
 export const MAX_SLIP_BYTES = 1 * 1024 * 1024;
+// Multipart framing and the other form fields, on top of the slip itself.
+const MAX_SLIP_REQUEST_BYTES = MAX_SLIP_BYTES + 64 * 1024;
+
+/**
+ * Refuses an oversized upload from its Content-Length, before formData() buffers the whole body.
+ * A chunked body has no Content-Length; the slip size check after parsing still catches it.
+ */
+export function slipRequestTooLarge(request: Request) {
+  return Number(request.headers.get("content-length")) > MAX_SLIP_REQUEST_BYTES;
+}
 
 const SLIP_CONTENT_TYPE_EXTENSIONS: Record<(typeof ALLOWED_SLIP_CONTENT_TYPES)[number], string> = {
   "image/jpeg": "jpg",

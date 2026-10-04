@@ -110,6 +110,13 @@ test("concurrency: CAS update and the unique disbursement index guard the same r
   const uploadIndex = route.indexOf("await uploadSlip(");
   const disburseCallIndex = route.indexOf("disburseLoanRequest({");
   assert.ok(uploadIndex > -1 && disburseCallIndex > -1 && uploadIndex < disburseCallIndex);
+
+  // A loan not awaiting disbursement is refused before the upload, so a replay or a wrong id
+  // leaves no orphan slip; a broken multipart body is a 422, not a bare 500.
+  const statusCheckIndex = route.indexOf("await findLoanStatus(id)");
+  assert.ok(statusCheckIndex > -1 && statusCheckIndex < uploadIndex);
+  assert.match(route, /status !== "pending_disbursement"\) \{\s*return apiError\("CONFLICT", "The loan is no longer awaiting disbursement", 409\);/);
+  assert.match(route, /request\.formData\(\)\.catch\(\(\) => null\)/);
 });
 
 test("cancel guard: disbursed loans are excluded from cancellation everywhere", () => {
