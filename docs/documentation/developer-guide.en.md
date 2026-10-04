@@ -3,7 +3,7 @@
 Version covered: metang 0.1.0
 Document version: 1.0 draft
 Date: 2026-10-02
-Checked against: commit `403e36b` (the outbox change of Section 8.2)
+Checked against: the code of 2026-10-02 (the outbox change of Section 8.2)
 
 This guide is for the metang development team. It explains how to set up, change, test, and
 document the code. It does not replace the other documents:

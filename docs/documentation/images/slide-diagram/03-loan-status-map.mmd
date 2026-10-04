@@ -1,0 +1,38 @@
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Liberation Sans, Arial, sans-serif", "fontSize": "20px", "primaryColor": "#ffffff", "primaryBorderColor": "#334155", "lineColor": "#334155"}, "flowchart": {"useMaxWidth": false, "htmlLabels": true, "wrappingWidth": 420, "curve": "basis", "nodeSpacing": 50, "rankSpacing": 70}}}%%
+flowchart TB
+  START(["Student<br/>submits"]) --> PA["pending_advisor"]
+  PA -->|"advisor approves"| PAD["pending_admin"]
+  PAD -->|"admin approves<br/>and sets the amount"| PE["pending_executive"]
+  PE -->|"executive approves"| PD["pending_disbursement"]
+  PD -->|"admin records<br/>the transfer and slip"| DIS["disbursed"]
+  DIS -->|"last installment<br/>confirmed"| CL(["closed"])
+
+  PE -->|"executive returns:<br/>change the amount"| PAD
+
+  RET["<b>returned</b><br/>advisor or admin asks<br/>for a correction"]
+  REJ(["<b>rejected</b><br/>by the advisor, the admin,<br/>or the executive"])
+  CAN(["<b>cancelled</b><br/>by the student before disbursement,<br/>by an admin, or automatically when<br/>the advisor is removed and the request<br/>is still in pending_advisor"])
+
+  PA -.-> RET
+  PAD -.-> RET
+  RET -.->|"student resubmits"| PA
+  RET -.->|"student resubmits"| PAD
+  PA -.-> REJ
+  PAD -.-> REJ
+  PE -.-> REJ
+  PA -.->|"also when the advisor<br/>is removed"| CAN
+  PAD -.-> CAN
+  PE -.-> CAN
+  PD -.-> CAN
+  RET -.-> CAN
+
+  classDef open fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#0f172a;
+  classDef done fill:#dcfce7,stroke:#15803d,stroke-width:2px,color:#0f172a;
+  classDef back fill:#fef3c7,stroke:#b45309,stroke-width:2px,color:#0f172a;
+  classDef stop fill:#fee2e2,stroke:#b91c1c,stroke-width:2px,color:#0f172a;
+  classDef start fill:#fef9c3,stroke:#a16207,stroke-width:2px,color:#0f172a;
+  class PA,PAD,PE,PD open;
+  class DIS,CL done;
+  class RET back;
+  class REJ,CAN stop;
+  class START start;

@@ -1,0 +1,31 @@
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Liberation Sans, Arial, sans-serif", "fontSize": "20px", "primaryColor": "#ffffff", "primaryBorderColor": "#334155", "lineColor": "#334155"}, "flowchart": {"useMaxWidth": false, "htmlLabels": true, "wrappingWidth": 420, "curve": "basis", "nodeSpacing": 50, "rankSpacing": 110}}}%%
+flowchart LR
+  subgraph people["Users (5 roles)"]
+    direction TB
+    S["Student"]
+    A["Advisor"]
+    AD["Admin"]
+    EX["Executive"]
+    SA["SuperAdmin"]
+  end
+
+  M["<b>metang</b><br/>Emergency-loan web system"]
+
+  E["<b>CMU Entra ID</b><br/>sign-in (OAuth 2.0)"]
+  B["<b>CMU BasicInfo API</b><br/>user profile"]
+  L["<b>CMU LINE FON</b><br/>messages to reviewers"]
+  EM["<b>CMU Email API</b><br/>payment reminders to students"]
+
+  people -->|"use it in a web browser"| M
+  M -->|"sign-in"| E
+  M -->|"reads profile"| B
+  M -->|"notifies reviewers"| L
+  M -->|"sends reminders"| EM
+
+  classDef system fill:#dbeafe,stroke:#1d4ed8,stroke-width:3px,color:#0f172a;
+  classDef external fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a;
+  classDef person fill:#fef9c3,stroke:#a16207,stroke-width:2px,color:#0f172a;
+  class M system;
+  class E,B,L,EM external;
+  class S,A,AD,EX,SA person;
+  style people fill:#fffef5,stroke:#a16207,stroke-width:2px;

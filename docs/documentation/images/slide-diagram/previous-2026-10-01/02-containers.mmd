@@ -1,0 +1,38 @@
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Liberation Sans, Arial, sans-serif", "fontSize": "20px", "primaryColor": "#ffffff", "primaryBorderColor": "#334155", "lineColor": "#334155"}, "flowchart": {"useMaxWidth": false, "htmlLabels": true, "wrappingWidth": 420, "curve": "basis", "nodeSpacing": 60, "rankSpacing": 110}}}%%
+flowchart LR
+  subgraph sys["metang system"]
+    C["<b>Scheduled jobs</b><br/>5 cron routes (Vercel Cron)"]
+    W["<b>Web app + API</b><br/>Next.js 16, React 19, TypeScript<br/>runs on Vercel"]
+    D[("<b>Database</b><br/>PostgreSQL on Supabase<br/>accessed with Prisma")]
+    F[("<b>Slip storage</b><br/>Supabase Storage<br/>private bucket")]
+  end
+
+  U["<b>Users</b><br/>web browser"]
+  E["<b>CMU Entra ID</b><br/>sign-in (OAuth 2.0)"]
+  I["<b>Infisical</b><br/>secrets"]
+
+  B["<b>CMU BasicInfo API</b><br/>user profile"]
+  L["<b>CMU LINE FON</b><br/>messages to reviewers"]
+  EM["<b>CMU Email API</b><br/>payment reminders"]
+
+  C -->|"calls with CRON_SECRET"| W
+  U -->|"HTTPS, under /metang"| W
+  I -.->|"secrets as environment variables"| W
+  W -->|"sign-in (OAuth 2.0)"| E
+  W -->|"SQL"| D
+  W -->|"REST"| F
+  W -->|"profile"| B
+  W -->|"reviewer messages"| L
+  W -->|"reminder emails"| EM
+
+  classDef app fill:#dbeafe,stroke:#1d4ed8,stroke-width:3px,color:#0f172a;
+  classDef part fill:#ffffff,stroke:#334155,stroke-width:2px,color:#0f172a;
+  classDef data fill:#dcfce7,stroke:#15803d,stroke-width:2px,color:#0f172a;
+  classDef external fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a;
+  classDef person fill:#fef9c3,stroke:#a16207,stroke-width:2px,color:#0f172a;
+  class W app;
+  class C part;
+  class D,F data;
+  class E,B,L,EM,I external;
+  class U person;
+  style sys fill:#f8fafc,stroke:#1d4ed8,stroke-width:2px,stroke-dasharray: 6 4;

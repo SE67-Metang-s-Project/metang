@@ -1,0 +1,37 @@
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Liberation Sans, Arial, sans-serif", "fontSize": "20px", "primaryColor": "#ffffff", "primaryBorderColor": "#334155", "lineColor": "#334155"}, "flowchart": {"useMaxWidth": false, "htmlLabels": true, "wrappingWidth": 420, "curve": "basis", "nodeSpacing": 50, "rankSpacing": 90}}}%%
+flowchart TB
+  S1["<b>Student</b><br/>signs in with the CMU account<br/>and fills in the loan form"]
+  A1["<b>Advisor</b><br/>reviews the request<br/>approve, return, or reject"]
+  D1["<b>Admin</b><br/>checks documents and amount<br/>sets the approved amount"]
+  X1["<b>Executive</b><br/>makes the final decision<br/>approve, return, or reject"]
+  OK(["<b>Approved</b><br/>waits for the bank transfer"])
+
+  S1 -->|"LINE to advisor"| A1
+  A1 -->|"LINE to admins"| D1
+  D1 -->|"LINE to executive"| X1
+  X1 -->|"LINE to admins"| OK
+  X1 -.->|"return:<br/>change the amount"| D1
+
+  RET["<b>Returned to student</b><br/>the student corrects<br/>and resubmits"]
+  REJ(["<b>Rejected</b><br/>the request ends"])
+  A1 -.->|"return"| RET
+  D1 -.->|"return"| RET
+  RET -.-> S1
+  A1 -.->|"reject"| REJ
+  D1 -.->|"reject"| REJ
+  X1 -.->|"reject"| REJ
+
+  classDef student fill:#fef9c3,stroke:#a16207,stroke-width:2px,color:#0f172a;
+  classDef advisor fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#0f172a;
+  classDef admin fill:#dcfce7,stroke:#15803d,stroke-width:2px,color:#0f172a;
+  classDef exec fill:#f3e8ff,stroke:#7e22ce,stroke-width:2px,color:#0f172a;
+  classDef back fill:#fef3c7,stroke:#b45309,stroke-width:2px,color:#0f172a;
+  classDef stop fill:#fee2e2,stroke:#b91c1c,stroke-width:2px,color:#0f172a;
+  classDef good fill:#ecfccb,stroke:#4d7c0f,stroke-width:2px,color:#0f172a;
+  class S1 student;
+  class A1 advisor;
+  class D1 admin;
+  class X1 exec;
+  class RET back;
+  class REJ stop;
+  class OK good;

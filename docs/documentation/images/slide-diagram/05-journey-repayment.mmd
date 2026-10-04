@@ -1,0 +1,24 @@
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Liberation Sans, Arial, sans-serif", "fontSize": "20px", "primaryColor": "#ffffff", "primaryBorderColor": "#334155", "lineColor": "#334155"}, "flowchart": {"useMaxWidth": false, "htmlLabels": true, "wrappingWidth": 420, "curve": "basis", "nodeSpacing": 50, "rankSpacing": 90}}}%%
+flowchart TB
+  D2["<b>Admin</b><br/>transfers the money at the bank<br/>and uploads the transfer slip"]
+  S3["<b>Student</b><br/>confirms the money arrived"]
+  S4["<b>Student</b><br/>pays an installment at the bank<br/>and uploads the slip"]
+  D3["<b>Admin</b><br/>checks the slip<br/>confirm or reject"]
+  DONE(["<b>Loan closed</b><br/>after the last installment"])
+  MAIL["<b>Reminder emails to the student</b><br/>3, 1, and 0 days before the due date<br/>1, 3, and 7 days after it, while unpaid"]
+
+  D2 --> S3
+  S3 --> S4
+  S4 --> D3
+  D3 -->|"last installment<br/>confirmed"| DONE
+  D3 -.->|"slip rejected,<br/>or more installments unpaid"| S4
+  MAIL -.-> S4
+
+  classDef student fill:#fef9c3,stroke:#a16207,stroke-width:2px,color:#0f172a;
+  classDef admin fill:#dcfce7,stroke:#15803d,stroke-width:2px,color:#0f172a;
+  classDef good fill:#ecfccb,stroke:#4d7c0f,stroke-width:2px,color:#0f172a;
+  classDef mail fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a;
+  class S3,S4 student;
+  class D2,D3 admin;
+  class DONE good;
+  class MAIL mail;
