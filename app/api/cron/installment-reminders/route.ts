@@ -2,7 +2,7 @@ import { checkCronAuth } from "@/lib/notifications/cron-auth";
 import { apiOk } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { bangkokDatePlusDays } from "@/lib/date";
-import { enqueueNotification } from "@/db/queries/notifications";
+import type { EnqueueNotificationInput } from "@/db/queries/notifications";
 import {
   INSTALLMENT_REMINDER_EVENT,
   INSTALLMENT_REMINDER_OFFSETS,
@@ -28,26 +28,26 @@ async function handle(request: Request) {
     select: { id: true, loanId: true, dueDate: true },
   });
 
-  let enqueuedCount = 0;
+  const rows: EnqueueNotificationInput[] = [];
+  for (const installment of installments) {
+    const offset = offsetByDueTime.get(installment.dueDate.getTime());
+    if (offset === undefined) continue;
 
-  if (installments.length > 0) {
-    await prisma.$transaction(async (tx) => {
-      for (const installment of installments) {
-        const offset = offsetByDueTime.get(installment.dueDate.getTime());
-        if (offset === undefined) continue;
-
-        const isoDate = installment.dueDate.toISOString().slice(0, 10);
-        const dedupeKey = buildInstallmentReminderDedupeKey(installment.id, isoDate, offset);
-
-        await enqueueNotification(tx, {
-          dedupeKey,
-          eventType: INSTALLMENT_REMINDER_EVENT,
-          payload: { loanId: installment.loanId, installmentId: String(installment.id) },
-        });
-        enqueuedCount++;
-      }
+    const isoDate = installment.dueDate.toISOString().slice(0, 10);
+    rows.push({
+      dedupeKey: buildInstallmentReminderDedupeKey(installment.id, isoDate, offset),
+      eventType: INSTALLMENT_REMINDER_EVENT,
+      payload: { loanId: installment.loanId, installmentId: String(installment.id) },
     });
   }
+
+  // One statement, not an upsert per row in a transaction: a busy due date would outrun the
+  // transaction timeout and lose the whole day. skipDuplicates keeps a re-run a no-op, like the
+  // upsert in enqueueNotification, and the count leaves out the rows it skipped.
+  const { count: enqueuedCount } =
+    rows.length > 0
+      ? await prisma.notificationOutbox.createMany({ data: rows, skipDuplicates: true })
+      : { count: 0 };
 
   return apiOk(serializeJson({ enqueued: enqueuedCount }));
 }
