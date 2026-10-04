@@ -212,3 +212,33 @@ test("concurrent sendEmail calls dedupe the token refresh into one GetToken requ
     restore();
   }
 });
+
+test("both Email API calls carry a timeout signal, and a timed-out send is retryable", async () => {
+  const sendEmail = await freshClient();
+  const signals: unknown[] = [];
+
+  const restore = mockFetch((url, init) => {
+    signals.push(init?.signal);
+    if (url.endsWith("/EmailApi/GetToken")) {
+      return jsonResponse({ success: true, access_token: "tok-1", token_type: "Bearer", expires_in: 86400 });
+    }
+    // What fetch throws when AbortSignal.timeout fires.
+    throw new DOMException("The operation was aborted due to timeout", "TimeoutError");
+  });
+
+  try {
+    await assert.rejects(
+      () => sendEmail(BASE_PAYLOAD),
+      (error: unknown) => {
+        assert.ok(error instanceof EmailApiError);
+        // No status: the outbox classifies it as retryable.
+        assert.equal(error.status, undefined);
+        return true;
+      },
+    );
+    assert.equal(signals.length, 2);
+    for (const signal of signals) assert.ok(signal instanceof AbortSignal);
+  } finally {
+    restore();
+  }
+});

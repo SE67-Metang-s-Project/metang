@@ -111,7 +111,8 @@ const CLAIM_LEASE_MINUTES = 15;
  * route's maxDuration so a reclaim can never race a still-running worker.
  *
  * attempt_count increments here rather than only in markFailed: a row that reliably kills its
- * worker would otherwise loop claim -> crash -> reclaim forever and never reach MAX_ATTEMPTS.
+ * worker would otherwise loop claim -> crash -> reclaim forever and never reach MAX_ATTEMPTS. A
+ * lease that expires at MAX_ATTEMPTS is therefore marked failed here, and never claimed again.
  *
  * eventType is required, not optional: every worker handles exactly one event type and marks any
  * row it does not recognise as permanently failed, so a worker that claimed indiscriminately would
@@ -121,10 +122,21 @@ const CLAIM_LEASE_MINUTES = 15;
  */
 export async function claimDueNotifications(limit: number, eventType: string) {
   return prisma.$transaction(async (tx) => {
+    await tx.notificationOutbox.updateMany({
+      where: {
+        eventType,
+        status: "processing",
+        attemptCount: { gte: MAX_ATTEMPTS },
+        availableAt: { lte: new Date() },
+      },
+      data: { status: "failed", lastError: "Delivery lease expired after the final attempt" },
+    });
+
     const claimable = await tx.$queryRaw<{ id: string }[]>`
       SELECT id FROM notification_outbox
       WHERE event_type = ${eventType}
         AND status IN ('pending', 'retry', 'processing')
+        AND attempt_count < ${MAX_ATTEMPTS}
         AND available_at <= now()
       ORDER BY available_at
       LIMIT ${limit}

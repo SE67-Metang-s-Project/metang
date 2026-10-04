@@ -14,6 +14,11 @@ function getRequiredEnvironmentVariable(
   return value;
 }
 
+// Same bound as the LINE call. A hung request would otherwise hold a worker past its outbox lease,
+// and another worker would reclaim the row and send the email twice. An abort lands in the
+// "Unable to connect" catch, which has no status, so the outbox retries it.
+const EMAIL_API_TIMEOUT_MS = 10_000;
+
 let tokenCache: { token: string; expiresAt: number } | null = null;
 
 async function fetchFreshToken(): Promise<string> {
@@ -41,6 +46,7 @@ async function fetchFreshToken(): Promise<string> {
         "Content-Type": "application/json",
       },
       body: requestBody,
+      signal: AbortSignal.timeout(EMAIL_API_TIMEOUT_MS),
     });
   } catch {
     throw new EmailApiError("Unable to connect to Email API GetToken endpoint");
@@ -165,6 +171,7 @@ async function sendEmailRequest(
         "Content-Type": "application/json",
       },
       body: requestBody,
+      signal: AbortSignal.timeout(EMAIL_API_TIMEOUT_MS),
     });
   } catch {
     throw new EmailApiError("Unable to connect to Email API SendEmail endpoint");

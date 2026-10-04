@@ -13,8 +13,9 @@ One command. `scripts/api-test-isolated.mjs` does the rest:
 
 1. starts a throwaway `postgres:17` container (`metang-test`, port 5433) and waits for it
 2. `prisma migrate deploy` + `db/seed.ts` against it
-3. runs the database tests `tests/db/role-access-matrix.test.ts`, `advisor-removal.test.ts` and
-   `home-path.test.ts` against it, before Bruno changes any role
+3. runs the database tests `tests/db/role-access-matrix.test.ts`, `advisor-removal.test.ts`,
+   `admin-cancel-ownership.test.ts`, `outbox-claim-cap.test.ts` and `home-path.test.ts` against it,
+   before Bruno changes any role
 4. starts the app on **port 8081** — deliberately not the dev server's 8080
 5. runs the collection, then the ordered `Workflow/` walk
 6. removes the container on success; **leaves it running on failure** so you can inspect it

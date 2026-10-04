@@ -153,9 +153,9 @@ function migrateAndSeed() {
  * it only needs the throwaway database.
  */
 function databaseTests() {
-  console.log("\n──────── database tests (role access, advisor removal, home path) ────────");
+  console.log("\n──────── database tests (role access, advisor removal, admin cancel ownership, outbox claim cap, home path) ────────");
   return (
-    run("npx", ["tsx", "--conditions=react-server", "--test", "tests/db/role-access-matrix.test.ts", "tests/db/advisor-removal.test.ts", "tests/db/home-path.test.ts"], {
+    run("npx", ["tsx", "--conditions=react-server", "--test", "tests/db/role-access-matrix.test.ts", "tests/db/advisor-removal.test.ts", "tests/db/admin-cancel-ownership.test.ts", "tests/db/outbox-claim-cap.test.ts", "tests/db/home-path.test.ts"], {
       env: { ...process.env, DATABASE_URL, DIRECT_URL: DATABASE_URL },
     }).status ?? 1
   );
