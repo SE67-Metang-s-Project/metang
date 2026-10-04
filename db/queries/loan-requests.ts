@@ -557,7 +557,9 @@ export class AdminCancelError extends Error {
 }
 
 /**
- * Cancel a loan request that is awaiting disbursement or awaiting admin approval.
+ * Cancel a loan request that is awaiting disbursement or awaiting admin approval. A pending_admin
+ * loan assigned to another admin is theirs alone, as in decideAdminLoanRequest, so it reads as
+ * NOT_FOUND here too.
  */
 export async function cancelAdminLoanRequest({
   id,
@@ -575,21 +577,22 @@ export async function cancelAdminLoanRequest({
     });
     if (!effectiveRole) throw new AdminCancelError("ACCESS_REVOKED");
 
+    const cancellable: Prisma.LoanRequestWhereInput = {
+      id,
+      OR: [
+        { status: "pending_disbursement" },
+        { status: "pending_admin", OR: assignedToViewerOrNoOne(adminId) },
+      ],
+    };
     const current = await tx.loanRequest.findFirst({
-      where: {
-        id,
-        status: { in: ["pending_disbursement", "pending_admin"] },
-      },
+      where: cancellable,
       select: adminLoanDetailSelect,
     });
     if (!current) throw new AdminCancelError("NOT_FOUND");
 
     const cancelledAt = new Date();
     const changed = await tx.loanRequest.updateMany({
-      where: {
-        id,
-        status: { in: ["pending_disbursement", "pending_admin"] },
-      },
+      where: cancellable,
       data: {
         status: "cancelled",
         cancelledAt,

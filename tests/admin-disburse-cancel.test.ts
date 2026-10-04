@@ -16,7 +16,12 @@ test("cancelAdminLoanRequest is defined with transaction and proper role checks"
     /tx\.userRole\.findFirst\(\{\s*where: \{ userId: adminId, role: \{ in: \["admin", "super_admin"\] \} \}/,
   );
   assert.match(cancelService, /if \(!effectiveRole\) throw new AdminCancelError\("ACCESS_REVOKED"\);/);
-  assert.match(cancelService, /status: \{ in: \["pending_disbursement", "pending_admin"\] \}/);
+  // A pending_admin loan assigned to another admin is theirs alone, as in decideAdminLoanRequest.
+  assert.match(
+    cancelService,
+    /\{ status: "pending_disbursement" \},\s*\{ status: "pending_admin", OR: assignedToViewerOrNoOne\(adminId\) \}/,
+  );
+  assert.equal(cancelService.match(/where: cancellable/g)?.length, 2);
   assert.match(cancelService, /status: "cancelled"/);
   assert.match(cancelService, /cancelledAt/);
   // The admin is named by the rejected admin approval and the audit row; loan_request has no
